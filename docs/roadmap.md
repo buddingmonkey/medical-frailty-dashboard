@@ -9,7 +9,8 @@ running totals in `docs/talk-notes.md`.
 ## M0 Scaffolding
 
 1. pnpm workspace (`apps/web`, `apps/api`, `packages/shared`), TypeScript strict base config,
-   ESLint flat config, Prettier, `.editorconfig`, `.gitignore`, `.nvmrc` (Node LTS).
+   ESLint flat config, Prettier, `.editorconfig`, `.gitignore` (incl. `.dev.vars`, `.wrangler/`,
+   `.logs/`, Playwright output), `.nvmrc` (Node LTS).
 2. `apps/web`: Vite + Vue 3 + Vue Router + Tailwind v4 + TanStack Query; a placeholder page.
    Use the `tailwind-design-system` skill to set design tokens (color, type, spacing) once.
 3. `apps/api`: Hono Worker serving `apps/web/dist` as static assets with SPA fallback,
@@ -20,8 +21,8 @@ running totals in `docs/talk-notes.md`.
 5. Middleware: `site-gate` (`SITE_MODE`) and `access-jwt`, with the required tests from
    `docs/testing.md`.
 6. GitHub: Actions CI (PR checks), Dependabot, CodeQL, gitleaks, branch protection,
-   `SECURITY.md`, `CONTRIBUTING.md`, update `README.md` "Getting started" (`LICENSE` is already MIT). Add the build
-   outputs and `.dev.vars` to the existing `.gitignore`.
+   `SECURITY.md`, `CONTRIBUTING.md`, update `README.md` "Getting started" (`LICENSE` is already MIT).
+   (The `.gitignore` additions for build outputs and `.dev.vars` were done in step 1.)
 7. Cloudflare: create preview + prod Workers, D1, R2, Access applications (whole host); deploy
    from CI. **Check:** both URLs ask for Google login; after login the placeholder page loads.
 8. `.claude/agents/builder.md` (standing rules for builders) and a project skill for "add a
