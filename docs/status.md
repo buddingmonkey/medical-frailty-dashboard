@@ -9,8 +9,12 @@ _Last updated: 2026-11-01_
   TypeScript base config, type-aware ESLint flat config, Prettier, `.editorconfig`, `.nvmrc`
   (26). `pnpm lint`, `pnpm typecheck` and `pnpm format:check` pass. `pnpm check` arrives in
   step 4.
-- **Next step:** M0 step 2 (`apps/web`: Vite + Vue + Tailwind). The `tailwind-design-system`
-  skill is linked into `.claude/skills/` and ready to use.
+- **Step 2 done** (branch `m0-step2-web`): `apps/web` is a Vite 8 + Vue 3.5 + Vue Router 5
+  (file-based routes) + Tailwind 4.3 + TanStack Query 5 app with a placeholder home page and a
+  404 page. Design tokens (light and dark) are in `apps/web/src/styles/main.css`; see
+  `docs/architecture.md`, "Design tokens". `pnpm --filter @mfcd/web dev` runs Vite alone on
+  port 5173; the `pnpm dev` in `CLAUDE.md` (Vite + wrangler on 8787) arrives with step 3.
+- **Next step:** M0 step 3 (`apps/api`: Hono Worker serving `apps/web/dist`).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -34,6 +38,8 @@ _Last updated: 2026-11-01_
 | Admins | Two Google accounts (the user and one other). The emails live only in the Access policy and the `ADMIN_EMAILS` Worker secret, **never in the public repo** |
 | Georgia A/B | Two tiers, loaded as one version; tier kept in `entries.tier` |
 | Tiers and qualification | Show **each state's own rule**: the state's tier label plus a badge (qualifies alone / needs another code / supporting evidence / state doesn't say), with "inferred" shown where we deduced it. Site-wide note on the 2026-10-29 *Massachusetts v. Oz* ruling. Compare and search can filter to "qualifies alone" (user, 2026-11-01, after research showed the ruling does not strike down tiers). **Provisional:** the user works with a team of lawyers who may ask to remove or reword the badges later |
+| Look and feel | Colours based on the Georgetown CCF palette; open-licensed fonts (Jost headings, Source Sans 3 body, IBM Plex Mono codes), self-hosted; no serif for now. **Not an official CCF site**: no CCF name or logo; branding may be added later (user, 2026-11-01) |
+| Dark mode | Light, dark and "follow system" must all work before launch. Tokens for both themes exist; the switch comes in M0 step 4; axe runs in both themes in M7 (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
