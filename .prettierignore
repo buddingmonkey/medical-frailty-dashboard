@@ -1,0 +1,15 @@
+pnpm-lock.yaml
+dist
+coverage
+.wrangler
+.logs
+playwright-report
+test-results
+blob-report
+# Third-party skills, managed by the skills CLI (see docs/architecture.md, "Agent skills")
+.agents
+.claude
+skills-lock.json
+# Hand-written docs; formatting them would churn the plan files
+docs
+*.md

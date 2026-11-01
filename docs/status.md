@@ -4,10 +4,18 @@ _Last updated: 2026-11-01_
 
 ## Where things stand
 
-- **Phase:** planning. There is no application code yet. The repo holds the plan docs, the
-  user's design wiki, and the installed skills (`tailwind-design-system`, `unslop`, and the
-  `vue-development` plugin).
-- **Next step:** roadmap **M0** (scaffolding). See `docs/roadmap.md`.
+- **Phase:** M0 scaffolding. **Step 1 done** (branch `m0-step1-workspace`): pnpm workspace
+  with `apps/web`, `apps/api`, `packages/shared` (one placeholder `src/index.ts` each), strict
+  TypeScript base config, type-aware ESLint flat config, Prettier, `.editorconfig`, `.nvmrc`
+  (26). `pnpm lint`, `pnpm typecheck` and `pnpm format:check` pass. `pnpm check` arrives in
+  step 4.
+- **Next step:** M0 step 2 (`apps/web`: Vite + Vue + Tailwind). First link the
+  `tailwind-design-system` skill into `.claude/skills/` (see `docs/architecture.md`, "Agent
+  skills").
+- **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
+  `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
+- **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
+  purpose (user, 2026-11-01). Their sources are in `docs/architecture.md`, "Agent skills".
 
 ## Decisions made (2026-11-01, with the user)
 

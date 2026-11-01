@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Refuse packages published less than 3 days ago (4320 minutes). Most hijacked releases
+# are caught and pulled within that window.
+minimumReleaseAge: 4320
+
+# Exact versions only.
+saveExact: true

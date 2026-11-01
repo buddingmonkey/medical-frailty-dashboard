@@ -50,6 +50,39 @@ fixtures/              small excerpts of real state files + expected normalized 
 docs/
 ```
 
+## Tool versions
+
+Exact versions live in the root `package.json`; the notes here say why some are held back.
+
+- **Node 26** (LTS "Lithium"). `.nvmrc` holds the major only, so patch releases are picked up.
+- **pnpm 12**, installed by hand (`npm i -g pnpm@12.16.1`); corepack is gone from Node 25+.
+  `pnpm-workspace.yaml` sets `minimumReleaseAge: 4320` (3 days): pnpm refuses any package
+  published less than 3 days ago, which blocks most hijacked releases. If a pin is too new,
+  step back to the previous release rather than adding an exclude.
+- **TypeScript 6.0.x, not 7.** TypeScript 7 (the native Go port) is `latest` on npm, but
+  `typescript-eslint` 8.x supports only `<6.1.0` and `vue-tsc` needs the JS compiler API that 7
+  dropped. Revisit when both support 7. TS 6 changed some defaults (`types` is `[]`), so
+  `tsconfig.base.json` sets every option explicitly.
+- **ESLint 10**, flat config built with `defineConfig()` from `eslint/config`
+  (`tseslint.config()` is deprecated). Linting is type-aware (`strictTypeChecked`).
+
+## Agent skills (not committed)
+
+These AI-assistant skills were installed by the project lead before M0. Their folders are
+**left untracked on purpose**: do not commit, edit or delete `.agents/`, `.claude/skills/` or
+`skills-lock.json`. Prettier and ESLint ignore them. To reproduce the setup:
+
+| Skill | Source | How it was installed | Where it lands |
+| --- | --- | --- | --- |
+| `tailwind-design-system` | GitHub `wshobson/agents`, path `plugins/frontend-mobile-development/skills/tailwind-design-system/SKILL.md` | skills CLI (`npx skills add`, which writes `skills-lock.json`) | `.agents/skills/tailwind-design-system/` |
+| `unslop` | GitHub `theclaymethod/unslop` (`SKILL.md` at repo root) | skills CLI | `.agents/skills/unslop/`, symlinked from `.claude/skills/unslop` |
+| `vue-development` | Claude Code plugin from marketplace GitHub `alexanderop/claude-skill-vue-development` (v0.1.0) | `/plugin marketplace add alexanderop/claude-skill-vue-development`, then `/plugin install vue-development`, project-local scope | Claude Code plugin cache (outside the repo) |
+
+Claude Code reads project skills from `.claude/skills/`. As installed, only `unslop` is linked
+there; `tailwind-design-system` exists only under `.agents/skills/`, so Claude Code does not
+list it. Link it (`ln -s ../../.agents/skills/tailwind-design-system .claude/skills/`) before
+M0 step 2, which uses it.
+
 ## One Worker, two halves
 
 A single Worker handles every request, so there is one deploy, one domain and one Access setup.

@@ -9,7 +9,10 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 
 ## 1. What you need
 
-- A computer with a terminal, Git and Node.js. _(Exact install steps: to write after M0.)_
+- A computer with a terminal, Git and Node.js 26 (the LTS line; `.nvmrc` says `26`, so
+  `nvm install && nvm use` picks it up).
+- pnpm 12.16.1: `npm i -g pnpm@12.16.1`. Node 25 and later no longer ship corepack, so pnpm
+  must be installed by hand. Then run `pnpm install` in the repo.
 - An AI coding assistant (this project used Claude Code).
 - Access to the GitHub repo. For deploying: a Cloudflare account (free). For admin pages: your
   Google account added to the admin list by an existing admin.

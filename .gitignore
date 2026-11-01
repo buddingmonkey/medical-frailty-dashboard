@@ -150,3 +150,15 @@ vite.config.ts.timestamp-*
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Project additions (M0 step 1)
+# Cloudflare: local secrets and wrangler state
+.dev.vars
+.dev.vars.*
+.wrangler/
+# pnpm check logs
+.logs/
+# Playwright output
+playwright-report/
+test-results/
+blob-report/
