@@ -1,0 +1,69 @@
+# Medical Frailty Coding Dashboard
+
+A public site that compares the code lists US states use to mark Medicaid members as
+"medically frail" (an exemption from the H.R.1 work requirements). Vue 3 + Tailwind on the
+front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
+All data is public state policy. There is no patient data, and there never will be.
+
+> **Status: planning.** The commands below come online in roadmap step M0. Until then,
+> `docs/status.md` says what exists.
+
+## Commands
+
+```bash
+pnpm check            # lint, typecheck, unit + component + API tests, one line per stage; run after every change
+pnpm check:full       # pnpm check + build + Playwright e2e + axe; run before merging to main
+pnpm dev              # Vite + wrangler dev (local D1/R2) on http://localhost:8787
+pnpm test -- <filter> # run matching Vitest tests in every workspace
+pnpm e2e              # Playwright against a local build with seeded D1
+pnpm db:migrate:local # apply D1 migrations to the local database
+pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
+pnpm format           # prettier --write
+pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare Access)
+```
+
+Production deploys happen only from CI on `main`. Never run `wrangler deploy` against production by hand.
+
+## Rules
+
+- **TypeScript strict everywhere.** No `any`, no `@ts-ignore`. Validate every API input and
+  every ingested row with the zod schemas in `packages/shared`.
+- **Vue:** `<script setup lang="ts">`, Composition API, `defineModel` for v-model, and no
+  `v-html` with data. Follow the `vue-development` skill for structure and tests.
+- **Test first.** Write the failing test, implement, run `pnpm check`. See `docs/testing.md`.
+- **No patient data.** Never add a field, upload path or log line that could hold a member's
+  name, ID or claim. The site compares code lists only.
+- **CPT descriptions:** show only the text the state published, with its source citation. Never
+  add an AMA CPT descriptor table. See `docs/data-model.md` ("Licensing of code text").
+- **Admin is behind Cloudflare Access**, and the API also checks the Access JWT. Never add an
+  admin route outside `/admin` or `/api/admin`. See `docs/security.md`.
+- **Secrets** go in `wrangler secret` or `.dev.vars` (gitignored). The repo is public.
+- **Keep subagents small:** one roadmap step per builder, then commit and stop. Use Sonnet for
+  rote doc, search and refactor work.
+- Do not read a large doc in full. `grep -n` for the section, then read that range.
+- **Keep the devlog.** At the end of every session that changed the plan or code, and at
+  every milestone, add an entry to `docs/devlog/` (template in its README). Promote lessons to
+  `docs/playbook.md` and notable moments and numbers to `docs/talk-notes.md`. The repo is
+  public: roles, not names or emails.
+- When you learn something about a state's data or the federal rules, add it to
+  `docs/sources.md` or `docs/MedicalFrailtyCode-design-wiki.md`.
+
+## Docs
+
+Read the doc that matches the task. Do not load all of them.
+
+| Read this | When you need |
+| --- | --- |
+| [docs/status.md](docs/status.md) | **Read first.** Where things stand, open questions, how the user likes to work |
+| [docs/roadmap.md](docs/roadmap.md) | Milestones and steps, with acceptance checks |
+| [docs/MedicalFrailtyCode-design-wiki.md](docs/MedicalFrailtyCode-design-wiki.md) | Product goals, users and features (the user's spec) |
+| [docs/architecture.md](docs/architecture.md) | Stack, repo layout, request flow, API shape, caching |
+| [docs/data-model.md](docs/data-model.md) | Tables, code normalization, wildcards/ranges, categories, "like" codes, glossary |
+| [docs/ingestion.md](docs/ingestion.md) | Upload, parse, review, map and publish flow; parser adapters; AI cleanup |
+| [docs/sources.md](docs/sources.md) | Each state's source documents, format quirks and category list |
+| [docs/security.md](docs/security.md) | Threat model, Access setup, pre-launch gate, headers, upload safety |
+| [docs/testing.md](docs/testing.md) | Test layers, tools, fixtures, how to add and run tests |
+| [docs/deployment.md](docs/deployment.md) | Cloudflare setup, environments, CI/CD, costs, backups, going live |
+| [docs/devlog/](docs/devlog/README.md) | How the site was built, session by session; entry template |
+| [docs/playbook.md](docs/playbook.md) | Step-by-step guide for less-technical builders adding to the site |
+| [docs/talk-notes.md](docs/talk-notes.md) | Story, moments and numbers for a future blog post or talk |

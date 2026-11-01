@@ -1,0 +1,78 @@
+# Status
+
+_Last updated: 2026-11-01_
+
+## Where things stand
+
+- **Phase:** planning. There is no application code yet. The repo holds the plan docs, the
+  user's design wiki, and the installed skills (`tailwind-design-system`, `unslop`, and the
+  `vue-development` plugin).
+- **Next step:** roadmap **M0** (scaffolding). See `docs/roadmap.md`.
+
+## Decisions made (2026-11-01, with the user)
+
+| Topic | Decision |
+| --- | --- |
+| Hosting | Cloudflare: one Worker serves the Vue build (static assets) and the API; D1 for data; R2 for source files and backups |
+| Parsing | In the admin's browser (pdf.js, SheetJS). The server receives validated JSON rows only |
+| AI cleanup | Both: a copy-paste prompt (free, always available) and an optional Claude API button that appears only when an API key secret is set |
+| Admin auth | Cloudflare Access with Google login, plus JWT verification in the Worker |
+| Pre-launch | The **whole site** is behind Access until the user marks it live. After launch, only `/admin*` and `/api/admin*` stay protected |
+| CPT text | Show the state's published description with a citation, and an AMA notice in the footer. No CPT descriptor table of our own |
+| Repo | Public on GitHub (free Actions minutes, CodeQL) |
+| Domain | None yet. Use `*.workers.dev` until a domain is bought (~$10/yr via Cloudflare Registrar) |
+| Seed states | Georgia (Attachments A and B), Louisiana, Montana, Nebraska |
+| Name | **Medical Frailty Coding Dashboard** |
+| Licence | MIT (already in `LICENSE`) |
+| Admins | Two Google accounts (the user and one other). The emails live only in the Access policy and the `ADMIN_EMAILS` Worker secret, **never in the public repo** |
+| Georgia A/B | Two tiers, loaded as one version; tier kept in `entries.tier` |
+| Tiers and qualification | Show **each state's own rule**: the state's tier label plus a badge (qualifies alone / needs another code / supporting evidence / state doesn't say), with "inferred" shown where we deduced it. Site-wide note on the 2026-10-29 *Massachusetts v. Oz* ruling. Compare and search can filter to "qualifies alone" (user, 2026-11-01, after research showed the ruling does not strike down tiers). **Provisional:** the user works with a team of lawyers who may ask to remove or reword the badges later |
+| Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
+
+## Open questions
+
+1. **Dates to watch** are in "Watch dates" below (next: ~2026-12-28, the *Massachusetts v. Oz*
+   appeal deadline).
+2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
+   supporting code, 2 = supporting evidence only (SHVS 2026-09-11 + a fit against the data).
+   Not confirmed by LDH, so it is shown as "inferred". The "code system" explanation does not
+   fit the data. See `docs/sources.md`.
+3. **Louisiana .xlsx:** none public (search, 2026-11-01). LDH's work requirements page
+   (https://ldh.la.gov/Medicaid/work-requirements) links only PDFs, and none of them is the
+   code list; the source URL of our `HR1-Codes` PDF is unknown. Next step if wanted: ask LDH
+   or an MCO provider-relations line for the .xlsx and the Code Designation definition.
+   Until then, parse the PDF.
+4. **Georgia source:** URL and publish date of Attachments A and B.
+
+## Watch dates
+
+Dates we must act on. Until the `/admin/watch` page exists (roadmap M2 step 2), track them
+here; that page is seeded from this table. Approximate dates are marked ~.
+
+| Date | What | Why it matters | Source |
+| --- | --- | --- | --- |
+| ~2026-12-28 | *Massachusetts v. Oz*: CMS appeal deadline (60 days from judgment; exact date depends on when judgment was entered) | An appeal or stay may change the site's ruling note; states may loosen combination rules either way | `docs/sources.md`, "Federal and court rulings" |
+| 2027-01-01 | Work requirements take effect | States may publish final or revised lists before this date; re-check all seed states | H.R.1 §71119 |
+| ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
+| No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
+| No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
+| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text | Badges may be removed or reworded | This file, decisions table |
+
+## Re-ingestion safety (user requirement, 2026-11-01)
+
+States will reissue their lists. A re-upload must be able to replace a whole state, with
+warnings and data checks so a wrong file cannot damage the database. Design: draft versions,
+blocking/typed-confirm checks, diff, atomic per-state publish, pre-publish backup, one-click
+rollback. See `docs/ingestion.md` ("Checks before publishing") and `docs/data-model.md`
+("Replacing a state's list").
+
+## How the user likes to work
+
+- The user works with a team of lawyers. On legal questions (what the ruling means, how
+  qualification is described, disclaimers, CPT text) the lawyers decide. Present research and
+  a recommendation, label it as not legal advice, and expect changes.
+
+- Keep `CLAUDE.md` small. It points to docs that agents load when they need them.
+- The user pays for hosting personally, so keep running costs near $0. Say what anything
+  will cost before adding it.
+- Ask questions instead of guessing on product decisions.
