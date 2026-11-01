@@ -155,6 +155,7 @@ vite.config.ts.timestamp-*
 # Cloudflare: local secrets and wrangler state
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 .wrangler/
 # pnpm check logs
 .logs/

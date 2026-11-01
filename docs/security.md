@@ -72,20 +72,37 @@ private: Access on everything, Worker JWT check on everything, `X-Robots-Tag: no
 
 ## HTTP headers (set by middleware on every response)
 
+Set in `apps/api/src/middleware/security-headers.ts` with Hono's `secureHeaders` (M0 step 3).
+Every request runs the Worker first until launch, so static files get them too.
+
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-  img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none';
-  base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self';
+  img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:;
+  object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
 Strict-Transport-Security: max-age=31536000; includeSubDomains
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: camera=(), microphone=(), geolocation=()
 Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+X-Frame-Options: DENY
 ```
 
-(`style-src 'unsafe-inline'` is for Vue's dynamic style bindings; review this in M7. If the AI
-button needs a direct browser call, it does not: the browser calls our API, which calls
-Anthropic.)
+`secureHeaders` also adds its other defaults (`X-XSS-Protection: 0`, `X-DNS-Prefetch-Control: off`,
+`Origin-Agent-Cluster`, and similar), which are harmless.
+
+- **No `'unsafe-inline'` for styles** (user, 2026-11-01). Vue applies `:style` bindings through
+  the DOM (CSSOM), which CSP does not block, and Tailwind ships one external stylesheet. The
+  placeholder page renders in headless Chrome with no CSP violations. The step 4 browser tests
+  will catch any regression.
+- Fonts are self-hosted, so `font-src 'self'` is enough (no Google Fonts).
+- **Inline scripts need a hash.** The step 4 theme script (runs before first paint to avoid a
+  flash of the wrong theme) must be added to `script-src` as a `'sha256-…'` hash, or loaded
+  as an external file.
+- If the AI button needs a direct browser call, it does not: the browser calls our API, which
+  calls Anthropic.
+- Workers Logs redact query strings (`observability.redact_query_string`), so search terms
+  never reach logs.
 
 ## Abuse and cost controls
 

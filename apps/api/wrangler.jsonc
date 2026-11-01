@@ -1,0 +1,37 @@
+// Cloudflare Worker: serves the Vue build (apps/web/dist) and the API.
+// Top level = production. `--env preview` = the preview Worker. See docs/deployment.md.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "frailty-dashboard",
+  "main": "src/index.ts",
+  // Newest date the pinned wrangler's workerd supports. Bump with wrangler.
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  // No per-version URLs: no unprotected copy of the site may exist.
+  "preview_urls": false,
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Every request runs the Worker first, so security headers (and, from step 5, the site
+    // gate) apply to static files too. At go-live, /assets/* moves to direct serving; see
+    // docs/deployment.md, "Going live".
+    "run_worker_first": true,
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    // Search terms stay out of logs.
+    "redact_query_string": true,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true },
+  },
+  "vars": { "ENVIRONMENT": "production" },
+  "env": {
+    "preview": {
+      "name": "frailty-dashboard-preview",
+      "vars": { "ENVIRONMENT": "preview" },
+    },
+  },
+}
