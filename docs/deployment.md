@@ -22,7 +22,11 @@ the site exists.
 Workers Logs and Traces are on (`observability` in `wrangler.jsonc`; free plan: 200,000 log
 events a day, kept 3 days). Query strings are redacted. Errors are logged as one JSON line.
 
-Worker variables: `ENVIRONMENT`, `SITE_MODE`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `AI_MODEL`.
+Worker variables: `ENVIRONMENT`, `SITE_MODE` (`private` on both Workers until launch),
+`ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` (empty in `wrangler.jsonc` until step 7 creates the Access
+application; while empty, every gated request is a 401), `AI_MODEL`. `DEV_ADMIN_EMAIL` exists
+only locally (`pnpm dev` sets it to `dev@localhost`). The deployed smoke test (step 7) needs an
+**Access service token**; it passes the site gate but, having no email, never the admin check.
 Secrets: `ADMIN_EMAILS` (comma-separated; a secret so the emails stay out of the public repo),
 `ANTHROPIC_API_KEY` (optional). Local values go in `apps/api/.dev.vars`
 (gitignored; `.dev.vars.example` is committed).

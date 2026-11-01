@@ -1,3 +1,7 @@
-# Copy to .dev.vars (gitignored) for local secrets. `pnpm dev` already sets ENVIRONMENT.
-# Never put real admin emails or API keys in this example file.
+# Copy to .dev.vars (gitignored) for local secrets. Never put real emails or keys in this file.
+# `pnpm dev` already sets ENVIRONMENT=development and DEV_ADMIN_EMAIL=dev@localhost, so local
+# dev runs behind the site gate as a signed-in admin (localhost only).
 ENVIRONMENT=development
+DEV_ADMIN_EMAIL=dev@localhost
+# Comma-separated; only needed to test real Access tokens locally.
+ADMIN_EMAILS=admin@example.org

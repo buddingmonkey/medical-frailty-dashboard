@@ -6,7 +6,9 @@ export default defineProject({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: './wrangler.jsonc' },
-      miniflare: { bindings: { ENVIRONMENT: 'test' } },
+      // Integration tests through `exports.default` see the site as public; the gate tests in
+      // src/middleware/access.test.ts set SITE_MODE themselves.
+      miniflare: { bindings: { ENVIRONMENT: 'test', SITE_MODE: 'public' } },
     }),
   ],
   test: { name: 'api', include: ['src/**/*.test.ts'] },

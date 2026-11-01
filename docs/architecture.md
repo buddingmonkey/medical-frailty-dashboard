@@ -194,12 +194,21 @@ Admin (Access JWT required; all writes):
 Public responses carry `Cache-Control: public, max-age=300` and are stored in the Workers
 Cache API under a key that includes a global `data_version` number. Each publish or rollback
 increments `data_version`, so stale cache entries are never read again. This keeps D1 reads
-low enough to stay inside the free tier.
+low enough to stay inside the free tier. **While `SITE_MODE` is private, skip the shared cache
+and send `Cache-Control: private`**, so a response that needed a login is never stored where
+someone without one could read it.
 
 ## Site gate (pre-launch)
 
-`SITE_MODE` (`private` | `public`) is a Worker variable. When it is `private`, the Worker
-requires a valid Access JWT on **every** route, static assets included (this needs
-`assets.run_worker_first = true`), and sends `X-Robots-Tag: noindex` plus a disallow-all
-`robots.txt`. This sits on top of the Access policy, so a mistake in the Access config alone
-cannot expose the site. Going live is described in `docs/deployment.md`.
+`SITE_MODE` (`private` | `public`) is a Worker variable. When it is `private` (or anything but
+exactly `public`), the Worker requires a valid Access JWT on **every** route, static assets
+included (`assets.run_worker_first = true`), from any identity Access let in, and sends
+`X-Robots-Tag: noindex, nofollow`. This sits on top of the Access policy, so a mistake in the
+Access config alone cannot expose the site. Admin routes (`/admin*`, `/api/admin*`) also need an
+email in `ADMIN_EMAILS`, in both modes. Going live is described in `docs/deployment.md`.
+
+`robots.txt` is served by the Worker (`apps/api/src/routes/robots.ts`):
+
+- Private: `User-agent: *` / `Disallow: /`.
+- Public: `Allow: /`, `Disallow: /admin`, `Disallow: /api/` (crawling the JSON API would only
+  use up the free request quota). Add a `Sitemap:` line once there is a custom domain (M7).

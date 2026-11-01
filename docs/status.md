@@ -22,7 +22,11 @@ _Last updated: 2026-11-01_
   unit, component, api; one line each, logs in `.logs/latest/`) and `pnpm check:full` (+ build,
   e2e with axe in light and dark). 16 Vitest tests + 5 Playwright tests. Public API routes now
   return 405 for non-GET. The header has a System/Light/Dark theme menu (icons, dropdown).
-- **Next step:** M0 step 5 (`site-gate` and `access-jwt` middleware, with the required tests).
+- **Step 5 done** (branch `m0-step5-auth`): Access JWT verification (`jose`), the site gate
+  (private by default, fails closed), admin checks on `/admin*` and `/api/admin*`,
+  `GET /api/admin/whoami`, a two-mode `robots.txt`, and the localhost-only dev bypass. 39 API
+  tests, including every required auth test in `docs/testing.md` that applies so far.
+- **Next step:** M0 step 6 (GitHub: CI, Dependabot, CodeQL, gitleaks, branch protection).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -52,6 +56,8 @@ _Last updated: 2026-11-01_
 | CSP styles | No `'unsafe-inline'` for `style-src` (user, 2026-11-01) |
 | Logs | Workers Logs + Traces on, query strings redacted; free tier (user, 2026-11-01) |
 | Theme menu | Dropdown with icons in the header (System / Light / Dark) (user, 2026-11-01) |
+| Site gate | Before launch, anyone Access lets in may see the site (admins, guest testers, CI service token); admin routes also need `ADMIN_EMAILS` (user, 2026-11-01) |
+| robots.txt | Private: disallow all. Public: allow the site, disallow `/admin` and `/api/`; add a sitemap at launch (user asked for a good one from the start, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
@@ -67,7 +73,11 @@ _Last updated: 2026-11-01_
    code list; the source URL of our `HR1-Codes` PDF is unknown. Next step if wanted: ask LDH
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
-4. **Georgia source:** URL and publish date of Attachments A and B.
+4. **AI crawlers** (ask before launch): the public `robots.txt` lets every crawler in, AI
+   crawlers included. Since the goal is to inform states and advocates, that may be wanted.
+   Alternatives: block AI training crawlers (e.g. GPTBot, ClaudeBot, Google-Extended) or use
+   Cloudflare's managed robots.txt / AI crawl control. A product decision for the project lead.
+5. **Georgia source:** URL and publish date of Attachments A and B.
 
 ## Watch dates
 

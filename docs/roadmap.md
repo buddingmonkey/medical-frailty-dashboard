@@ -118,7 +118,8 @@ and evidence that target users find the site useful and use it correctly.
 6. Turn on Cloudflare Web Analytics (free, no cookies, so no consent banner) to see which
    pages people use after launch.
 7. `security-review`, restore drill, rate limits verified.
-8. Go live (`docs/deployment.md`, "Going live").
+8. Go live (`docs/deployment.md`, "Going live"). If a custom domain and sitemap exist, add a
+   `Sitemap:` line to the public `robots.txt` (`apps/api/src/routes/robots.ts`).
 
 ## Later (not planned in detail)
 

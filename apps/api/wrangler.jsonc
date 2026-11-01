@@ -28,11 +28,24 @@
     "logs": { "enabled": true, "invocation_logs": true },
     "traces": { "enabled": true },
   },
-  "vars": { "ENVIRONMENT": "production" },
+  // SITE_MODE: anything but "public" keeps the whole site behind Access (fail closed).
+  // ACCESS_*: filled in when the Access application exists (roadmap M0 step 7). While empty,
+  // every gated request gets a 401.
+  "vars": {
+    "ENVIRONMENT": "production",
+    "SITE_MODE": "private",
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+  },
   "env": {
     "preview": {
       "name": "frailty-dashboard-preview",
-      "vars": { "ENVIRONMENT": "preview" },
+      "vars": {
+        "ENVIRONMENT": "preview",
+        "SITE_MODE": "private",
+        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_AUD": "",
+      },
     },
   },
 }
