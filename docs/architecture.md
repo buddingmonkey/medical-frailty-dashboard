@@ -78,10 +78,10 @@ These AI-assistant skills were installed by the project lead before M0. Their fo
 | `unslop` | GitHub `theclaymethod/unslop` (`SKILL.md` at repo root) | skills CLI | `.agents/skills/unslop/`, symlinked from `.claude/skills/unslop` |
 | `vue-development` | Claude Code plugin from marketplace GitHub `alexanderop/claude-skill-vue-development` (v0.1.0) | `/plugin marketplace add alexanderop/claude-skill-vue-development`, then `/plugin install vue-development`, project-local scope | Claude Code plugin cache (outside the repo) |
 
-Claude Code reads project skills from `.claude/skills/`. As installed, only `unslop` is linked
-there; `tailwind-design-system` exists only under `.agents/skills/`, so Claude Code does not
-list it. Link it (`ln -s ../../.agents/skills/tailwind-design-system .claude/skills/`) before
-M0 step 2, which uses it.
+Claude Code reads project skills from `.claude/skills/`. The skills CLI linked only `unslop`
+there, so `tailwind-design-system` was invisible to Claude Code until it was linked by hand
+(2026-11-01). On a fresh setup, after installing both skills, run:
+`ln -s ../../.agents/skills/tailwind-design-system .claude/skills/`.
 
 ## One Worker, two halves
 

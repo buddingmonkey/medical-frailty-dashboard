@@ -65,7 +65,7 @@ typecheck passing. Nothing else.
 
 ## Open threads
 
-- Link `tailwind-design-system` into `.claude/skills/` before step 2.
+- ~~Link `tailwind-design-system` into `.claude/skills/` before step 2.~~ Done by the project lead at 15:53.
 - `pnpm check` (one line per stage) comes in step 4; until then run `pnpm lint` and
   `pnpm typecheck`.
 - Revisit TypeScript 7 when `typescript-eslint` and `vue-tsc` support it.

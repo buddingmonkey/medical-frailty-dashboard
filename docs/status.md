@@ -9,9 +9,8 @@ _Last updated: 2026-11-01_
   TypeScript base config, type-aware ESLint flat config, Prettier, `.editorconfig`, `.nvmrc`
   (26). `pnpm lint`, `pnpm typecheck` and `pnpm format:check` pass. `pnpm check` arrives in
   step 4.
-- **Next step:** M0 step 2 (`apps/web`: Vite + Vue + Tailwind). First link the
-  `tailwind-design-system` skill into `.claude/skills/` (see `docs/architecture.md`, "Agent
-  skills").
+- **Next step:** M0 step 2 (`apps/web`: Vite + Vue + Tailwind). The `tailwind-design-system`
+  skill is linked into `.claude/skills/` and ready to use.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
