@@ -1,6 +1,6 @@
 # 2026-11-01: M0 step 6, GitHub CI and repo protection
 
-**Session:** 2026-11-01 17:36–17:53 CST  •  **Milestone:** M0 step 6  •  **People:** project lead  •
+**Session:** 2026-11-01 17:36–17:51 CST  •  **Milestone:** M0 step 6  •  **People:** project lead  •
 **AI:** Claude Code, Opus main session, no subagents
 
 ## Goal
@@ -59,7 +59,7 @@ secret scanning, branch protection, plus `SECURITY.md`, `CONTRIBUTING.md` and RE
 
 ## Numbers
 
-- Time: 17 minutes (17:36–17:53 CST), including about 2 minutes waiting for CI.
+- Time: 15 minutes (17:36–17:51 CST), including about 2 minutes waiting for CI.
 - Money: $0. GitHub Actions minutes are free for public repos. AI usage not measured.
 - CI run time: about 1.5 minutes wall clock (`check` is the longest at 1m17s).
 - Lines: about 350 lines of workflow, config, templates and contributor docs; about 50 lines of

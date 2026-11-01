@@ -72,7 +72,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 3 (2026-11-01) | 0.4 (21 min) | not measured | $0 | Hono Worker, headers, strict CSP |
 | M0 step 4 (2026-11-01) | 0.2 (14 min) | not measured | $0 | Test harness, `pnpm check`, theme menu; 21 tests |
 | M0 step 5 (2026-11-01) | 0.2 (9 min) | not measured | $0 | Access JWT, site gate, robots.txt; 39 API tests |
-| M0 step 6 (2026-11-01) | 0.3 (17 min) | not measured | $0 (public repo: free Actions) | CI, Dependabot, CodeQL, ruleset with no bypass |
+| M0 step 6 (2026-11-01) | 0.3 (15 min) | not measured | $0 (public repo: free Actions) | CI, Dependabot, CodeQL, ruleset with no bypass |
 
 ## Assets to capture for slides
 
