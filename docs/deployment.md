@@ -19,6 +19,9 @@ tier. The limits below were correct when planned (2026-11). Check the
 Workers preview URLs (per-version URLs) stay **off**, or behind Access, so no unprotected copy of
 the site exists.
 
+Workers Logs and Traces are on (`observability` in `wrangler.jsonc`; free plan: 200,000 log
+events a day, kept 3 days). Query strings are redacted. Errors are logged as one JSON line.
+
 Worker variables: `ENVIRONMENT`, `SITE_MODE`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `AI_MODEL`.
 Secrets: `ADMIN_EMAILS` (comma-separated; a secret so the emails stay out of the public repo),
 `ANTHROPIC_API_KEY` (optional). Local values go in `apps/api/.dev.vars`
@@ -95,7 +98,12 @@ Before launch (M7), with everything below checked off in `docs/status.md`:
    `robots.txt`).
 5. Run the production smoke spec: public pages return 200; `/admin` and `/api/admin/*` return
    401/redirect without login.
-6. Optional: buy the domain, add it as a Worker custom domain, add WAF/Bot Fight Mode, and
+6. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
+   `run_worker_first` from `true` to `["/*", "!/assets/*"]`, and add `apps/web/public/_headers`
+   with `/assets/*` rules for `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`
+   and `Cross-Origin-Resource-Policy: same-origin` (CSP matters only on HTML, which still goes
+   through the Worker). This cuts Worker requests to about 1 per page view.
+7. Optional: buy the domain, add it as a Worker custom domain, add WAF/Bot Fight Mode, and
    move the Access application to the new host name.
 
 To take the site private again, do steps 4 then 3 in reverse.

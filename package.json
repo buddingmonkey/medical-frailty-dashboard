@@ -7,6 +7,8 @@
     "node": ">=26.0.0 <27"
   },
   "scripts": {
+    "dev": "pnpm --filter @mfcd/web build && concurrently -k -n web,api -c blue,magenta \"pnpm --filter @mfcd/web build --watch\" \"pnpm --filter @mfcd/api dev\"",
+    "build": "pnpm --filter @mfcd/web build && pnpm --filter @mfcd/api build",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --parallel typecheck",
     "format": "prettier --write .",
@@ -15,6 +17,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.6.6",
+    "concurrently": "10.0.6",
     "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-vue": "10.12.0",

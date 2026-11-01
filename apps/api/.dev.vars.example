@@ -1,0 +1,3 @@
+# Copy to .dev.vars (gitignored) for local secrets. `pnpm dev` already sets ENVIRONMENT.
+# Never put real admin emails or API keys in this example file.
+ENVIRONMENT=development
