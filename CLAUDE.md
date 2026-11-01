@@ -62,6 +62,7 @@ Read the doc that matches the task. Do not load all of them.
 | [docs/ingestion.md](docs/ingestion.md) | Upload, parse, review, map and publish flow; parser adapters; AI cleanup |
 | [docs/sources.md](docs/sources.md) | Each state's source documents, format quirks and category list |
 | [docs/security.md](docs/security.md) | Threat model, Access setup, pre-launch gate, headers, upload safety |
+| [docs/seo.md](docs/seo.md) | SEO and GEO rules: server-rendered HTML, URLs, structured data, sitemap, crawlers |
 | [docs/testing.md](docs/testing.md) | Test layers, tools, fixtures, how to add and run tests |
 | [docs/deployment.md](docs/deployment.md) | Cloudflare setup, environments, CI/CD, costs, backups, going live |
 | [docs/devlog/](docs/devlog/README.md) | How the site was built, session by session; entry template |

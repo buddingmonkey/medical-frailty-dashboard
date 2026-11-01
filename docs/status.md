@@ -58,6 +58,8 @@ _Last updated: 2026-11-01_
 | Theme menu | Dropdown with icons in the header (System / Light / Dark) (user, 2026-11-01) |
 | Site gate | Before launch, anyone Access lets in may see the site (admins, guest testers, CI service token); admin routes also need `ADMIN_EMAILS` (user, 2026-11-01) |
 | robots.txt | Private: disallow all. Public: allow the site, disallow `/admin` and `/api/`; add a sitemap at launch (user asked for a good one from the start, 2026-11-01) |
+| SEO and GEO | Best practices; AI crawlers welcome so AI gets the right information. Worker renders real HTML for public pages. `Content-Signal: search=yes, ai-input=yes, ai-train=yes`. See `docs/seo.md` (user, 2026-11-01). **`ai-train=yes` is provisional:** the legal team may revisit it because pages quote AMA-copyrighted CPT text |
+| Domain and hosting | The project lead buys a domain in M7, or gives the site to an organization to host. Keep the site portable (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
@@ -73,11 +75,7 @@ _Last updated: 2026-11-01_
    code list; the source URL of our `HR1-Codes` PDF is unknown. Next step if wanted: ask LDH
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
-4. **AI crawlers** (ask before launch): the public `robots.txt` lets every crawler in, AI
-   crawlers included. Since the goal is to inform states and advocates, that may be wanted.
-   Alternatives: block AI training crawlers (e.g. GPTBot, ClaudeBot, Google-Extended) or use
-   Cloudflare's managed robots.txt / AI crawl control. A product decision for the project lead.
-5. **Georgia source:** URL and publish date of Attachments A and B.
+4. **Georgia source:** URL and publish date of Attachments A and B.
 
 ## Watch dates
 
@@ -91,7 +89,7 @@ here; that page is seeded from this table. Approximate dates are marked ~.
 | ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
-| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text | Badges may be removed or reworded | This file, decisions table |
+| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text, and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 

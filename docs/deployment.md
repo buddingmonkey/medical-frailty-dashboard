@@ -102,12 +102,17 @@ Before launch (M7), with everything below checked off in `docs/status.md`:
    `robots.txt`).
 5. Run the production smoke spec: public pages return 200; `/admin` and `/api/admin/*` return
    401/redirect without login.
-6. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
+6. Check Cloudflare's bot settings for the final host: "Block AI bots" / managed robots.txt
+   off, AI Crawl Control set to allow, verified crawlers not challenged (`docs/seo.md`).
+7. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
    `run_worker_first` from `true` to `["/*", "!/assets/*"]`, and add `apps/web/public/_headers`
    with `/assets/*` rules for `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`
    and `Cross-Origin-Resource-Policy: same-origin` (CSP matters only on HTML, which still goes
    through the Worker). This cuts Worker requests to about 1 per page view.
-7. Optional: buy the domain, add it as a Worker custom domain, add WAF/Bot Fight Mode, and
-   move the Access application to the new host name.
+8. Domain: the project lead buys one (~$10/yr), or the site is handed to an organization that
+   hosts it on its own domain. Nothing may hard-code the `workers.dev` host. Then add it as a
+   Worker custom domain, move the Access application to the new host name, add the `Sitemap:`
+   line to `robots.txt`, and optionally turn on WAF/Bot Fight Mode (re-check step 6: verified
+   crawlers must not be challenged).
 
 To take the site private again, do steps 4 then 3 in reverse.

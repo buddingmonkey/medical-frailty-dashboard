@@ -141,6 +141,7 @@ describe('robots.txt', () => {
     const body = await res.text()
     expect(body).toMatch(/^User-agent: \*$/m)
     expect(body).toMatch(/^Disallow: \/$/m)
+    expect(body).not.toContain('Content-Signal')
   })
 
   it('once public, allows the site but not admin or API paths', async () => {
@@ -150,6 +151,12 @@ describe('robots.txt', () => {
     expect(body).toMatch(/^Disallow: \/admin$/m)
     expect(body).toMatch(/^Disallow: \/api\/$/m)
     expect(body).not.toMatch(/^Disallow: \/$/m)
+  })
+
+  // Project lead, 2026-11-01: AI crawlers are welcome, for search, answers and training.
+  it('once public, welcomes AI use with a Content-Signal line', async () => {
+    const body = await (await call('/robots.txt', { vars: { SITE_MODE: 'public' } })).text()
+    expect(body).toMatch(/^Content-Signal: search=yes, ai-input=yes, ai-train=yes$/m)
   })
 })
 
