@@ -49,6 +49,15 @@
   format, lint, types, unit, component, api; `--full` adds build and e2e. It keeps going after a
   failure so one run shows everything, and each failing line names its log file.
 
+### Access and site-gate tests (M0 step 5)
+
+`apps/api/src/middleware/access.test.ts` holds the required auth tests. `src/test/access-fixtures.ts`
+generates an RSA key pair per run and signs Access-style tokens (good, expired, wrong `aud`,
+wrong `iss`, wrong key, no email), and builds the app with `createApp({ getJwks })` pointed at a
+local key set, so no test touches the network. `call(path, { token, host, vars })` overrides any
+binding; `fakeAssets` stands in for the static files. Tests that go through `exports.default`
+see `SITE_MODE=public` (set in `apps/api/vitest.config.ts`).
+
 ## Fixtures
 
 `fixtures/<state>/` holds, for each seed file:

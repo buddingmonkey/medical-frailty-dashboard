@@ -27,13 +27,15 @@ running totals in `docs/talk-notes.md`.
    `SECURITY.md`, `CONTRIBUTING.md`, update `README.md` "Getting started" (`LICENSE` is already MIT).
    (The `.gitignore` additions for build outputs and `.dev.vars` were done in step 1.)
 7. Cloudflare: create preview + prod Workers, D1, R2, Access applications (whole host); deploy
-   from CI. **Check:** both URLs ask for Google login; after login the placeholder page loads.
+   from CI. Leave Cloudflare's "Block AI bots" / managed robots.txt off (`docs/seo.md`). **Check:** both URLs ask for Google login; after login the placeholder page loads.
 8. `.claude/agents/builder.md` (standing rules for builders) and a project skill for "add a
    new state source" once M2 shows what the steps are.
 
 ## M1 Data foundation
 
 1. Drizzle schema + first migration for every table in `docs/data-model.md`, FTS5 table.
+   Include what `docs/seo.md` needs: a stable URL slug per state and code, and the state's
+   publish date plus our last-updated date on each published version.
 2. `packages/shared/codes.ts`: normalization, wildcard, range, list splitting, code-system
    inference. Table-driven tests from every pattern in `docs/sources.md`.
 3. `packages/reference-data`: build `ref_codes` from the CMS ICD-10-CM and HCPCS Level II
@@ -68,6 +70,11 @@ running totals in `docs/talk-notes.md`.
    counts by code system and federal category, source date. Keyboard navigable, with a table
    view of the same data for screen readers and mobile.
 3. State detail page: summary, sources with links and dates, version history, notes.
+4. **SEO/GEO groundwork** (`docs/seo.md`): Worker renders real HTML for public pages
+   (`HTMLRewriter` into the built `index.html`: title, description, canonical, Open Graph,
+   JSON-LD, page content), cached on `data_version`; `Dataset` JSON-LD and CSV/JSON downloads
+   on state pages; `/sitemap.xml` from D1. **Check:** an E2E test with JavaScript disabled
+   finds each state page's key facts.
 
 ## M4 Compare by category
 
@@ -76,6 +83,8 @@ running totals in `docs/talk-notes.md`.
    number of states; aligned table (rows = codes, columns = states; exact / covered by
    wildcard / not listed), each cell with the state's tier label and qualification badge,
    and a filter for "qualifies alone". URL holds the selection so links can be shared. CSV export.
+   Server-rendered HTML per `docs/seo.md`; compare combinations are `noindex` (state and
+   code pages are the canonical homes of each fact).
 
 ## M5 Code search
 
@@ -84,6 +93,8 @@ running totals in `docs/talk-notes.md`.
 3. Code detail page: per-state status (exact, covered, narrower, like code, not listed), with
    labels explaining each.
 4. Condition groups: seed list + admin editor; "like" codes on the code detail page.
+5. Code detail pages server-rendered with `DefinedTerm` JSON-LD, a plain-sentence answer per
+   state, and a sitemap entry for every listed code (`docs/seo.md`).
 
 ## M6 Admin completion
 
@@ -102,6 +113,8 @@ and evidence that target users find the site useful and use it correctly.
 2. Accessibility pass (axe clean in **both light and dark themes**, keyboard-only walkthrough,
    screen reader spot check).
 3. Performance pass: bundle size budget, Lighthouse ≥ 90 on home page (`cloudflare:web-perf` skill).
+   SEO/GEO pass (`docs/seo.md`): `/llms.txt`, Rich Results Test on each page type, Cloudflare
+   bot settings re-checked.
 4. Disclaimer, about/methodology page (how matching, "like" codes and qualification badges
    work), a dated note on court rulings (*Massachusetts v. Oz*), AMA notice, and a
    "Report a problem" link (a mailto, or a GitHub issue template for data errors).
@@ -118,7 +131,9 @@ and evidence that target users find the site useful and use it correctly.
 6. Turn on Cloudflare Web Analytics (free, no cookies, so no consent banner) to see which
    pages people use after launch.
 7. `security-review`, restore drill, rate limits verified.
-8. Go live (`docs/deployment.md`, "Going live").
+8. Go live (`docs/deployment.md`, "Going live"). Domain: the project lead buys one, or the
+   site is given to an organization to host on its own domain. Then add the `Sitemap:` line to
+   the public `robots.txt` (`apps/api/src/routes/robots.ts`) and set canonical URLs to that host.
 
 ## Later (not planned in detail)
 

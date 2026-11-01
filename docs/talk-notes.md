@@ -43,6 +43,8 @@ literacy, little or no coding.
 | 2026-11-01 | The project lead asked for a palette "based on" a real organization's site. The AI pulled the colours from that site's stylesheet, but found its fonts are licensed to that organization only and picked free look-alikes | "Use their branding" has a legal edge: colours are fine as inspiration, licensed fonts and logos are not | `devlog/2026-11-01-m0-step2-web.md` |
 | 2026-11-01 | Two docs disagreed: "static files skip the Worker" and "the Worker adds security headers to every response" cannot both be true. Found while planning, before any code | Ask the AI to list what in the plan looks wrong before it builds; contradictions are cheap to fix on paper | `devlog/2026-11-01-m0-step3-api.md` |
 | 2026-11-01 | The AI recommended lowering the runtime date to match a test tool, and the project lead agreed. During install the tool turned out to be deprecated; its renamed successor matched production exactly, so the approved change was undone | Approvals rest on facts; when a fact changes, say so and revisit, even after a yes | `devlog/2026-11-01-m0-step4-tests.md` |
+| 2026-11-01 | All 37 auth tests passed, but a manual check of the running site showed static pages were missing their `noindex` header. Two new tests reproduced it before the fix | Green tests cover only what they test; poke the real thing too | `devlog/2026-11-01-m0-step5-auth.md` |
+| 2026-11-01 | "We want AI to crawl the site to get the right info" became an architecture requirement: most AI crawlers do not run JavaScript, so the single-page app must also send real HTML. Caught before any public page was built | Say what you want the site to achieve, not just what it should show; goals can change how it is built | `devlog/2026-11-01-m0-step5-auth.md` |
 
 ## Numbers to collect
 
@@ -68,6 +70,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 2 (2026-11-01) | 0.2 (13 min) | not measured | $0 | Vue app, design tokens, light + dark |
 | M0 step 3 (2026-11-01) | 0.4 (21 min) | not measured | $0 | Hono Worker, headers, strict CSP |
 | M0 step 4 (2026-11-01) | 0.2 (14 min) | not measured | $0 | Test harness, `pnpm check`, theme menu; 21 tests |
+| M0 step 5 (2026-11-01) | 0.2 (9 min) | not measured | $0 | Access JWT, site gate, robots.txt; 39 API tests |
 
 ## Assets to capture for slides
 

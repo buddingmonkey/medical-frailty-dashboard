@@ -1,7 +1,9 @@
 import { type HealthResponse, healthResponseSchema } from '@mfcd/shared'
 import { Hono } from 'hono'
 
-export const health = new Hono<{ Bindings: Env }>().get('/', (c) => {
+import type { AppEnv } from '../../types'
+
+export const health = new Hono<AppEnv>().get('/', (c) => {
   const body: HealthResponse = healthResponseSchema.parse({
     ok: true,
     environment: c.env.ENVIRONMENT,

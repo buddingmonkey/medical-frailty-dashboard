@@ -1,3 +1,4 @@
-import { app } from './app'
+import { createApp } from './app'
+import { remoteJwks } from './auth/remote-jwks'
 
-export default app
+export default createApp({ getJwks: remoteJwks })

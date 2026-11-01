@@ -30,12 +30,27 @@ The data is public state policy, and there is no patient data. The risks are abo
   misconfigured Access policy alone cannot open the admin API.
 - Local dev: a `DEV_ADMIN_EMAIL` bypass that only works when `ENVIRONMENT=development` and
   the request comes from localhost. A test asserts that the bypass is off in every other environment.
+- **Implemented in M0 step 5** (`apps/api/src/auth/access.ts`, `middleware/site-gate.ts`,
+  `middleware/require-admin.ts`):
+  - The **site gate** (private mode) accepts **any identity Access let in**: admins, guest
+    testers (M7) and service tokens (CI). Only admin routes check `ADMIN_EMAILS` (user, 2026-11-01).
+  - **Admin routes** are `/admin`, `/admin/*` and `/api/admin/*`, checked in every `SITE_MODE`.
+    Service tokens have no email, so they never pass the admin check. Admin responses are
+    `no-store` and `noindex`.
+  - **Fails closed:** `SITE_MODE` other than exactly `public` = private; empty
+    `ACCESS_TEAM_DOMAIN` or `ACCESS_AUD` = every gated request is 401 (and an error is logged).
+    If the certs cannot be fetched, the request fails with a 500, never a pass.
+  - Rejected tokens are logged as a warning with the `jose` error code only (no token, no email).
+  - The dev identity counts as an admin, so `pnpm dev` exercises the gate and admin pages
+    locally.
 
 ## Pre-launch gate
 
 See `docs/architecture.md` ("Site gate") and `docs/deployment.md` ("Going live"). While
-private: Access on everything, Worker JWT check on everything, `X-Robots-Tag: noindex`, and
-`robots.txt` disallows all.
+private: Access on everything, Worker JWT check on everything, `X-Robots-Tag: noindex, nofollow`
+on every response, and `robots.txt` disallows all. `robots.txt` is the one path the Worker
+serves without a token, because it reveals nothing. (Access still asks for a login at the edge
+unless the Access application bypasses that path.)
 
 ## Write safety
 

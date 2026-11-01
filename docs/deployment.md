@@ -22,7 +22,11 @@ the site exists.
 Workers Logs and Traces are on (`observability` in `wrangler.jsonc`; free plan: 200,000 log
 events a day, kept 3 days). Query strings are redacted. Errors are logged as one JSON line.
 
-Worker variables: `ENVIRONMENT`, `SITE_MODE`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `AI_MODEL`.
+Worker variables: `ENVIRONMENT`, `SITE_MODE` (`private` on both Workers until launch),
+`ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` (empty in `wrangler.jsonc` until step 7 creates the Access
+application; while empty, every gated request is a 401), `AI_MODEL`. `DEV_ADMIN_EMAIL` exists
+only locally (`pnpm dev` sets it to `dev@localhost`). The deployed smoke test (step 7) needs an
+**Access service token**; it passes the site gate but, having no email, never the admin check.
 Secrets: `ADMIN_EMAILS` (comma-separated; a secret so the emails stay out of the public repo),
 `ANTHROPIC_API_KEY` (optional). Local values go in `apps/api/.dev.vars`
 (gitignored; `.dev.vars.example` is committed).
@@ -98,12 +102,17 @@ Before launch (M7), with everything below checked off in `docs/status.md`:
    `robots.txt`).
 5. Run the production smoke spec: public pages return 200; `/admin` and `/api/admin/*` return
    401/redirect without login.
-6. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
+6. Check Cloudflare's bot settings for the final host: "Block AI bots" / managed robots.txt
+   off, AI Crawl Control set to allow, verified crawlers not challenged (`docs/seo.md`).
+7. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
    `run_worker_first` from `true` to `["/*", "!/assets/*"]`, and add `apps/web/public/_headers`
    with `/assets/*` rules for `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`
    and `Cross-Origin-Resource-Policy: same-origin` (CSP matters only on HTML, which still goes
    through the Worker). This cuts Worker requests to about 1 per page view.
-7. Optional: buy the domain, add it as a Worker custom domain, add WAF/Bot Fight Mode, and
-   move the Access application to the new host name.
+8. Domain: the project lead buys one (~$10/yr), or the site is handed to an organization that
+   hosts it on its own domain. Nothing may hard-code the `workers.dev` host. Then add it as a
+   Worker custom domain, move the Access application to the new host name, add the `Sitemap:`
+   line to `robots.txt`, and optionally turn on WAF/Bot Fight Mode (re-check step 6: verified
+   crawlers must not be challenged).
 
 To take the site private again, do steps 4 then 3 in reverse.
