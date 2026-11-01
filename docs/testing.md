@@ -90,6 +90,14 @@ are covered by behavior tests (no number target).
 
 ## CI (GitHub Actions)
 
-- PR: `pnpm check:full` (lint, types, unit/component/API, build, Playwright + axe), CodeQL,
-  gitleaks, `pnpm audit --prod`.
-- `main`: same, then deploy (see `docs/deployment.md`), then the deployed smoke spec.
+`.github/workflows/ci.yml`, on every PR and every push to `main`:
+
+| Job | What it runs |
+| --- | --- |
+| `check` | `pnpm install --frozen-lockfile`, Playwright Chromium (cached by Playwright version), `pnpm check:full`. On failure, uploads `.logs/latest/` and the Playwright report as the `check-logs` artifact (kept 7 days) |
+| `audit` | `pnpm audit --prod --audit-level high` |
+| `gitleaks` | Secret scan over the full git history |
+| CodeQL | GitHub's default setup (no workflow file), JavaScript/TypeScript and Actions |
+
+All four must pass before a PR can merge (`docs/security.md`, ruleset). From step 7, a push to
+`main` also deploys the preview Worker and runs the deployed smoke spec (`docs/deployment.md`).

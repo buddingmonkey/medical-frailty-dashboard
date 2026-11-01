@@ -1,0 +1,42 @@
+name: Report a data error
+description: A code, description, category or date on the site does not match the state's document.
+title: '[Data] <state>: <code or short summary>'
+labels: [data-error]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Please **do not include any patient or member information** (names, IDs,
+        claims). This site only compares the code lists states publish.
+  - type: input
+    id: state
+    attributes:
+      label: State
+      placeholder: e.g. Louisiana
+    validations:
+      required: true
+  - type: input
+    id: code
+    attributes:
+      label: Code(s)
+      description: The code or codes affected, if any.
+      placeholder: e.g. F20.0
+  - type: input
+    id: page
+    attributes:
+      label: Page on this site
+      description: The address of the page that shows the error.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong?
+      description: What the site shows, and what the state's document says.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Link to the state's document
+      description: A link to the state's published list, and the page number if it is a PDF.
+    validations:
+      required: true

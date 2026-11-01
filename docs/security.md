@@ -132,12 +132,24 @@ X-Frame-Options: DENY
 ## Repo and supply chain
 
 - Public repo: secrets only in `wrangler secret` / GitHub encrypted secrets / `.dev.vars`
-  (gitignored). `gitleaks` runs in CI.
-- Dependabot (npm + GitHub Actions), CodeQL (free for public repos), `pnpm audit` in CI.
-- GitHub Actions pinned to commit SHAs; workflow `permissions:` least privilege; the deploy
-  job uses a Cloudflare API token scoped to this Worker, D1 database and R2 bucket only.
-- Branch protection on `main`: PR required, `pnpm check:full` must pass.
-- pnpm `onlyBuiltDependencies` allowlist so install scripts don't run for arbitrary packages.
+  (gitignored). Two layers of secret detection: GitHub secret scanning with **push protection**
+  (on), and `gitleaks` over the full history in CI. gitleaks-action is free for a personal
+  account; if the repo moves to an organization, add a free `GITLEAKS_LICENSE` secret.
+- Dependabot alerts and security updates (on), weekly version updates for npm and GitHub
+  Actions (`.github/dependabot.yml`, with a 3-day `cooldown` matching pnpm's
+  `minimumReleaseAge`). **Security updates ignore the cooldown**: if one is younger than 3
+  days, CI's install fails; wait, don't add an exception. CodeQL default setup (JavaScript/
+  TypeScript and Actions, managed by GitHub). `pnpm audit --prod --audit-level high` in CI.
+- GitHub Actions pinned to commit SHAs (with the version in a comment); workflow
+  `permissions: contents: read`; checkout without persisted credentials. The deploy job
+  (step 7) uses a Cloudflare API token scoped to this Worker, D1 database and R2 bucket only.
+- **Ruleset on `main`** (no bypass, not even for admins; user, 2026-11-01): pull request
+  required (0 approvals, since the owner cannot approve their own PR), status checks `check`,
+  `audit` and `gitleaks` must pass on an up-to-date branch, CodeQL results must have no high or
+  critical alerts, no force-push, no deletion. In an emergency, an admin can edit the ruleset.
+- Private vulnerability reporting is on; `SECURITY.md` points to it.
+- pnpm `allowBuilds` (pnpm 12's name for the old `onlyBuiltDependencies`): install scripts run
+  only for packages listed as `true`. Today every listed package is `false`.
 
 ## Content safety
 
