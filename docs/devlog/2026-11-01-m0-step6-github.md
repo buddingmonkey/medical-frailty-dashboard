@@ -42,6 +42,10 @@ secret scanning, branch protection, plus `SECURITY.md`, `CONTRIBUTING.md` and RE
 
 - **CodeQL refused the "actions" language at first**: GitHub only offers it once workflow files
   exist on `main`. JavaScript/TypeScript went on first; Actions was added after the merge.
+- **The first PR through the ruleset was blocked even though every check passed.** Its CodeQL
+  scans had started just before Actions was added to CodeQL, so the code-scanning rule found
+  no Actions scan to compare with `main` ("1 configuration not found"). An empty commit re-ran
+  the scans with both languages and the PR turned mergeable. A one-time race; nothing to fix.
 - **`docs/security.md` named an old pnpm setting** (`onlyBuiltDependencies`); pnpm 12 calls it
   `allowBuilds`. Fixed.
 - **Dependabot security updates ignore the cooldown**, so a brand-new security release could
