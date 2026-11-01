@@ -1,0 +1,160 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens (M0 step 2). Approved palette: https://claude.ai/artifact/Ky9pvJ3qnF3NBvkLLrDu9F
+ * The colours start from the Georgetown CCF palette (navy #0c2a59, blue #26578c, gold #ab872e
+ * and #f7c343, red #8a2432). This is not a CCF site; it carries no CCF name or logo.
+ *
+ * Every text pair passes WCAG AA in both themes. Gold (--color-accent) is 3.4:1 on white, so
+ * use it for rules and borders only, never for text.
+ *
+ * Spacing and the type scale are Tailwind's defaults. Only colours and font families are custom.
+ * Components use these semantic tokens, so most need no `dark:` classes at all.
+ */
+@theme {
+  /* Remove Tailwind's default palette so only the semantic tokens below exist. */
+  --color-*: initial;
+
+  --color-background: #ffffff;
+  --color-surface: #f3f6fa;
+  --color-foreground: #2f2f2f;
+  --color-heading: #0c2a59;
+  --color-muted-foreground: #5c5c5c;
+  --color-link: #26578c;
+  --color-primary: #0c2a59;
+  --color-primary-hover: #031b3f;
+  --color-on-primary: #ffffff;
+  --color-ring: #26578c;
+  --color-border: #d4dde8;
+  --color-input-border: #767f8c;
+  --color-accent: #ab872e;
+  --color-highlight: #f7c343;
+  --color-on-highlight: #0c2a59;
+  --color-danger: #8a2432;
+  --color-header: #0c2a59;
+  --color-on-header: #ffffff;
+
+  /* Qualification badges. Always shown with their text label. */
+  --color-badge-alone: #14532d;
+  --color-badge-alone-bg: #dcfce7;
+  --color-badge-needs: #5e4610;
+  --color-badge-needs-bg: #f9e7b5;
+  --color-badge-support: #4c1d95;
+  --color-badge-support-bg: #ede9fe;
+  --color-badge-unknown: #2f2f2f;
+  --color-badge-unknown-bg: #e6e6e6;
+
+  /* Open-licensed (SIL OFL) fonts, self-hosted from npm (Fontsource). */
+  --font-display: 'Jost Variable', 'Futura', 'Avenir Next', ui-sans-serif, sans-serif;
+  --font-sans: 'Source Sans 3 Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+/*
+ * Dark theme. Three modes: no data-theme attribute = follow the system setting;
+ * data-theme="light" or "dark" on <html> = the user's explicit choice (the switch arrives in
+ * M0 step 4). The two blocks below hold the same values.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-background: #0a1424;
+    --color-surface: #12213a;
+    --color-foreground: #e6ebf2;
+    --color-heading: #ffffff;
+    --color-muted-foreground: #a7b4c6;
+    --color-link: #9cc3f0;
+    --color-primary: #9cc3f0;
+    --color-primary-hover: #c3dbf7;
+    --color-on-primary: #031b3f;
+    --color-ring: #f7c343;
+    --color-border: #2a3d57;
+    --color-input-border: #6f7f96;
+    --color-accent: #f7c343;
+    --color-highlight: #f7c343;
+    --color-on-highlight: #031b3f;
+    --color-danger: #f4a3ad;
+    --color-header: #031b3f;
+    --color-on-header: #ffffff;
+    --color-badge-alone: #bbf7d0;
+    --color-badge-alone-bg: #133a22;
+    --color-badge-needs: #fbe3a1;
+    --color-badge-needs-bg: #43340c;
+    --color-badge-support: #ddd6fe;
+    --color-badge-support-bg: #30205a;
+    --color-badge-unknown: #dde1e7;
+    --color-badge-unknown-bg: #2a3442;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-background: #0a1424;
+  --color-surface: #12213a;
+  --color-foreground: #e6ebf2;
+  --color-heading: #ffffff;
+  --color-muted-foreground: #a7b4c6;
+  --color-link: #9cc3f0;
+  --color-primary: #9cc3f0;
+  --color-primary-hover: #c3dbf7;
+  --color-on-primary: #031b3f;
+  --color-ring: #f7c343;
+  --color-border: #2a3d57;
+  --color-input-border: #6f7f96;
+  --color-accent: #f7c343;
+  --color-highlight: #f7c343;
+  --color-on-highlight: #031b3f;
+  --color-danger: #f4a3ad;
+  --color-header: #031b3f;
+  --color-on-header: #ffffff;
+  --color-badge-alone: #bbf7d0;
+  --color-badge-alone-bg: #133a22;
+  --color-badge-needs: #fbe3a1;
+  --color-badge-needs-bg: #43340c;
+  --color-badge-support: #ddd6fe;
+  --color-badge-support-bg: #30205a;
+  --color-badge-unknown: #dde1e7;
+  --color-badge-unknown-bg: #2a3442;
+}
+
+/* `dark:` variant for the rare case a token is not enough; matches both ways of being dark. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  a {
+    @apply text-link underline underline-offset-2 hover:no-underline;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}

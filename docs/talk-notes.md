@@ -40,6 +40,7 @@ literacy, little or no coding.
 | 2026-11-01 | Mid-stream requirements (stay private until launch; safe full-state replacement) folded into the design | You can steer while it works | same |
 | 2026-11-01 | Lawyers keep the final word on legal wording; the design makes badges switchable without code changes | Build for decisions you know will change | same |
 | 2026-11-01 | The 3-day package-age guard refused two brand-new releases on its first install, and strict lint flagged the AI's own deprecated config | Safety rules catch real things on day one; check versions online, not from memory | `devlog/2026-11-01-m0-step1-workspace.md` |
+| 2026-11-01 | The project lead asked for a palette "based on" a real organization's site. The AI pulled the colours from that site's stylesheet, but found its fonts are licensed to that organization only and picked free look-alikes | "Use their branding" has a legal edge: colours are fine as inspiration, licensed fonts and logos are not | `devlog/2026-11-01-m0-step2-web.md` |
 
 ## Numbers to collect
 
@@ -62,6 +63,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | --- | --- | --- | --- | --- |
 | Planning (2026-11-01) | not measured | not measured | $0 | Plan docs only |
 | M0 step 1 (2026-11-01) | 0.1 (6 min) | not measured | $0 | Workspace, lint, typecheck |
+| M0 step 2 (2026-11-01) | 0.2 (13 min) | not measured | $0 | Vue app, design tokens, light + dark |
 
 ## Assets to capture for slides
 

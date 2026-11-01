@@ -17,7 +17,9 @@ running totals in `docs/talk-notes.md`.
    `GET /api/public/health`, security-headers middleware.
 4. Test harness: Vitest workspaces, Testing Library, MSW, `@cloudflare/vitest-pool-workers`,
    Playwright + axe. One passing test per layer. `pnpm check` with one-line-per-stage output
-   and logs in `.logs/latest/`.
+   and logs in `.logs/latest/`. The component-layer test is a **theme switch** (System / Light /
+   Dark, sets `data-theme` on `<html>`, remembered in `localStorage`) in the site header, with
+   a pre-paint script so the page does not flash (needs a CSP hash once step 3's headers exist).
 5. Middleware: `site-gate` (`SITE_MODE`) and `access-jwt`, with the required tests from
    `docs/testing.md`.
 6. GitHub: Actions CI (PR checks), Dependabot, CodeQL, gitleaks, branch protection,
@@ -96,7 +98,8 @@ and evidence that target users find the site useful and use it correctly.
 1. Data gate: an admin page "Launch readiness" lists each published state with its counts of
    unmapped and auto (unconfirmed) category mappings. At least 2 states must show 0 and 0.
    A test checks the page's logic.
-2. Accessibility pass (axe clean, keyboard-only walkthrough, screen reader spot check).
+2. Accessibility pass (axe clean in **both light and dark themes**, keyboard-only walkthrough,
+   screen reader spot check).
 3. Performance pass: bundle size budget, Lighthouse ≥ 90 on home page (`cloudflare:web-perf` skill).
 4. Disclaimer, about/methodology page (how matching, "like" codes and qualification badges
    work), a dated note on court rulings (*Massachusetts v. Oz*), AMA notice, and a

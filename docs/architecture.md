@@ -29,7 +29,8 @@ driver behind Drizzle.
 apps/
   web/                 Vue SPA (public pages + /admin pages)
     src/
-      pages/           route components (Home, Compare, Search, CodeDetail, admin/*)
+      pages/           file-based routes: (home).vue, compare.vue, search.vue, codes/[codeId].vue, admin/*
+      styles/main.css  Tailwind import + design tokens (@theme), light and dark
       components/      UI components (StateMap, CodeTable, StatePicker, ...)
       composables/     useStates, useCompare, useCodeSearch (TanStack Query wrappers)
       ingest/          browser-side parser adapters (pdf, xlsx, csv, json) -> RawRow[]
@@ -65,6 +66,35 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   `tsconfig.base.json` sets every option explicitly.
 - **ESLint 10**, flat config built with `defineConfig()` from `eslint/config`
   (`tseslint.config()` is deprecated). Linting is type-aware (`strictTypeChecked`).
+- **Vue Router 5, file-based routing built in.** `unplugin-vue-router` is deprecated ("Merged
+  into vuejs/router"). Use the `vue-router/vite` plugin and import from `vue-router` and
+  `vue-router/auto-routes`, not `vue-router/auto` as the `vue-development` skill's routing guide
+  still shows. The plugin writes `apps/web/src/typed-router.d.ts`; it is committed (so
+  `vue-tsc` works on a clean checkout) and ignored by ESLint and Prettier.
+- **`apps/web` typecheck is `vue-tsc --build`** over `tsconfig.app.json` (DOM, `vite/client`)
+  and `tsconfig.node.json` (`vite.config.ts`). `src/env.d.ts` declares `*.vue` modules only so
+  typescript-eslint can type `.vue` imports in `.ts` files.
+- **Vite 8** (Rolldown). `vue-demi` (pulled in by TanStack Query) wants a postinstall script;
+  pnpm blocks it and that is fine, because its default build already targets Vue 3.
+- **Fonts are self-hosted** from Fontsource npm packages (Jost, Source Sans 3, IBM Plex Mono;
+  all SIL OFL). No Google Fonts requests, so the CSP can keep `font-src 'self'`. CCF's own
+  fonts (Futura PT, Adobe Caslon Pro) are licensed to CCF through Adobe Fonts and cannot be used.
+
+## Design tokens
+
+Set once in M0 step 2 in `apps/web/src/styles/main.css`; approved palette page:
+https://claude.ai/artifact/Ky9pvJ3qnF3NBvkLLrDu9F (private to the project lead).
+
+- Colours start from the Georgetown CCF palette (navy, blue, gold, red). The site is **not**
+  a CCF site and carries no CCF name or logo; branding may be added later with CCF's approval.
+- Tailwind's default palette is removed (`--color-*: initial`); only semantic tokens exist
+  (`background`, `surface`, `foreground`, `heading`, `muted-foreground`, `link`, `primary`,
+  `ring`, `border`, `input-border`, `accent`, `highlight`, `danger`, `header`, four badge pairs).
+  Every text pair passes WCAG AA in both themes. Gold `accent` is for rules only, never text.
+- Type scale and spacing are Tailwind's defaults. Fonts: `font-display` (Jost) for headings,
+  `font-sans` (Source Sans 3) for body and tables, `font-mono` (IBM Plex Mono, dotted zero) for codes.
+- Themes: no `data-theme` on `<html>` = follow the system; `data-theme="light"|"dark"` = the
+  user's choice. The System/Light/Dark switch arrives in M0 step 4. Prefer tokens over `dark:`.
 
 ## Agent skills (not committed)
 
