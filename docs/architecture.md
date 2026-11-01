@@ -15,7 +15,7 @@
 | File storage | Cloudflare R2 (source documents, backups) | 10 GB free, no egress fees |
 | Auth | Cloudflare Access (Google IdP), JWT verified in the Worker with `jose` | No auth code to get wrong; free for up to 50 users |
 | Parsing | `pdfjs-dist` and SheetJS CE run in the admin's browser | No server CPU cost; untrusted files never get parsed on the server |
-| Testing | Vitest, Vue Testing Library, MSW, `@cloudflare/vitest-pool-workers`, Playwright, axe-core | See `docs/testing.md` |
+| Testing | Vitest, Vue Testing Library, MSW, `@cloudflare/vitest-plugin`, Playwright, axe-core | See `docs/testing.md` |
 | Tooling | pnpm workspaces, ESLint (flat config, `eslint-plugin-vue`, `typescript-eslint`), Prettier | Standard |
 
 The design wiki says "NodeJS" for the back end. Workers run a V8 runtime with Node API
@@ -90,6 +90,15 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   URL, real headers and CSP). `pnpm --filter @mfcd/web dev` gives hot reload on :5173 and
   proxies `/api` to :8787. `pnpm build` = web build + `wrangler deploy --dry-run`.
 
+- **Testing tools:** Vitest 5.0.5, `@cloudflare/vitest-plugin` 1.4.11 (the renamed
+  `vitest-pool-workers`), Testing Library for Vue 8.1, MSW 3, jsdom 30, Playwright 1.64,
+  axe-core 4.14. Details in `docs/testing.md`, "Setup".
+- **pnpm build scripts:** `pnpm-workspace.yaml` lists `esbuild`, `vue-demi` and `workerd` under
+  `allowBuilds: false`. pnpm 12 fails the install (`ERR_PNPM_IGNORED_BUILDS`) for any package
+  with an unreviewed install script, so a new one must be reviewed and added there.
+- **`apps/web/vite.config.ts` gives the router plugin an absolute `root`.** Without it, running
+  Vitest from the repo root wrote an empty `src/typed-router.d.ts` at the repo root.
+
 ## Design tokens
 
 Set once in M0 step 2 in `apps/web/src/styles/main.css`; approved palette page:
@@ -104,7 +113,9 @@ https://claude.ai/artifact/Ky9pvJ3qnF3NBvkLLrDu9F (private to the project lead).
 - Type scale and spacing are Tailwind's defaults. Fonts: `font-display` (Jost) for headings,
   `font-sans` (Source Sans 3) for body and tables, `font-mono` (IBM Plex Mono, dotted zero) for codes.
 - Themes: no `data-theme` on `<html>` = follow the system; `data-theme="light"|"dark"` = the
-  user's choice. The System/Light/Dark switch arrives in M0 step 4. Prefer tokens over `dark:`.
+  user's choice, set by the header's theme menu (`components/ThemeMenu.vue`, icons + dropdown)
+  and stored in `localStorage` as `mfcd-theme`. `public/theme-init.js` applies it before first
+  paint. Prefer tokens over `dark:`.
 
 ## Agent skills (not committed)
 

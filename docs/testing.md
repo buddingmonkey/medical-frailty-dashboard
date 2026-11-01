@@ -7,7 +7,7 @@
 | Unit | Vitest | `packages/shared/**/*.test.ts` | Code normalization, wildcard/range parsing, code-system inference, category auto-mapping, diff + checks logic. **The most important tests in the repo** |
 | Parser | Vitest (jsdom/happy-dom) | `apps/web/src/ingest/**/*.test.ts` | Each adapter against `fixtures/<state>/` excerpts → expected normalized JSON |
 | Component | Vitest + `@testing-library/vue` + MSW | `apps/web/src/**/*.test.ts` | User-visible behavior: pick states, see table, search results, admin review table. Mock the API with MSW, never mock composables |
-| API | Vitest + `@cloudflare/vitest-pool-workers` | `apps/api/src/**/*.test.ts` | Routes running in workerd with a real local D1 and R2 (Miniflare). Auth middleware, site gate, publish/rollback, per-state write isolation |
+| API | Vitest + `@cloudflare/vitest-plugin` | `apps/api/src/**/*.test.ts` | Routes running in workerd with a real local D1 and R2 (Miniflare). Auth middleware, site gate, publish/rollback, per-state write isolation |
 | E2E | Playwright | `apps/web/e2e/` | Main journeys in Chromium against `wrangler dev` with seeded local D1: home map → state, compare, search → code detail, admin ingest → publish → rollback |
 | Accessibility | `@axe-core/playwright` | in E2E specs | No serious/critical axe violations on every public page. State agencies often need Section 508 / WCAG 2.1 AA |
 | Deployed smoke | Playwright (small spec) | CI after deploy | Preview: everything returns 401/302 without Access. Production after launch: public pages 200, `/api/admin/*` 401 |
@@ -31,6 +31,24 @@
   - Rollback restores the exact previous public results.
   - Public routes reject non-GET methods.
 
+## Setup (M0 step 4)
+
+- **Vitest 5**, one root `vitest.config.ts` with three projects: `unit` (`packages/shared`),
+  `component` (`apps/web`, jsdom), `api` (`apps/api`, workerd via `@cloudflare/vitest-plugin`,
+  which replaced the deprecated `@cloudflare/vitest-pool-workers`). The plugin bundles the same
+  workerd as wrangler, so tests run on the production compatibility date.
+- **Component tests** use `@testing-library/vue` and `user-event`, with plain `expect` (no
+  `jest-dom`: it needs `@testing-library/dom` 10, while Testing Library for Vue still uses 9).
+  `src/test/setup.ts` cleans up after each test and starts an MSW 3 server with
+  `onUnhandledFrame: 'error'` (MSW 3 renamed `onUnhandledRequest`), so a test that hits an
+  unmocked URL fails. Test files are type-checked through `apps/web/tsconfig.vitest.json`.
+- **E2E** (`apps/web/e2e/`): Playwright starts `wrangler dev` on :8788 against the production
+  build. Specs fail on any console error (so a CSP violation fails), and run axe in both themes.
+  First run on a new machine: `pnpm --filter @mfcd/web exec playwright install chromium`.
+- **`pnpm check`** is `scripts/check.ts`, run directly by Node 26 (type stripping). Stages:
+  format, lint, types, unit, component, api; `--full` adds build and e2e. It keeps going after a
+  failure so one run shows everything, and each failing line names its log file.
+
 ## Fixtures
 
 `fixtures/<state>/` holds, for each seed file:
@@ -46,8 +64,8 @@
 
 ```bash
 pnpm check                    # everything except e2e, one summary line per stage
-pnpm test -- codes            # tests whose name/file matches "codes"
-pnpm --filter api test        # one workspace
+pnpm test codes               # tests whose file matches "codes" (no `--`: it disables the filter)
+pnpm exec vitest run --project api   # one layer: unit | component | api
 pnpm e2e                      # Playwright (builds, seeds local D1, starts wrangler dev)
 pnpm e2e -- --ui              # Playwright UI mode
 ```
@@ -57,7 +75,8 @@ writes full logs to `.logs/latest/`. Agents should read logs with `grep`/`tail`,
 
 ## Coverage
 
-`pnpm coverage` (v8). Targets: `packages/shared` ≥ 95% lines, `apps/api` ≥ 85%, components
+Not set up yet; add it in M1 when there is logic to measure. Use `@vitest/coverage-istanbul`
+for `apps/api`: v8 coverage does not work inside workerd. Targets: `packages/shared` ≥ 95% lines, `apps/api` ≥ 85%, components
 are covered by behavior tests (no number target).
 
 ## CI (GitHub Actions)

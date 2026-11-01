@@ -15,11 +15,12 @@ running totals in `docs/talk-notes.md`.
    Use the `tailwind-design-system` skill to set design tokens (color, type, spacing) once.
 3. `apps/api`: Hono Worker serving `apps/web/dist` as static assets with SPA fallback,
    `GET /api/public/health`, security-headers middleware.
-4. Test harness: Vitest workspaces, Testing Library, MSW, `@cloudflare/vitest-pool-workers`,
+4. Test harness: Vitest workspaces, Testing Library, MSW, `@cloudflare/vitest-plugin`,
    Playwright + axe. One passing test per layer. `pnpm check` with one-line-per-stage output
    and logs in `.logs/latest/`. The component-layer test is a **theme switch** (System / Light /
    Dark, sets `data-theme` on `<html>`, remembered in `localStorage`) in the site header, with
-   a pre-paint script so the page does not flash (needs a CSP hash once step 3's headers exist).
+   a pre-paint script so the page does not flash (`public/theme-init.js`, external so the CSP
+   needs no hash). Built as a dropdown with icons (user, 2026-11-01).
 5. Middleware: `site-gate` (`SITE_MODE`) and `access-jwt`, with the required tests from
    `docs/testing.md`.
 6. GitHub: Actions CI (PR checks), Dependabot, CodeQL, gitleaks, branch protection,
