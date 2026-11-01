@@ -3,9 +3,9 @@
 Compare the medical codes each US state uses to decide who is **"medically frail"** and so
 exempt from the new Medicaid work requirements.
 
-> **Status: planning.** There is no application code yet. The plan is in [`docs/`](docs/);
-> start with [`docs/status.md`](docs/status.md) and [`docs/roadmap.md`](docs/roadmap.md).
-> The site will stay private until it is ready.
+> **Status: early development.** The scaffolding (web app, API, tests, CI) is in place; the
+> data features come next. Start with [`docs/status.md`](docs/status.md) and
+> [`docs/roadmap.md`](docs/roadmap.md). The site will stay private until it is ready.
 
 ## Why this exists
 
@@ -80,8 +80,18 @@ things wrong, so other organizations can learn from it:
 
 ## Getting started (developers)
 
-Not available yet. Setup steps arrive with roadmap milestone M0. The planned commands are in
-[`CLAUDE.md`](CLAUDE.md).
+You need Node 26 and pnpm 12.
+
+```bash
+pnpm install
+pnpm --filter @mfcd/web exec playwright install chromium   # once, for the browser tests
+pnpm dev          # the whole site on http://localhost:8787
+pnpm check        # format, lint, types, unit, component and API tests
+pnpm check:full   # plus the build and browser tests (run before a pull request)
+```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and rules, and
+[`SECURITY.md`](SECURITY.md) to report a vulnerability.
 
 ## Data, accuracy and disclaimer
 
@@ -94,8 +104,8 @@ Not available yet. Setup steps arrive with roadmap milestone M0. The planned com
   shown only as published by each state, with a citation. ICD-10-CM and HCPCS Level II are in
   the public domain.
 
-Found a data error? Once the repo has issues enabled, open an issue with the state, the code
-and a link to the state's document.
+Found a data error? [Open a data error issue](../../issues/new?template=data-error.yml) with
+the state, the code and a link to the state's document.
 
 ## License
 
