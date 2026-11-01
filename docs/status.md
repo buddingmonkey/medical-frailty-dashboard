@@ -26,7 +26,14 @@ _Last updated: 2026-11-01_
   (private by default, fails closed), admin checks on `/admin*` and `/api/admin*`,
   `GET /api/admin/whoami`, a two-mode `robots.txt`, and the localhost-only dev bypass. 39 API
   tests, including every required auth test in `docs/testing.md` that applies so far.
-- **Next step:** M0 step 6 (GitHub: CI, Dependabot, CodeQL, gitleaks, branch protection).
+- **Step 6 done** (PR #6): GitHub Actions CI (`check`, `audit`, `gitleaks`; about 1.5 min),
+  Dependabot (3-day cooldown), CodeQL default setup (JS/TS + Actions), private vulnerability
+  reporting, data-error issue template, `SECURITY.md`, `CONTRIBUTING.md`, README setup steps.
+  `main` is protected by a ruleset with **no bypass**: every change goes through a PR with
+  green checks; a direct push is refused (tested).
+- **Next step:** M0 step 7 (Cloudflare: Workers, D1, R2, Access; deploy from CI). Needs the
+  project lead's Cloudflare account, an API token for CI, and the admin emails for the
+  `ADMIN_EMAILS` secret.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -60,6 +67,7 @@ _Last updated: 2026-11-01_
 | robots.txt | Private: disallow all. Public: allow the site, disallow `/admin` and `/api/`; add a sitemap at launch (user asked for a good one from the start, 2026-11-01) |
 | SEO and GEO | Best practices; AI crawlers welcome so AI gets the right information. Worker renders real HTML for public pages. `Content-Signal: search=yes, ai-input=yes, ai-train=yes`. See `docs/seo.md` (user, 2026-11-01). **`ai-train=yes` is provisional:** the legal team may revisit it because pages quote AMA-copyrighted CPT text |
 | Domain and hosting | The project lead buys a domain in M7, or gives the site to an organization to host. Keep the site portable (user, 2026-11-01) |
+| Branch protection | Ruleset on `main` with no bypass, not even for admins (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
