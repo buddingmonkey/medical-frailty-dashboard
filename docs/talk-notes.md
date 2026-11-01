@@ -42,6 +42,7 @@ literacy, little or no coding.
 | 2026-11-01 | The 3-day package-age guard refused two brand-new releases on its first install, and strict lint flagged the AI's own deprecated config | Safety rules catch real things on day one; check versions online, not from memory | `devlog/2026-11-01-m0-step1-workspace.md` |
 | 2026-11-01 | The project lead asked for a palette "based on" a real organization's site. The AI pulled the colours from that site's stylesheet, but found its fonts are licensed to that organization only and picked free look-alikes | "Use their branding" has a legal edge: colours are fine as inspiration, licensed fonts and logos are not | `devlog/2026-11-01-m0-step2-web.md` |
 | 2026-11-01 | Two docs disagreed: "static files skip the Worker" and "the Worker adds security headers to every response" cannot both be true. Found while planning, before any code | Ask the AI to list what in the plan looks wrong before it builds; contradictions are cheap to fix on paper | `devlog/2026-11-01-m0-step3-api.md` |
+| 2026-11-01 | The AI recommended lowering the runtime date to match a test tool, and the project lead agreed. During install the tool turned out to be deprecated; its renamed successor matched production exactly, so the approved change was undone | Approvals rest on facts; when a fact changes, say so and revisit, even after a yes | `devlog/2026-11-01-m0-step4-tests.md` |
 
 ## Numbers to collect
 
@@ -66,6 +67,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 1 (2026-11-01) | 0.1 (6 min) | not measured | $0 | Workspace, lint, typecheck |
 | M0 step 2 (2026-11-01) | 0.2 (13 min) | not measured | $0 | Vue app, design tokens, light + dark |
 | M0 step 3 (2026-11-01) | 0.4 (21 min) | not measured | $0 | Hono Worker, headers, strict CSP |
+| M0 step 4 (2026-11-01) | 0.2 (14 min) | not measured | $0 | Test harness, `pnpm check`, theme menu; 21 tests |
 
 ## Assets to capture for slides
 

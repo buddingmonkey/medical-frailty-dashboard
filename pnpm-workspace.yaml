@@ -8,3 +8,11 @@ minimumReleaseAge: 4320
 
 # Exact versions only.
 saveExact: true
+
+# Install scripts are refused unless listed here (strictDepBuilds is on by default).
+# All three work without their scripts: esbuild and workerd get their binaries from
+# platform-specific optional dependencies, and vue-demi's default build targets Vue 3.
+allowBuilds:
+  esbuild: false
+  vue-demi: false
+  workerd: false

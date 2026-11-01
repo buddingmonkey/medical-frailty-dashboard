@@ -96,9 +96,11 @@ X-Frame-Options: DENY
   placeholder page renders in headless Chrome with no CSP violations. The step 4 browser tests
   will catch any regression.
 - Fonts are self-hosted, so `font-src 'self'` is enough (no Google Fonts).
-- **Inline scripts need a hash.** The step 4 theme script (runs before first paint to avoid a
-  flash of the wrong theme) must be added to `script-src` as a `'sha256-…'` hash, or loaded
-  as an external file.
+- **No inline scripts.** The pre-paint theme script is an external file
+  (`apps/web/public/theme-init.js`), so `script-src 'self'` covers it with no hash to maintain.
+  Any future inline script needs a `'sha256-…'` hash instead.
+- **Public API routes are read only:** `apps/api/src/middleware/public-get-only.ts` returns 405
+  with `Allow: GET, HEAD` for any other method on `/api/public/*` (required test).
 - If the AI button needs a direct browser call, it does not: the browser calls our API, which
   calls Anthropic.
 - Workers Logs redact query strings (`observability.redact_query_string`), so search terms

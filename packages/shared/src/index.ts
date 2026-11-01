@@ -1,2 +1,2 @@
-// Shared zod schemas, API types and code normalization go here (M1).
-export const packageName = 'shared'
+// Shared zod schemas, API types and (from M1) code normalization. Pure functions, no I/O.
+export * from './health'

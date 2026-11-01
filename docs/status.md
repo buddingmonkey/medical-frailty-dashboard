@@ -18,7 +18,11 @@ _Last updated: 2026-11-01_
   the security headers on every response (strict CSP, no `'unsafe-inline'`). `pnpm dev` runs
   it on http://localhost:8787; `pnpm build` adds a `wrangler deploy --dry-run`. Workers Logs and
   Traces are on. Nothing is deployed yet (step 7).
-- **Next step:** M0 step 4 (test harness; the theme switch is the first component test).
+- **Step 4 done** (branch `m0-step4-tests`): test harness. `pnpm check` (format, lint, types,
+  unit, component, api; one line each, logs in `.logs/latest/`) and `pnpm check:full` (+ build,
+  e2e with axe in light and dark). 16 Vitest tests + 5 Playwright tests. Public API routes now
+  return 405 for non-GET. The header has a System/Light/Dark theme menu (icons, dropdown).
+- **Next step:** M0 step 5 (`site-gate` and `access-jwt` middleware, with the required tests).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -47,6 +51,7 @@ _Last updated: 2026-11-01_
 | Static files and the Worker | Until launch every request runs the Worker first (one place for headers; site gate covers assets). At go-live, `/assets/*` moves to direct serving with a `_headers` file (user, 2026-11-01) |
 | CSP styles | No `'unsafe-inline'` for `style-src` (user, 2026-11-01) |
 | Logs | Workers Logs + Traces on, query strings redacted; free tier (user, 2026-11-01) |
+| Theme menu | Dropdown with icons in the header (System / Light / Dark) (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions

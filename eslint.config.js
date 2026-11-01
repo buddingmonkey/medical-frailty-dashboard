@@ -57,6 +57,13 @@ export default defineConfig(
     rules: { 'vue/multi-word-component-names': 'off' },
   },
   {
+    // Plain browser script served as-is (no bundler, no TypeScript project).
+    files: ['apps/web/public/**/*.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { globals: { ...globals.browser }, sourceType: 'script' },
+    rules: { 'no-var': 'off' },
+  },
+  {
     files: ['*.js'],
     languageOptions: { globals: { ...globals.node } },
   },

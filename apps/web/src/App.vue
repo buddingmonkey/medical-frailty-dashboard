@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+
+import ThemeMenu from './components/ThemeMenu.vue'
 </script>
 
 <template>
@@ -11,10 +13,11 @@ import { RouterLink, RouterView } from 'vue-router'
   </a>
 
   <header class="border-b-4 border-highlight bg-header text-on-header">
-    <div class="mx-auto max-w-6xl px-4 py-5">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
       <RouterLink to="/" class="font-display text-2xl font-medium text-on-header no-underline">
         Medical Frailty Coding Dashboard
       </RouterLink>
+      <ThemeMenu />
     </div>
   </header>
 

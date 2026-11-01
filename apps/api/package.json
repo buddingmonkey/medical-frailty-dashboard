@@ -7,12 +7,16 @@
     "dev": "wrangler dev --port 8787 --var ENVIRONMENT:development",
     "build": "wrangler deploy --dry-run --outdir dist",
     "cf-types": "wrangler types --strict-vars=false",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@mfcd/shared": "workspace:*",
     "hono": "4.13.14"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.11",
+    "vitest": "5.0.5",
     "wrangler": "4.156.0"
   }
 }

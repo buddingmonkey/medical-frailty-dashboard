@@ -4,7 +4,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "frailty-dashboard",
   "main": "src/index.ts",
-  // Newest date the pinned wrangler's workerd supports. Bump with wrangler.
+  // Matches the workerd bundled with wrangler and @cloudflare/vitest-plugin, so tests, dev and
+  // production share runtime behaviour. Raise it when the pool package catches up.
   "compatibility_date": "2026-10-23",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,

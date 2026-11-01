@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 
+import { publicGetOnly } from './middleware/public-get-only'
 import { securityHeaders } from './middleware/security-headers'
 import { health } from './routes/public/health'
 
@@ -7,6 +8,7 @@ export const app = new Hono<{ Bindings: Env }>()
 
 app.use(securityHeaders)
 
+app.use('/api/public/*', publicGetOnly)
 app.route('/api/public/health', health)
 
 // Unknown API paths get a JSON 404, never the SPA's index.html.

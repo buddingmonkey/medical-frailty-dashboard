@@ -14,7 +14,7 @@ All data is public state policy. There is no patient data, and there never will 
 pnpm check            # lint, typecheck, unit + component + API tests, one line per stage; run after every change
 pnpm check:full       # pnpm check + build + Playwright e2e + axe; run before merging to main
 pnpm dev              # Vite + wrangler dev (local D1/R2) on http://localhost:8787
-pnpm test -- <filter> # run matching Vitest tests in every workspace
+pnpm test <filter>    # run matching Vitest tests in every workspace (no `--`: it disables the filter)
 pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:migrate:local # apply D1 migrations to the local database
 pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
