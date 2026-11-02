@@ -77,7 +77,8 @@ unless the Access application bypasses that path.)
   for text), and stores it. The R2 key never leaves the Worker.
 - `pdfjs-dist` is pinned to a current release (CVE-2024-4367 affected versions below 4.2.67)
   with `isEvalSupported: false`.
-- SheetJS comes from the official CDN tarball, not the stale npm `xlsx` package.
+- Excel files are read with `read-excel-file` (npm, pinned), never the stale npm `xlsx`
+  package (unmaintained, known CVEs).
 - The original file goes to R2 as `application/octet-stream` with
   `Content-Disposition: attachment`, under a random key. It is never served inline from our
   origin. Public source links point at the state's own URL.

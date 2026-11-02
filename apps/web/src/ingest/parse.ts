@@ -1,4 +1,6 @@
 import { fileTypeFromName, MAX_COLUMNS, MAX_ROWS, type RawRow, type RawTable } from '@mfcd/shared'
+// The build for code already inside a Web Worker: it starts no workers of its own.
+import readXlsxFile from 'read-excel-file/web-worker'
 
 // Parser adapters (docs/ingestion.md, "Parser adapters"). Pure functions: they run in a Web
 // Worker in the browser (worker.ts) and directly in tests.
@@ -128,11 +130,56 @@ export function parseJson(text: string, name: string): RawTable {
   }
 }
 
+/** A cell as the text a reader sees. Dates become `YYYY-MM-DD`. */
+function xlsxCellText(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return cellText(value)
+}
+
+/** Every sheet of a workbook, one table each. Numbers stay as the text in the cell ("0"). */
+export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTable[]> {
+  let sheets: Awaited<ReturnType<typeof readXlsxFile<string>>>
+  try {
+    sheets = await readXlsxFile<string>(new Uint8Array(bytes).buffer, {
+      parseNumber: (text) => text,
+      trim: false,
+    })
+  } catch {
+    throw new ParseError(`${name} is not a readable Excel workbook.`)
+  }
+  const tables: RawTable[] = []
+  for (const { sheet, data } of sheets) {
+    if (data.length > MAX_ROWS + 1) {
+      throw new ParseError(`Sheet “${sheet}” has more than ${String(MAX_ROWS)} rows.`)
+    }
+    const rows = data.map((row, i) => ({
+      cells: row.map(xlsxCellText),
+      line: i + 1,
+    }))
+    const headerIndex = rows.findIndex((r) => r.cells.some((c) => c.trim() !== ''))
+    const headerRow = rows[headerIndex]
+    if (!headerRow) continue // An empty sheet.
+    if (headerRow.cells.length > MAX_COLUMNS) {
+      throw new ParseError(`Sheet “${sheet}” has more than ${String(MAX_COLUMNS)} columns.`)
+    }
+    tables.push({
+      name: sheet,
+      header: headerRow.cells.map((c) => c.trim()),
+      rows: rows
+        .slice(headerIndex + 1)
+        .map((r): RawRow => ({ cells: r.cells, locator: `${sheet} row ${String(r.line)}` })),
+    })
+  }
+  if (tables.length === 0) throw new ParseError(`${name} has no sheets with data.`)
+  return tables
+}
+
 /** Text from bytes; TextDecoder drops a UTF-8 byte-order mark. */
 const decode = (bytes: Uint8Array) => new TextDecoder('utf-8').decode(bytes)
 
 export function parseSource(input: ParseInput): Promise<RawTable[]> {
-  return Promise.resolve().then(() => {
+  return Promise.resolve().then(async () => {
     if (input.kind === 'paste') return [parseDelimited(input.text, '\t', 'Pasted table')]
     switch (fileTypeFromName(input.name)) {
       case 'csv':
@@ -144,9 +191,7 @@ export function parseSource(input: ParseInput): Promise<RawTable[]> {
       case 'pdf':
         throw new ParseError('PDF parsing is not built yet (roadmap M2 step 5).')
       case 'xlsx':
-        throw new ParseError(
-          'Excel parsing is not set up yet. Copy the cells in Excel and use “Paste a table”, or save the sheet as CSV.',
-        )
+        return parseXlsx(input.bytes, input.name)
       case null:
         throw new ParseError('Use a CSV, JSON, text, Excel or PDF file.')
     }

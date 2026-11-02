@@ -14,7 +14,7 @@
 | Search | SQLite FTS5 virtual table on code + description | Built into D1, no extra service |
 | File storage | Cloudflare R2 (source documents, backups) | 10 GB free, no egress fees |
 | Auth | Cloudflare Access (Google IdP), JWT verified in the Worker with `jose` | No auth code to get wrong; free for up to 50 users |
-| Parsing | `pdfjs-dist` and SheetJS CE run in the admin's browser | No server CPU cost; untrusted files never get parsed on the server |
+| Parsing | `pdfjs-dist` and `read-excel-file` run in the admin's browser | No server CPU cost; untrusted files never get parsed on the server |
 | Testing | Vitest, Vue Testing Library, MSW, `@cloudflare/vitest-plugin`, Playwright, axe-core | See `docs/testing.md` |
 | Tooling | pnpm workspaces, ESLint (flat config, `eslint-plugin-vue`, `typescript-eslint`), Prettier | Standard |
 
