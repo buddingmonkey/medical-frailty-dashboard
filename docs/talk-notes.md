@@ -115,6 +115,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 9 (2026-11-02) | 09:41–09:46 | not measured | $0 | Category mapping screen and chapter overrides; publish stores keyword guesses |
 | M2 step 10 (2026-11-02) | 09:50–10:05 | not measured | $0 (Claude API off) | AI cleanup: copy-paste prompt and an optional Claude button; est. $5–6 per large file if turned on |
 | M2 step 11 (2026-11-02) | 10:08–10:14 | not measured | $0 | Four seed states through the UI (17,186 rows, 38 s); a wrong file stopped by typed checks |
+| M2 step 12 + **M2 total** (2026-11-02) | 10:18–10:19; M2 ≈ 3.5 h over two days | not measured | $0 (+ $5 Workers Paid month) | Admin ingestion complete: 13 PRs (#20–#33), 615 Vitest + 9 admin e2e; four states, 17,186 rows through the UI |
 
 ## Assets to capture for slides
 
