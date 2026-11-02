@@ -153,8 +153,12 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   - LA: three kinds of code (see Louisiana above).
   - NE: the index "is not a one-to-one diagnosis list"; members "might have to meet other
     criteria" (process PDF).
-- H.R.1 (Public Law 119-21) §71119: community engagement requirement and the medically
-  frail exclusion. Federal categories are in `docs/data-model.md`. Link the enacted text and
-  any CMS guidance here once confirmed (roadmap M1).
+- **H.R.1, Public Law 119-21, §71119** (enrolled text:
+  https://www.govinfo.gov/content/pkg/PLAW-119publ21/html/PLAW-119publ21.htm): adds the
+  community engagement requirement as Social Security Act §1902(xx). The medically frail
+  exclusion is §1902(xx)(9)(A)(ii)(V), "medically frail or otherwise has special medical needs
+  (as defined by the Secretary)", including clauses (aa)–(ee); verbatim in
+  `packages/shared/src/categories.ts` (checked 2026-11-01). "As defined by the Secretary" is
+  what the CMS IFR filled in, and the part *Massachusetts v. Oz* vacated.
 - CMS ICD-10-CM code files (public domain): https://www.cms.gov/medicare/coding-billing/icd-10-codes
 - CMS HCPCS Level II quarterly files (public domain): https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update

@@ -55,7 +55,10 @@ _Last updated: 2026-11-01_
   `ref_codes` from pinned CMS files (ICD-10-CM FY2027: 98,403 codes; HCPCS October 2026: 8,770)
   into 22 resumable SQL chunks. `pnpm db:ref:local` loads them locally in ~20 s. Remote loads
   take two days per database on the free tier (with M1 step 6).
-- **Next step:** M1 step 4 (federal categories and the auto-mapping keyword table).
+- **M1 step 4 done** (branch `m1-step4-categories`): `packages/shared/src/categories.ts` with the
+  five statutory categories (wording verified against the enrolled law), our two, and the
+  auto-mapping keyword table, tested on every LA and MT category.
+- **Next step:** M1 step 5 (diff and checks engine).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -127,7 +130,7 @@ here; that page is seeded from this table. Approximate dates are marked ~.
 | ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
-| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 
