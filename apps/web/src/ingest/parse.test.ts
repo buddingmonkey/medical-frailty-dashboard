@@ -77,6 +77,20 @@ describe('parseSource', () => {
     expect(table?.header).toEqual(['Code'])
   })
 
+  it('gives the text of a file, for an AI assistant, instead of tables when asked', async () => {
+    const lines = Array.from({ length: 250 }, (_, i) => `F${String(i)},Name ${String(i)}`)
+    const { tables, pageTexts } = await parseSource({
+      kind: 'file',
+      name: 'list.csv',
+      bytes: bytes(`Code,Description\n${lines.join('\n')}`),
+      textOnly: true,
+    })
+    expect(tables).toEqual([])
+    // Text files have no pages: 100 lines make one.
+    expect(pageTexts).toHaveLength(3)
+    expect(pageTexts?.[0]?.split('\n')[0]).toBe('Code,Description')
+  })
+
   it('parses pasted spreadsheet cells as tab-separated', async () => {
     const {
       tables: [table],

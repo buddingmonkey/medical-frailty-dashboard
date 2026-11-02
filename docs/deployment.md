@@ -33,7 +33,7 @@ Worker secrets:
 | --- | --- | --- |
 | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | CI, on every deploy (`--secrets-file`), from the GitHub environment's **variables** | Not sensitive, but kept out of the repo so a new host changes them without a code change. While unset, every gated request is a 401 |
 | `ADMIN_EMAILS` | The project lead, once per Worker: `pnpm cf secret put ADMIN_EMAILS --env preview`, and without `--env` for production | Comma-separated. Prompts for the value, so it never lands in the repo or a chat |
-| `ANTHROPIC_API_KEY` | Optional, later | |
+| `ANTHROPIC_API_KEY` | Optional, not set | Turns on the "Ask Claude" button in AI cleanup. Set a monthly spend limit in the Anthropic Console first. `AI_MODEL` (optional variable) picks the model; default `claude-opus-5-5` (`apps/api/src/ai/claude.ts`) |
 
 Local values go in `apps/api/.dev.vars` (gitignored; `.dev.vars.example` is committed).
 
@@ -82,7 +82,7 @@ through `pnpm cf <args>` (`scripts/cf.ts`), which loads that file. It **refuses 
 | Cloudflare Access | Free for up to 50 users | Never, for a few admins |
 | GitHub (public repo) | Unlimited Actions minutes, CodeQL, Dependabot | Never |
 | Domain (optional) | — | ~$10/year at Cloudflare Registrar (at cost) |
-| Claude API (optional) | — | Pay per token, only when the admin clicks the AI cleanup button. Set a spend limit |
+| Claude API (optional) | — | Pay per token, only when the admin clicks the AI cleanup button. Set a spend limit. **Estimate, not measured:** with `claude-opus-5-5` ($4 in / $20 out per million tokens, 2026-10) Nebraska's 295 pages ≈ 0.2M tokens in and ≈ 0.25M out ≈ **$5–6 per full file**; a cheaper model via `AI_MODEL` is the project lead's call. Measure the first real run and write it here |
 
 **Expected: $0/month** (plus ~$10/year if you buy a domain). Size estimate: 50 states ×
 ~5,000 entries ≈ 250k rows ≈ well under 500 MB in D1. A full re-ingest of one large state

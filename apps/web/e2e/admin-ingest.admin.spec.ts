@@ -64,3 +64,32 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(await seriousA11yViolations(page)).toEqual([])
   })
 }
+
+test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.goto('/admin/ingest')
+  await page.getByLabel('State').selectOption('Montana')
+  await page.getByLabel('File').setInputFiles({
+    name: 'mt.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(pdf),
+  })
+  const panel = page.getByRole('region', { name: 'Get help from an AI assistant' })
+  await panel.getByRole('button', { name: 'Prepare the prompt' }).click()
+  // The text comes from pdf.js in the parser worker, one line per printed line.
+  await expect(panel.getByLabel('Prompt for part 1')).toHaveValue(
+    /F20\.0 {3}Paranoid schizophrenia/,
+  )
+  // No API key on this Worker: no Claude button.
+  await expect(panel.getByRole('button', { name: /Ask Claude/ })).toHaveCount(0)
+
+  await panel
+    .getByLabel('The assistant’s answer')
+    .fill('{"rows":[{"code":"F31.0","description":"Bipolar"}]}')
+  await panel.getByRole('button', { name: 'Read the answer' }).click()
+  await expect(panel.getByRole('status')).toContainText('Read 1 row')
+  await expect(page.getByLabel('Table', { exact: true })).toHaveValue('1')
+  await expect(page.getByRole('table', { name: 'Mapped rows (first 20)' })).toContainText('Bipolar')
+  expect(await seriousA11yViolations(page)).toEqual([])
+  expect(errors).toEqual([])
+})

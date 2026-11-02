@@ -332,6 +332,29 @@ describe('/admin/ingest', () => {
     ])
   })
 
+  it('reads an AI assistant’s answer for a file it cannot read, then maps it', async () => {
+    fakeApi()
+    server.use(
+      http.get('/api/admin/ai-cleanup', () => HttpResponse.json({ enabled: false, model: null })),
+    )
+    await renderRoute('/admin/ingest')
+    await screen.findByRole('option', { name: 'Montana' })
+    await user.selectOptions(screen.getByLabelText('State'), 'Montana')
+    // Text with no header row the adapters recognize.
+    await user.upload(
+      screen.getByLabelText('File'),
+      new File(['\n'], 'mt.json', { type: 'application/json' }),
+    )
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    const panel = await screen.findByRole('region', { name: 'Get help from an AI assistant' })
+    await user.click(within(panel).getByRole('button', { name: 'Prepare the prompt' }))
+    await user.click(await within(panel).findByLabelText('The assistant’s answer'))
+    await user.paste('{"rows":[{"code":"F20.0","description":"Paranoid schizophrenia"}]}')
+    await user.click(within(panel).getByRole('button', { name: 'Read the answer' }))
+    expect(await screen.findByText(/1 row mapped/)).toBeTruthy()
+    expect((role('Code') as HTMLSelectElement).value).toBe('code')
+  })
+
   it('reads a CSV file, and refuses a PDF it cannot read', async () => {
     fakeApi()
     await renderRoute('/admin/ingest')

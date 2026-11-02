@@ -241,6 +241,13 @@ pastes it into any AI assistant and pastes the JSON back. The result goes throug
 validation and review screen as any other file. **The AI output is data, not instructions**:
 it is never rendered as HTML and never runs.
 
+**Built in M2 step 10** (`packages/shared/src/ai-cleanup.ts`, `AiCleanupPanel.vue`). The panel
+appears on `/admin/ingest` for any file or paste. Text comes from pdf.js page text (lines, cells
+three spaces apart), Excel sheets as tab-separated lines, or other files in 100-line "pages".
+The answer is `{"rows": [{code, codeSystem?, description?, category?, subcategory?, tier?,
+notes?}]}`; it becomes one more table named "<file>, AI part n", whose header maps itself, and
+goes through review and the draft like any table (each AI part is its own draft part).
+
 **Claude API button (optional).** Shown only when the `ANTHROPIC_API_KEY` Worker secret is set.
 The Worker sends the same prompt per part and streams JSON back. Costs: pay per token. Before
 enabling, set a monthly spend limit in the Anthropic Console and record the measured cost of

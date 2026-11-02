@@ -6,7 +6,7 @@ import gaB from './fixtures/pdf-pages-ga-b.json'
 import la from './fixtures/pdf-pages-la.json'
 import mt from './fixtures/pdf-pages-mt.json'
 import ne from './fixtures/pdf-pages-ne.json'
-import { type PdfPageText, rebuildPdfTables } from './pdf-layout'
+import { pageText, type PdfPageText, rebuildPdfTables } from './pdf-layout'
 
 // Real pages from the four seed states' PDFs (text runs only; fixtures/pdf-pages.make.test.ts
 // writes them). Each case below is a row this adapter once got wrong.
@@ -178,6 +178,18 @@ describe('Montana (title, mixed alignment)', () => {
     expect(rowFor(table, 'L89.500-L89')?.['Code Name']).toBe(
       'Pressure ulcer of ankle (right/left/unspecified, all stages)',
     )
+  })
+})
+
+describe('pageText (the text an AI assistant gets)', () => {
+  it('writes a page as lines, top to bottom, with the cells of a line apart', () => {
+    const [first] = load(mt)
+    if (!first) throw new Error('no page')
+    const lines = pageText(first).split('\n')
+    expect(lines.findIndex((l) => l.includes('Condition Name'))).toBeLessThan(
+      lines.findIndex((l) => /\b[A-Z]\d{2}(\.\w+)?\b/.test(l)),
+    )
+    expect(lines.find((l) => l.includes('Code Name'))).toMatch(/Code {2,}Code Name/)
   })
 })
 

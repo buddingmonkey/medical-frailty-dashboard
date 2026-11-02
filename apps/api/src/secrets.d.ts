@@ -10,4 +10,8 @@ interface Env {
   ADMIN_EMAILS?: string
   /** Local-only admin identity; ignored unless ENVIRONMENT=development on localhost. */
   DEV_ADMIN_EMAIL?: string
+  /** Optional. Turns on the AI cleanup button (docs/ingestion.md). Costs per token. */
+  ANTHROPIC_API_KEY?: string
+  /** Optional Worker variable: the model for AI cleanup (default in src/ai/claude.ts). */
+  AI_MODEL?: string
 }

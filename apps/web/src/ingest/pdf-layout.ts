@@ -91,6 +91,16 @@ const joinRuns = (text: string, end: number, run: Run) =>
   run.x - end > 0.15 * run.height ? `${text} ${run.text}` : text + run.text
 
 /** Clusters items by baseline: items within half a text height share a line. */
+/**
+ * A page as plain text for an AI assistant (docs/ingestion.md, "AI cleanup"): lines top to
+ * bottom, the text runs of a line three spaces apart so cells stay apart.
+ */
+export function pageText(page: PdfPageText): string {
+  return toLines(page.items)
+    .map((line) => line.runs.map((r) => r.text).join('   '))
+    .join('\n')
+}
+
 function toLines(items: PdfTextItem[]): Line[] {
   const visible = items
     .map((it) => ({ ...it, text: it.text.trim(), height: Math.max(it.height, 1) }))

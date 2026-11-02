@@ -124,8 +124,14 @@ _Last updated: 2026-11-02_
   chapter-grouped states). Publish stores keyword guesses as `auto`. Migration
   `0006_chapter_mappings`. `federalCategoryOf()` in shared is the one rule for admin and public
   pages.
-- **Next step:** M2 step 10, AI cleanup (copy-paste prompt builder, then the optional Claude
-  API endpoint).
+- **M2 step 10 done** (branch `m2-step10-ai-cleanup`): "Get help from an AI assistant" on
+  `/admin/ingest` (prompt per 40-page part, paste the JSON back, validated and reviewed like any
+  table) and the optional "Ask Claude" button (`/api/admin/ai-cleanup`, `@anthropic-ai/sdk`
+  1.3.0, model from `AI_MODEL`, default `claude-opus-5-5`, refusal fallback on, 30 calls an
+  hour). **Off until the project lead sets `ANTHROPIC_API_KEY`** (cost estimate in
+  `docs/deployment.md`: about $5–6 for Nebraska's whole file on Opus 5.5). The real API call is
+  untested; tests use a fake.
+- **Next step:** M2 step 11, load the four seed states on preview and try a wrong file.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

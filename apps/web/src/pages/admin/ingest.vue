@@ -31,6 +31,7 @@ import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
+import AiCleanupPanel from '../../components/admin/AiCleanupPanel.vue'
 import ReviewTable from '../../components/admin/ReviewTable.vue'
 import SendToDraft from '../../components/admin/SendToDraft.vue'
 import type { ParseInput } from '../../ingest/parse'
@@ -68,11 +69,14 @@ const wrapLabels: Record<WrapDirection, string> = {
   below: 'below the code',
 }
 let lastInput: ParseInput | null = null
+/** The file or paste last read: the AI cleanup panel builds its prompt from it. */
+const source = ref<ParseInput | null>(null)
 
 /** `again`: the same file read another way; keep the current tables (and the focused wrap
  * select) on screen until the new ones arrive. */
 async function parse(input: ParseInput, again = false) {
   lastInput = input
+  source.value = input
   parseError.value = null
   parsing.value = true
   if (!again) {
@@ -109,6 +113,13 @@ async function onFile(event: Event) {
 function onPaste() {
   fileInfo.value = null
   return parse({ kind: 'paste', text: pasteText.value })
+}
+
+// An AI assistant's answer becomes one more table, mapped and reviewed like the others.
+function onAiTable(table: RawTable) {
+  parseError.value = null
+  tables.value = [...tables.value, table]
+  tableIndex.value = tables.value.length - 1
 }
 
 // Read the same PDF again with the admin's choice.
@@ -386,6 +397,14 @@ const inputClass =
 
     <p v-if="parsing" class="text-muted-foreground">Reading…</p>
     <p v-if="parseError" role="alert" class="text-danger">{{ parseError }}</p>
+
+    <AiCleanupPanel
+      v-if="source && stateId && !parsing"
+      :state-id="stateId"
+      :state-name="stateName"
+      :source="source"
+      @table="onAiTable"
+    />
 
     <template v-if="table && stateId">
       <div v-if="pdfWrap" class="max-w-prose">
