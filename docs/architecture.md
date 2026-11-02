@@ -204,7 +204,8 @@ Admin (Access JWT required; all writes):
 | `PUT /api/admin/states/:stateId/categories` | `{items: [{stateCategory, stateSubcategory, federalCategory}]}` (≤ 200): confirmed mappings |
 | `PUT /api/admin/states/:stateId/chapters/:chapter` | `{federalCategory}` sets a chapter override, `null` clears it |
 | `POST /api/admin/states/:stateId/rollback` | `{versionId}`: re-publish a superseded version of the same state, in one batch (404 for another state's version, 409 for one that was never published) |
-| `POST /api/admin/ai-cleanup` | Optional; only exists when `ANTHROPIC_API_KEY` is set |
+| `GET /api/admin/ai-cleanup` | `{enabled, model}`: whether the "Ask Claude" button shows |
+| `POST /api/admin/ai-cleanup` | `{stateId, fileName, part}`. 404 unless `ANTHROPIC_API_KEY` is set. The server builds the prompt (so the key only serves this task), calls Claude (`@anthropic-ai/sdk`, streaming, `fallbacks: "default"`), audits model and tokens (never the text), and returns the answer as text for the browser to validate. 30 calls an hour across all admins (counted in `audit_log`); a refusal or a cut-off answer is 422 |
 | `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |
 | `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |
 | `GET /api/admin/watch?status=open\|closed`, `POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close. `PUT` body is `{action: 'edit', ...fields}` or `{action: 'close', status, resolutionMd}`; a closed item answers 409 |

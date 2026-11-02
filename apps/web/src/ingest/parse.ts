@@ -17,6 +17,8 @@ export type ParseInput =
       bytes: Uint8Array
       /** PDF only: where wrapped text sits relative to the code; 'auto' detects it. */
       wrap?: WrapDirection | 'auto'
+      /** Return the file's text in pages (for an AI assistant) instead of tables. */
+      textOnly?: boolean
     }
   | { kind: 'paste'; text: string }
 
@@ -26,6 +28,41 @@ export interface ParseResult {
   pdfWrap?: WrapDirection
   /** PDF only: text before the first table (titles), for the state-name check. */
   titleText?: string
+  /** With `textOnly`: the text, one string per page (text files: per 100 lines). */
+  pageTexts?: string[]
+}
+
+/** Lines per "page" of a text file, for AI cleanup parts. */
+const LINES_PER_TEXT_PAGE = 100
+
+async function extractText(input: { name: string; bytes: Uint8Array }): Promise<string[]> {
+  switch (fileTypeFromName(input.name)) {
+    case 'pdf': {
+      const { extractPdfPages } = await import('./pdf')
+      const { pageText } = await import('./pdf-layout')
+      return (await extractPdfPages(input.bytes, input.name)).map(pageText)
+    }
+    case 'xlsx': {
+      const tables = await parseXlsx(input.bytes, input.name)
+      return tables.map((t) =>
+        [`Sheet: ${t.name}`, t.header.join('\t'), ...t.rows.map((r) => r.cells.join('\t'))].join(
+          '\n',
+        ),
+      )
+    }
+    case 'csv':
+    case 'txt':
+    case 'json': {
+      const lines = decode(input.bytes).split(/\r?\n/)
+      const pages: string[] = []
+      for (let i = 0; i < lines.length; i += LINES_PER_TEXT_PAGE) {
+        pages.push(lines.slice(i, i + LINES_PER_TEXT_PAGE).join('\n'))
+      }
+      return pages
+    }
+    case null:
+      throw new ParseError('Use a CSV, JSON, text, Excel or PDF file.')
+  }
 }
 
 const QUOTE = '"'
@@ -197,6 +234,7 @@ export function parseSource(input: ParseInput): Promise<ParseResult> {
   return Promise.resolve().then(async (): Promise<ParseResult> => {
     if (input.kind === 'paste')
       return { tables: [parseDelimited(input.text, '\t', 'Pasted table')] }
+    if (input.textOnly) return { tables: [], pageTexts: await extractText(input) }
     switch (fileTypeFromName(input.name)) {
       case 'csv':
         return { tables: [parseDelimited(decode(input.bytes), ',', input.name)] }

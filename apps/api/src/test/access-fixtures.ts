@@ -8,6 +8,7 @@ import {
   SignJWT,
 } from 'jose'
 
+import type { AiCompletion } from '../ai/claude'
 import { createApp } from '../app'
 
 export const TEAM_DOMAIN = 'test-team.cloudflareaccess.com'
@@ -49,7 +50,25 @@ export async function accessToken(options: TokenOptions = {}): Promise<string> {
     .sign(options.wrongKey ? otherKeys.privateKey : signingKeys.privateKey)
 }
 
-export const app = createApp({ getJwks: () => jwks })
+/** Stand-in for the Claude API: records each call and answers with `fakeAi.answer`. */
+export const fakeAi = {
+  calls: [] as { apiKey: string; model: string; prompt: string }[],
+  answer: (): AiCompletion => ({
+    text: '{"rows":[]}',
+    model: 'claude-opus-5-5',
+    stopReason: 'end_turn',
+    inputTokens: 1,
+    outputTokens: 1,
+  }),
+}
+
+export const app = createApp({
+  getJwks: () => jwks,
+  aiComplete: (apiKey, model, prompt) => {
+    fakeAi.calls.push({ apiKey, model, prompt })
+    return Promise.resolve(fakeAi.answer())
+  },
+})
 
 /** Stand-in for the static assets binding, so tests do not depend on a web build. */
 export const fakeAssets: Fetcher = {

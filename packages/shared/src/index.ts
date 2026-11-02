@@ -1,5 +1,6 @@
 // Shared zod schemas, API types and (from M1) code normalization. Pure functions, no I/O.
 export * from './admin'
+export * from './ai-cleanup'
 export * from './categories'
 export * from './category-mapping'
 export * from './checks'

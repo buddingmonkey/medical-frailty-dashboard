@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 
+import { type AiComplete, claudeComplete } from './ai/claude'
 import type { GetJwks } from './auth/access'
 import { adminWriteGuard } from './middleware/admin-write-guard'
 import { publicGetOnly } from './middleware/public-get-only'
 import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
+import { aiCleanupRoute } from './routes/admin/ai-cleanup'
 import { audit } from './routes/admin/audit'
 import { categoriesRoute } from './routes/admin/categories'
 import { columnProfilesRoute } from './routes/admin/column-profiles'
@@ -22,9 +24,11 @@ import type { AppEnv } from './types'
 export interface AppDeps {
   /** Access key set lookup. Production: the team's remote certs. Tests: a local key set. */
   getJwks: GetJwks
+  /** The Claude call for AI cleanup. Production: the Anthropic SDK. Tests: a fake. */
+  aiComplete?: AiComplete
 }
 
-export function createApp({ getJwks }: AppDeps) {
+export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   const app = new Hono<AppEnv>()
 
   app.use(securityHeaders)
@@ -50,6 +54,7 @@ export function createApp({ getJwks }: AppDeps) {
   app.route('/api/admin/column-profiles', columnProfilesRoute)
   app.route('/api/admin/ref-codes', refCodesRoute)
   app.route('/api/admin/drafts', draftsRoute)
+  app.route('/api/admin/ai-cleanup', aiCleanupRoute(aiComplete))
 
   // Unknown API paths get a JSON 404, never the SPA's index.html.
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))
