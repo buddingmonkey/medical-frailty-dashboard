@@ -99,5 +99,7 @@ are covered by behavior tests (no number target).
 | `gitleaks` | Secret scan over the full git history |
 | CodeQL | GitHub's default setup (no workflow file), JavaScript/TypeScript and Actions |
 
-All four must pass before a PR can merge (`docs/security.md`, ruleset). From step 7, a push to
-`main` also deploys the preview Worker and runs the deployed smoke spec (`docs/deployment.md`).
+All four must pass before a PR can merge (`docs/security.md`, ruleset). A push to `main`
+also deploys the preview Worker and smoke-tests it; a `v*` tag does the same for production
+after approval (`deploy-preview`, `deploy-production`; `docs/deployment.md`). The deployed
+Playwright smoke spec arrives with real pages (M3).

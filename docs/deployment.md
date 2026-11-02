@@ -14,7 +14,8 @@ tier. The limits below were correct when planned (2026-11). Check the
 | D1 database | `frailty-prod` | `frailty-preview` |
 | R2 bucket | `frailty-prod-files` | `frailty-preview-files` |
 | Access application | whole host until launch, then `/admin*` + `/api/admin*` | whole host, always |
-| URL | `frailty-dashboard.<account>.workers.dev` (custom domain later) | `frailty-dashboard-preview.<account>.workers.dev` |
+| URL | `frailty-dashboard.<subdomain>.workers.dev` (custom domain later) | `frailty-dashboard-preview.<subdomain>.workers.dev` |
+| Bindings | `DB` (D1), `FILES` (R2) | same |
 
 Workers preview URLs (per-version URLs) stay **off**, or behind Access, so no unprotected copy of
 the site exists.
@@ -22,14 +23,54 @@ the site exists.
 Workers Logs and Traces are on (`observability` in `wrangler.jsonc`; free plan: 200,000 log
 events a day, kept 3 days). Query strings are redacted. Errors are logged as one JSON line.
 
-Worker variables: `ENVIRONMENT`, `SITE_MODE` (`private` on both Workers until launch),
-`ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` (empty in `wrangler.jsonc` until step 7 creates the Access
-application; while empty, every gated request is a 401), `AI_MODEL`. `DEV_ADMIN_EMAIL` exists
-only locally (`pnpm dev` sets it to `dev@localhost`). The deployed smoke test (step 7) needs an
-**Access service token**; it passes the site gate but, having no email, never the admin check.
-Secrets: `ADMIN_EMAILS` (comma-separated; a secret so the emails stay out of the public repo),
-`ANTHROPIC_API_KEY` (optional). Local values go in `apps/api/.dev.vars`
-(gitignored; `.dev.vars.example` is committed).
+Worker variables (`wrangler.jsonc`): `ENVIRONMENT`, `SITE_MODE` (`private` on both Workers
+until launch), `AI_MODEL` (later). `DEV_ADMIN_EMAIL` exists only locally (`pnpm dev` sets it to
+`dev@localhost`).
+
+Worker secrets:
+
+| Secret | Set by | Notes |
+| --- | --- | --- |
+| `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | CI, on every deploy (`--secrets-file`), from the GitHub environment's **variables** | Not sensitive, but kept out of the repo so a new host changes them without a code change. While unset, every gated request is a 401 |
+| `ADMIN_EMAILS` | The project lead, once per Worker: `pnpm cf secret put ADMIN_EMAILS --env preview`, and without `--env` for production | Comma-separated. Prompts for the value, so it never lands in the repo or a chat |
+| `ANTHROPIC_API_KEY` | Optional, later | |
+
+Local values go in `apps/api/.dev.vars` (gitignored; `.dev.vars.example` is committed).
+
+### Cloudflare account and Access (set up in M0 step 7)
+
+- A **dedicated Cloudflare account** for this project (not shared with other projects), so the
+  site can be handed to an organization later and API tokens only reach this project.
+- A Zero Trust team (Free plan; its name is the `ACCESS_TEAM_DOMAIN` variable), Google as the only identity provider.
+- Reusable Access policy **"Frailty Dashboard Access"**: Allow, the admins' emails. Guest
+  testers (M7) are added here.
+- Access applications (self-hosted, whole host, 24 h session, Google auto-redirect):
+  "Frailty Dashboard (preview)" and "Frailty Dashboard (production)". Each also has a Service
+  Auth policy for its CI service token (`ci-smoke-preview`, `ci-smoke-prod`, 1-year expiry:
+  renew by November 2027).
+- workers.dev hosts have no zone, so there are no bot settings to change until a domain is
+  added ("Going live", step 6).
+
+### GitHub environments
+
+| | `preview` | `production` |
+| --- | --- | --- |
+| Who can deploy | `main` only | `main` and `v*` tags, after the required reviewer (project lead) approves |
+| Secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | same names, own values |
+| Variables | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL` | same names, own values |
+
+Each environment has its own CI API token ("Edit Cloudflare Workers" template plus D1 Edit and
+R2 Edit, this account only), so either can be revoked alone. Cloudflare API tokens can be
+limited to an account, not to single Workers, databases or buckets.
+
+### Local Cloudflare access
+
+`wrangler login` is global to the computer, so this repo uses its own token instead:
+`apps/api/.env.cloudflare` (gitignored) with `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` (a token named `mfcd-local`, same permissions as CI's). Run wrangler
+through `pnpm cf <args>` (`scripts/cf.ts`), which loads that file. It **refuses any `deploy` or
+`rollback` without `--env preview`**: production changes code only from CI.
+`pnpm deploy:preview` builds the site and deploys the preview Worker.
 
 ## Cost
 
@@ -57,12 +98,16 @@ to Workers Paid ($5/month) rather than re-architecting.
 | Trigger | What happens |
 | --- | --- |
 | PR | `pnpm check:full`, CodeQL, gitleaks, audit. No deploy |
-| Merge to `main` | Checks, `wrangler d1 migrations apply frailty-preview --remote`, deploy preview, smoke test |
-| Release tag `v*` (manual) | Checks, backup prod D1 to R2, `wrangler d1 migrations apply frailty-prod --remote`, deploy production, smoke test |
+| Merge to `main` | Checks, then `deploy preview` (`.github/workflows/deploy.yml`): build, deploy with the Access secrets, smoke test |
+| Release tag `v*` (manual, on a commit in `main`) | Checks, then `deploy production` waits for the project lead's approval, then the same steps |
 
-- The deploy job uses a Cloudflare API token limited to these Workers, D1 databases and R2
-  buckets, stored as a GitHub environment secret with required reviewers (you) on the
-  `production` environment.
+The smoke test calls `/api/public/health` with the environment's service token (expects
+`ok: true`, the right `environment` and `X-Robots-Tag: noindex`), then checks that a request
+without a token is redirected to the Access login. **From M1** the deploy also runs
+`wrangler d1 migrations apply` (and, for production, backs up D1 to R2 first); M0 has no
+migrations and no data.
+
+- The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
 - Migrations must be backward-compatible with the previous Worker version (add columns and
   tables first, drop them in a later release), because migrations run before the new code is live.
 - Rollback a bad deploy: `wrangler rollback` to the previous Worker version (data is not
@@ -102,7 +147,7 @@ Before launch (M7), with everything below checked off in `docs/status.md`:
    `robots.txt`).
 5. Run the production smoke spec: public pages return 200; `/admin` and `/api/admin/*` return
    401/redirect without login.
-6. Check Cloudflare's bot settings for the final host: "Block AI bots" / managed robots.txt
+6. Check Cloudflare's bot settings for the final host (they exist only once there is a domain): "Block AI bots" / managed robots.txt
    off, AI Crawl Control set to allow, verified crawlers not challenged (`docs/seo.md`).
 7. Serve hashed static files without the Worker: in `apps/api/wrangler.jsonc` change
    `run_worker_first` from `true` to `["/*", "!/assets/*"]`, and add `apps/web/public/_headers`

@@ -20,6 +20,7 @@ pnpm db:migrate:local # apply D1 migrations to the local database
 pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
 pnpm format           # prettier --write
 pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare Access)
+pnpm cf <args>        # wrangler with this repo's own token (apps/api/.env.cloudflare); refuses prod deploys
 ```
 
 Production deploys happen only from CI on `main`. Never run `wrangler deploy` against production by hand.

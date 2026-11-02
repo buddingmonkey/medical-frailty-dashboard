@@ -35,10 +35,11 @@ export async function verifyAccess(
       return { email: env.DEV_ADMIN_EMAIL, devAdmin: true }
   }
 
-  const team = env.ACCESS_TEAM_DOMAIN.trim()
+  const team = (env.ACCESS_TEAM_DOMAIN ?? '')
+    .trim()
     .replace(/^https?:\/\//, '')
     .replace(/\/+$/, '')
-  const audience = env.ACCESS_AUD.trim()
+  const audience = (env.ACCESS_AUD ?? '').trim()
   if (!team || !audience) {
     log('error', 'Access is not configured (ACCESS_TEAM_DOMAIN or ACCESS_AUD is empty)')
     return null

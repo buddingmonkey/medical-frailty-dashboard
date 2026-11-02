@@ -45,6 +45,8 @@ literacy, little or no coding.
 | 2026-11-01 | The AI recommended lowering the runtime date to match a test tool, and the project lead agreed. During install the tool turned out to be deprecated; its renamed successor matched production exactly, so the approved change was undone | Approvals rest on facts; when a fact changes, say so and revisit, even after a yes | `devlog/2026-11-01-m0-step4-tests.md` |
 | 2026-11-01 | All 37 auth tests passed, but a manual check of the running site showed static pages were missing their `noindex` header. Two new tests reproduced it before the fix | Green tests cover only what they test; poke the real thing too | `devlog/2026-11-01-m0-step5-auth.md` |
 | 2026-11-01 | "We want AI to crawl the site to get the right info" became an architecture requirement: most AI crawlers do not run JavaScript, so the single-page app must also send real HTML. Caught before any public page was built | Say what you want the site to achieve, not just what it should show; goals can change how it is built | `devlog/2026-11-01-m0-step5-auth.md` |
+| 2026-11-01 | The project lead offered an existing Cloudflare account. The AI looked first: it served another project, and the site may be given away later. A new account, plus a per-repo token so the other project's login stayed untouched | Check what an "already set up" account is tied to before reusing it | `devlog/2026-11-01-m0-step7-cloudflare.md` |
+| 2026-11-01 | "Never deploy production by hand" moved from a rule in a doc into a script that refuses to do it | Turn important rules into code where it is cheap | same |
 | 2026-11-01 | After the ruleset went on, the AI tried to push straight to `main` on purpose. GitHub refused it. The devlog for that step had to go through a pull request like everything else | A rule you have not tried to break is a rule you only hope works | `devlog/2026-11-01-m0-step6-github.md` |
 
 ## Numbers to collect
@@ -73,6 +75,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 4 (2026-11-01) | 0.2 (14 min) | not measured | $0 | Test harness, `pnpm check`, theme menu; 21 tests |
 | M0 step 5 (2026-11-01) | 0.2 (9 min) | not measured | $0 | Access JWT, site gate, robots.txt; 39 API tests |
 | M0 step 6 (2026-11-01) | 0.3 (15 min) | not measured | $0 (public repo: free Actions) | CI, Dependabot, CodeQL, ruleset with no bypass |
+| M0 step 7 (2026-11-01) | 0.2 (11 min build, plus account setup) | not measured | $0 | Cloudflare account, D1, R2, Access, CI deploys |
 
 ## Assets to capture for slides
 
