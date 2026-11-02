@@ -30,7 +30,13 @@ function base(overrides: Partial<CheckInput> = {}): CheckInput {
   const entries = codes(100)
   return {
     stateId: 'NE',
-    draft: { entries, invalidRowCount: 0, sourceSha256s: ['new'], namedStateIds: [] },
+    draft: {
+      entries,
+      invalidRowCount: 0,
+      incompleteSources: [],
+      sourceSha256s: ['new'],
+      namedStateIds: [],
+    },
     published: { entries, sourceSha256s: ['old'] },
     knownIcd10cm: new Set(entries.map((e) => e.codeNorm)),
     ...overrides,
@@ -73,6 +79,16 @@ describe('runChecks', () => {
     input.draft.invalidRowCount = 3 // 3 of 103 ≈ 2.9%
     expect(runChecks(input).canPublish).toBe(false)
     expect(triggered(input)).toContain('invalid_rows')
+  })
+
+  it('blocks when a source has fewer entries stored than were sent', () => {
+    const input = base()
+    input.draft.incompleteSources = ['Attachment B']
+    expect(triggered(input)).toContain('incomplete_upload')
+    expect(runChecks(input).canPublish).toBe(false)
+    expect(runChecks(input).checks.find((c) => c.id === 'incomplete_upload')?.message).toContain(
+      'Attachment B',
+    )
   })
 
   it('asks for a typed confirmation when the file names another state', () => {
@@ -195,7 +211,13 @@ describe('diff', () => {
     ]
     const { diff } = runChecks(
       base({
-        draft: { entries: draft, invalidRowCount: 0, sourceSha256s: [], namedStateIds: [] },
+        draft: {
+          entries: draft,
+          invalidRowCount: 0,
+          incompleteSources: [],
+          sourceSha256s: [],
+          namedStateIds: [],
+        },
         published: { entries: published, sourceSha256s: [] },
       }),
     )
@@ -224,7 +246,13 @@ describe('diff', () => {
     const draft = [entry('32851', { codeSystem: 'cpt', matchKind: 'range', rangeEndNorm: '32854' })]
     const { diff } = runChecks(
       base({
-        draft: { entries: draft, invalidRowCount: 0, sourceSha256s: [], namedStateIds: [] },
+        draft: {
+          entries: draft,
+          invalidRowCount: 0,
+          incompleteSources: [],
+          sourceSha256s: [],
+          namedStateIds: [],
+        },
         published: { entries: published, sourceSha256s: [] },
       }),
     )

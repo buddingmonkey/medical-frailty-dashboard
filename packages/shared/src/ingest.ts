@@ -36,6 +36,8 @@ export const columnRoles = [
   'subcategory',
   'tier',
   'qualification',
+  'included',
+  'notes',
   'ignore',
 ] as const
 export const columnRoleSchema = z.enum(columnRoles)
@@ -49,6 +51,8 @@ export const columnRoleLabels: Record<ColumnRole, string> = {
   subcategory: 'Subcategory',
   tier: 'Tier',
   qualification: 'Qualification',
+  included: 'Included (Yes/No)',
+  notes: 'Notes / rationale',
   ignore: 'Ignore',
 }
 
@@ -56,6 +60,8 @@ export const columnRoleLabels: Record<ColumnRole, string> = {
 const ROLE_PATTERNS: [RegExp, ColumnRole][] = [
   [/designation|qualif/, 'qualification'],
   [/tier/, 'tier'],
+  [/^(yes ?\/ ?no|included?|frail)$/, 'included'],
+  [/rationale|notes?\b|comment/, 'notes'],
   [/sub-?\s?categ/, 'subcategory'],
   [/categ/, 'category'],
   [/condition name/, 'subcategory'],
@@ -149,6 +155,12 @@ export interface MappedRow {
   tier: string
   qualification: Qualification
   qualificationBasis: QualificationBasis
+  /** The cell the qualification rule read (LA designation `0`), or '' for a fixed rule. */
+  qualificationValue: string
+  /** False when the source marks the row as not qualifying (GA "Yes/No" = No). */
+  included: boolean
+  /** The state's notes or rationale (GA). */
+  notes: string
 }
 
 export interface MappingResult {
@@ -160,6 +172,9 @@ export interface MappingResult {
   /** Values in the qualification source column that the rule does not map. */
   unmappedQualificationValues: string[]
 }
+
+/** Values of an "Included" column that mean the row does not qualify. Blank means included. */
+const NOT_INCLUDED = new Set(['no', 'n', 'false', '0', 'excluded'])
 
 const cell = (row: RawRow, index: number) =>
   index < 0 ? '' : (row.cells[index] ?? '').trim().slice(0, MAX_CELL_LENGTH)
@@ -183,10 +198,12 @@ export function applyMapping(table: RawTable, profile: ColumnProfile): MappingRe
       continue
     }
     let qualification: Qualification
+    let qualificationValue = ''
     if (rule.mode === 'fixed') {
       qualification = rule.value
     } else {
       const value = cell(row, at(rule.from))
+      qualificationValue = value
       const mapped = rule.values[value]
       if (mapped === undefined) unmapped.add(value)
       qualification = mapped ?? 'unknown'
@@ -201,6 +218,9 @@ export function applyMapping(table: RawTable, profile: ColumnProfile): MappingRe
       tier: cell(row, at('tier')),
       qualification,
       qualificationBasis: rule.basis,
+      qualificationValue,
+      included: !NOT_INCLUDED.has(cell(row, at('included')).toLowerCase()),
+      notes: cell(row, at('notes')),
     })
   }
   return {

@@ -162,6 +162,13 @@ export const versionSources = sqliteTable(
     sourceDocumentId: integer('source_document_id')
       .notNull()
       .references(() => sourceDocuments.id),
+    /** Entries the browser said it would send for this source (an upload that stopped half
+     * way leaves fewer; the checks block). */
+    expectedEntries: integer('expected_entries').notNull().default(0),
+    /** Rows of this source that could not be read and were not dropped in review. */
+    invalidRowCount: integer('invalid_row_count').notNull().default(0),
+    /** States the file names (title, headers), as a JSON array of 2-letter codes. */
+    namedStateIdsJson: text('named_state_ids_json').notNull().default('[]'),
   },
   (t) => [primaryKey({ columns: [t.versionId, t.sourceDocumentId] })],
 )
