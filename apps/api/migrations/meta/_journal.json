@@ -50,6 +50,13 @@
       "when": 1793634003162,
       "tag": "0006_chapter_mappings",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793659338279,
+      "tag": "0007_unified_categories",
+      "breakpoints": true
     }
   ]
 }
