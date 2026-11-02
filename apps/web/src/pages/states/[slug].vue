@@ -2,6 +2,7 @@
 import {
   type CodeSystem,
   codeSystemLabels,
+  compareSearchParams,
   type FederalCategory,
   federalCategoryInfo,
   formatCount,
@@ -59,6 +60,20 @@ const countTables = computed(() => {
     },
   ]
 })
+
+/** The compare page on one of this state's categories. */
+function compareLink(category: string, subcategory: string) {
+  const id = state.value?.id ?? ''
+  const params = compareSearchParams({
+    states: [id],
+    ownState: id,
+    ownCategory: category,
+    ownSubcategory: subcategory,
+    alone: false,
+    page: 1,
+  })
+  return `/compare?${params.toString()}`
+}
 
 function categoryName(category: string, subcategory: string) {
   if (category === '' && subcategory === '') return '(no category)'
@@ -176,7 +191,8 @@ function categoryName(category: string, subcategory: string) {
                 <th scope="col" class="py-2 pr-4">State category</th>
                 <th scope="col" class="py-2 pr-4">Federal category</th>
                 <th scope="col" class="py-2 pr-4 text-right">Entries</th>
-                <th scope="col" class="py-2">Mapping</th>
+                <th scope="col" class="py-2 pr-4">Mapping</th>
+                <th scope="col" class="py-2"><span class="sr-only">Compare</span></th>
               </tr>
             </thead>
             <tbody>
@@ -190,7 +206,15 @@ function categoryName(category: string, subcategory: string) {
                 </th>
                 <td class="py-2 pr-4">{{ federalCategoryInfo[c.federalCategory].label }}</td>
                 <td class="py-2 pr-4 text-right tabular-nums">{{ formatCount(c.entries) }}</td>
-                <td class="py-2">{{ c.confirmed ? 'Confirmed' : 'Not yet confirmed' }}</td>
+                <td class="py-2 pr-4">{{ c.confirmed ? 'Confirmed' : 'Not yet confirmed' }}</td>
+                <td class="py-2">
+                  <RouterLink
+                    :to="compareLink(c.stateCategory, c.stateSubcategory)"
+                    class="text-link"
+                    :aria-label="`Compare ${categoryName(c.stateCategory, c.stateSubcategory)} with other states`"
+                    >Compare</RouterLink
+                  >
+                </td>
               </tr>
             </tbody>
           </table>

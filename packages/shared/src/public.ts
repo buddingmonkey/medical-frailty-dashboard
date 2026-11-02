@@ -144,4 +144,11 @@ export const pageTitles = {
   home: `${SITE_NAME}: compare state Medicaid frailty code lists`,
   state: (name: string) => `${name} medical frailty codes | ${SITE_NAME}`,
   notFound: `State not found | ${SITE_NAME}`,
+  compare: `Compare states by category | ${SITE_NAME}`,
+}
+
+/** A state's own category for people: `Cancer › Solid`, or "(no category)". */
+export function stateCategoryName(category: string, subcategory: string): string {
+  if (category === '' && subcategory === '') return '(no category)'
+  return subcategory === '' ? category : `${category} › ${subcategory}`
 }

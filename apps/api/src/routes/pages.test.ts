@@ -260,3 +260,61 @@ describe('GET /sitemap.xml', () => {
     expect(xml).toContain('<loc>http://frailty.example.org/states/mt</loc>')
   })
 })
+
+describe('GET /compare (server-rendered, noindex)', () => {
+  it('renders the table for the selection in the URL, never indexed', async () => {
+    const res = await get('/compare?states=ga,ne&category=sud')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+
+    expect(html).toContain(`<title>${pageTitles.compare}</title>`)
+    expect(html).toContain('<meta name="robots" content="noindex" />')
+    expect(html).toMatch(/<link rel="canonical" href="https?:\/\/[^"]+\/compare" \/>/)
+    expect(html).toContain('<h1>Compare states by category</h1>')
+    expect(html).toContain('<th scope="col"><a href="/states/ga">Georgia</a></th>')
+    expect(html).toContain('<th scope="col"><a href="/states/ne">Nebraska</a></th>')
+    // GA's F codes count as SUD by the chapter override; Nebraska has no list.
+    expect(html).toMatch(/<th scope="row">F10\.\*<\/th>\s*<td>[^<]*<\/td>\s*<td>Listed/)
+    expect(html).toContain('No list on this site')
+    expect(html).toContain('2 codes, page 1 of 1')
+    expect(html).toContain('href="/compare.csv?states=GA%2CNE&amp;category=sud"')
+  })
+
+  it('without a selection, explains the page and still says noindex', async () => {
+    const html = await (await get('/compare')).text()
+    expect(html).toContain('<meta name="robots" content="noindex" />')
+    expect(html).toContain('Pick a category and at least one state')
+    expect(html).not.toContain('<table')
+  })
+
+  it('says what was wrong with a bad selection', async () => {
+    const html = await (await get('/compare?states=ZZ&category=sud')).text()
+    expect(html).toContain('Unknown state: ZZ')
+  })
+})
+
+describe('GET /compare.csv', () => {
+  it('every row, a column group per state', async () => {
+    const res = await get('/compare.csv?states=GA,NE&category=sud&page=2')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('text/csv; charset=utf-8')
+    expect(res.headers.get('content-disposition')).toBe(
+      'attachment; filename="compare-sud-ga-ne.csv"',
+    )
+    const lines = (await res.text()).trimEnd().split('\r\n')
+    expect(lines[0]).toBe(
+      'code_system,code,description,description_source,' +
+        'GA_status,GA_entry,GA_tier,GA_qualification,GA_qualification_basis,GA_state_category,GA_federal_category,' +
+        'NE_status,NE_entry,NE_tier,NE_qualification,NE_qualification_basis,NE_state_category,NE_federal_category',
+    )
+    expect(lines).toHaveLength(3)
+    expect(lines[1]).toBe(
+      'ICD-10-CM,F10.*,,,Listed,F10.*,,Needs another code,The state says so,Mental health,Substance use disorder,No list on this site,,,,,,',
+    )
+  })
+
+  it('answers 400 for a bad selection', async () => {
+    const res = await get('/compare.csv?states=GA')
+    expect(res.status).toBe(400)
+  })
+})
