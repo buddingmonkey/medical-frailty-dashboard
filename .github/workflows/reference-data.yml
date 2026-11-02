@@ -1,7 +1,7 @@
-# Loads the CMS reference codes (ref_codes) into one environment's D1, in resumable chunks
-# under a daily row budget (packages/reference-data/README.md). Run by hand from the Actions
-# tab; run it again the next day until it reports nothing left. Production waits for the
-# `production` environment's required reviewer, like a production deploy.
+# Loads the reference data (CMS ref_codes, AHRQ CCSR ref_ccsr) into one environment's D1, in
+# resumable chunks under a daily row budget (packages/reference-data/README.md). Run by hand from
+# the Actions tab; run it again the next day until it reports nothing left. Production waits for
+# the `production` environment's required reviewer, like a production deploy.
 name: Reference data
 
 on:
@@ -46,7 +46,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Downloads the pinned CMS files and checks their SHA-256.
+      # Downloads the pinned CMS and AHRQ CCSR files and checks their SHA-256.
       - run: pnpm --filter @mfcd/reference-data build
 
       - name: Load

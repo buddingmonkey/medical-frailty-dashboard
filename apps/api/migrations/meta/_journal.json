@@ -57,6 +57,13 @@
       "when": 1793659338279,
       "tag": "0007_unified_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793660163454,
+      "tag": "0008_ref_ccsr",
+      "breakpoints": true
     }
   ]
 }
