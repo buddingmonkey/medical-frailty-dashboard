@@ -53,6 +53,7 @@ literacy, little or no coding.
 | 2026-11-01 | The AI's first test of its own safety check "passed", but the edit meant to break things had matched nothing. It noticed and redid the test | Before trusting a passing safety check, confirm you actually broke something | same |
 | 2026-11-01 | Counting every code in the real files by shape found six patterns the docs had missed. One, Louisiana's drug class codes, looks exactly like an ICD-10 diagnosis category and would have been filed under the wrong code system | Have the AI measure the real data before it writes rules | `devlog/2026-11-01-m1-step2-codes.md` |
 | 2026-11-01 | Ten steps in, the project lead switched from approving every step to "stop only at the end of a milestone" | Trust grows with a track record; move the checkpoint, keep a hard stop | same |
+| 2026-11-01 | All 124 unit tests passed, then GitHub's code scanner failed the PR: three text patterns could freeze the server on a crafted upload or URL. Tests reproduced the slowdown before the fix | Automated security checks find what your own tests never thought to try | `devlog/2026-11-01-m1-step2-codes.md` |
 
 ## Numbers to collect
 

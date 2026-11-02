@@ -26,6 +26,7 @@ export type CodeFlag =
 /** Not usable: the row needs manual entry. */
 export type CodeProblemKind =
   | 'empty'
+  | 'too_long'
   | 'unrecognized'
   | 'system_mismatch'
   | 'truncated_range'
@@ -99,9 +100,26 @@ export function normalizeCode(raw: string): string {
  */
 export function splitCodeList(raw: string): string[] {
   return raw
-    .split(/[\n\r,;]|\s+and\s+/i)
+    .split(/[\n\r,;]/)
+    .flatMap(splitOnAnd)
     .map((part) => part.trim())
     .filter((part) => part.length > 0)
+}
+
+/** `33230 and 33240` → two parts. Token-based, so no regex can backtrack on long whitespace. */
+function splitOnAnd(text: string): string[] {
+  const parts: string[] = []
+  let current: string[] = []
+  for (const token of text.split(/\s/)) {
+    if (token.toLowerCase() === 'and') {
+      parts.push(current.join(' '))
+      current = []
+    } else if (token !== '') {
+      current.push(token)
+    }
+  }
+  parts.push(current.join(' '))
+  return parts
 }
 
 /**
@@ -138,8 +156,17 @@ interface Single {
   ambiguous: boolean
 }
 
-/** `C34.x`, `Z89.*`, `S06.2*`, `D57.0X` → the prefix before the wildcard. */
-const WILDCARD = /^([A-Z]\d[0-9A-Z](?:\.?[0-9A-Z]*?)?)\.?(?:X+|\*+)$/
+/**
+ * `C34.x`, `Z89.*`, `S06.2*`, `D57.0X` → the prefix before the wildcard, or null. A linear scan
+ * rather than a regex: a pattern like `(…*?)(X+)$` backtracks badly on long runs of X.
+ */
+function wildcardBase(text: string): string | null {
+  let end = text.length
+  while (end > 0 && (text[end - 1] === 'X' || text[end - 1] === '*')) end--
+  if (end === text.length) return null
+  const base = text.endsWith('.', end) ? text.slice(0, end - 1) : text.slice(0, end)
+  return base.length >= 3 ? base : null
+}
 
 function parseSingle(raw: string, options: ParseOptions): Single | CodeProblemKind {
   const text = raw.trim().toUpperCase()
@@ -147,9 +174,9 @@ function parseSingle(raw: string, options: ParseOptions): Single | CodeProblemKi
 
   // Wildcards exist only for ICD-10-CM. A trailing X is a wildcard; an X followed by more
   // characters is a 7th-character placeholder (`W01.0XXA`) and part of an exact code.
-  const wild = WILDCARD.exec(text)
-  if (wild?.[1] && (!options.system || options.system === 'icd10cm')) {
-    const norm = normalizeCode(wild[1])
+  const wild = wildcardBase(text)
+  if (wild && (!options.system || options.system === 'icd10cm')) {
+    const norm = normalizeCode(wild)
     if (ICD_CM.test(norm)) return { system: 'icd10cm', norm, wildcard: true, ambiguous: false }
   }
 
@@ -204,8 +231,8 @@ function fromSingle(raw: string, s: Single): ParsedCode {
 // ---------------------------------------------------------------------------------------------
 // Ranges
 
-/** Hyphen, en dash or em dash, with optional spaces. Codes themselves never contain one. */
-const RANGE_MARK = /\s*[-–—]\s*/
+/** Hyphen, en dash or em dash (ends are trimmed after the split). Codes never contain one. */
+const RANGE_MARK = /[-\u2013\u2014]/
 
 function parseRange(
   raw: string,
@@ -251,8 +278,12 @@ function parseRange(
   return { ...base, includesChildren: category ? null : 0, flags }
 }
 
+/** The longest real cell seen is a few hundred characters (NE comma lists). */
+export const MAX_CELL_LENGTH = 2_000
+
 const MESSAGES: Record<CodeProblemKind, string> = {
   empty: 'No code in this cell.',
+  too_long: `The cell is longer than ${String(MAX_CELL_LENGTH)} characters. Split it or enter it by hand.`,
   unrecognized:
     'Not a code in any known code system. Set the code system for this column or enter it by hand.',
   system_mismatch: 'The code does not fit the code system set for this column.',
@@ -265,13 +296,17 @@ const MESSAGES: Record<CodeProblemKind, string> = {
 /** Parses one source cell into codes and ranges, and reports what it could not read. */
 export function parseCodeCell(raw: string, options: ParseOptions = {}): ParsedCell {
   const result: ParsedCell = { codes: [], problems: [] }
+  if (raw.length > MAX_CELL_LENGTH) {
+    result.problems.push({ raw: raw.slice(0, 40), problem: 'too_long', message: MESSAGES.too_long })
+    return result
+  }
   const parts = splitCodeList(raw)
   if (parts.length === 0) {
     result.problems.push({ raw, problem: 'empty', message: MESSAGES.empty })
     return result
   }
   for (const part of parts) {
-    const ends = part.split(RANGE_MARK)
+    const ends = part.split(RANGE_MARK).map((end) => end.trim())
     const parsed =
       ends.length === 2
         ? parseRange(part, ends[0] ?? '', ends[1] ?? '', options)

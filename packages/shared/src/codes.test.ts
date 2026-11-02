@@ -313,3 +313,33 @@ describe('entryCovers', () => {
     ).toBe(false)
   })
 })
+
+describe('hostile input (CodeQL js/polynomial-redos, PR #13)', () => {
+  // The API runs parseCodeCell on uploaded rows, so a crafted cell must not stall the Worker.
+  const fast = (fn: () => unknown) => {
+    const started = performance.now()
+    fn()
+    return performance.now() - started
+  }
+
+  // Called directly, past the cell length limit, so the functions themselves must be linear.
+  const spaces = ' '.repeat(20_000)
+  it.each([
+    ['split: many spaces', () => splitCodeList(`F20${spaces}x`)],
+    ['split: many spaces around "and"', () => splitCodeList(`F20 ${spaces}and${spaces}`)],
+    [
+      'cell: many spaces around a dash',
+      () => parseCodeCell(`F20${' '.repeat(900)}-${' '.repeat(900)}x`),
+    ],
+    ['URL: many X after a code', () => parseCodeUrl('icd-10-cm', `A90${'X'.repeat(20_000)}1`)],
+    ['URL: many X at the end', () => parseCodeUrl('icd-10-cm', `A90${'X'.repeat(20_000)}`)],
+  ])('%s', (_name, fn) => {
+    expect(fast(fn)).toBeLessThan(50)
+  })
+
+  it('refuses cells longer than any real code list cell', () => {
+    expect(parseCodeCell('F20.0, '.repeat(1_000)).problems).toEqual([
+      expect.objectContaining({ problem: 'too_long' }),
+    ])
+  })
+})
