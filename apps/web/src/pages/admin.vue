@@ -32,6 +32,8 @@ const sections = [
   { to: '/admin/drafts', label: 'Drafts' },
   { to: '/admin/versions', label: 'Versions' },
   { to: '/admin/categories', label: 'Categories' },
+  { to: '/admin/unified', label: 'Unified categories' },
+  { to: '/admin/mappings', label: 'Mappings' },
   { to: '/admin/guide', label: 'Guide' },
   { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },

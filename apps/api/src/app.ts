@@ -15,6 +15,8 @@ import { columnProfilesRoute } from './routes/admin/column-profiles'
 import { draftsRoute } from './routes/admin/drafts'
 import { refCodesRoute } from './routes/admin/ref-codes'
 import { sources } from './routes/admin/sources'
+import { ccsrCategoriesRoute, unifiedRoute } from './routes/admin/unified'
+import { unifiedMappingsRoute } from './routes/admin/unified-mappings'
 import { adminStates } from './routes/admin/states'
 import { watch } from './routes/admin/watch'
 import { whoami } from './routes/admin/whoami'
@@ -59,6 +61,9 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.route('/api/admin/watch', watch)
   app.route('/api/admin/states', adminStates)
   app.route('/api/admin/states', categoriesRoute)
+  app.route('/api/admin/states', unifiedMappingsRoute)
+  app.route('/api/admin/unified', unifiedRoute)
+  app.route('/api/admin/ccsr-categories', ccsrCategoriesRoute)
   app.route('/api/admin/sources', sources)
   app.route('/api/admin/column-profiles', columnProfilesRoute)
   app.route('/api/admin/ref-codes', refCodesRoute)

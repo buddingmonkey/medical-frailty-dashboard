@@ -1,7 +1,15 @@
 // Synthetic rows only: the category ids (TST…, ZZZ…) and groupings are invented, not AHRQ's.
 import { describe, expect, it } from 'vitest'
 
-import { ccsrGroupsOf, ccsrLookupPrefixes, type CcsrRow } from './ccsr'
+import {
+  ccsrGroupsCovered,
+  ccsrGroupsOf,
+  ccsrGroupsUnder,
+  ccsrIndex,
+  ccsrKeyRanges,
+  ccsrLookupPrefixes,
+  type CcsrRow,
+} from './ccsr'
 
 const row = (codeNorm: string, ccsrCategory: string, isDefault: 0 | 1 = 0): CcsrRow => ({
   codeNorm,
@@ -67,5 +75,73 @@ describe('ccsrGroupsOf', () => {
       ccsrGroupsOf('F20', [{ codeNorm: 'F20', ccsrCategory: 'TST001', isDefault: true }])
         ?.defaultCategory,
     ).toBe('TST001')
+  })
+})
+
+describe('ccsrGroupsCovered (the groups of the codes an entry covers)', () => {
+  // F31 is a header whose children differ, so it has no rows of its own.
+  const index = ccsrIndex([
+    row('F20', 'TST001', 1),
+    row('F310', 'TST002', 1),
+    row('F311', 'TST003', 1),
+    row('F3110', 'TST004', 1),
+    row('F32', 'TST005', 1),
+    row('F33', 'TST006', 1),
+    row('G10', 'TST007', 1),
+  ])
+  const exact = (codeNorm: string) => ({
+    codeNorm,
+    matchKind: 'exact' as const,
+    rangeEndNorm: null,
+    includesChildren: 0,
+  })
+
+  it('an exact code with rows (or a parent with rows) takes those groups', () => {
+    expect(ccsrGroupsCovered(exact('F200'), index)).toEqual(['TST001'])
+    expect(ccsrGroupsCovered(exact('F3111'), index)).toEqual(['TST003'])
+  })
+
+  it('a header with no rows of its own takes the groups of the codes under it', () => {
+    expect(ccsrGroupsCovered(exact('F31'), index)).toEqual(['TST002', 'TST003', 'TST004'])
+    expect(ccsrGroupsCovered(exact('F311'), index)).toEqual(['TST003'])
+  })
+
+  it('a wildcard adds the groups of every code under it', () => {
+    expect(
+      ccsrGroupsCovered({ ...exact('F311'), matchKind: 'prefix', includesChildren: 1 }, index),
+    ).toEqual(['TST003', 'TST004'])
+    expect(ccsrGroupsCovered({ ...exact('F311'), includesChildren: 1 }, index)).toEqual([
+      'TST003',
+      'TST004',
+    ])
+  })
+
+  it('a range takes every code from its start through its end and the codes under its end', () => {
+    expect(
+      ccsrGroupsCovered({ ...exact('F31'), matchKind: 'range', rangeEndNorm: 'F32' }, index),
+    ).toEqual(['TST002', 'TST003', 'TST004', 'TST005'])
+  })
+
+  it('finds nothing for a code CCSR does not know', () => {
+    expect(ccsrGroupsCovered(exact('Z999'), index)).toEqual([])
+    expect(ccsrGroupsUnder('Z9', index)).toEqual([])
+  })
+})
+
+describe('ccsrKeyRanges', () => {
+  it('reads each ICD-10-CM category an entry touches once, ranges merged', () => {
+    expect(
+      ccsrKeyRanges([
+        { codeNorm: 'F200', rangeEndNorm: null },
+        { codeNorm: 'F20', rangeEndNorm: null },
+        { codeNorm: 'F31', rangeEndNorm: 'F33' },
+        { codeNorm: 'F32', rangeEndNorm: null },
+        { codeNorm: 'G10', rangeEndNorm: null },
+      ]),
+    ).toEqual([
+      { from: 'F20', to: 'F20￿' },
+      { from: 'F31', to: 'F33￿' },
+      { from: 'G10', to: 'G10￿' },
+    ])
   })
 })

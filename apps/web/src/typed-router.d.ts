@@ -57,7 +57,9 @@ declare module 'vue-router/auto-routes' {
       | '/admin/drafts/[versionId]'
       | '/admin/guide'
       | '/admin/ingest'
+      | '/admin/mappings'
       | '/admin/sources'
+      | '/admin/unified'
       | '/admin/versions'
       | '/admin/watch'
     >,
@@ -110,9 +112,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/admin/mappings': RouteRecordInfo<
+      '/admin/mappings',
+      '/admin/mappings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/admin/sources': RouteRecordInfo<
       '/admin/sources',
       '/admin/sources',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/unified': RouteRecordInfo<
+      '/admin/unified',
+      '/admin/unified',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -191,7 +207,9 @@ declare module 'vue-router/auto-routes' {
         | '/admin/drafts/[versionId]'
         | '/admin/guide'
         | '/admin/ingest'
+        | '/admin/mappings'
         | '/admin/sources'
+        | '/admin/unified'
         | '/admin/versions'
         | '/admin/watch'
       views:
@@ -255,9 +273,25 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/admin/mappings.vue': {
+      routes:
+        | '/admin/mappings'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/admin/sources.vue': {
       routes:
         | '/admin/sources'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/unified.vue': {
+      routes:
+        | '/admin/unified'
       views:
         | never
       pathParamNames:
