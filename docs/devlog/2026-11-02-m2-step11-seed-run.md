@@ -33,6 +33,15 @@ as Montana) is stopped by the typed-confirm checks.
 5. LA's drug classes: the "Not in the CMS lists" filter plus each Pharmacy category, then "Set
    code system: Drug class", 85 rows in 8 groups.
 
+## Preview half (10:55–11:09 CST)
+The project lead signed in to preview in a Chrome window; the session drove it with the
+browser tool. Files from `~/Downloads` needed `/add-dir` first (the tool uploads only files the
+session may read). Same steps, same numbers: MT 309 codes, NE 8,182 (two parts), GA 6,046 (A +
+B), LA 2,423 (85 drug classes set by a short script using the page's own controls). Wrong file:
+both typed checks fired; publish disabled with "NE" typed; a direct API call with "NE" got 400
+(`missing: state_mismatch, large_change`). Discarded; MT stayed at v1.
+`wrangler d1 insights` on preview: 109,486 rows written by 25,338 entry inserts, 4.3 per entry.
+
 ## Decisions
 | Decision | Why | Who decided |
 | --- | --- | --- |
@@ -54,5 +63,4 @@ as Montana) is stopped by the typed-confirm checks.
 - AI cost: not measured. Hosting: $0 (local).
 
 ## Open threads
-- Preview half (project lead). Writes per entry on preview, before the downgrade.
 - Category mappings: none confirmed yet.
