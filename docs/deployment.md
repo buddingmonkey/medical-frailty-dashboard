@@ -43,7 +43,7 @@ Local values go in `apps/api/.dev.vars` (gitignored; `.dev.vars.example` is comm
   site can be handed to an organization later and API tokens only reach this project.
 - A Zero Trust team (Free plan; its name is the `ACCESS_TEAM_DOMAIN` variable), Google as the only identity provider.
 - Reusable Access policy **"Frailty Dashboard Access"**: Allow, the admins' emails. Guest
-  testers (M7) are added here.
+  testers (M8) are added here.
 - Access applications (self-hosted, whole host, 24 h session, Google auto-redirect):
   "Frailty Dashboard (preview)" and "Frailty Dashboard (production)". Each also has a Service
   Auth policy for its CI service token (`ci-smoke-preview`, `ci-smoke-prod`, 1-year expiry:
@@ -162,9 +162,9 @@ Test restore path 2 in E2E, and do a path 3 drill on the preview database once b
 
 ## Going live
 
-Before launch (M7), with everything below checked off in `docs/status.md`:
+Before launch (M8), with everything below checked off in `docs/status.md`:
 
-1. Launch gate met (`docs/roadmap.md`, M7): at least 2 states with every category mapping
+1. Launch gate met (`docs/roadmap.md`, M8): at least 2 states with every category mapping
    confirmed, the usability gate passed, and the disclaimer and CPT notice reviewed.
 2. `security-review` run and findings closed; Playwright smoke passes against preview with
    `SITE_MODE=public`.

@@ -83,7 +83,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | Lines of code and of docs | `git diff --stat` per milestone |
 | Tests and pass rate | `pnpm check` summary |
 | States loaded, codes compared | Admin launch-readiness page |
-| Usability results | `docs/usability.md` (M7) |
+| Usability results | `docs/usability.md` (M8) |
 | Times the AI was wrong / a human was wrong, and how caught | Devlog "Corrections and surprises" |
 
 ## Running totals

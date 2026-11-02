@@ -232,7 +232,7 @@ with an empty cache) in `caches.default`; only 200 responses are stored. Server-
 add a hash of the built `index.html` to the key and tell browsers to revalidate
 (`max-age=0, must-revalidate`) while the edge keeps its copy 5 minutes. Non-GET and private-mode responses get
 `Cache-Control: private, no-store`. The Cache API is a no-op on `*.workers.dev` hosts, so the
-shared cache starts working only on a custom domain (M7); until then each request reads D1
+shared cache starts working only on a custom domain (M8); until then each request reads D1
 (about 68 ms locally for the four seed states, 17k entries).
 
 ## Site gate (pre-launch)
@@ -248,4 +248,4 @@ email in `ADMIN_EMAILS`, in both modes. Going live is described in `docs/deploym
 
 - Private: `User-agent: *` / `Disallow: /`.
 - Public: `Allow: /`, `Disallow: /admin`, `Disallow: /api/` (crawling the JSON API would only
-  use up the free request quota). Add a `Sitemap:` line once there is a custom domain (M7).
+  use up the free request quota). Add a `Sitemap:` line once there is a custom domain (M8).

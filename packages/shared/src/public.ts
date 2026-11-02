@@ -150,7 +150,7 @@ export const pageTitles = {
 
 /**
  * The main navigation, in order, for the Vue header and the server-rendered HTML. Add a page
- * here when it exists (Search in M5, About in M7), never before: a link must not 404.
+ * here when it exists (Search in M6, About in M8), never before: a link must not 404.
  * `section` marks the link current on deeper pages too (`/states/ga` is under States).
  */
 export const siteNav = [
