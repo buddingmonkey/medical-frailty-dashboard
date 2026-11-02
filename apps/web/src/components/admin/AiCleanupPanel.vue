@@ -105,6 +105,12 @@ function read(text: string, source: string) {
   }
 }
 
+/** The "Ask Claude" button works only when the server has an API key (it costs per use). */
+const claudeOn = computed(() => status.data.value?.enabled === true)
+function askClaude(p: TextPart) {
+  if (claudeOn.value && !ask.isPending.value) ask.mutate(p)
+}
+
 const ask = useMutation({
   mutationFn: (p: TextPart) =>
     sendJson(
@@ -171,15 +177,26 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         <div class="mt-2 flex flex-wrap items-center gap-2">
           <button type="button" :class="smallButton" @click="copy">Copy the prompt</button>
           <span v-if="copied" role="status" class="text-sm">Copied.</span>
-          <button
-            v-if="status.data.value?.enabled"
-            type="button"
-            :class="smallButton"
-            :disabled="ask.isPending.value"
-            @click="ask.mutate(part)"
-          >
-            Ask Claude for part {{ part.number }}
-          </button>
+          <span class="group relative inline-block">
+            <button
+              type="button"
+              :class="[smallButton, { 'cursor-not-allowed opacity-60': !claudeOn }]"
+              :aria-disabled="!claudeOn || ask.isPending.value"
+              :aria-describedby="claudeOn ? undefined : `${id}-claude-tip`"
+              @click="askClaude(part)"
+            >
+              Ask Claude for part {{ part.number }}
+            </button>
+            <span
+              v-if="!claudeOn"
+              :id="`${id}-claude-tip`"
+              role="tooltip"
+              class="pointer-events-none absolute top-full left-0 z-10 mt-1 w-72 rounded bg-heading px-2 py-1 text-xs text-on-primary opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+            >
+              Off: this button needs an Anthropic API key on the server, and each use costs money.
+              Ask the project lead. Copy the prompt into any AI assistant instead.
+            </span>
+          </span>
           <span v-if="ask.isPending.value" role="status" class="text-sm">
             Asking {{ status.data.value?.model }}… a long part can take a few minutes.
           </span>

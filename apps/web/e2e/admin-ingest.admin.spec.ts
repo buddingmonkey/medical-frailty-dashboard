@@ -80,8 +80,9 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   await expect(panel.getByLabel('Prompt for part 1')).toHaveValue(
     /F20\.0 {3}Paranoid schizophrenia/,
   )
-  // No API key on this Worker: no Claude button.
-  await expect(panel.getByRole('button', { name: /Ask Claude/ })).toHaveCount(0)
+  // No API key on this Worker: the Claude button is there but disabled, with a tooltip.
+  await expect(panel.getByRole('button', { name: /Ask Claude/ })).toBeDisabled()
+  await expect(panel.getByRole('tooltip')).toHaveText(/needs an Anthropic API key/)
 
   await panel
     .getByLabel('The assistant’s answer')
@@ -93,3 +94,12 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])
 })
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`the guide renders with no serious accessibility problems (${scheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/admin/guide')
+    await expect(page.getByRole('heading', { name: /Adding or updating a state/ })).toBeVisible()
+    expect(await seriousA11yViolations(page)).toEqual([])
+  })
+}

@@ -253,8 +253,10 @@ page 295: 314 of 314 and 27 of 27 rows, codes identical to the PDF adapter's (se
 devlog). Their feedback added the rules on wrapped lines, cut-off text, repeated codes and
 same-named columns.
 
-**Claude API button (optional). Shown only when the `ANTHROPIC_API_KEY` Worker secret is set.
-The Worker sends the same prompt per part and streams JSON back. Costs: pay per token. Before
+**Claude API button (optional).** Works only when the `ANTHROPIC_API_KEY` Worker secret is
+set; otherwise it is shown disabled (`aria-disabled`, so it stays focusable) with a tooltip
+saying it needs a key and costs money (project lead, 2026-11-02). The Worker builds the same
+prompt per part and streams the answer back. Costs: pay per token. Before
 enabling, set a monthly spend limit in the Anthropic Console and record the measured cost of
 one large file (e.g. Nebraska's 295 pages) in this doc. The model ID is a Worker variable, so it
 can change without a deploy. Check the `claude-api` skill for the current model and pricing

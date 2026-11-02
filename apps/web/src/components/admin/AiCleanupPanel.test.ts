@@ -78,11 +78,17 @@ describe('AiCleanupPanel', () => {
     })
   })
 
-  it('hides the Claude button while no API key is set', async () => {
+  it('shows the Claude button disabled, with a tooltip, while no API key is set', async () => {
     const off = setup(csv(3))
     await off.user.click(screen.getByRole('button', { name: 'Prepare the prompt' }))
-    await screen.findByLabelText('Part')
-    expect(screen.queryByRole('button', { name: /Ask Claude/ })).toBeNull()
+    const button = await screen.findByRole('button', { name: 'Ask Claude for part 1' })
+    // aria-disabled, not disabled: it stays focusable so keyboard users reach the tooltip.
+    expect(button.getAttribute('aria-disabled')).toBe('true')
+    await off.user.click(button)
+    const tip = screen.getByRole('tooltip')
+    expect(tip.textContent).toContain('needs an Anthropic API key')
+    expect(button.getAttribute('aria-describedby')).toBe(tip.id)
+    expect(off.posts).toEqual([])
   })
 
   it('asks Claude for a part and reads its answer', async () => {

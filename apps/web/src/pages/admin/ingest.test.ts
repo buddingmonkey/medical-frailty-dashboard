@@ -380,6 +380,10 @@ describe('/admin/ingest', () => {
     expect((await screen.findByRole('alert')).textContent).toContain(
       'mt.pdf is not a readable PDF.',
     )
+    // A file that will not read points to the guide (and the AI assistant panel).
+    expect(screen.getByRole('link', { name: 'the guide' }).getAttribute('href')).toBe(
+      '/admin/guide',
+    )
     expect(screen.queryByLabelText('Wrapped lines')).toBeNull()
   })
 })
