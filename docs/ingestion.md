@@ -82,11 +82,17 @@ page stays responsive and pdf.js runs off the main thread.
 ## Category auto-mapping
 
 1. An exact match against existing `category_mappings` for the state (re-uploads).
-2. A keyword table in `packages/shared/categories.ts`: `SMI`, `mental`, `DMD` →
-   `disabling_mental_disorder`; `SUD`, `substance` → `sud`; `IDD`, `SID`, `SDD`, `SPD`,
-   `developmental`, `ADL` → `physical_idd_adl`; `blind`, `disab` → `blind_or_disabled`;
-   `SCMC`, `cancer`, `transplant`, `diabetes`, `neurolog`, `immuno`, `infectious` →
-   `serious_complex_medical`.
+2. The keyword table in `packages/shared/src/categories.ts` (`autoMapCategory`), tested
+   against every LA and MT category: `SMI`, `DMD`, `mental` → `disabling_mental_disorder`;
+   `SUD`, `substance` → `sud`; `IDD`, `SID`, `SDD`, `SPD`, `ADL`, `developmental`,
+   `intellectual` → `physical_idd_adl`; `SCMC`, `ESRD`, `cancer`, `transplant`, `diabetes`,
+   `neurolog`, `immun`, `infectious` → `serious_complex_medical`; `B` (whole label), `blind`,
+   `disabled`, `disability` → `blind_or_disabled`; `temporar`, `ability to work`, `frailty
+   indicator` → `state_specific`. Keywords match whole words or word starts (`immun` does
+   not match "community"). The first match in table order wins; if other keywords disagree,
+   confidence drops to 0.5. The subcategory is used only when the category matches nothing.
+   The earlier draft keyword `disab` would have mapped LA "Temporary disabling" to
+   blind-or-disabled; it was replaced (2026-11-01).
 3. Otherwise `unmapped`. Never guess silently: auto mappings show as "auto" in the admin
    until someone confirms them.
 

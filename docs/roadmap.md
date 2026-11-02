@@ -44,7 +44,7 @@ running totals in `docs/talk-notes.md`.
    inference. Table-driven tests from every pattern in `docs/sources.md`.
 3. **Done** (branch `m1-step3-reference-data`). `packages/reference-data`: build `ref_codes` from the CMS ICD-10-CM and HCPCS Level II
    files (current fiscal year) into a seed SQL file. Document the yearly update in this doc.
-4. Federal categories + auto-mapping keyword table. Confirm the statute wording and link it in
+4. **Done** (branch `m1-step4-categories`). Federal categories + auto-mapping keyword table. Confirm the statute wording and link it in
    `docs/sources.md`.
 5. Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
    `docs/ingestion.md`.

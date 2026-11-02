@@ -15,15 +15,20 @@ The design wiki says "type of code" for two different things. In code and docs w
 
 ## Federal categories
 
-From H.R.1 (2025) §71119, an individual who is medically frail or has special medical needs,
-including someone who is (verify the wording against the enacted statute in M1):
+Social Security Act §1902(xx)(9)(A)(ii)(V), added by Public Law 119-21 (H.R.1, 2025) §71119:
+an individual "who is medically frail or otherwise has special medical needs (as defined by the
+Secretary), including an individual" (verified against the enrolled law on govinfo, 2026-11-01;
+link in `docs/sources.md`):
 
-1. `blind_or_disabled`: blind or disabled
-2. `sud`: has a substance use disorder
-3. `disabling_mental_disorder`: has a disabling mental disorder
-4. `physical_idd_adl`: has a physical, intellectual or developmental disability that
-   significantly impairs one or more activities of daily living
-5. `serious_complex_medical`: has serious or complex medical conditions
+1. `blind_or_disabled`: (aa) "who is blind or disabled (as defined in section 1614)"
+2. `sud`: (bb) "with a substance use disorder"
+3. `disabling_mental_disorder`: (cc) "with a disabling mental disorder"
+4. `physical_idd_adl`: (dd) "with a physical, intellectual or developmental disability that
+   significantly impairs their ability to perform 1 or more activities of daily living"
+5. `serious_complex_medical`: (ee) "with a serious or complex medical condition"
+
+Labels, clauses and verbatim text live in `packages/shared/src/categories.ts`
+(`federalCategoryInfo`). The short public labels are provisional (legal review).
 
 Plus two of our own:
 

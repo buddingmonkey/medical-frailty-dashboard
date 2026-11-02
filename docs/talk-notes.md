@@ -56,6 +56,7 @@ literacy, little or no coding.
 | 2026-11-01 | All 124 unit tests passed, then GitHub's code scanner failed the PR: three text patterns could freeze the server on a crafted upload or URL. Tests reproduced the slowdown before the fix | Automated security checks find what your own tests never thought to try | `devlog/2026-11-01-m1-step2-codes.md` |
 | 2026-11-01 | The national code list is 107,173 rows; the free database plan writes 100,000 a day. Counting first turned a deploy-day surprise into a design choice: one write per row, and a loader that picks up where it stopped | Ask how big the data is and what the free plan allows before you load it | `devlog/2026-11-01-m1-step3-reference-data.md` |
 | 2026-11-01 | This year CMS added the first diagnosis codes with a letter in the second place (`QA0`). The parser refused line 30,620 instead of skipping it, which exposed the same wrong assumption in the code that reads state lists | Make programs stop on the unexpected; silent skipping hides news | same |
+| 2026-11-01 | The planning docs said the keyword `disab` means "blind or disabled". A test row for each real state category showed it would also catch Louisiana's "Temporary disabling", which is a different thing | Test rules against every real example, not the examples you had in mind | `devlog/2026-11-01-m1-step4-categories.md` |
 
 ## Numbers to collect
 
@@ -88,6 +89,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M1 step 1 (2026-11-01) | 0.2 (12 min) | not measured | $0 | Schema, migrations, FTS5, drift check; 75 Vitest tests |
 | M1 step 2 (2026-11-01) | 0.25 (15 min) | not measured | $0 | Code normalization; 103 table-driven tests |
 | M1 step 3 (2026-11-01) | 0.2 (13 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
+| M1 step 4 (2026-11-01) | 0.1 (7 min) | not measured | $0 | Federal categories from the enacted law; keyword auto-mapping |
 
 ## Assets to capture for slides
 
