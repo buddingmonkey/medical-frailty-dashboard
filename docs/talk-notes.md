@@ -91,6 +91,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M1 step 3 (2026-11-01) | 0.2 (12 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
 | M1 step 4 (2026-11-01) | 0.1 (4 min) | not measured | $0 | Federal categories from the enacted law; keyword auto-mapping |
 | M1 step 5 (2026-11-01) | 0.05 (3 min) | not measured | $0 | Pre-publish checks and diff; 21 tests |
+| M1 step 6 (2026-11-01) | 0.05 (4 min) | not measured | $0 | Migrations and restore bookmark in the deploy; reference-data workflow |
 
 ## Assets to capture for slides
 

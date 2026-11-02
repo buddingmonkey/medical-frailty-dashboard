@@ -25,7 +25,9 @@ pnpm --filter @mfcd/reference-data load --local           # apply the chunks loc
 pnpm --filter @mfcd/reference-data load --env preview     # remote preview, up to 80,000 rows per run
 ```
 
-Production is loaded only from CI (roadmap M1 step 6); `load` refuses `--env production`.
+Production is loaded only from CI: the **Reference data** workflow
+(`.github/workflows/reference-data.yml`, run by hand, after approval). Outside GitHub Actions,
+`load` refuses `--env production`.
 
 ## Free-tier limit (why loads are chunked)
 

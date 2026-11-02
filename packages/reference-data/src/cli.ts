@@ -77,14 +77,20 @@ async function build(): Promise<void> {
   )
 }
 
-/** Runs wrangler in apps/api: the local one for --local, else `pnpm cf` (this repo's token). */
+/** True inside GitHub Actions, where the job's environment supplies the Cloudflare token. */
+const inCi = process.env['GITHUB_ACTIONS'] === 'true'
+
+/**
+ * Runs `wrangler d1 execute` in apps/api. Locally, remote commands go through `pnpm cf`
+ * (this repo's own token); in CI, wrangler reads the job's CLOUDFLARE_API_TOKEN directly.
+ */
 function wrangler(target: string[], args: string[]): string {
-  const local = target.includes('--local')
-  const command = local
-    ? ['exec', 'wrangler', 'd1', 'execute', 'DB', ...target, ...args]
-    : ['cf', 'd1', 'execute', 'DB', ...target, ...args]
+  const viaCf = !target.includes('--local') && !inCi
+  const command = viaCf
+    ? ['cf', 'd1', 'execute', 'DB', ...target, ...args]
+    : ['exec', 'wrangler', 'd1', 'execute', 'DB', ...target, ...args]
   const result = spawnSync('pnpm', command, {
-    cwd: local ? apiDir : join(apiDir, '..', '..'),
+    cwd: viaCf ? join(apiDir, '..', '..') : apiDir,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   })
@@ -117,12 +123,22 @@ function load(argv: string[]): void {
   if (values.local === (values.env !== undefined)) {
     throw new Error('Pass exactly one of --local or --env preview.')
   }
-  if (values.env !== undefined && values.env !== 'preview') {
-    // Production is loaded from CI only, like every production change (CLAUDE.md).
-    throw new Error(`Refusing --env ${values.env}: production is loaded from CI.`)
+  if (values.env !== undefined && values.env !== 'preview' && values.env !== 'production') {
+    throw new Error(`Unknown --env ${values.env}.`)
   }
-  const target = values.local ? ['--local'] : ['--remote', '--env', 'preview']
+  if (values.env === 'production' && !inCi) {
+    // Production changes only from CI (CLAUDE.md): .github/workflows/reference-data.yml.
+    throw new Error('Refusing --env production outside CI: run the "Reference data" workflow.')
+  }
+  // Top level of wrangler.jsonc is production; preview is `--env preview`.
+  const target = values.local
+    ? ['--local']
+    : values.env === 'production'
+      ? ['--remote']
+      : ['--remote', '--env', 'preview']
   const budget = values.local ? Infinity : Number(values['max-rows'])
+  if (!Number.isFinite(budget) || budget <= 0)
+    throw new Error('--max-rows must be a positive number.')
 
   const manifest = JSON.parse(readFileSync(join(distDir, 'manifest.json'), 'utf8')) as Manifest
   const done = loadedChunks(target)
