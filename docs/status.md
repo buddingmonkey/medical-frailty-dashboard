@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02_
+_Last updated: 2026-11-02 (M3 step 1)_
 
 ## Where things stand
 
@@ -153,6 +153,11 @@ _Last updated: 2026-11-02_
   wrapper goes (`.claude/skills/` is untracked); it only needs to point at that doc.
 - **M2 is complete.** Hard stop for the project lead's
   review (PRs #20–#33). See the M2 devlog entry for the summary and the questions.
+- **M3 started** (project lead, 2026-11-02 13:25). **Step 1 done** (branch
+  `m3-step1-public-states`): `GET /api/public/states` (every state; counts of the published
+  version by code system, federal category and qualification; source date; whether every
+  mapping is confirmed) behind `publicCache` (Cache API keyed on `data_version`; private mode
+  never stores). The Cache API only works on a custom domain, not `*.workers.dev`.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

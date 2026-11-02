@@ -6,5 +6,7 @@ export interface AppEnv {
   Variables: {
     /** Set by the site gate (private mode) or the admin check once a request is verified. */
     identity?: AccessIdentity
+    /** Set by the public cache middleware: the `data_version` the response is built from. */
+    dataVersion?: number
   }
 }

@@ -173,7 +173,7 @@ Public (read only, `GET`, cacheable):
 
 | Route | Returns |
 | --- | --- |
-| `/api/public/states` | Every state with status, counts by category and code system, source date. Feeds the home map |
+| `/api/public/states` | Every state and DC by name: status, and for a published list its version number, source date (the version's, else its newest source's), last update, entry counts by code system, federal category (`federalCategoryOf`) and qualification, and whether every category mapping is confirmed. `dataVersion` too. Feeds the home map (`publicStatesResponseSchema`) |
 | `/api/public/states/:st` | One state's summary, sources, notes |
 | `/api/public/categories` | The federal categories and how each state maps to them |
 | `/api/public/compare?category=&states=GA,LA&system=` | Codes in that category for each selected state, aligned by code |
@@ -218,6 +218,13 @@ increments `data_version`, so stale cache entries are never read again. This kee
 low enough to stay inside the free tier. **While `SITE_MODE` is private, skip the shared cache
 and send `Cache-Control: private`**, so a response that needed a login is never stored where
 someone without one could read it.
+
+The middleware is `apps/api/src/middleware/public-cache.ts` (`publicCache`): it reads
+`data_version` (one row), and in public mode looks up the URL plus `__dv=<version>` in
+`caches.default`; only 200 responses are stored. Non-GET and private-mode responses get
+`Cache-Control: private, no-store`. The Cache API is a no-op on `*.workers.dev` hosts, so the
+shared cache starts working only on a custom domain (M7); until then each request reads D1
+(about 68 ms locally for the four seed states, 17k entries).
 
 ## Site gate (pre-launch)
 
