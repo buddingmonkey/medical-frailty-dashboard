@@ -69,6 +69,7 @@ literacy, little or no coding.
 | 2026-11-02 | The milestone check: load four states' real lists through the admin screens, then load Nebraska's file as Montana on purpose. The site asked for "MT" to be typed twice ("the file names NE"; "44% of codes gone") and would not publish with anything else | Make the dangerous mistake on purpose in a rehearsal, and watch the guard rail hold | `devlog/2026-11-02-m2-step11-seed-run.md` |
 | 2026-11-02 | On preview, the AI drove the project lead's own signed-in browser to repeat the check, then measured what a load costs the database: 4.3 rows written per code. One day of this testing would have used the whole free daily allowance | Measure the cost of a real run before you depend on a free tier | `devlog/2026-11-02-m2-step11-seed-run.md` |
 | 2026-11-02 | The AI reworded one sentence, and the test still saw the old one, twice. The local server had kept a cached copy of the page, and the cache never noticed the server's own code had changed. The live site had the same gap: for five minutes after each update it could have served the old page | A cache needs to know about everything that shapes the page, code included; a stale-looking test is a clue, not bad luck | `devlog/2026-11-02-m3-step4-seo.md` |
+| 2026-11-02 | The AI broke a rule on purpose to prove a test could catch it, and nothing failed. The rule was dead code: the data it guarded against could never reach it. Deleting it made the code simpler, and breaking the real guard failed the test | When breaking something changes nothing, ask whether the thing does anything | `devlog/2026-11-02-m4-step1-compare-api.md` |
 
 ## Numbers to collect
 
@@ -123,6 +124,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M3 step 3 (2026-11-02) | 13:48–13:53 | not measured | $0 | State pages and their API; 12 new tests |
 | M3 step 4 (2026-11-02) | 13:57–14:16 | not measured | $0 | Server-rendered pages for crawlers, JSON-LD, CSV/JSON downloads, sitemap; 19 new tests |
 | **M3 total** (2026-11-02) | **≈ 1 h** (13:25–14:26) | not measured | $0 | 4 PRs (#37–#40); 658 Vitest + 24 e2e; map, state pages, crawler-readable HTML, downloads, sitemap |
+| M4 step 1 (2026-11-02) | 14:57–15:08 | not measured | $0 | Compare API: one category aligned across states; 22 new tests; a deliberate break found dead code |
 
 ## Assets to capture for slides
 
