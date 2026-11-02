@@ -334,6 +334,30 @@ export const conditionMembers = sqliteTable(
   ],
 )
 
+/**
+ * Per-state override by ICD-10-CM chapter, for states that group codes only by chapter (NE,
+ * GA): an override wins over the category mapping for ICD-10-CM entries in that chapter
+ * (`federalCategoryOf` in packages/shared). Belongs to the state, like category_mappings.
+ */
+export const chapterMappings = sqliteTable(
+  'chapter_mappings',
+  {
+    stateId: text('state_id')
+      .notNull()
+      .references(() => states.id),
+    /** ICD-10-CM chapter number (1–22). */
+    chapter: integer('chapter').notNull(),
+    federalCategory: text('federal_category', { enum: federalCategories }).notNull(),
+    mappedBy: text('mapped_by').notNull(),
+    mappedAt: timestamp('mapped_at'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.stateId, t.chapter] }),
+    check('chapter_mappings_chapter_check', sql`${t.chapter} BETWEEN 1 AND 22`),
+    check('chapter_mappings_federal_check', oneOf(t.federalCategory, federalCategories)),
+  ],
+)
+
 // ---------------------------------------------------------------------------------------------
 // Site settings, audit and watch dates
 

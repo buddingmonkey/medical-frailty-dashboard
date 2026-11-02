@@ -7,6 +7,7 @@ import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
 import { audit } from './routes/admin/audit'
+import { categoriesRoute } from './routes/admin/categories'
 import { columnProfilesRoute } from './routes/admin/column-profiles'
 import { draftsRoute } from './routes/admin/drafts'
 import { refCodesRoute } from './routes/admin/ref-codes'
@@ -44,6 +45,7 @@ export function createApp({ getJwks }: AppDeps) {
   app.route('/api/admin/audit', audit)
   app.route('/api/admin/watch', watch)
   app.route('/api/admin/states', adminStates)
+  app.route('/api/admin/states', categoriesRoute)
   app.route('/api/admin/sources', sources)
   app.route('/api/admin/column-profiles', columnProfilesRoute)
   app.route('/api/admin/ref-codes', refCodesRoute)

@@ -142,7 +142,7 @@ describe('publish and rollback', () => {
       sourceIds[stateId] = doc?.id ?? 0
     }
     await db.insert(refCodes).values(
-      ['F20', 'F200', 'F310', 'F329', 'F339'].map((codeNorm) => ({
+      ['F20', 'F200', 'F310', 'F329', 'F339', 'F1020'].map((codeNorm) => ({
         codeSystem: 'icd10cm' as const,
         codeNorm,
         description: 'x',
@@ -176,6 +176,31 @@ describe('publish and rollback', () => {
       action: 'version.publish',
       target: `version:${String(id)}`,
     })
+  })
+
+  it('stores an auto mapping for each new category, and keeps confirmed ones', async () => {
+    await db.insert(categoryMappings).values({
+      stateId: 'MT',
+      stateCategory: 'SUD',
+      federalCategory: 'state_specific',
+      method: 'manual',
+      mappedBy: ADMIN,
+    })
+    const id = await draftWith('MT', [
+      entry('F20.0'),
+      entry('F10.20', { stateCategory: 'SUD' }),
+      entry('F31.0', { stateCategory: 'Something else' }),
+    ])
+    expect((await publishAll(id, 'MT')).status).toBe(200)
+    const rows = await db.select().from(categoryMappings).where(eq(categoryMappings.stateId, 'MT'))
+    expect(
+      rows
+        .map((m) => [m.stateCategory, m.federalCategory, m.method, m.confidence])
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+    ).toEqual([
+      ['SMI', 'disabling_mental_disorder', 'auto', 0.9],
+      ['SUD', 'state_specific', 'manual', null],
+    ])
   })
 
   it('needs every confirmation the checks ask for', async () => {
@@ -303,7 +328,7 @@ describe('publish and rollback', () => {
     await draftWith('NE', [entry('F32.9')]) // an open NE draft
     await db.insert(categoryMappings).values({
       stateId: 'NE',
-      stateCategory: 'SMI',
+      stateCategory: 'Chapter 5',
       federalCategory: 'disabling_mental_disorder',
       method: 'manual',
       mappedBy: ADMIN,

@@ -1,4 +1,5 @@
 import {
+  autoMapCategory,
   type CheckEntry,
   type DraftChecksResponse,
   draftChecksResponseSchema,
@@ -28,6 +29,7 @@ import { backupVersion } from '../../db/backup'
 import { bumpDataVersion } from '../../db/meta'
 import { createDb, type Db } from '../../db/client'
 import {
+  categoryMappings,
   datasetVersions,
   draftParts,
   entries,
@@ -464,6 +466,31 @@ export const draftsRoute = new Hono<AppEnv>()
     const now = new Date().toISOString()
     const actor = actorOf(c)
 
+    // New state categories get the keyword table's guess, stored as "auto" until an admin
+    // confirms it (docs/ingestion.md, "Category auto-mapping"). Existing mappings stay.
+    const used = await db
+      .selectDistinct({ category: entries.stateCategory, subcategory: entries.stateSubcategory })
+      .from(entries)
+      .where(eq(entries.versionId, version.id))
+    const autoMappings = used.flatMap(({ category, subcategory }) => {
+      const auto = autoMapCategory(category, subcategory)
+      return auto
+        ? [
+            db
+              .insert(categoryMappings)
+              .values({
+                stateId,
+                stateCategory: category,
+                stateSubcategory: subcategory,
+                federalCategory: auto.federalCategory,
+                method: 'auto' as const,
+                confidence: auto.confidence,
+              })
+              .onConflictDoNothing(),
+          ]
+        : []
+    })
+
     // Duplicates (same code, category, subcategory and tier): keep the first.
     const firsts = db
       .select({ id: min(entries.id) })
@@ -507,6 +534,7 @@ export const draftsRoute = new Hono<AppEnv>()
         .update(states)
         .set({ publishedVersionId: version.id, status: 'published', updatedAt: now })
         .where(eq(states.id, stateId)),
+      ...autoMappings,
       bumpDataVersion(db),
       auditInsert(db, {
         actorEmail: actor,
