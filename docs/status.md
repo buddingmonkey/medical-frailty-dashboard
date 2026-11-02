@@ -58,7 +58,9 @@ _Last updated: 2026-11-01_
 - **M1 step 4 done** (branch `m1-step4-categories`): `packages/shared/src/categories.ts` with the
   five statutory categories (wording verified against the enrolled law), our two, and the
   auto-mapping keyword table, tested on every LA and MT category.
-- **Next step:** M1 step 5 (diff and checks engine).
+- **M1 step 5 done** (branch `m1-step5-checks`): `packages/shared/src/checks.ts`, every check in
+  `docs/ingestion.md` plus the diff and the publish confirmation gate (21 tests).
+- **Next step:** M1 step 6 (migrations and the reference-code load in the deploy).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

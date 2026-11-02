@@ -90,6 +90,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M1 step 2 (2026-11-01) | 0.25 (15 min) | not measured | $0 | Code normalization; 103 table-driven tests |
 | M1 step 3 (2026-11-01) | 0.2 (13 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
 | M1 step 4 (2026-11-01) | 0.1 (7 min) | not measured | $0 | Federal categories from the enacted law; keyword auto-mapping |
+| M1 step 5 (2026-11-01) | 0.15 (8 min) | not measured | $0 | Pre-publish checks and diff; 21 tests |
 
 ## Assets to capture for slides
 

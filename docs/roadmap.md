@@ -46,7 +46,7 @@ running totals in `docs/talk-notes.md`.
    files (current fiscal year) into a seed SQL file. Document the yearly update in this doc.
 4. **Done** (branch `m1-step4-categories`). Federal categories + auto-mapping keyword table. Confirm the statute wording and link it in
    `docs/sources.md`.
-5. Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
+5. **Done** (branch `m1-step5-checks`). Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
    `docs/ingestion.md`.
 6. Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
    for production record the D1 Time Travel bookmark before migrating (`docs/deployment.md`,
