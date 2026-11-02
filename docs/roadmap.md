@@ -131,8 +131,11 @@ the public pages say who reviewed it and when.
    a cell opens the drill-down. Server-rendered; a real table (WCAG 1.3.1, 1.4.1).
 6. **Category drill-down** (`/compare/<unified category>`): codes grouped by ICD-10-CM
    category, ranked by how many states list them; filters (everyone, gaps, only one state);
-   focus state; details per code with each state's tier and badge. The M4 table stays as the
-   leaf view and the CSV.
+   focus state; details per code with each state's tier and badge. **"Include codes no state
+   lists"** (project lead, 2026-11-02): where the category's full code list is known
+   (ICD-10-CM through its CCSR groups and `ref_codes`), show every code in it, so codes no
+   state lists appear with 0 of N; elsewhere the page says only listed codes are shown. The M4
+   table stays as the leaf view and the CSV.
 7. **Compare 2–4 states** and **states like mine**: only the differences, grouped by unified
    category, with shared and only-in counts and similarity; a ranked "most similar states"
    list on each state page that opens the comparison.
