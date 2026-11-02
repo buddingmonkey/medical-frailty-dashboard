@@ -7,73 +7,16 @@ import { createDb } from '../../db/client'
 import {
   appMeta,
   categoryMappings,
-  chapterMappings,
   datasetVersions,
-  entries,
   sourceDocuments,
   states,
-  versionSources,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
-import { resetDb } from '../../test/reset-db'
+import { seedPublicStates } from '../../test/public-fixtures'
 
 // GET /api/public/states (roadmap M3 step 1): the home map's data, cached on data_version.
 
 const db = createDb(env.DB)
-
-type NewEntry = typeof entries.$inferInsert
-
-async function publishVersion(
-  stateId: string,
-  status: 'published' | 'draft',
-  rows: Omit<NewEntry, 'versionId' | 'sourceDocumentId'>[],
-  dates: { version?: string | null; source?: string | null } = {},
-) {
-  const [doc] = await db
-    .insert(sourceDocuments)
-    .values({
-      stateId,
-      title: `${stateId} list ${status}`,
-      fileType: 'pdf',
-      sha256: `${stateId}${status}`.padEnd(64, '0'),
-      r2Key: `sources/${stateId}/${status}`,
-      byteSize: 10,
-      uploadedBy: ADMIN,
-      publisherDate: dates.source ?? null,
-    })
-    .returning()
-  const [version] = await db
-    .insert(datasetVersions)
-    .values({
-      stateId,
-      versionNo: status === 'published' ? 1 : 2,
-      status,
-      createdBy: ADMIN,
-      statePublishedDate: dates.version ?? null,
-      contentUpdatedAt: status === 'published' ? '2026-11-02T10:00:00.000Z' : null,
-      rowCount: rows.length,
-    })
-    .returning()
-  if (!doc || !version) throw new Error('insert failed')
-  await db.insert(versionSources).values({ versionId: version.id, sourceDocumentId: doc.id })
-  await db
-    .insert(entries)
-    .values(rows.map((r) => ({ ...r, versionId: version.id, sourceDocumentId: doc.id })))
-  if (status === 'published') {
-    await db
-      .update(states)
-      .set({ publishedVersionId: version.id, status: 'published' })
-      .where(eq(states.id, stateId))
-  }
-}
-
-const icd = (codeNorm: string, stateCategory: string, patch: Partial<NewEntry> = {}) => ({
-  codeSystem: 'icd10cm' as const,
-  rawCode: codeNorm,
-  codeNorm,
-  stateCategory,
-  ...patch,
-})
 
 let calls = 0
 
@@ -88,50 +31,7 @@ async function getStates(options: { host?: string; vars?: Partial<Env>; token?: 
   return { res, body: publicStatesResponseSchema.parse(await res.json()) }
 }
 
-beforeEach(async () => {
-  await resetDb(env.DB)
-  await db.insert(states).values([
-    { id: 'NE', slug: 'ne', name: 'Nebraska', fips: '31' },
-    { id: 'GA', slug: 'ga', name: 'Georgia', fips: '13' },
-    { id: 'MT', slug: 'mt', name: 'Montana', fips: '30', status: 'announced' },
-  ])
-  await publishVersion(
-    'GA',
-    'published',
-    [
-      icd('F200', 'Mental health'),
-      icd('F10', 'Mental health', { matchKind: 'prefix', qualification: 'needs_support' }),
-      icd('C50', 'Cancer', { matchKind: 'prefix', qualification: 'standalone' }),
-      { codeSystem: 'hcpcs', rawCode: 'E0250', codeNorm: 'E0250', stateCategory: 'Equipment' },
-    ],
-    { version: null, source: '2026-09-15' },
-  )
-  // A draft is never public.
-  await publishVersion('GA', 'draft', [icd('Z99', 'Draft only')])
-  await db.insert(categoryMappings).values([
-    {
-      stateId: 'GA',
-      stateCategory: 'Mental health',
-      federalCategory: 'disabling_mental_disorder',
-      method: 'manual',
-      mappedBy: ADMIN,
-    },
-    {
-      stateId: 'GA',
-      stateCategory: 'Cancer',
-      federalCategory: 'serious_complex_medical',
-      method: 'auto',
-      confidence: 0.8,
-    },
-  ])
-  // Chapter 5 (F01–F99) override: F10 counts as SUD even though its category says mental health.
-  await db.insert(chapterMappings).values({
-    stateId: 'GA',
-    chapter: 5,
-    federalCategory: 'sud',
-    mappedBy: ADMIN,
-  })
-})
+beforeEach(seedPublicStates)
 
 describe('GET /api/public/states', () => {
   it('lists every state by name, with null for states not published yet', async () => {
@@ -203,6 +103,18 @@ describe('GET /api/public/states', () => {
     const fresh = await getStates({ host })
     expect(fresh.body.dataVersion).toBe(7)
     expect(fresh.body.items.map((s) => s.name)).toContain('Renamed')
+  })
+
+  it('starts with an empty cache after a deploy (new Worker version)', async () => {
+    const host = 'deploy-test.example.com'
+    const version = (id: string) => ({ CF_VERSION_METADATA: { id, tag: '', timestamp: '' } })
+    await getStates({ host, vars: { SITE_MODE: 'public', ...version('one') } })
+    await db.update(states).set({ name: 'Renamed' }).where(eq(states.id, 'NE'))
+
+    const same = await getStates({ host, vars: { SITE_MODE: 'public', ...version('one') } })
+    expect(same.body.items.map((s) => s.name)).toContain('Nebraska')
+    const next = await getStates({ host, vars: { SITE_MODE: 'public', ...version('two') } })
+    expect(next.body.items.map((s) => s.name)).toContain('Renamed')
   })
 
   it('never stores a response in private mode', async () => {

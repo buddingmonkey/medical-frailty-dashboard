@@ -5,11 +5,12 @@ import {
   type FederalCategory,
   federalCategoryInfo,
   type PublicStateSummary,
+  formatCount,
+  formatDay,
+  stateStatusLabels,
 } from '@mfcd/shared'
 import { computed, useId } from 'vue'
 import { RouterLink } from 'vue-router'
-
-import { formatCount, formatDay, stateStatusLabels } from '../../lib/public-states'
 
 // The hover/focus card next to the map: one state's counts by code system and federal category.
 

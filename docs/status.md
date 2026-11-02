@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M3 step 3)_
+_Last updated: 2026-11-02 (M3 step 4)_
 
 ## Where things stand
 
@@ -164,6 +164,11 @@ _Last updated: 2026-11-02 (M3 step 3)_
 - **M3 step 3 done** (branch `m3-step3-state-page`): `/states/:slug` (summary, counts, the
   state's categories and their federal mapping, sources, version history, notes) and
   `GET /api/public/states/:slug`. Counting shared in `apps/api/src/db/public-summary.ts`.
+- **M3 step 4 done** (branch `m3-step4-seo`): the Worker renders `/` and `/states/:slug` as real
+  HTML (title, description, canonical, Open Graph, JSON-LD `WebSite` / `Dataset`, the facts in
+  plain sentences and tables); CSV and JSON downloads at `/states/<st>/codes.csv|json`;
+  `/sitemap.xml`. Public cache keys now include the Worker version (`CF_VERSION_METADATA`).
+  The public e2e D1 gets a small Montana list (`apps/web/e2e/fixtures/public-seed.sql`).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -244,6 +249,7 @@ close dates there, not here. Approximate dates are marked ~.
 | ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
+| No date | Legal team decides the licence of the compiled lists (for the `license` field in the state pages' `Dataset` JSON-LD and the downloads; left out until then) | Search engines recommend a licence on datasets | `docs/seo.md` |
 | No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)

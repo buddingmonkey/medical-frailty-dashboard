@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { usMap } from '@mfcd/shared/us-map'
+import { pageTitles, STATES_AND_DC } from '@mfcd/shared'
 import { computed, onMounted, ref } from 'vue'
 
 import StateMap from '../components/home/StateMap.vue'
 import StateSummaryCard from '../components/home/StateSummaryCard.vue'
 import StateTable from '../components/home/StateTable.vue'
+import { usePageTitle } from '../lib/page-title'
 import { usePublicStates } from '../lib/public-states'
 
+usePageTitle(pageTitles.home)
 const { data, isPending, isError } = usePublicStates()
 
 const view = ref<'map' | 'table'>('map')
@@ -54,7 +56,7 @@ const legend = [
         <div>
           <h2 id="states-heading" class="font-display text-2xl font-medium text-heading">States</h2>
           <p v-if="data" class="text-muted-foreground">
-            {{ withList }} of {{ usMap.states.length }} states and DC have a list on this site.
+            {{ withList }} of {{ STATES_AND_DC }} states and DC have a list on this site.
           </p>
         </div>
         <div

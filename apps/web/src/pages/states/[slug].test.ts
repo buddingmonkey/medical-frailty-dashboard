@@ -130,6 +130,14 @@ describe('/states/:slug', () => {
     expect(versions.textContent).toContain('Current')
     expect(versions.textContent).toContain('Replaced')
 
+    expect(screen.getByRole('link', { name: 'Georgia codes (CSV)' }).getAttribute('href')).toBe(
+      '/states/ga/codes.csv',
+    )
+    expect(screen.getByRole('link', { name: 'Georgia codes (JSON)' }).getAttribute('href')).toBe(
+      '/states/ga/codes.json',
+    )
+    expect(document.title).toBe('Georgia medical frailty codes | Medical Frailty Coding Dashboard')
+
     expect(screen.getByText('two').tagName).toBe('STRONG')
   })
 

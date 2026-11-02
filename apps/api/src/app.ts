@@ -18,6 +18,7 @@ import { sources } from './routes/admin/sources'
 import { adminStates } from './routes/admin/states'
 import { watch } from './routes/admin/watch'
 import { whoami } from './routes/admin/whoami'
+import { pagesRoute } from './routes/pages'
 import { health } from './routes/public/health'
 import { publicStates } from './routes/public/states'
 import { robots } from './routes/robots'
@@ -63,6 +64,9 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
 
   // Unknown API paths get a JSON 404, never the SPA's index.html.
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))
+
+  // Public pages with their content rendered in (docs/seo.md), downloads and the sitemap.
+  app.route('/', pagesRoute)
 
   // Everything else is the Vue build. Unknown paths fall back to index.html
   // (not_found_handling = single-page-application). The copy makes the headers mutable so the

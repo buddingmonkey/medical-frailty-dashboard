@@ -1,8 +1,9 @@
 import {
+  formatCount,
   publicStateDetailResponseSchema,
   type PublicStateSummary,
   publicStatesResponseSchema,
-  type StateStatus,
+  stateStatusLabels,
 } from '@mfcd/shared'
 import { useQuery } from '@tanstack/vue-query'
 import { type MaybeRefOrGetter, toValue } from 'vue'
@@ -31,38 +32,10 @@ export function usePublicState(slug: MaybeRefOrGetter<string>) {
   })
 }
 
-/** Status words for people, not the database: "published" means published on this site. */
-export const stateStatusLabels: Record<StateStatus, string> = {
-  published: 'List on this site',
-  announced: 'List announced, not on this site yet',
-  none: 'No list yet',
-}
-
-export const formatCount = (n: number) => n.toLocaleString('en-US')
-
-/** `2026-09-15` → "September 15, 2026", read as a calendar date (no time zone shift). */
-export function formatDay(day: string): string {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  })
-}
-
 /** The accessible name of a state on the map: name, status and entry count. */
 export function stateLinkLabel(state: Pick<PublicStateSummary, 'name' | 'status' | 'published'>) {
   const status = stateStatusLabels[state.status].toLowerCase()
   return state.published
     ? `${state.name}: ${status}, ${formatCount(state.published.totalEntries)} entries`
     : `${state.name}: ${status}`
-}
-
-/** An ISO timestamp as a date in the reader's own time zone. */
-export function formatTimestampDay(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
 }
