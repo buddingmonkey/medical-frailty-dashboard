@@ -78,7 +78,12 @@ _Last updated: 2026-11-01_
   `GET, POST /api/admin/watch`, `PUT /api/admin/watch/:id`. Migration `0002_seed_watch_items`
   copies the table below into `watch_items`; preview and production get it with the next
   deploy. The state picker waits for loaded states (step 8); the API already takes `stateId`.
-- **Next step:** M2 step 3, source upload to R2.
+- **M2 step 3 done** (branch `m2-step3-source-upload`): `/admin/sources` (pick a state and a
+  file; the browser hashes it and warns "already loaded on <date> as version N" before
+  sending; list with downloads). API: `GET /api/admin/states`, `GET, POST /api/admin/sources`,
+  `GET /api/admin/sources/:id/file`. Migration `0003_seed_states` adds the 50 states and DC
+  (status `none`).
+- **Next step:** M2 step 4, parser adapters (xlsx/csv, json, paste) and column mapping.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -134,6 +139,9 @@ _Last updated: 2026-11-01_
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
 4. **Georgia source:** URL and publish date of Attachments A and B.
+5. **Territories:** the states table has the 50 states and DC. Should Puerto Rico, Guam, the
+   US Virgin Islands, American Samoa and the Northern Mariana Islands be listed too? (Adding
+   them later is one migration; the M3 map would need an inset.)
 
 ## Watch dates
 

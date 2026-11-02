@@ -59,7 +59,9 @@ unless the Access application bypasses that path.)
   other method returns 405.
 - CSRF: Access cookies are `SameSite=Lax`; the API also rejects writes whose `Origin` is not
   the site's own origin, and requires `Content-Type: application/json` (no form posts).
-  Code: `apps/api/src/middleware/admin-write-guard.ts` (403 / 415 / 413).
+  Code: `apps/api/src/middleware/admin-write-guard.ts` (403 / 415 / 413). The one exception
+  to JSON is `POST /api/admin/sources`, which takes the raw file as `application/octet-stream`
+  up to 25 MB (still own-origin only).
 - Every write is limited to one `state_id`/`version_id` (see `docs/data-model.md`) and
   recorded in `audit_log` with the admin's email.
 - Inputs: zod-validate every body, query and path parameter. Reject unknown keys. Cap sizes
@@ -70,6 +72,9 @@ unless the Access application bypasses that path.)
 ## Upload safety
 
 - Files are parsed only in the admin's browser, inside a Web Worker.
+- The Worker never parses an upload. It re-hashes the body (the browser's hash must match),
+  checks the first bytes against the claimed type (`%PDF-`, zip header for xlsx, no NUL bytes
+  for text), and stores it. The R2 key never leaves the Worker.
 - `pdfjs-dist` is pinned to a current release (CVE-2024-4367 affected versions below 4.2.67)
   with `isEvalSupported: false`.
 - SheetJS comes from the official CDN tarball, not the stale npm `xlsx` package.

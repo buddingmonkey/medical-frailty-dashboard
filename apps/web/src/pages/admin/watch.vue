@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import {
-  groupWatchItems,
-  type WatchCreate,
-  type WatchItem,
-  watchItemSchema,
-  type WatchUpdate,
-} from '@mfcd/shared'
+import { groupWatchItems, type WatchCreate, watchItemSchema, type WatchUpdate } from '@mfcd/shared'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 
 import WatchCloseForm from '../../components/admin/WatchCloseForm.vue'
 import WatchItemForm from '../../components/admin/WatchItemForm.vue'
 import { formatIsoDate, localToday, useWatchItems, watchKindLabels } from '../../lib/admin-watch'
-import { ApiError } from '../../lib/api'
+import { sendJson } from '../../lib/api'
 
 type Tab = 'open' | 'history'
 const tab = ref<Tab>('open')
@@ -36,28 +30,11 @@ const closing = ref<number | null>(null)
 
 const queryClient = useQueryClient()
 
-async function send(method: 'POST' | 'PUT', url: string, body: unknown): Promise<WatchItem> {
-  const res = await fetch(url, {
-    method,
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(body),
-  })
-  const json: unknown = await res.json().catch(() => null)
-  if (!res.ok) {
-    const error =
-      typeof json === 'object' && json !== null && 'error' in json && typeof json.error === 'string'
-        ? json.error
-        : res.statusText
-    throw new ApiError(res.status, error)
-  }
-  return watchItemSchema.parse(json)
-}
-
 const save = useMutation({
   mutationFn: ({ id, body }: { id: number | null; body: WatchCreate | WatchUpdate }) =>
     id === null
-      ? send('POST', '/api/admin/watch', body)
-      : send('PUT', `/api/admin/watch/${String(id)}`, body),
+      ? sendJson('POST', '/api/admin/watch', body, watchItemSchema)
+      : sendJson('PUT', `/api/admin/watch/${String(id)}`, body, watchItemSchema),
   onSuccess: async () => {
     editing.value = null
     closing.value = null

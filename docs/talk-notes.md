@@ -58,6 +58,7 @@ literacy, little or no coding.
 | 2026-11-01 | This year CMS added the first diagnosis codes with a letter in the second place (`QA0`). The parser refused line 30,620 instead of skipping it, which exposed the same wrong assumption in the code that reads state lists | Make programs stop on the unexpected; silent skipping hides news | same |
 | 2026-11-01 | The planning docs said the keyword `disab` means "blind or disabled". A test row for each real state category showed it would also catch Louisiana's "Temporary disabling", which is a different thing | Test rules against every real example, not the examples you had in mind | `devlog/2026-11-01-m1-step4-categories.md` |
 | 2026-11-01 | The first admin write routes passed every test and were in a PR, but lacked the cross-site request check the security doc promised. Rereading that doc before the next step caught it before merge | Reread the security plan when you add the first feature of a new kind; tests only check what someone remembered to write | `devlog/2026-11-01-m2-step2-watch-dates.md` |
+| 2026-11-01 | Every test passed, but a screenshot taken at 11 pm US Central time said the file was stored "Nov 2": the page showed the UTC date. Tests run at any hour never noticed | Look at the real screen, at a real time of day; dates hide bugs | `devlog/2026-11-01-m2-step3-source-upload.md` |
 
 ## Numbers to collect
 
@@ -96,6 +97,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | **M1 total** (2026-11-01) | **≈ 1.1 h** | not measured | $0 | 7 PRs; 276 tests (M0: 44); 107,173 reference codes |
 | M2 step 1 (2026-11-01) | 0.1 (5 min) | not measured | $0 | Admin shell, audit log API and page; 17 new tests |
 | M2 step 2 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Watch dates page and banner; status.md table seeded into the app; CSRF write guard; 46 new tests |
+| M2 step 3 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Source upload to R2 with hash, type check and duplicate warning; 50 states + DC seeded; 41 new tests |
 
 ## Assets to capture for slides
 

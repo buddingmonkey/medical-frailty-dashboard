@@ -22,6 +22,13 @@
       "when": 1793595156271,
       "tag": "0002_seed_watch_items",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793595850801,
+      "tag": "0003_seed_states",
+      "breakpoints": true
     }
   ]
 }
