@@ -119,6 +119,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 12 + **M2 total** (2026-11-02) | 10:18–10:19; M2 ≈ 3.5 h over two days | not measured | $0 (+ $5 Workers Paid month) | Admin ingestion complete: 13 PRs (#20–#33), 615 Vitest + 9 admin e2e; four states, 17,186 rows through the UI |
 | M3 step 1 (2026-11-02) | 13:25–13:30 | not measured | $0 | Public states API with an edge cache keyed on the data version; 8 new tests |
 | M3 step 2 (2026-11-02) | 13:33–13:39 | not measured | $0 | Home map (51 shapes precomputed, 44 KB gzipped page), card, table view; a focus outline only a screenshot caught |
+| M3 step 3 (2026-11-02) | 13:48–13:53 | not measured | $0 | State pages and their API; 12 new tests |
 
 ## Assets to capture for slides
 

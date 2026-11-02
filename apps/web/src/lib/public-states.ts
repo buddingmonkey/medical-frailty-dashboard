@@ -1,5 +1,11 @@
-import { type PublicStateSummary, publicStatesResponseSchema, type StateStatus } from '@mfcd/shared'
+import {
+  publicStateDetailResponseSchema,
+  type PublicStateSummary,
+  publicStatesResponseSchema,
+  type StateStatus,
+} from '@mfcd/shared'
 import { useQuery } from '@tanstack/vue-query'
+import { type MaybeRefOrGetter, toValue } from 'vue'
 
 import { getJson } from './api'
 
@@ -8,6 +14,19 @@ export function usePublicStates() {
   return useQuery({
     queryKey: ['public', 'states'],
     queryFn: () => getJson('/api/public/states', publicStatesResponseSchema),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/** `GET /api/public/states/:slug`: one state's page. */
+export function usePublicState(slug: MaybeRefOrGetter<string>) {
+  return useQuery({
+    queryKey: ['public', 'state', slug],
+    queryFn: () =>
+      getJson(
+        `/api/public/states/${encodeURIComponent(toValue(slug))}`,
+        publicStateDetailResponseSchema,
+      ),
     staleTime: 5 * 60 * 1000,
   })
 }
@@ -37,4 +56,13 @@ export function stateLinkLabel(state: Pick<PublicStateSummary, 'name' | 'status'
   return state.published
     ? `${state.name}: ${status}, ${formatCount(state.published.totalEntries)} entries`
     : `${state.name}: ${status}`
+}
+
+/** An ISO timestamp as a date in the reader's own time zone. */
+export function formatTimestampDay(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }

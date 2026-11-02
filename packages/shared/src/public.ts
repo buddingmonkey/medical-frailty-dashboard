@@ -5,9 +5,11 @@ import {
   codeSystems,
   type FederalCategory,
   federalCategories,
+  federalCategorySchema,
   type Qualification,
   qualifications,
   stateStatusSchema,
+  versionStatusSchema,
 } from './enums'
 
 // Public, read-only API bodies (docs/architecture.md, "API shape"). Counts are entries of the
@@ -62,6 +64,48 @@ export const publicStatesResponseSchema = z.object({
   items: z.array(publicStateSummarySchema),
 })
 export type PublicStatesResponse = z.infer<typeof publicStatesResponseSchema>
+
+/** One of a state's own categories and the federal category its entries count under. */
+export const publicStateCategorySchema = z.object({
+  stateCategory: z.string(),
+  stateSubcategory: z.string(),
+  federalCategory: federalCategorySchema,
+  /** An admin confirmed it (a manual mapping or a chapter override); else a keyword guess. */
+  confirmed: z.boolean(),
+  entries: z.number().int().min(0),
+})
+export type PublicStateCategory = z.infer<typeof publicStateCategorySchema>
+
+/** Body of `GET /api/public/states/:slug`. */
+export const publicStateDetailResponseSchema = z.object({
+  dataVersion: z.number().int().min(0),
+  state: publicStateSummarySchema,
+  /** Our notes on the state (Markdown, shown as text), or null. */
+  notesMd: z.string().nullable(),
+  /** The documents the published list was read from. */
+  sources: z.array(
+    z.object({
+      title: z.string(),
+      /** The state's public link; null when unknown. */
+      url: z.url({ protocol: /^https?$/ }).nullable(),
+      publisherDate: isoDate.nullable(),
+      retrievedAt: z.string(),
+      fileType: z.string(),
+    }),
+  ),
+  /** Published and earlier published versions, newest first. Drafts never show. */
+  versions: z.array(
+    z.object({
+      versionNo: z.number().int().min(1),
+      status: versionStatusSchema.extract(['published', 'superseded']),
+      publishedAt: z.string().nullable(),
+      statePublishedDate: isoDate.nullable(),
+      rowCount: z.number().int().min(0),
+    }),
+  ),
+  categories: z.array(publicStateCategorySchema),
+})
+export type PublicStateDetail = z.infer<typeof publicStateDetailResponseSchema>
 
 export type SystemCounts = Record<CodeSystem, number>
 export type FederalCategoryCounts = Record<FederalCategory, number>

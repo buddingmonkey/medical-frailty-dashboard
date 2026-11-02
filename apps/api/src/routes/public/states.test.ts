@@ -1,4 +1,4 @@
-import { publicStatesResponseSchema } from '@mfcd/shared'
+import { publicStateDetailResponseSchema, publicStatesResponseSchema } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -229,5 +229,105 @@ describe('GET /api/public/states', () => {
   it('needs a sign-in in private mode', async () => {
     const res = await call('/api/public/states', { vars: { SITE_MODE: 'private' } })
     expect(res.status).toBe(401)
+  })
+})
+
+describe('GET /api/public/states/:slug', () => {
+  async function getState(slug: string) {
+    calls += 1
+    return call(`/api/public/states/${slug}`, {
+      host: `detail-${String(calls)}.example.com`,
+      vars: { SITE_MODE: 'public' },
+    })
+  }
+
+  it("returns the state's summary, sources, published versions and categories", async () => {
+    await db.insert(datasetVersions).values({
+      stateId: 'GA',
+      // A v3 that was rolled back to v1.
+      versionNo: 3,
+      status: 'superseded',
+      createdBy: ADMIN,
+      publishedAt: '2026-10-01T00:00:00.000Z',
+      rowCount: 3,
+    })
+    await db
+      .update(states)
+      .set({ notesMd: 'Two attachments, **A** and **B**.' })
+      .where(eq(states.id, 'GA'))
+    await db
+      .update(sourceDocuments)
+      .set({ url: 'https://medicaid.georgia.gov/list.pdf' })
+      .where(eq(sourceDocuments.title, 'GA list published'))
+
+    const res = await getState('ga')
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('public, max-age=300')
+    const body = publicStateDetailResponseSchema.parse(await res.json())
+    expect(body.state.published?.totalEntries).toBe(4)
+    expect(body.notesMd).toBe('Two attachments, **A** and **B**.')
+    expect(body.sources).toEqual([
+      expect.objectContaining({
+        title: 'GA list published',
+        url: 'https://medicaid.georgia.gov/list.pdf',
+        publisherDate: '2026-09-15',
+        fileType: 'pdf',
+      }),
+    ])
+    // The draft (v2) is not listed.
+    expect(body.versions.map((v) => [v.versionNo, v.status])).toEqual([
+      [3, 'superseded'],
+      [1, 'published'],
+    ])
+    expect(body.categories).toEqual([
+      {
+        stateCategory: 'Cancer',
+        stateSubcategory: '',
+        federalCategory: 'serious_complex_medical',
+        confirmed: false,
+        entries: 1,
+      },
+      {
+        stateCategory: 'Equipment',
+        stateSubcategory: '',
+        federalCategory: 'unmapped',
+        confirmed: false,
+        entries: 1,
+      },
+      {
+        stateCategory: 'Mental health',
+        stateSubcategory: '',
+        federalCategory: 'sud',
+        confirmed: true,
+        entries: 2,
+      },
+    ])
+  })
+
+  it('answers for a state with no list yet, upper case included', async () => {
+    const body = publicStateDetailResponseSchema.parse(await (await getState('MT')).json())
+
+    expect(body.state).toMatchObject({ id: 'MT', status: 'announced', published: null })
+    expect(body.sources).toEqual([])
+    expect(body.versions).toEqual([])
+    expect(body.categories).toEqual([])
+  })
+
+  it('never shows a source URL that is not http(s)', async () => {
+    await db
+      .update(sourceDocuments)
+      .set({ url: 'javascript:alert(1)' })
+      .where(eq(sourceDocuments.title, 'GA list published'))
+
+    const body = publicStateDetailResponseSchema.parse(await (await getState('ga')).json())
+
+    expect(body.sources[0]?.url).toBeNull()
+  })
+
+  it.each(['zz', 'georgia', 'g', '%27'])('answers 404 for %s, never cached', async (slug) => {
+    const res = await getState(slug)
+    expect(res.status).toBe(404)
+    expect(res.headers.get('cache-control')).toBe('no-store')
   })
 })

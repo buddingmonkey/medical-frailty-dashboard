@@ -131,6 +131,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/states/[slug]': RouteRecordInfo<
+      '/states/[slug]',
+      '/states/:slug',
+      { slug: ParamValue<true> },
+      { slug: ParamValue<false> },
+      | never
+    >,
   }
 
   /**
@@ -257,6 +264,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/states/[slug].vue': {
+      routes:
+        | '/states/[slug]'
+      views:
+        | never
+      pathParamNames:
+        | 'slug'
     }
   }
 
