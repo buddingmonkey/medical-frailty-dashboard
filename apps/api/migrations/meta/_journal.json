@@ -43,6 +43,13 @@
       "when": 1793632571593,
       "tag": "0005_draft_parts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793634003162,
+      "tag": "0006_chapter_mappings",
+      "breakpoints": true
     }
   ]
 }

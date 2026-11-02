@@ -31,6 +31,7 @@ const sections = [
   { to: '/admin/ingest', label: 'Read and map' },
   { to: '/admin/drafts', label: 'Drafts' },
   { to: '/admin/versions', label: 'Versions' },
+  { to: '/admin/categories', label: 'Categories' },
   { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },
 ] as const

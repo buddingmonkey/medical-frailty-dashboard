@@ -65,6 +65,8 @@ entries             id, version_id, code_system, raw_code, code_norm, match_kind
 
 category_mappings   id, state_id, state_category, state_subcategory, federal_category,
                     method ('auto'|'manual'), confidence, mapped_by, mapped_at
+chapter_mappings    state_id, chapter (1–22), federal_category, mapped_by, mapped_at
+                    (ICD-10-CM chapter overrides; PK state_id + chapter)
 
 ref_codes           code_system, code_norm, description, parent_norm, chapter, billable,
                     valid_from, valid_to  (ICD-10-CM and HCPCS Level II only, from public-domain

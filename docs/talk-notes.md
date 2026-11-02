@@ -110,6 +110,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 6 (2026-11-02) | 08:03–08:19 | not measured | $0 | Review table, CMS lookup for codes; NE questions 1,602 → 102; 62 new tests |
 | M2 step 7 (2026-11-02) | 08:32–09:22 | not measured | $0 | Draft versions, server checks, diff + CSV; 3 bugs found only with real files or parallel tests |
 | M2 step 8 (2026-11-02) | 09:25–09:37 | not measured | $0 | Publish (checked rows only, typed confirmations, R2 backup) and rollback; the three required safety tests |
+| M2 step 9 (2026-11-02) | 09:41–09:46 | not measured | $0 | Category mapping screen and chapter overrides; publish stores keyword guesses |
 
 ## Assets to capture for slides
 

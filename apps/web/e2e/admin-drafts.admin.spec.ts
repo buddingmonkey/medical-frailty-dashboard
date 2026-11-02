@@ -95,3 +95,22 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(await seriousA11yViolations(page)).toEqual([])
   })
 }
+
+test('maps a category and overrides a chapter', async ({ page }) => {
+  const errors = collectErrors(page)
+  await sendToDraft(page, 'Montana')
+  await page.goto('/admin/categories')
+  await page.getByLabel('State').selectOption('Montana')
+  const table = page.getByRole('table', { name: 'Categories of Montana' })
+  await table.getByLabel('Federal category for (no category)').selectOption('state_specific')
+  await table.getByRole('button', { name: 'Confirm (no category)' }).click()
+  await expect(page.getByRole('status')).toContainText('Confirmed (no category)')
+  await expect(table.getByText(/Confirmed by e2e-admin@localhost/)).toBeVisible()
+
+  const chapters = page.getByRole('table', { name: 'ICD-10-CM chapters' })
+  await chapters.getByLabel('Override for chapter 5').selectOption('disabling_mental_disorder')
+  await chapters.getByRole('button', { name: 'Save chapter 5' }).click()
+  await expect(page.getByRole('status')).toContainText('chapter 5')
+  expect(await seriousA11yViolations(page)).toEqual([])
+  expect(errors).toEqual([])
+})

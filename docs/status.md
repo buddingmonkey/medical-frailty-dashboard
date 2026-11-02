@@ -119,7 +119,13 @@ _Last updated: 2026-11-02_
   required tests in `docs/testing.md` (per-state isolation, typed confirmation, exact
   rollback) are in `apps/api/src/routes/admin/publish.test.ts`. Not built yet: pruning backups
   to 20 per state, deleting drafts older than 30 days.
-- **Next step:** M2 step 9, category mapping screen.
+- **M2 step 9 done** (branch `m2-step9-categories`): `/admin/categories` (confirm each
+  category's federal category, or all guesses at once; ICD-10-CM chapter overrides for
+  chapter-grouped states). Publish stores keyword guesses as `auto`. Migration
+  `0006_chapter_mappings`. `federalCategoryOf()` in shared is the one rule for admin and public
+  pages.
+- **Next step:** M2 step 10, AI cleanup (copy-paste prompt builder, then the optional Claude
+  API endpoint).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
