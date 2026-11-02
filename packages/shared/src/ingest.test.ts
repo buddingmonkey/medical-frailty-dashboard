@@ -100,6 +100,7 @@ describe('columnProfileSchema', () => {
       roles: ['code', 'ignore', 'description'],
       qualification: { mode: 'fixed', value: 'standalone', basis: 'published' },
       defaultCategory: '',
+      defaultTier: '',
     })
   })
 })
@@ -168,6 +169,23 @@ describe('applyMapping', () => {
       [false, 'Not severe', ''],
       [true, '', ''],
     ])
+  })
+
+  it('uses the tier for every row when the file has no tier column (GA Attachment A or B)', () => {
+    const ga: RawTable = {
+      name: 'Attachment B',
+      header: GA,
+      rows: [{ locator: 'row 2', cells: ['F20.0', 'ICD-10', 'Schizophrenia', 'Yes', 'SMI'] }],
+    }
+    const { rows } = applyMapping(
+      ga,
+      columnProfileSchema.parse({
+        roles: guessColumnRoles(GA),
+        qualification: { mode: 'fixed', value: 'needs_support', basis: 'published' },
+        defaultTier: 'Attachment B',
+      }),
+    )
+    expect(rows[0]?.tier).toBe('Attachment B')
   })
 
   it('uses the default category when the file has none', () => {

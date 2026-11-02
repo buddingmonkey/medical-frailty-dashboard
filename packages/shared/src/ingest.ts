@@ -112,6 +112,8 @@ export const columnProfileSchema = z
     qualification: qualificationRule,
     /** Category for every row when the file has no category column (e.g. Georgia). */
     defaultCategory: z.string().trim().max(200).default(''),
+    /** Tier for every row when the file has no tier column (GA: one file per tier). */
+    defaultTier: z.string().trim().max(200).default(''),
   })
   .superRefine((profile, ctx) => {
     const count = (role: ColumnRole) => profile.roles.filter((r) => r === role).length
@@ -215,7 +217,7 @@ export function applyMapping(table: RawTable, profile: ColumnProfile): MappingRe
       description: cell(row, at('description')),
       category: cell(row, at('category')) || profile.defaultCategory,
       subcategory: cell(row, at('subcategory')),
-      tier: cell(row, at('tier')),
+      tier: cell(row, at('tier')) || profile.defaultTier,
       qualification,
       qualificationBasis: rule.basis,
       qualificationValue,

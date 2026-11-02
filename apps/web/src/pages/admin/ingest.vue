@@ -136,6 +136,7 @@ const fixedValue = ref<Qualification>('unknown')
 const ruleValues = ref<Record<string, Qualification | ''>>({})
 const basis = ref<QualificationBasis>('published')
 const defaultCategory = ref('')
+const defaultTier = ref('')
 const savedOn = ref<{ at: string; by: string } | null>(null)
 const saved = ref(false)
 
@@ -148,6 +149,7 @@ function resetMapping(header: string[]) {
   ruleValues.value = {}
   basis.value = 'published'
   defaultCategory.value = ''
+  defaultTier.value = ''
   savedOn.value = null
   saved.value = false
 }
@@ -175,6 +177,7 @@ watch([table, stateId], async ([current, state]) => {
       ruleValues.value = { ...rule.values }
     }
     defaultCategory.value = item.profile.defaultCategory
+    defaultTier.value = item.profile.defaultTier
     savedOn.value = { at: item.updatedAt, by: item.updatedBy }
   } catch {
     // No saved profile available: keep the guesses.
@@ -196,6 +199,7 @@ const profile = computed(() =>
             basis: basis.value,
           },
     defaultCategory: defaultCategory.value,
+    defaultTier: defaultTier.value,
   }),
 )
 
@@ -545,6 +549,15 @@ const inputClass =
         <p class="mt-1 text-sm text-muted-foreground">
           This file has no category column (e.g. Georgia). Categories can be refined in the mapping
           step.
+        </p>
+      </div>
+
+      <div v-if="!roles.includes('tier')" class="max-w-md">
+        <label :for="`${id}-tier`" class="font-medium">Tier for every row</label>
+        <input :id="`${id}-tier`" v-model="defaultTier" type="text" :class="inputClass" />
+        <p class="mt-1 text-sm text-muted-foreground">
+          For a state that publishes each tier as its own file (Georgia: “Attachment A”, “Attachment
+          B”). Leave it empty when the list has no tiers.
         </p>
       </div>
 
