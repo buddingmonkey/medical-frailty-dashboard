@@ -1,4 +1,4 @@
-# Deploys one Worker and smoke-tests it (docs/deployment.md, "Environments and CI/CD").
+# Migrates D1, deploys one Worker and smoke-tests it (docs/deployment.md, "Environments and CI/CD").
 # Called by ci.yml: preview on every push to main, production on a `v*` tag after the
 # `production` environment's required reviewer approves.
 #
@@ -70,6 +70,37 @@ jobs:
           umask 077
           jq -n '{ACCESS_TEAM_DOMAIN: env.ACCESS_TEAM_DOMAIN, ACCESS_AUD: env.ACCESS_AUD}' \
             > "$RUNNER_TEMP/worker-secrets.json"
+
+      # A point-in-time restore target in case a migration goes wrong. Not `wrangler d1 export`:
+      # D1 cannot export a database with an FTS5 table (docs/deployment.md, "Backups and restore").
+      - name: Record D1 Time Travel bookmark
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          args=(d1 time-travel info DB --json)
+          if [ "$TARGET" != production ]; then args+=(--env "$TARGET"); fi
+          bookmark=$(pnpm --filter @mfcd/api exec wrangler "${args[@]}" | sed -n '/^{/,$p' | jq -er .bookmark)
+          echo "D1 bookmark before migrations: $bookmark"
+          {
+            echo "### D1 bookmark before migrations ($TARGET)"
+            echo
+            echo "\`$bookmark\`"
+            echo
+            echo "Restore: \`wrangler d1 time-travel restore DB --bookmark=$bookmark\` (7 days)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Before the new code goes live, so migrations must work with the previous Worker too
+      # (docs/deployment.md). Non-interactive runs apply without a prompt.
+      - name: Apply D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          args=(d1 migrations apply DB --remote)
+          if [ "$TARGET" != production ]; then args+=(--env "$TARGET"); fi
+          pnpm --filter @mfcd/api exec wrangler "${args[@]}"
 
       - name: Deploy
         env:

@@ -48,7 +48,7 @@ running totals in `docs/talk-notes.md`.
    `docs/sources.md`.
 5. **Done** (branch `m1-step5-checks`). Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
    `docs/ingestion.md`.
-6. Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
+6. **Done** (branch `m1-step6-deploy-migrations`). Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
    for production record the D1 Time Travel bookmark before migrating (`docs/deployment.md`,
    "Backups and restore"; D1 cannot export a database with an FTS5 table). Start the
    reference-code load on preview and production (two days each on the free tier; production

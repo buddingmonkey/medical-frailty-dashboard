@@ -60,7 +60,11 @@ _Last updated: 2026-11-01_
   auto-mapping keyword table, tested on every LA and MT category.
 - **M1 step 5 done** (branch `m1-step5-checks`): `packages/shared/src/checks.ts`, every check in
   `docs/ingestion.md` plus the diff and the publish confirmation gate (21 tests).
-- **Next step:** M1 step 6 (migrations and the reference-code load in the deploy).
+- **M1 step 6 done** (branch `m1-step6-deploy-migrations`): the deploy records a D1 Time Travel
+  bookmark, then applies migrations; a manual **Reference data** workflow loads `ref_codes` in
+  chunks (production after approval). **M1 is complete; waiting for the project lead's
+  review** (milestone gate). Production gets the schema with the next `v*` tag.
+- **Next step:** M2 (ingestion), after the M1 review.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

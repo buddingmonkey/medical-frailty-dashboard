@@ -109,9 +109,16 @@ to Workers Paid ($5/month) rather than re-architecting.
 
 The smoke test calls `/api/public/health` with the environment's service token (expects
 `ok: true`, the right `environment` and `X-Robots-Tag: noindex`), then checks that a request
-without a token is redirected to the Access login. **From M1** the deploy also runs
-`wrangler d1 migrations apply` (and, for production, records a D1 Time Travel bookmark first;
-see "Backups and restore").
+without a token is redirected to the Access login. Before deploying, the job records the D1
+Time Travel bookmark (shown in the run summary, with the restore command) and runs
+`wrangler d1 migrations apply DB --remote` (since M1 step 6), for preview and production alike.
+
+**Reference codes** load through a separate manual workflow, **Reference data**
+(`.github/workflows/reference-data.yml`): pick the environment and a row budget (default
+80,000), and run it again on later days until it reports nothing left. A production run waits
+for the same approval as a production deploy, and never runs at the same time as a deploy of
+that environment. Preview can also be loaded locally with
+`pnpm --filter @mfcd/reference-data load --env preview`; production cannot.
 
 - The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
 - **Never edit a migration after a remote database has applied it** (from M1 step 6 on). Until
