@@ -61,10 +61,15 @@ export interface ParsedCell {
 // ---------------------------------------------------------------------------------------------
 // Shapes (after normalizeCode: uppercase, no dots or spaces)
 
-/** ICD-10-CM: letter, digit, alphanumeric, then up to 4 more (7 characters at most). */
-const ICD_CM = /^[A-Z]\d[0-9A-Z][0-9A-Z]{0,4}$/
+/**
+ * ICD-10-CM: letter, digit, alphanumeric, then up to 4 more (7 characters at most). FY2027
+ * added the first codes with a letter in 2nd place, `QA0`–`QA1`; only `QA` is allowed, so a
+ * category name like `SMI` in a code column is not read as a code. A new family fails the
+ * reference-data build loudly (packages/reference-data).
+ */
+const ICD_CM = /^(?:[A-Z]\d|QA)[0-9A-Z][0-9A-Z]{0,4}$/
 /** Dotted form as published: `F20.0`, `C7A.010`, `S14.111A`. */
-const ICD_CM_DOTTED = /^[A-Z]\d[0-9A-Z]\.[0-9A-Z]{1,4}$/
+const ICD_CM_DOTTED = /^(?:[A-Z]\d|QA)[0-9A-Z]\.[0-9A-Z]{1,4}$/
 /** ICD-10-PCS: always 7 alphanumerics (no I or O). Only set from the source, never inferred. */
 const ICD_PCS = /^[0-9A-HJ-NP-Z]{7}$/
 /** CPT: 5 digits, or 4 digits + F (Category II), T (Category III) or U (PLA). */

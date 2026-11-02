@@ -1,6 +1,6 @@
 {
-  "id": "c612187f-877b-43d8-ae33-2a7b83a3223e",
-  "prevId": "ba369550-8b13-48c0-b86d-3b60f4434c32",
+  "id": "dfa78c15-9afd-41cc-85e0-915c8d3a6454",
+  "prevId": "67bd9c2f-059c-4266-b681-25abf2e55320",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -683,6 +683,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "billable": {
+          "name": "billable",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "valid_from": {
           "name": "valid_from",
           "type": "text",
@@ -698,13 +705,7 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "ref_codes_parent_idx": {
-          "name": "ref_codes_parent_idx",
-          "columns": ["code_system", "parent_norm"],
-          "isUnique": false
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "ref_codes_code_system_code_norm_valid_from_pk": {
@@ -717,6 +718,10 @@
         "ref_codes_code_system_check": {
           "name": "ref_codes_code_system_check",
           "value": "\"ref_codes\".\"code_system\" IN ('icd10cm', 'hcpcs')"
+        },
+        "ref_codes_billable_check": {
+          "name": "ref_codes_billable_check",
+          "value": "\"ref_codes\".\"billable\" IN (0, 1)"
         }
       }
     },

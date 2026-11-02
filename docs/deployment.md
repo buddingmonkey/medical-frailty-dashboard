@@ -89,6 +89,12 @@ through `pnpm cf <args>` (`scripts/cf.ts`), which loads that file. It **refuses 
 (≈ 6,000 rows plus FTS and index writes) fits inside the daily write quota. Load a few states
 per day if bulk-seeding many.
 
+**Reference codes** (`ref_codes`, 107,173 rows of ICD-10-CM and HCPCS) are larger than one
+day's free write quota, which preview and production share. The loader works in chunks and
+resumes, so the first load takes about **two days per database** at $0; later updates load
+only changed codes (`packages/reference-data/README.md`). Entries carry three indexes plus the
+FTS index, so a state version may cost about 5 writes per entry (estimate, not measured; measure in M2): GA's ~6,000 rows ≈ 30k writes.
+
 Watch for: a publish that writes > 100k rows in one day (free tier), and search traffic that
 misses the cache. Turn on a Cloudflare usage notification. If either becomes a problem, switch
 to Workers Paid ($5/month) rather than re-architecting.

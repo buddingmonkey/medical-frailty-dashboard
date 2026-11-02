@@ -28,6 +28,7 @@ const stages: Stage[] = [
   // Schema changes without a migration (scripts/db-drift.ts).
   { name: 'db-drift', args: ['db:drift'] },
   vitest('unit'),
+  vitest('refdata'),
   vitest('component'),
   vitest('api'),
 ]

@@ -46,7 +46,7 @@ apps/
     wrangler.jsonc
 packages/
   shared/              zod schemas, API types, code normalization (pure functions, no I/O)
-  reference-data/      scripts that build the ICD-10-CM / HCPCS reference tables from CMS files
+  reference-data/      builds ref_codes (ICD-10-CM, HCPCS) from pinned CMS files; resumable loader
 fixtures/              small excerpts of real state files + expected normalized output
 docs/
 ```
@@ -70,6 +70,7 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   server, which drizzle-kit does not start). `pnpm audit --prod` is clean. Migrations: change
   `apps/api/src/db/schema.ts`, run `pnpm db:generate`, review the SQL. Virtual tables (FTS5)
   and triggers go in hand-written migrations (`drizzle-kit generate --custom --name <x>`).
+- **`fflate` 0.8.x** unzips the CMS files in `packages/reference-data` (no dependencies).
 - **ESLint 10**, flat config built with `defineConfig()` from `eslint/config`
   (`tseslint.config()` is deprecated). Linting is type-aware (`strictTypeChecked`).
 - **Vue Router 5, file-based routing built in.** `unplugin-vue-router` is deprecated ("Merged

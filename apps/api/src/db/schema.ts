@@ -223,22 +223,35 @@ export const categoryMappings = sqliteTable(
 // ---------------------------------------------------------------------------------------------
 // Reference data and like codes
 
-/** ICD-10-CM and HCPCS Level II only, from public-domain CMS files (roadmap M1 step 3). */
+/**
+ * ICD-10-CM and HCPCS Level II only, from public-domain CMS files (packages/reference-data).
+ * About 107k rows against D1's free tier of 100k rows written per day, so each row must cost
+ * exactly one write: the table is `WITHOUT ROWID` (the primary key is the table) and has no
+ * other index. Children of a code are a primary-key range scan (`code_norm >= 'F20' AND
+ * code_norm < 'F21'`). drizzle-kit cannot express `WITHOUT ROWID`: it is added by hand in
+ * migrations/0000_init.sql, and src/db/schema.test.ts fails if a migration loses it.
+ */
 export const refCodes = sqliteTable(
   'ref_codes',
   {
     codeSystem: text('code_system', { enum: ['icd10cm', 'hcpcs'] }).notNull(),
     codeNorm: text('code_norm').notNull(),
     description: text('description').notNull(),
+    /** The nearest shorter code that exists (`T8450XA` → `T8450`). */
     parentNorm: text('parent_norm'),
+    /** ICD-10-CM chapter number as text (`'5'`); NULL for HCPCS. */
     chapter: text('chapter'),
+    /** ICD-10-CM: 1 = valid for billing, 0 = header. HCPCS: NULL. */
+    billable: integer('billable'),
+    /** First release we loaded the code from. */
     validFrom: text('valid_from').notNull(),
+    /** HCPCS termination date, or the day a yearly update deleted the code. */
     validTo: text('valid_to'),
   },
   (t) => [
     primaryKey({ columns: [t.codeSystem, t.codeNorm, t.validFrom] }),
-    index('ref_codes_parent_idx').on(t.codeSystem, t.parentNorm),
     check('ref_codes_code_system_check', oneOf(t.codeSystem, ['icd10cm', 'hcpcs'])),
+    check('ref_codes_billable_check', isBoolean(t.billable)),
   ],
 )
 

@@ -51,7 +51,11 @@ _Last updated: 2026-11-01_
 - **M1 step 2 done** (branch `m1-step2-codes`): `packages/shared/src/codes.ts` (split, normalize,
   wildcards, ranges, code-system inference, display, code URLs, `entryCovers`) with 103
   table-driven tests from the real files. New code system `drug_class` (LA pharmacy).
-- **Next step:** M1 step 3 (`packages/reference-data`, `ref_codes` from CMS files).
+- **M1 step 3 done** (branch `m1-step3-reference-data`): `packages/reference-data` builds
+  `ref_codes` from pinned CMS files (ICD-10-CM FY2027: 98,403 codes; HCPCS October 2026: 8,770)
+  into 22 resumable SQL chunks. `pnpm db:ref:local` loads them locally in ~20 s. Remote loads
+  take two days per database on the free tier (with M1 step 6).
+- **Next step:** M1 step 4 (federal categories and the auto-mapping keyword table).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -94,6 +98,8 @@ _Last updated: 2026-11-01_
 
 ## Open questions
 
+- **Reference-code load:** two days per database at $0 (chosen), or Workers Paid ($5) for one
+  month to load at once? Not blocking; the load starts in M1 step 6.
 1. **Dates to watch** are in "Watch dates" below (next: ~2026-12-28, the *Massachusetts v. Oz*
    appeal deadline).
 2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
@@ -115,6 +121,8 @@ here; that page is seeded from this table. Approximate dates are marked ~.
 | Date | What | Why it matters | Source |
 | --- | --- | --- | --- |
 | ~2026-12-28 | *Massachusetts v. Oz*: CMS appeal deadline (60 days from judgment; exact date depends on when judgment was entered) | An appeal or stay may change the site's ruling note; states may loosen combination rules either way | `docs/sources.md`, "Federal and court rulings" |
+| ~2026-12 | CMS posts the January 2027 HCPCS file | Build the diff loader first, so the update loads only new and changed codes (`packages/reference-data/README.md`, "Updating") | CMS HCPCS quarterly update page |
+| ~2027-06 | CMS posts ICD-10-CM FY2028 files (valid 2027-10-01) | Load the changes into `ref_codes`; re-run checks for every state | CMS ICD-10 page |
 | 2027-01-01 | Work requirements take effect | States may publish final or revised lists before this date; re-check all seed states | H.R.1 §71119 |
 | ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
