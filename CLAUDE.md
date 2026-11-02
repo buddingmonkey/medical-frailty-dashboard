@@ -5,8 +5,8 @@ A public site that compares the code lists US states use to mark Medicaid member
 front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
 All data is public state policy. There is no patient data, and there never will be.
 
-> **Status: M1 in progress (data foundation).** Every command below works except
-> `db:seed:local` and the seeded `e2e`, which arrive later in M1. `docs/status.md` says what exists.
+> **Status: M2 in progress (ingestion admin).** Every command below works except
+> `db:seed:local` and the seeded `e2e`, which are not built yet. `docs/status.md` says what exists.
 
 ## Commands
 

@@ -16,6 +16,9 @@ const pdf = makePdf([
     { text: 'with a second line', x: 120, y: 82 },
     { text: 'F20.1', x: 40, y: 104 },
     { text: 'Disorganized schizophrenia', x: 120, y: 104 },
+    // A bare category: the review asks whether it covers the whole category.
+    { text: 'F31', x: 40, y: 126 },
+    { text: 'Bipolar disorder', x: 120, y: 126 },
   ],
 ])
 
@@ -35,6 +38,11 @@ test('reads a PDF in the browser and maps its rows', async ({ page }) => {
 
   await page.getByLabel('Wrapped lines').selectOption('above')
   await expect(rows.getByText('with a second line Disorganized schizophrenia')).toBeVisible()
+
+  const review = page.getByRole('region', { name: 'Review rows' })
+  await expect(review.getByText('3 rows: 2 ready, 1 needs a decision')).toBeVisible()
+  await review.getByRole('button', { name: 'Whole category', exact: true }).click()
+  await expect(review.getByText('3 rows: 3 ready')).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -49,6 +57,10 @@ for (const scheme of ['light', 'dark'] as const) {
       buffer: Buffer.from(pdf),
     })
     await expect(page.getByRole('table', { name: 'Mapped rows (first 20)' })).toBeVisible()
+    // The review table with a flag and its buttons, and an open inline edit form.
+    const review = page.getByRole('table', { name: 'Rows to review' })
+    await review.getByRole('button', { name: /^Edit row/ }).click()
+    await expect(page.getByRole('group', { name: /^Edit row/ })).toBeVisible()
     expect(await seriousA11yViolations(page)).toEqual([])
   })
 }

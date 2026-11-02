@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/vue'
+import { screen, waitFor, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -22,8 +22,12 @@ interface Saved {
   profile: unknown
 }
 
+/** What ref_codes holds in these tests. */
+const cms: Record<string, 'icd10cm' | 'hcpcs'> = { A0103: 'icd10cm', E09349: 'icd10cm' }
+
 function fakeApi(savedProfile: unknown = null) {
   const saves: Saved[] = []
+  const lookups: string[][] = []
   server.use(
     http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),
     http.get('/api/admin/watch', () => HttpResponse.json({ items: [] })),
@@ -52,8 +56,17 @@ function fakeApi(savedProfile: unknown = null) {
       saves.push((await request.json()) as Saved)
       return HttpResponse.json({ ok: true })
     }),
+    http.post('/api/admin/ref-codes/lookup', async ({ request }) => {
+      const { codes } = (await request.json()) as { codes: string[] }
+      lookups.push(codes)
+      const items = codes.flatMap((codeNorm) => {
+        const codeSystem = cms[codeNorm]
+        return codeSystem ? [{ codeNorm, codeSystem, billable: true }] : []
+      })
+      return HttpResponse.json({ items })
+    }),
   )
-  return { saves }
+  return { saves, lookups }
 }
 
 let user: ReturnType<typeof userEvent.setup>
@@ -208,6 +221,54 @@ describe('/admin/ingest', () => {
         'with a second line Disorganized schizophrenia',
       ),
     ).toBeTruthy()
+  })
+
+  it('reviews the mapped rows, and starts the review again for a new file', async () => {
+    fakeApi()
+    // F20 sits on row 2 of both files, so a kept edit would show as "ready".
+    await start('Code\tDescription\nF20\tSchizophrenia\nF20.0\tParanoid schizophrenia\n')
+    const review = screen.getByRole('region', { name: 'Review rows' })
+    expect(within(review).getByText(/2 rows: 1 ready, 1 needs a decision/)).toBeTruthy()
+    await user.click(within(review).getByRole('button', { name: 'Whole category' }))
+    expect(within(review).getByText(/2 rows: 2 ready/)).toBeTruthy()
+
+    await user.upload(
+      screen.getByLabelText('File'),
+      new File(['Code,Code Name\nF20,Schizophrenia\n'], 'la.csv', { type: 'text/csv' }),
+    )
+    expect(await screen.findByText(/1 row: 0 ready, 1 needs a decision/)).toBeTruthy()
+  })
+
+  it('guesses that a list writes ICD-10-CM codes without dots, and asks CMS’s lists (NE)', async () => {
+    const api = fakeApi()
+    await start('Code\tDescription\nE09349\tDiabetes\nA0103\tTyphoid\nA9999\tUnknown\n')
+    expect(screen.getByLabelText<HTMLInputElement>(/written without dots/).checked).toBe(true)
+    // A0103 is only in ICD-10-CM, so the question “ICD-10-CM or HCPCS?” is settled.
+    expect(await screen.findByText(/3 rows: 2 ready, 1 needs a decision/)).toBeTruthy()
+    expect(api.lookups.flat().sort()).toEqual(['A0103', 'A9999', 'E09349'])
+
+    // A fixed code is looked up too; codes already known are not asked again.
+    const review = screen.getByRole('region', { name: 'Review rows' })
+    await user.selectOptions(within(review).getByLabelText('Show'), 'All rows')
+    await user.click(within(review).getByRole('button', { name: 'Edit row row 2' }))
+    const code = screen.getByLabelText('Code')
+    await user.clear(code)
+    await user.type(code, 'E09.341')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => {
+      expect(api.lookups.at(-1)).toEqual(['E09341'])
+    })
+    // E09.341 and the unknown A9999.
+    expect(await screen.findAllByText('Not in the CMS code list for this system')).toHaveLength(2)
+  })
+
+  it('says when the codes could not be checked against CMS’s lists', async () => {
+    fakeApi()
+    server.use(
+      http.post('/api/admin/ref-codes/lookup', () => HttpResponse.json({}, { status: 500 })),
+    )
+    await start()
+    expect(await screen.findByText(/Could not check the codes against the CMS lists/)).toBeTruthy()
   })
 
   it('reads a CSV file, and refuses a PDF it cannot read', async () => {
