@@ -37,7 +37,7 @@ running totals in `docs/talk-notes.md`.
 
 ## M1 Data foundation
 
-1. Drizzle schema + first migration for every table in `docs/data-model.md`, FTS5 table.
+1. **Done** (branch `m1-step1-schema`). Drizzle schema + first migration for every table in `docs/data-model.md`, FTS5 table.
    Include what `docs/seo.md` needs: a stable URL slug per state and code, and the state's
    publish date plus our last-updated date on each published version.
 2. `packages/shared/codes.ts`: normalization, wildcard, range, list splitting, code-system
@@ -49,7 +49,8 @@ running totals in `docs/talk-notes.md`.
 5. Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
    `docs/ingestion.md`.
 6. Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
-   for production a D1 export to R2 before migrating (`docs/deployment.md`).
+   for production record the D1 Time Travel bookmark before migrating (`docs/deployment.md`,
+   "Backups and restore"; D1 cannot export a database with an FTS5 table).
 
 ## M2 Ingestion (admin)
 

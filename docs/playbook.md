@@ -56,7 +56,12 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 - **Production deploys go through CI**, never by hand. Previews are private.
 - **Make the AI prove a test can fail.** A passing test proves nothing until you have seen it
   fail. In step 4 the AI broke the page on purpose (a blocked inline style) and checked that the
-  browser test caught it (`docs/devlog/2026-11-01-m0-step4-tests.md`).
+  browser test caught it (`docs/devlog/2026-11-01-m0-step4-tests.md`). Also check that the
+  break really happened: in M1 step 1 a first "proof" changed nothing, so it proved nothing
+  (`docs/devlog/2026-11-01-m1-step1-schema.md`).
+- **Check each plan step against the platform's documented limits.** The plan said to back
+  up the database with an export the platform refuses for this kind of database. Asking the
+  AI to read the official docs while planning caught it before anyone relied on that backup.
 - **See colours before you approve them.** Ask for a swatch page that shows light and dark
   mode with contrast ratios. "Based on another site's branding" is fine for colours; its fonts
   and logo are licensed, so ask which ones you may use (`docs/devlog/2026-11-01-m0-step2-web.md`).

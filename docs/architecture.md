@@ -64,6 +64,12 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   `typescript-eslint` 8.x supports only `<6.1.0` and `vue-tsc` needs the JS compiler API that 7
   dropped. Revisit when both support 7. TS 6 changed some defaults (`types` is `[]`), so
   `tsconfig.base.json` sets every option explicitly.
+- **Drizzle: `drizzle-orm` 0.45.x and `drizzle-kit` 0.31.x**, the stable lines. 1.0 is still
+  an RC (2026-11-01); revisit when it is final. drizzle-kit 0.31 pulls the deprecated
+  `@esbuild-kit` loader with an old esbuild (one moderate dev-only advisory about esbuild's dev
+  server, which drizzle-kit does not start). `pnpm audit --prod` is clean. Migrations: change
+  `apps/api/src/db/schema.ts`, run `pnpm db:generate`, review the SQL. Virtual tables (FTS5)
+  and triggers go in hand-written migrations (`drizzle-kit generate --custom --name <x>`).
 - **ESLint 10**, flat config built with `defineConfig()` from `eslint/config`
   (`tseslint.config()` is deprecated). Linting is type-aware (`strictTypeChecked`).
 - **Vue Router 5, file-based routing built in.** `unplugin-vue-router` is deprecated ("Merged

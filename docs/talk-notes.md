@@ -49,6 +49,8 @@ literacy, little or no coding.
 | 2026-11-01 | "Never deploy production by hand" moved from a rule in a doc into a script that refuses to do it | Turn important rules into code where it is cheap | same |
 | 2026-11-01 | The builder agent's first run, a cheap "recite your rules" check, repeated a stale line from `CLAUDE.md` ("production deploys from `main`"). The rules file was right; the top-level doc had drifted | A dry run of a new agent tests the docs it reads as much as the agent | `devlog/2026-11-01-m0-step8-builder.md` |
 | 2026-11-01 | After the ruleset went on, the AI tried to push straight to `main` on purpose. GitHub refused it. The devlog for that step had to go through a pull request like everything else | A rule you have not tried to break is a rule you only hope works | `devlog/2026-11-01-m0-step6-github.md` |
+| 2026-11-01 | The plan said "export the database to R2 before each production deploy". Cloudflare's docs say export refuses any database with a full-text search table, which the site needs. Caught while planning; the backup became a point-in-time restore bookmark | Check each step against the platform's real limits before building; a backup you can't take is worse than none | `devlog/2026-11-01-m1-step1-schema.md` |
+| 2026-11-01 | The AI's first test of its own safety check "passed", but the edit meant to break things had matched nothing. It noticed and redid the test | Before trusting a passing safety check, confirm you actually broke something | same |
 
 ## Numbers to collect
 
@@ -78,6 +80,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 6 (2026-11-01) | 0.3 (15 min) | not measured | $0 (public repo: free Actions) | CI, Dependabot, CodeQL, ruleset with no bypass |
 | M0 step 7 (2026-11-01) | 0.2 (11 min build, plus account setup) | not measured | $0 | Cloudflare account, D1, R2, Access, CI deploys |
 | M0 step 8 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Builder agent; **M0 total ≈ 1.5 h of building** |
+| M1 step 1 (2026-11-01) | 0.2 (12 min) | not measured | $0 | Schema, migrations, FTS5, drift check; 75 Vitest tests |
 
 ## Assets to capture for slides
 

@@ -34,14 +34,15 @@ Plus two of our own:
 ## Tables (D1 / SQLite)
 
 ```
-states              id (2-letter), name, fips, status ('none'|'announced'|'published'),
+states              id (2-letter), slug (URL, unique, never changes), name, fips, status ('none'|'announced'|'published'),
                     published_version_id → dataset_versions, notes_md, updated_at
 
 source_documents    id, state_id, title, url, publisher_date, retrieved_at,
                     file_type, sha256, r2_key, byte_size, uploaded_by
 
 dataset_versions    id, state_id, version_no, status ('draft'|'published'|'superseded'|'discarded'),
-                    label, effective_date, created_by, created_at,
+                    label, effective_date, state_published_date (the state's date),
+                    content_updated_at (our last-updated date), created_by, created_at,
                     published_by, published_at, check_report_json, row_count
 
 version_sources     version_id, source_document_id          (many-to-many)
@@ -61,7 +62,7 @@ ref_codes           code_system, code_norm, description, parent_norm, chapter, v
                     (ICD-10-CM and HCPCS Level II only, built from public-domain CMS files)
 
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
-condition_members   group_id, code_system, code_norm or prefix
+condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm
 
 app_meta            key, value                              (data_version, site settings)
 audit_log           id, at, actor_email, action, target, details_json
@@ -70,8 +71,31 @@ watch_items         id, title, kind ('court'|'federal'|'state_list'|'internal'),
                     due_date, date_is_approximate (0/1), why_md, links_json,
                     status ('open'|'done'|'dismissed'), resolution_md, resolved_by, resolved_at,
                     repeat_days (nullable), created_by, created_at
-entries_fts         FTS5 virtual table over (code_norm, raw_code, description_published)
+entries_fts         FTS5 virtual table over (code_norm, raw_code, description_published);
+                    external content (text lives in entries), kept in step by triggers
 ```
+
+The schema is `apps/api/src/db/schema.ts` (Drizzle); `apps/api/migrations/` holds the SQL.
+Rules the database itself enforces (tested in `apps/api/src/db/schema.test.ts`):
+
+- Enum columns have CHECK constraints built from the lists in `packages/shared/src/enums.ts`.
+- `state_subcategory` is `''`, never NULL, when a state has no subcategory, so the unique key
+  on `category_mappings (state_id, state_category, state_subcategory)` works (SQLite treats
+  NULLs as distinct).
+- At most one `published` version per state (partial unique index), and `version_no` is
+  unique per state.
+- `range_end_norm` is set exactly when `match_kind = 'range'`.
+- Deleting a version deletes its entries and `version_sources` rows (cascade); `entries_fts`
+  follows through triggers.
+- Dates are ISO-8601 text: `YYYY-MM-DD` for calendar dates, UTC with milliseconds for
+  timestamps (`2026-11-01T21:04:05.123Z`). IDs are integers, except `states.id`.
+- `states.published_version_id` and `dataset_versions.state_id` point at each other. Create
+  the state first (no published version), then its versions.
+- `content_updated_at` feeds `dateModified` and the sitemap `lastmod` (`docs/seo.md`). Set it
+  on publish, and move it when an admin changes a mapping of that state.
+- Code pages have no slug column: the URL is computed from the code system and code
+  (`/codes/icd-10-cm/F20.0`) by a function in `packages/shared/codes.ts` (roadmap M1 step 2).
+  Changing that function changes published URLs, so it needs 301s (`docs/seo.md`).
 
 Every public query reads through `states.published_version_id`. Rows of drafts and old
 versions sit in the same tables but are never visible publicly. This is what makes
