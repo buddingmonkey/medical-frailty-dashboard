@@ -66,6 +66,7 @@ literacy, little or no coding.
 | 2026-11-02 | Every unit test passed. Then real files and parallel browser tests found three bugs in an hour: two clicks at once got the same draft number; a long list broke a database limit by one; and Nebraska's PDF, which holds two tables, would have lost the first when the second was sent | Unit tests check what you thought of; the real file and two people clicking at once check what you didn't | `devlog/2026-11-02-m2-step7-drafts.md` |
 | 2026-11-02 | The test "publishing Montana never changes Nebraska" passed before publishing was even written. Only after the AI deliberately broke the finished code (one missing state filter) did it fail, and prove it could catch the bug it exists for | A safety test you have never seen fail is a guess | `devlog/2026-11-02-m2-step8-publish.md` |
 | 2026-11-02 | To test the AI prompt without paying for the API, the project lead suggested handing it to two AI helpers as if they were any chat assistant. Their answers matched the site's own PDF reader code for code (314 of 314, 27 of 27), and both pointed at the same flaw: an example in the prompt broke one of its own rules | Test instructions on a fresh reader; ask it what was unclear, not just for the answer | `devlog/2026-11-02-m2-step10-ai-cleanup.md` |
+| 2026-11-02 | The milestone check: load four states' real lists through the admin screens, then load Nebraska's file as Montana on purpose. The site asked for "MT" to be typed twice ("the file names NE"; "44% of codes gone") and would not publish with anything else | Make the dangerous mistake on purpose in a rehearsal, and watch the guard rail hold | `devlog/2026-11-02-m2-step11-seed-run.md` |
 
 ## Numbers to collect
 
@@ -113,6 +114,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 8 (2026-11-02) | 09:25–09:37 | not measured | $0 | Publish (checked rows only, typed confirmations, R2 backup) and rollback; the three required safety tests |
 | M2 step 9 (2026-11-02) | 09:41–09:46 | not measured | $0 | Category mapping screen and chapter overrides; publish stores keyword guesses |
 | M2 step 10 (2026-11-02) | 09:50–10:05 | not measured | $0 (Claude API off) | AI cleanup: copy-paste prompt and an optional Claude button; est. $5–6 per large file if turned on |
+| M2 step 11 (2026-11-02) | 10:08–10:14 | not measured | $0 | Four seed states through the UI (17,186 rows, 38 s); a wrong file stopped by typed checks |
 
 ## Assets to capture for slides
 
