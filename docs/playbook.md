@@ -73,10 +73,10 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 
 | Task | How | Status |
 | --- | --- | --- |
-| Load or update a state's code list | Admin → Ingestion. Follow the checks screen; read every warning | _(to write after M2)_ |
-| Fix a wrong category mapping | Admin → Category mapping | _(to write after M2)_ |
-| Roll back a bad upload | Admin → state → Versions → Roll back | _(to write after M2)_ |
-| Add or close a watch date | Admin → Watch dates | _(to write after M2)_ |
+| Load or update a state's code list | `docs/add-state-source.md`, step by step | Written (M2) |
+| Fix a wrong category mapping | Admin → Categories: choose the federal category, Confirm | Written (M2) |
+| Roll back a bad upload | Admin → Versions → choose the state → Restore an earlier version (two clicks) | Written (M2) |
+| Add or close a watch date | Admin → Watch dates | Written (M2) |
 | Add a new public page | Use the loop in section 3; prompt template below | _(to write after M3)_ |
 | Download a backup | Admin → Download backup | _(to write after M6)_ |
 

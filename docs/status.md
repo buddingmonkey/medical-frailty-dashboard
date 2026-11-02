@@ -143,7 +143,12 @@ _Last updated: 2026-11-02_
   Tier 1 = qualifies alone, Tier 2 = state doesn't say; NE = state doesn't say; LA designation
   0/1/2 as in `docs/sources.md` (inferred). No category mapping is confirmed yet (GA and NE have
   only "(no category)"; LA has 12 categories the keywords do not map).
-- **Next step:** M2 step 12, the "add a state source" guide.
+- **M2 step 12 done, except where the skill file lives** (branch `m2-step12-state-guide`):
+  `docs/add-state-source.md`, the step-by-step guide written from the step 11 run (also linked
+  from `CLAUDE.md` and the playbook's task table). The project lead decides where the skill
+  wrapper goes (`.claude/skills/` is untracked); it only needs to point at that doc.
+- **M2 is complete apart from the preview half of step 11.** Hard stop for the project lead's
+  review (PRs #20–#33). See the M2 devlog entry for the summary and the questions.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
