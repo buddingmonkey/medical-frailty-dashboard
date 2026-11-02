@@ -5,7 +5,8 @@ import { defineConfig, devices } from '@playwright/test'
 // Access sits in front of local wrangler; the API tests cover the gate.
 const PORT = 8788
 // Admin pages: a second Worker in development mode, whose localhost-only bypass signs in a
-// made-up admin, with its own local D1 (migrations applied first). Tests: e2e/*.admin.spec.ts.
+// made-up admin, with its own local D1 (migrations applied first, then e2e/fixtures/admin-seed.sql:
+// synthetic CCSR groups and a published Louisiana list). Tests: e2e/*.admin.spec.ts.
 const ADMIN_PORT = 8789
 const ADMIN_STATE = '.wrangler/e2e-admin'
 const PUBLIC_STATE = '.wrangler/e2e-public'
@@ -50,6 +51,8 @@ export default defineConfig({
     {
       command:
         `pnpm --dir ../api exec wrangler d1 migrations apply DB --local --persist-to ${ADMIN_STATE}` +
+        ` && pnpm --dir ../api exec wrangler d1 execute DB --local --persist-to ${ADMIN_STATE}` +
+        ' --file ../web/e2e/fixtures/admin-seed.sql' +
         ` && pnpm --dir ../api exec wrangler dev --port ${String(ADMIN_PORT)}` +
         ` --persist-to ${ADMIN_STATE} --var ENVIRONMENT:development` +
         ' --var DEV_ADMIN_EMAIL:e2e-admin@localhost --var SITE_MODE:public',
