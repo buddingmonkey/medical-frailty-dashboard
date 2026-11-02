@@ -87,10 +87,10 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 7 (2026-11-01) | 0.2 (11 min build, plus account setup) | not measured | $0 | Cloudflare account, D1, R2, Access, CI deploys |
 | M0 step 8 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Builder agent; **M0 total ≈ 1.5 h of building** |
 | M1 step 1 (2026-11-01) | 0.2 (12 min) | not measured | $0 | Schema, migrations, FTS5, drift check; 75 Vitest tests |
-| M1 step 2 (2026-11-01) | 0.25 (15 min) | not measured | $0 | Code normalization; 103 table-driven tests |
-| M1 step 3 (2026-11-01) | 0.2 (13 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
-| M1 step 4 (2026-11-01) | 0.1 (7 min) | not measured | $0 | Federal categories from the enacted law; keyword auto-mapping |
-| M1 step 5 (2026-11-01) | 0.15 (8 min) | not measured | $0 | Pre-publish checks and diff; 21 tests |
+| M1 step 2 (2026-11-01) | 0.3 (17 min, incl. CodeQL fix) | not measured | $0 | Code normalization; 103 table-driven tests |
+| M1 step 3 (2026-11-01) | 0.2 (12 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
+| M1 step 4 (2026-11-01) | 0.1 (4 min) | not measured | $0 | Federal categories from the enacted law; keyword auto-mapping |
+| M1 step 5 (2026-11-01) | 0.05 (3 min) | not measured | $0 | Pre-publish checks and diff; 21 tests |
 
 ## Assets to capture for slides
 

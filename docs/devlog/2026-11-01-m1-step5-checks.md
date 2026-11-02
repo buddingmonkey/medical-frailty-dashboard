@@ -3,7 +3,7 @@
 **Milestone:** M1 step 5  •  **People:** project lead (not involved in this step)  •
 **AI:** Claude Code, Opus main session (no builder agent)
 
-Start 21:53 CST, end 22:01 CST (from the PC clock).
+Start 21:49 CST, end 21:52 CST (commit times).
 
 ## Goal
 Pure functions for the pre-publish checks and the diff against the published version, with a
@@ -25,15 +25,18 @@ test for every check in `docs/ingestion.md`.
 | Report token deferred to the publish route | It ties the report to stored rows, which exist only in M2 | AI |
 
 ## Corrections and surprises
-- None in this step. The ingestion doc left several definitions open (what "removed" counts,
-  what a duplicate is); they are now written next to the table.
+- The ingestion doc left several definitions open (what "removed" counts, what a duplicate
+  is); they are now written next to the table.
+- **The AI wrote guessed end times** into the step 4 and step 5 entries (21:53 and 22:01)
+  instead of reading the clock; the clock said 21:52 when this was noticed. Both entries now
+  use commit times.
 
 ## What a non-technical builder should take from this
 - Test the edges of every limit (exactly 2%, just over 2%). That is where off-by-one mistakes
   hide.
 
 ## Numbers
-- Time: about 8 minutes.
+- Time: about 3 minutes (plus the next step's CI wait).
 - AI cost: not measured. Hosting: $0.
 - Tests: 21 new (197 unit total); all passing.
 
