@@ -3,7 +3,7 @@
 **Milestone:** M1 (all six steps)  •  **People:** project lead  •  **AI:** Claude Code, Opus
 main session (no builder agents)
 
-Start 20:58 CST, end 22:05 CST (PC clock). PRs #12–#17, plus this one.
+Start 20:58 CST, end 22:02 CST (PC clock). PRs #12–#17, plus this one.
 
 ## Goal
 Everything the site's data rests on, before any upload screen exists: the database schema,
@@ -45,7 +45,7 @@ AI still asked one question when it mattered (state URL slugs) and wrote open qu
 - **The AI guessed two devlog times** instead of reading the clock; corrected from commit times.
 
 ## Numbers
-- Time: about 1 h 7 min of AI working time; the project lead answered three questions.
+- Time: about 1 h 4 min of AI working time; the project lead answered three questions.
 - AI cost: not measured. Hosting: $0.
 - Tests: 197 unit, 13 refdata, 55 API, 6 component, 5 e2e (276 in all; M0 ended with 44).
 - Reference rows: 107,173. Migrations: 2. Pull requests: 7.
