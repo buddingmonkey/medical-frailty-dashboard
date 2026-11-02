@@ -197,7 +197,7 @@ _Last updated: 2026-11-02_
 | Add-a-state guide | Served in the app at `/admin/guide` (rendered from `docs/add-state-source.md`), linked from "Read and map" when a file cannot be read. No separate agent skill (project lead, 2026-11-02) |
 | Step 11 assumptions | Whole-category reading of bare codes and the qualification per state look right; the project lead verifies later (2026-11-02) |
 | Claude API button | Stays off; shown disabled with a tooltip that says it needs a key and costs money (project lead, 2026-11-02) |
-| Release after M2 | `v0.2.0` to production (project lead, 2026-11-02); production deploy waits for the project lead's approval in GitHub |
+| Release after M2 | `v0.2.0` in production 2026-11-02 (approved by the project lead; run 41492763306): migrations 0002–0006 applied, smoke test passed. No state data in production yet |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
