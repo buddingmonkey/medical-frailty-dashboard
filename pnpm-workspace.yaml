@@ -16,3 +16,7 @@ allowBuilds:
   esbuild: false
   vue-demi: false
   workerd: false
+
+# pdfjs-dist lists a native canvas module as optional. We only read text, so it is never needed.
+ignoredOptionalDependencies:
+  - '@napi-rs/canvas'

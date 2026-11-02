@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { makePdf } from '../../ingest/fixtures/make-pdf'
 import { server } from '../../test/msw-server'
 import { renderRoute } from '../../test/render-route'
 
@@ -152,6 +153,14 @@ describe('/admin/ingest', () => {
     )
   })
 
+  it('names a blank designation “(blank)” among the values with no qualification', async () => {
+    fakeApi()
+    await start(`${laPaste}\nPhysical\tSMI\tG2\t\tBlank designation\tF33.9`)
+    expect(
+      (await screen.findByText(/No qualification chosen for/)).textContent.replace(/\s+/g, ' '),
+    ).toContain('No qualification chosen for: (blank), 0, 2.')
+  })
+
   it('needs exactly one code column before it maps or saves', async () => {
     fakeApi()
     await start()
@@ -166,7 +175,42 @@ describe('/admin/ingest', () => {
     ).toBe(true)
   })
 
-  it('reads a CSV file, and explains file types that are not supported yet', async () => {
+  it('reads a PDF, shows how wrapped lines were read, and re-reads them the other way', async () => {
+    fakeApi()
+    await renderRoute('/admin/ingest')
+    await screen.findByRole('option', { name: 'Montana' })
+    await user.selectOptions(screen.getByLabelText('State'), 'Montana')
+    const pdf = makePdf([
+      [
+        { text: 'Code', x: 40, y: 50, bold: true },
+        { text: 'Code Name', x: 120, y: 50, bold: true },
+        { text: 'F20.0', x: 40, y: 70 },
+        { text: 'Paranoid schizophrenia', x: 120, y: 70 },
+        { text: 'with a second line', x: 120, y: 82 },
+        { text: 'F20.1', x: 40, y: 104 },
+        { text: 'Disorganized schizophrenia', x: 120, y: 104 },
+      ],
+    ])
+    await user.upload(screen.getByLabelText('File'), new File([pdf], 'mt.pdf'))
+
+    const rows = await screen.findByRole('table', { name: 'Mapped rows (first 20)' })
+    expect(within(rows).getByText('Paranoid schizophrenia with a second line')).toBeTruthy()
+    expect(within(rows).getByText('page 1, line 1')).toBeTruthy()
+    const wrap = screen.getByLabelText<HTMLSelectElement>('Wrapped lines')
+    expect(wrap.value).toBe('auto')
+    expect(wrap.selectedOptions[0]?.textContent).toContain('found: below the code')
+
+    await user.selectOptions(wrap, 'above')
+    // The select stays put (and keeps focus) while the file is read again.
+    expect(screen.getByLabelText('Wrapped lines')).toBe(wrap)
+    expect(
+      await within(await screen.findByRole('table', { name: 'Mapped rows (first 20)' })).findByText(
+        'with a second line Disorganized schizophrenia',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('reads a CSV file, and refuses a PDF it cannot read', async () => {
     fakeApi()
     await renderRoute('/admin/ingest')
     await screen.findByRole('option', { name: 'Montana' })
@@ -179,6 +223,9 @@ describe('/admin/ingest', () => {
     expect(await screen.findByText(/1 row mapped/)).toBeTruthy()
 
     await user.upload(screen.getByLabelText('File'), new File(['%PDF-'], 'mt.pdf'))
-    expect((await screen.findByRole('alert')).textContent).toContain('PDF parsing is not built yet')
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'mt.pdf is not a readable PDF.',
+    )
+    expect(screen.queryByLabelText('Wrapped lines')).toBeNull()
   })
 })

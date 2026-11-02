@@ -5,13 +5,26 @@ import readXlsxFile from 'read-excel-file/web-worker'
 // Parser adapters (docs/ingestion.md, "Parser adapters"). Pure functions: they run in a Web
 // Worker in the browser (worker.ts) and directly in tests.
 
-/** A file we cannot turn into a table. The message is shown to the admin. */
-export class ParseError extends Error {
-  override name = 'ParseError'
-}
+import { ParseError } from './parse-error'
+import type { WrapDirection } from './pdf-layout'
+
+export { ParseError }
 
 export type ParseInput =
-  { kind: 'file'; name: string; bytes: Uint8Array } | { kind: 'paste'; text: string }
+  | {
+      kind: 'file'
+      name: string
+      bytes: Uint8Array
+      /** PDF only: where wrapped text sits relative to the code; 'auto' detects it. */
+      wrap?: WrapDirection | 'auto'
+    }
+  | { kind: 'paste'; text: string }
+
+export interface ParseResult {
+  tables: RawTable[]
+  /** PDF only: the wrap direction used (chosen, or detected under 'auto'). */
+  pdfWrap?: WrapDirection
+}
 
 const QUOTE = '"'
 
@@ -178,20 +191,25 @@ export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTab
 /** Text from bytes; TextDecoder drops a UTF-8 byte-order mark. */
 const decode = (bytes: Uint8Array) => new TextDecoder('utf-8').decode(bytes)
 
-export function parseSource(input: ParseInput): Promise<RawTable[]> {
-  return Promise.resolve().then(async () => {
-    if (input.kind === 'paste') return [parseDelimited(input.text, '\t', 'Pasted table')]
+export function parseSource(input: ParseInput): Promise<ParseResult> {
+  return Promise.resolve().then(async (): Promise<ParseResult> => {
+    if (input.kind === 'paste')
+      return { tables: [parseDelimited(input.text, '\t', 'Pasted table')] }
     switch (fileTypeFromName(input.name)) {
       case 'csv':
-        return [parseDelimited(decode(input.bytes), ',', input.name)]
+        return { tables: [parseDelimited(decode(input.bytes), ',', input.name)] }
       case 'txt':
-        return [parseDelimited(decode(input.bytes), '\t', input.name)]
+        return { tables: [parseDelimited(decode(input.bytes), '\t', input.name)] }
       case 'json':
-        return [parseJson(decode(input.bytes), input.name)]
-      case 'pdf':
-        throw new ParseError('PDF parsing is not built yet (roadmap M2 step 5).')
+        return { tables: [parseJson(decode(input.bytes), input.name)] }
+      case 'pdf': {
+        // pdf.js is large: load it only when a PDF is read.
+        const { parsePdf } = await import('./pdf')
+        const { tables, wrap } = await parsePdf(input.bytes, input.name, input.wrap ?? 'auto')
+        return { tables, pdfWrap: wrap }
+      }
       case 'xlsx':
-        return parseXlsx(input.bytes, input.name)
+        return { tables: await parseXlsx(input.bytes, input.name) }
       case null:
         throw new ParseError('Use a CSV, JSON, text, Excel or PDF file.')
     }

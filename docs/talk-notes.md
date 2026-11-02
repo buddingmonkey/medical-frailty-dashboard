@@ -60,6 +60,8 @@ literacy, little or no coding.
 | 2026-11-01 | The first admin write routes passed every test and were in a PR, but lacked the cross-site request check the security doc promised. Rereading that doc before the next step caught it before merge | Reread the security plan when you add the first feature of a new kind; tests only check what someone remembered to write | `devlog/2026-11-01-m2-step2-watch-dates.md` |
 | 2026-11-01 | Every test passed, but a screenshot taken at 11 pm US Central time said the file was stored "Nov 2": the page showed the UTC date. Tests run at any hour never noticed | Look at the real screen, at a real time of day; dates hide bugs | `devlog/2026-11-01-m2-step3-source-upload.md` |
 | 2026-11-01 | The plan said to install the Excel library from its maker's website, not the usual package store. The AI's own safety rules refused, and the step went ahead without Excel, with the choice left to the project lead | Guardrails that stop the AI turn into decisions for you; write down the options, keep the rest moving. (The project lead picked a smaller library from the usual store; it was in within the hour.) | `devlog/2026-11-01-m2-step4-parsers.md` |
+| 2026-11-02 | The plan said a wrapped line belongs to the row above. Dumping every word's position in all five state PDFs showed that was true for one state; another mixed both directions in the same file. The parser now weighs each gap on its own | Measure the real files before trusting a rule written from one example | `devlog/2026-11-02-m2-step5-pdf.md` |
+| 2026-11-02 | Every automated test passed, and the page showed nothing: the PDF library hijacked the background worker's messages. Only running the real app in a real browser showed it; a browser test now covers it | Green tests in a simulated browser are not a working feature; look at the real screen | same |
 
 ## Numbers to collect
 
@@ -101,6 +103,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 3 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Source upload to R2 with hash, type check and duplicate warning; 50 states + DC seeded; 41 new tests |
 | M2 step 4 (2026-11-01) | 0.1 (11 min) | not measured | $0 | CSV/JSON/paste adapters in a Web Worker, column mapping and saved profiles; 33 new tests |
 | M2 step 4b + dev:stop (2026-11-01) | 0.1 (~10 min) | not measured | $0 | Excel via `read-excel-file` (project lead's choice); `pnpm dev:stop`; 8 new tests |
+| M2 step 5 (2026-11-02) | 0.6 (36 min) | not measured | $0 | PDF adapter; all five seed PDFs read (17,187 rows); 37 new tests, admin e2e project |
 
 ## Assets to capture for slides
 

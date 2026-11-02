@@ -75,8 +75,11 @@ unless the Access application bypasses that path.)
 - The Worker never parses an upload. It re-hashes the body (the browser's hash must match),
   checks the first bytes against the claimed type (`%PDF-`, zip header for xlsx, no NUL bytes
   for text), and stores it. The R2 key never leaves the Worker.
-- `pdfjs-dist` is pinned to a current release (CVE-2024-4367 affected versions below 4.2.67)
-  with `isEvalSupported: false`.
+- `pdfjs-dist` is pinned to a current release (CVE-2024-4367 affected versions below 4.2.67).
+  pdf.js 6 has no eval path left (the `isEvalSupported` option was removed with it; no
+  `eval` or `new Function` in either build), and our CSP forbids eval anyway. It runs with
+  font loading off, no fetches, and in its own worker started from our parser worker. Its
+  optional native canvas module is never installed (`ignoredOptionalDependencies`).
 - Excel files are read with `read-excel-file` (npm, pinned), never the stale npm `xlsx`
   package (unmaintained, known CVEs).
 - The original file goes to R2 as `application/octet-stream` with
