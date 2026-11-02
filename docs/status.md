@@ -62,8 +62,10 @@ _Last updated: 2026-11-01_
   `docs/ingestion.md` plus the diff and the publish confirmation gate (21 tests).
 - **M1 step 6 done** (branch `m1-step6-deploy-migrations`): the deploy records a D1 Time Travel
   bookmark, then applies migrations; a manual **Reference data** workflow loads `ref_codes` in
-  chunks (production after approval). **M1 is complete; waiting for the project lead's
-  review** (milestone gate). Production gets the schema with the next `v*` tag.
+  chunks (production after approval). First CI migration ran on preview (2026-11-01), and
+  80,000 of 107,173 reference rows are loaded there; run the workflow again after 00:00 UTC.
+  **M1 is complete; waiting for the project lead's review** (milestone gate,
+  `docs/devlog/2026-11-01-m1-milestone.md`). Production gets the schema with the next `v*` tag.
 - **Next step:** M2 (ingestion), after the M1 review.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
