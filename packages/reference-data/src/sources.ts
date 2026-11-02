@@ -1,6 +1,7 @@
-// The CMS releases `ref_codes` is built from. To update, change a release here (URL, SHA-256,
-// member file, effective date) and follow README.md, "Updating". Both code sets are public
-// domain (docs/data-model.md, "Licensing of code text").
+// The releases the reference tables are built from: CMS's ICD-10-CM and HCPCS files for
+// `ref_codes` (public domain; docs/data-model.md, "Licensing of code text") and AHRQ's CCSR for
+// `ref_ccsr` (no stated licence; see below). To update, change a release here (URL, SHA-256,
+// member file, effective date) and follow README.md, "Updating".
 
 export interface Release {
   /** Chunk names and app_meta markers start with this, e.g. `icd10cm-fy2027-000`. */
@@ -35,3 +36,25 @@ export const releases: readonly Release[] = [
     validFrom: '2026-10-01',
   },
 ]
+
+/** The AHRQ CCSR release behind `ref_ccsr` and `ref_ccsr_categories`. */
+export interface CcsrRelease {
+  /** Chunk names and app_meta markers start with this, e.g. `ccsr-dx-2026.1-000`. */
+  id: string
+  url: string
+  sha256: string
+  /** The CSV mapping file inside the zip. */
+  member: string
+}
+
+// Clinical Classifications Software Refined (CCSR) for ICD-10-CM Diagnoses, v2026.1. Healthcare
+// Cost and Utilization Project (HCUP). Agency for Healthcare Research and Quality, Rockville, MD.
+// https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp
+// AHRQ states no licence for these files: never commit them or anything copied from them. The
+// build downloads the zip into .cache/ and writes only to dist/ (both gitignored); README.md.
+export const ccsrRelease: CcsrRelease = {
+  id: 'ccsr-dx-2026.1',
+  url: 'https://hcup-us.ahrq.gov/toolssoftware/ccsr/DXCCSR-v2026-1.zip',
+  sha256: '093ea8f925606eea74a9342395eed440e7635293d0abf031d8c89d1183cde310',
+  member: 'DXCCSR-v2026-1/DXCCSR_v2026-1.csv',
+}

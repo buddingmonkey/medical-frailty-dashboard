@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 1)_
+_Last updated: 2026-11-02 (M5 step 2)_
 
 ## Where things stand
 
@@ -190,6 +190,9 @@ _Last updated: 2026-11-02 (M5 step 1)_
 - **M5 started** (project lead, 2026-11-02). **Step 1 done** (branch `m5-step1-unified`):
   migration `0007_unified_categories` and `unifiedOf()` in `packages/shared/src/unified.ts`
   (spec: `docs/data-model.md`, "Unified categories (M5)"). No routes or UI yet.
+- **M5 step 2 done** (branch `m5-step2-ccsr`): AHRQ CCSR v2026.1 in `ref_ccsr` /
+  `ref_ccsr_categories` (migration 0008; downloaded and pinned, never committed); longest-prefix
+  lookup in `@mfcd/shared/ccsr`. 16 invalid codes in the seed lists noted in `docs/sources.md`.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

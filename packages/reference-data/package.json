@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node src/cli.ts build",
+    "ccsr-coverage": "node src/cli.ts ccsr-coverage",
     "load": "node src/cli.ts load",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",

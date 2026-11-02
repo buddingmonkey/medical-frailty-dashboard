@@ -2,6 +2,7 @@
 export * from './admin'
 export * from './ai-cleanup'
 export * from './categories'
+export * from './ccsr'
 export * from './category-mapping'
 export * from './checks'
 export * from './codes'

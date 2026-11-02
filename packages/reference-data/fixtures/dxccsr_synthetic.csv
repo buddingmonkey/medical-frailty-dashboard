@@ -1,0 +1,8 @@
+'ICD-10-CM CODE','ICD-10-CM CODE DESCRIPTION','Default CCSR CATEGORY IP','Default CCSR CATEGORY DESCRIPTION IP','Default CCSR CATEGORY OP','Default CCSR CATEGORY DESCRIPTION OP','CCSR CATEGORY 1','CCSR CATEGORY 1 DESCRIPTION','CCSR CATEGORY 2','CCSR CATEGORY 2 DESCRIPTION','CCSR CATEGORY 3','CCSR CATEGORY 3 DESCRIPTION','CCSR CATEGORY 4','CCSR CATEGORY 4 DESCRIPTION','CCSR CATEGORY 5','CCSR CATEGORY 5 DESCRIPTION','CCSR CATEGORY 6','CCSR CATEGORY 6 DESCRIPTION','Rationale for Default Assignment'
+'F200',Test code one,'TST001',Test group one,'TST001',Test group one,'TST001',Test group one,' ',,' ',,' ',,' ',,' ',,01 Test rationale
+'F201',Test code two,'TST001',Test group one,'TST001',Test group one,'TST001',Test group one,' ',,' ',,' ',,' ',,' ',,01 Test rationale
+'F209',"Test code, with a comma",'TST001',Test group one,'TST001',Test group one,'TST001',Test group one,' ',,' ',,' ',,' ',,' ',,01 Test rationale
+'F3110',Test code three,'TST002',"Test group two, with a comma",'TST002',"Test group two, with a comma",'TST002',"Test group two, with a comma",'TST003',Test group three,' ',,' ',,' ',,' ',,02 Test rationale
+'F3111',Test code four,'TST002',"Test group two, with a comma",'TST002',"Test group two, with a comma",'TST002',"Test group two, with a comma",'TST003',Test group three,' ',,' ',,' ',,' ',,02 Test rationale
+'F312',Test code five,'TST003',Test group three,'TST003',Test group three,'TST002',"Test group two, with a comma",'TST003',Test group three,' ',,' ',,' ',,' ',,03 Test rationale
+'Q990',Test code six,'XXX000',Unacceptable PDX,'XXX111',Unacceptable DX1,'MBD901',Test group in a real body system,' ',,' ',,' ',,' ',,' ',,04 Test rationale

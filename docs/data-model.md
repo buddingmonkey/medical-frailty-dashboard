@@ -90,6 +90,28 @@ should set it is an open question for the project lead (`docs/status.md`).
 groups. The drill-down uses it to show codes no state lists (roadmap M5 step 6). Other code
 systems have no universe: only codes some state lists are shown.
 
+### CCSR reference data
+
+AHRQ's CCSR for ICD-10-CM (v2026.1, `packages/reference-data`; licence and citation in its
+README) puts each code in 1–6 of 553 categories, with a default. `ref_ccsr_categories` holds the
+names; `ref_ccsr` the code-to-category rows, with `is_default = 1` on CCSR's **inpatient**
+default (none when that is `XXX000`, "unacceptable principal diagnosis": 10,843 codes).
+
+- **Stored by prefix** (D1 free tier: 100k row writes a day): when every code in the file under a
+  prefix of 3+ characters has the same categories and default, the shortest such prefix gets the
+  rows. 87,705 code rows become 66,209.
+- **Lookup** (`ccsrLookupPrefixes`, `ccsrGroupsOf` in `packages/shared/src/ccsr.ts`): try the
+  code, then each shorter prefix down to 3 characters; the first with rows gives the groups.
+  This returns every code in the file its own groups, and gives a newer code CCSR lacks its
+  parent's groups.
+- A **header** code whose children differ (`F31`) finds nothing by that rule: like a wildcard,
+  it takes the groups of the codes under it (`ref_ccsr` keys starting with it).
+- CCSR keeps some old codes that are headers in FY2027 (`C860` beside `C8600`…). Such a code has
+  its own key with the old code's groups; an entry listing it as a header should use the codes
+  under it instead.
+- The universe of a CCSR group (above) is every `ref_codes` ICD-10-CM code whose lookup includes
+  the group.
+
 ## Tables (D1 / SQLite)
 
 ```
@@ -125,6 +147,10 @@ chapter_mappings    state_id, chapter (1–22), federal_category, mapped_by, map
 ref_codes           code_system, code_norm, description, parent_norm, chapter, billable,
                     valid_from, valid_to  (ICD-10-CM and HCPCS Level II only, from public-domain
                     CMS files; WITHOUT ROWID, no extra index: packages/reference-data/README.md)
+ref_ccsr_categories ccsr_category (PK, 'MBD001'), description, body_system, release ('ccsr-dx-2026.1')
+ref_ccsr            code_norm (ICD-10-CM code or prefix), ccsr_category, is_default (0/1), release
+                    PK (code_norm, ccsr_category); WITHOUT ROWID, no extra index; stored by prefix
+                    ("CCSR reference data" above)
 
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
 condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm
@@ -327,6 +353,9 @@ admin write query filters by `state_id` or `version_id`.
 
 - **ICD-10-CM / ICD-10-PCS** (CMS/NCHS) and **HCPCS Level II** (CMS) are public domain. We may
   load the official descriptions into `ref_codes`.
+- **AHRQ CCSR** states no licence. The file is downloaded at build time and never committed;
+  fixtures are synthetic; pages that show CCSR categories cite AHRQ (packages/reference-data
+  README, "CCSR licence and citation"). On the legal team's list.
 - **CPT** descriptors are © American Medical Association. We do **not** keep a CPT reference
   table. We show `description_published` exactly as the state printed it, always with a link to
   the state's source document, and the footer carries the AMA CPT notice. The user should get

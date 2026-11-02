@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loadBudget, toSqlChunks, type RefCodeRow } from './sql.ts'
+import { loadBudget, toCcsrSqlChunks, toSqlChunks, type RefCodeRow } from './sql.ts'
 
 const row = (codeNorm: string, description = 'A code'): RefCodeRow => ({
   codeSystem: 'icd10cm',
@@ -56,6 +56,44 @@ describe('toSqlChunks', () => {
       for (const statement of chunk.sql.split(';\n')) {
         expect(new TextEncoder().encode(statement).length).toBeLessThan(100_000)
       }
+    }
+  })
+})
+
+describe('toCcsrSqlChunks', () => {
+  const release = 'ccsr-dx-test'
+  const categories = [
+    { ccsrCategory: 'TST001', description: "Test's group", bodySystem: 'TST', release },
+    { ccsrCategory: 'TST002', description: 'Other', bodySystem: 'TST', release },
+  ]
+  const rows = Array.from({ length: 7 }, (_, i) => ({
+    codeNorm: `F2${String(i)}`,
+    ccsrCategory: 'TST001',
+    isDefault: (i % 2) as 0 | 1,
+    release,
+  }))
+
+  it('writes the categories first, then the code rows, as one numbered chunk set', () => {
+    const chunks = toCcsrSqlChunks(categories, rows, {
+      release,
+      rowsPerChunk: 3,
+      rowsPerStatement: 2,
+    })
+    expect(chunks.map((c) => [c.name, c.rowCount])).toEqual([
+      ['ccsr-dx-test-000', 2],
+      ['ccsr-dx-test-001', 3],
+      ['ccsr-dx-test-002', 3],
+      ['ccsr-dx-test-003', 1],
+    ])
+    expect(chunks[0]?.sql).toContain(
+      "INSERT OR IGNORE INTO ref_ccsr_categories (ccsr_category, description, body_system, release) VALUES\n('TST001', 'Test''s group', 'TST', 'ccsr-dx-test'),",
+    )
+    expect(chunks[1]?.sql.match(/INSERT OR IGNORE INTO ref_ccsr \(/g)).toHaveLength(2)
+    expect(chunks[1]?.sql).toContain("('F21', 'TST001', 1, 'ccsr-dx-test')")
+    for (const chunk of chunks) {
+      expect(chunk.sql).toContain(
+        `INSERT OR REPLACE INTO app_meta (key, value) VALUES ('ref_codes_chunk:${chunk.name}', '1');`,
+      )
     }
   })
 })

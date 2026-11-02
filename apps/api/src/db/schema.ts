@@ -409,6 +409,44 @@ export const refCodes = sqliteTable(
   ],
 )
 
+/**
+ * AHRQ CCSR body-system categories (`MBD001`), from packages/reference-data. Source: Clinical
+ * Classifications Software Refined (CCSR) for ICD-10-CM Diagnoses, v2026.1. Healthcare Cost and
+ * Utilization Project (HCUP). Agency for Healthcare Research and Quality, Rockville, MD.
+ */
+export const refCcsrCategories = sqliteTable('ref_ccsr_categories', {
+  ccsrCategory: text('ccsr_category').primaryKey(),
+  description: text('description').notNull(),
+  /** The body system's name (`MBD` → "Mental, behavioral, and neurodevelopmental disorders"). */
+  bodySystem: text('body_system').notNull(),
+  /** e.g. `ccsr-dx-2026.1`. */
+  release: text('release').notNull(),
+})
+
+/**
+ * ICD-10-CM → CCSR categories, one-to-many, stored by prefix: when every code under a prefix
+ * (3+ characters) has the same categories and default, the prefix has the rows instead of each
+ * code. Read with `ccsrLookupPrefixes` / `ccsrGroupsOf` (packages/shared/src/ccsr.ts):
+ * longest prefix with rows wins. `WITHOUT ROWID` with no other index, like ref_codes (one D1
+ * write per row); added by hand in migrations/0008_ref_ccsr.sql and guarded by
+ * src/db/schema.test.ts.
+ */
+export const refCcsr = sqliteTable(
+  'ref_ccsr',
+  {
+    /** ICD-10-CM code or prefix, no dot. */
+    codeNorm: text('code_norm').notNull(),
+    ccsrCategory: text('ccsr_category').notNull(),
+    /** 1 = CCSR's inpatient default category for these codes (none when it is XXX000). */
+    isDefault: integer('is_default').notNull().default(0),
+    release: text('release').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.codeNorm, t.ccsrCategory] }),
+    check('ref_ccsr_is_default_check', isBoolean(t.isDefault)),
+  ],
+)
+
 export const conditionGroups = sqliteTable('condition_groups', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   slug: text('slug').notNull().unique(),

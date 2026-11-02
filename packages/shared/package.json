@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./ccsr": "./src/ccsr.ts",
     "./icd-chapters": "./src/icd-chapters.ts",
     "./us-map": "./src/us-map.ts"
   },

@@ -24,6 +24,8 @@ const TABLES = [
   'unified_categories',
   'unified_ccsr',
   'unified_mappings',
+  'ref_ccsr_categories',
+  'ref_ccsr',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -181,6 +183,30 @@ describe('schema', () => {
          VALUES ('icd10cm', 'F200', 'Paranoid schizophrenia', '5', 1, '2026-10-01')`,
       )
       .run()
+  })
+
+  it('stores ref_ccsr so each row costs one D1 write (WITHOUT ROWID, no extra index)', async () => {
+    // Like ref_codes: the CCSR load counts against the same 100k-writes-per-day free tier.
+    const table = await db
+      .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'ref_ccsr'`)
+      .first<{ sql: string }>()
+    expect(table?.sql).toMatch(/WITHOUT ROWID\s*$/)
+    const { results } = await db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'ref_ccsr'`)
+      .all<{ name: string }>()
+    expect(results).toEqual([])
+    await db
+      .prepare(
+        `INSERT INTO ref_ccsr_categories (ccsr_category, description, body_system, release)
+         VALUES ('TST001', 'Test group', 'TST', 'ccsr-dx-test')`,
+      )
+      .run()
+    const insert = db.prepare(
+      `INSERT INTO ref_ccsr (code_norm, ccsr_category, is_default, release) VALUES (?, 'TST001', ?, 'ccsr-dx-test')`,
+    )
+    await insert.bind('F20', 1).run()
+    await expect(insert.bind('F20', 0).run()).rejects.toThrow(/UNIQUE constraint failed/)
+    await expect(insert.bind('F21', 2).run()).rejects.toThrow(/CHECK constraint failed/)
   })
 
   it('requires the state slug to be the lowercase postal code (user, 2026-11-01)', async () => {
