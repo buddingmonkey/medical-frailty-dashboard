@@ -154,6 +154,25 @@ describe('/admin/drafts/[versionId]', () => {
     await expect.poll(() => calls.checks).toBe(2)
   })
 
+  it('publishes from the draft page after the confirmations', async () => {
+    fakeApi()
+    let published = false
+    server.use(
+      http.post('/api/admin/drafts/7/publish', () => {
+        published = true
+        return HttpResponse.json({ ok: true, backupKey: null })
+      }),
+    )
+    await renderRoute('/admin/drafts/7')
+    const panel = await screen.findByRole('region', { name: 'Publish' })
+    // The fixture's report blocks publishing (incomplete upload).
+    expect(within(panel).getByText(/A check blocks publishing/)).toBeTruthy()
+    expect(
+      within(panel).getByRole('button', { name: 'Publish draft v3' }).hasAttribute('disabled'),
+    ).toBe(true)
+    expect(published).toBe(false)
+  })
+
   it('discards the draft after a second click', async () => {
     const calls = fakeApi()
     await renderRoute('/admin/drafts/7')

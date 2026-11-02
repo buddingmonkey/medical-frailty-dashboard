@@ -112,7 +112,14 @@ _Last updated: 2026-11-02_
   incomplete upload. Column roles `Included (Yes/No)` and `Notes / rationale` (GA). The PDF
   adapter keeps its title text for the state-name check. Real files: NE (both tables, 8,183
   entries) sends in ~1.4 s and checks in ~0.2 s locally.
-- **Next step:** M2 step 8, publish and rollback.
+- **M2 step 8 done** (branch `m2-step8-publish`): publish from the draft page (a tick per
+  confirmation, the state code typed for the strongest checks; the server re-runs the checks
+  and refuses rows that changed), R2 backup of the replaced version, one-batch publish limited
+  to the state, `data_version` bump; `/admin/versions` with Restore (rollback). The three
+  required tests in `docs/testing.md` (per-state isolation, typed confirmation, exact
+  rollback) are in `apps/api/src/routes/admin/publish.test.ts`. Not built yet: pruning backups
+  to 20 per state, deleting drafts older than 30 days.
+- **Next step:** M2 step 9, category mapping screen.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

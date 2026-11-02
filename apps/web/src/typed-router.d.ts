@@ -56,6 +56,7 @@ declare module 'vue-router/auto-routes' {
       | '/admin/drafts/[versionId]'
       | '/admin/ingest'
       | '/admin/sources'
+      | '/admin/versions'
       | '/admin/watch'
     >,
     '/admin/(overview)': RouteRecordInfo<
@@ -96,6 +97,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/sources': RouteRecordInfo<
       '/admin/sources',
       '/admin/sources',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/versions': RouteRecordInfo<
+      '/admin/versions',
+      '/admin/versions',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -145,6 +153,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin/drafts/[versionId]'
         | '/admin/ingest'
         | '/admin/sources'
+        | '/admin/versions'
         | '/admin/watch'
       views:
         | 'default'
@@ -194,6 +203,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/sources.vue': {
       routes:
         | '/admin/sources'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/versions.vue': {
+      routes:
+        | '/admin/versions'
       views:
         | never
       pathParamNames:

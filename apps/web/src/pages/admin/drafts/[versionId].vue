@@ -10,9 +10,10 @@ import {
 } from '@mfcd/shared'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { z } from 'zod'
 
+import PublishPanel from '../../../components/admin/PublishPanel.vue'
 import { formatTimestampDate } from '../../../lib/admin-watch'
 import { ApiError, getJson, sendJson } from '../../../lib/api'
 import { diffToCsv } from '../../../lib/diff-csv'
@@ -146,8 +147,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         <p v-if="draft.status === 'discarded'" role="status" class="font-medium">
           This draft was discarded. It is kept for the record and can no longer change.
         </p>
+        <p v-else-if="draft.status === 'published'" role="status" class="font-medium">
+          This is {{ stateName || draft.stateId }}’s public list. It can no longer change; an
+          earlier list can be restored from
+          <RouterLink to="/admin/versions" class="text-link underline">Versions</RouterLink>.
+        </p>
         <p v-else-if="draft.status !== 'draft'" role="status" class="font-medium">
-          This version is {{ draft.status }}; it can no longer change.
+          This version is {{ draft.status }}; it can no longer change. See
+          <RouterLink to="/admin/versions" class="text-link underline">Versions</RouterLink>.
         </p>
       </div>
 
@@ -216,8 +223,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             :class="report.canPublish ? 'border-primary bg-surface' : 'border-danger bg-surface'"
           >
             <template v-if="report.canPublish">
-              Nothing blocks publishing. Publishing (a later step) will ask for the confirmations
-              below.
+              Nothing blocks publishing. Publishing asks for the confirmations below.
             </template>
             <template v-else>Publishing is blocked until the checks marked below pass.</template>
           </p>
@@ -340,6 +346,15 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           </button>
         </div>
       </section>
+
+      <PublishPanel
+        v-if="draft.status === 'draft' && checksQuery.data.value"
+        :version-id="draft.id"
+        :version-no="draft.versionNo"
+        :state-id="draft.stateId"
+        :state-name="stateName || draft.stateId"
+        :checks="checksQuery.data.value"
+      />
 
       <div v-if="draft.status === 'draft'" class="flex flex-wrap items-center gap-3">
         <button v-if="!confirming" type="button" :class="smallButton" @click="confirming = true">

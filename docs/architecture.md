@@ -198,8 +198,9 @@ Admin (Access JWT required; all writes):
 | `POST /api/admin/drafts/:id/rows` | `{sourceDocumentId, part, entries}`, ≤ 500 entries. Each entry is re-parsed (`validateDraftEntry`); a mismatch answers 400 with its `index`, and nothing is stored. More entries than announced: 400 |
 | `GET /api/admin/drafts/:id/checks` | Runs `runChecks` on the stored rows (ref_codes for unknown ICD-10-CM, the published version for the diff), stores `{report, token, ranAt}` in `check_report_json`. `token` is a SHA-256 of the entry ids and parts |
 | `POST /api/admin/drafts/:id/discard` | Mark a draft `discarded` (kept for the record) |
-| `POST /api/admin/drafts/:id/publish` | Publish (needs the confirmation token from the checks) |
-| `POST /api/admin/states/:st/rollback` | Re-publish an earlier version |
+| `POST /api/admin/drafts/:id/publish` | `{token, confirmations}`. Re-runs the checks; a token that no longer matches the rows answers 409; missing confirmations 400 with `missing`. Then the R2 backup of the replaced version, then one `db.batch()`: merge duplicates, supersede, publish, move the state pointer, bump `data_version`, audit |
+| `GET /api/admin/states/:stateId/versions` | A state's versions, newest first |
+| `POST /api/admin/states/:stateId/rollback` | `{versionId}`: re-publish a superseded version of the same state, in one batch (404 for another state's version, 409 for one that was never published) |
 | `PUT /api/admin/category-mappings/:id` | Remap a state category to a federal category |
 | `POST /api/admin/ai-cleanup` | Optional; only exists when `ANTHROPIC_API_KEY` is set |
 | `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |

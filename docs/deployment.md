@@ -140,7 +140,7 @@ that environment. Preview can also be loaded locally with
 
 | Backup | How | Kept |
 | --- | --- | --- |
-| Before every publish | The Worker writes the state's current published version as JSON to R2 | 20 per state |
+| Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`: version row, sources, parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | 20 per state (pruning not built yet) |
 | Weekly full dump | Worker Cron Trigger (Sunday) → JSON of every table to R2 `backups/weekly/` | 12 weeks |
 | Before each production deploy | CI records the D1 Time Travel bookmark (`wrangler d1 time-travel info`) in the deploy log, then migrates. Not `wrangler d1 export`: it refuses databases with virtual tables, and `entries_fts` is one (user, 2026-11-01) | 7 days (Time Travel window) |
 | Manual download | Admin page "Download backup" → `GET /api/admin/backup` streams JSON to the admin's computer | Your computer |
