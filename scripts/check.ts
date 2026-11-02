@@ -31,6 +31,7 @@ const stages: Stage[] = [
   vitest('refdata'),
   vitest('component'),
   vitest('api'),
+  vitest('scripts'),
 ]
 
 if (process.argv.includes('--full')) {

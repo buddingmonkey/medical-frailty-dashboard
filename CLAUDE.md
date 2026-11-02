@@ -14,6 +14,7 @@ All data is public state policy. There is no patient data, and there never will 
 pnpm check            # lint, typecheck, unit + component + API tests, one line per stage; run after every change
 pnpm check:full       # pnpm check + build + Playwright e2e + axe; run before merging to main
 pnpm dev              # Vite + wrangler dev (local D1/R2) on http://localhost:8787
+pnpm dev:stop         # stop everything pnpm dev started (never pkill; wrangler respawns workerd)
 pnpm test <filter>    # run matching Vitest tests in every workspace (no `--`: it disables the filter)
 pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it

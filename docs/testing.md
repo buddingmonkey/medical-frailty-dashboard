@@ -35,10 +35,11 @@
 
 ## Setup (M0 step 4)
 
-- **Vitest 5**, one root `vitest.config.ts` with four projects: `unit` (`packages/shared`),
+- **Vitest 5**, one root `vitest.config.ts` with five projects: `unit` (`packages/shared`),
   `refdata` (`packages/reference-data`, parsers tested on real excerpts in its `fixtures/`),
   `component` (`apps/web`, jsdom), `api` (`apps/api`, workerd via `@cloudflare/vitest-plugin`,
-  which replaced the deprecated `@cloudflare/vitest-pool-workers`). The plugin bundles the same
+  which replaced the deprecated `@cloudflare/vitest-pool-workers`), `scripts` (the repo's own
+  Node scripts, e.g. `scripts/dev-stop.ts`). The plugin bundles the same
   workerd as wrangler, so tests run on the production compatibility date.
 - **Component tests** use `@testing-library/vue` and `user-event`, with plain `expect` (no
   `jest-dom`: it needs `@testing-library/dom` 10, while Testing Library for Vue still uses 9).
@@ -49,7 +50,7 @@
   build. Specs fail on any console error (so a CSP violation fails), and run axe in both themes.
   First run on a new machine: `pnpm --filter @mfcd/web exec playwright install chromium`.
 - **`pnpm check`** is `scripts/check.ts`, run directly by Node 26 (type stripping). Stages:
-  format, lint, types, db-drift, unit, refdata, component, api; `--full` adds build and e2e. `db-drift`
+  format, lint, types, db-drift, unit, refdata, component, api, scripts; `--full` adds build and e2e. `db-drift`
   (`scripts/db-drift.ts`) runs `drizzle-kit generate` and fails if it writes a file, i.e. the
   schema changed without a migration; the new migration is left in place to review. It keeps going after a
   failure so one run shows everything, and each failing line names its log file.
