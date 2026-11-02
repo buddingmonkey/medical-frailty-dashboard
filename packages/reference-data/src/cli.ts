@@ -13,7 +13,7 @@ import { unzipSync } from 'fflate'
 import { parseHcpcsFile } from './hcpcs.ts'
 import { parseIcd10cmOrderFile } from './icd10cm.ts'
 import { releases, type Release } from './sources.ts'
-import { chunkMarkerKey, toSqlChunks, type RefCodeRow } from './sql.ts'
+import { chunkMarkerKey, loadBudget, toSqlChunks, type RefCodeRow } from './sql.ts'
 
 const root = join(import.meta.dirname, '..')
 const cacheDir = join(root, '.cache')
@@ -136,9 +136,7 @@ function load(argv: string[]): void {
     : values.env === 'production'
       ? ['--remote']
       : ['--remote', '--env', 'preview']
-  const budget = values.local ? Infinity : Number(values['max-rows'])
-  if (!Number.isFinite(budget) || budget <= 0)
-    throw new Error('--max-rows must be a positive number.')
+  const budget = loadBudget(values.local, values['max-rows'])
 
   const manifest = JSON.parse(readFileSync(join(distDir, 'manifest.json'), 'utf8')) as Manifest
   const done = loadedChunks(target)

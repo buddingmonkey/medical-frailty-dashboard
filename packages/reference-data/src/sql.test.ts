@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { toSqlChunks, type RefCodeRow } from './sql.ts'
+import { loadBudget, toSqlChunks, type RefCodeRow } from './sql.ts'
 
 const row = (codeNorm: string, description = 'A code'): RefCodeRow => ({
   codeSystem: 'icd10cm',
@@ -57,5 +57,17 @@ describe('toSqlChunks', () => {
         expect(new TextEncoder().encode(statement).length).toBeLessThan(100_000)
       }
     }
+  })
+})
+
+describe('loadBudget', () => {
+  it('has no limit for a local load', () => {
+    expect(loadBudget(true, '80000')).toBe(Infinity)
+  })
+
+  it('reads --max-rows for a remote load and refuses nonsense', () => {
+    expect(loadBudget(false, '80000')).toBe(80000)
+    expect(() => loadBudget(false, '0')).toThrow('--max-rows')
+    expect(() => loadBudget(false, 'many')).toThrow('--max-rows')
   })
 })

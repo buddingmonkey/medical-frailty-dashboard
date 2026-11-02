@@ -96,7 +96,15 @@ _Last updated: 2026-11-02_
   force the wrap direction ("Wrapped lines"). Reads all four seed states' full PDFs; fixtures
   are text-run snapshots of 25 real pages. New `admin` e2e project (local Worker on :8789 with
   the dev bypass). Open: GA-B page 60 has a row with no code (`docs/sources.md`).
-- **Next step:** M2 step 6, the review table.
+- **M2 step 6 done** (branch `m2-step6-review`): review table on `/admin/ingest`
+  (`ReviewTable.vue`, `packages/shared/src/review.ts`): each row is Ready, Needs a decision,
+  Cannot be read or Dropped; inline edit, drop/restore, per-flag answers (whole category or
+  this code only; ICD-10-CM or HCPCS; accept), filters, search, paging (50), and bulk actions on
+  the rows shown. Every exact ICD-10-CM/HCPCS code is looked up in `ref_codes`
+  (`POST /api/admin/ref-codes/lookup`): settles NE's "ICD-10-CM or HCPCS?" and shows codes CMS
+  does not list. Also fixed `pnpm db:ref:local`, which refused every local load since M1 step 6.
+  GA "Yes/No" (excluded rows) still has no column role; it comes with the draft rows (step 7).
+- **Next step:** M2 step 7, draft versions (chunked rows, checks report, diff).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

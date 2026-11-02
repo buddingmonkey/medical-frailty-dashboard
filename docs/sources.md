@@ -37,6 +37,8 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   ask the state. The PDF adapter keeps it as a row without a code (2026-11-02).
 - PDF layout (2026-11-02): columns shift between pages, the header repeats on some pages only,
   page 151 centers its codes, and wrapped text sits above the code line (bottom-aligned).
+- **Review against the CMS lists** (2026-11-02, Attachment A): `G41` is the only code CMS does
+  not list; the 74 bare categories (`F01`, `F20`, ...) need the whole-category question.
 - Georgia has no category column; the user will map categories (likely per ICD chapter, as for
   Nebraska) or use the rationale text as a hint.
 
@@ -92,6 +94,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   letter + 4 digits (481), dotted ICD-10-CM (~520), 3-character categories (182), revenue
   codes of 3 or 4 digits (117), wildcards `I63.*`, `S06.2*`, `D89.81*` (~55), and single
   ranges `F41.*-F42.*`, `J7500-J7599`, `D80-D83`, `M30-M31.*`, `E08.621-E08.622`.
+- **Review against the CMS lists** (2026-11-02): over 50 rows are not in their system's CMS
+  list: the drug classes (`H2G`, `H7P`, ...; read as ICD-10-CM categories until the admin sets
+  Drug class for them) and WHO-style codes like `F30.0`. 322 rows need a decision, nearly all
+  bare categories.
 - **Pharmacy rows** hold HCPCS drug codes (`J1630` haloperidol) and 3-character drug class codes
   (`H2G` "ANTIPSYCHOTICS,PHENOTHIAZINES", `H7P`, `ZAF`; 67 rows). The class codes look like
   First Databank HIC3 classes (not confirmed). They share a shape with ICD-10-CM categories,
@@ -112,7 +118,9 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   SID-SDD-SPD (intellectual/developmental/physical disability), B (likely blind), and Tier 2
   "Impact on Ability to Work".
 - Wildcards: `C34.x`, `K70.X`, `D57.0X`, `Q90.x`, `Z89.x`.
-- Truncated ranges: `L89.500-L89` (the PDF cuts the column). Flag for manual entry.
+- Truncated ranges: `L89.500-L89` (the PDF cuts the column). Flag for manual entry. The review
+  (2026-11-02) shows 3 rows that cannot be read and 37 bare categories to decide; every exact
+  code is in the CMS lists.
 - The same code can appear under several condition names (`Z74.09` three times). These are
   separate entries, not duplicates.
 - **PDF layout** (2026-11-02): title lines and a "Medically Frail IFC" line above the header,
@@ -132,6 +140,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - PDF layout (2026-11-02): page 1 is a contents page; each page has a chapter title, the header
   and a "Page n of 295" footer. 8,146 ICD rows (pages 2–294) and 27 CPT/HCPCS rows (page 295).
   `E09.349,` has a stray trailing comma in the source.
+- **Review against the CMS lists** (2026-11-02, 8,146 rows): the lookup settles "ICD-10-CM or
+  HCPCS?" for all but 57 undotted codes, which neither list has (e.g. `A5055`). 12 codes are not
+  in ICD-10-CM FY2027, e.g. `C6412`, `H4219`, `T404X1A`–`T404X3A` (FY2027 split `T40.4`), and
+  `R57.2`.
 - Grouped only by ICD-10 chapter; no frailty categories (see `docs/ingestion.md`,
   "Category auto-mapping").
 - The CPT/HCPCS section uses ranges with en-dashes (`32851–32854`), hyphens, "and" lists

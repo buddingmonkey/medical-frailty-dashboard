@@ -62,6 +62,7 @@ literacy, little or no coding.
 | 2026-11-01 | The plan said to install the Excel library from its maker's website, not the usual package store. The AI's own safety rules refused, and the step went ahead without Excel, with the choice left to the project lead | Guardrails that stop the AI turn into decisions for you; write down the options, keep the rest moving. (The project lead picked a smaller library from the usual store; it was in within the hour.) | `devlog/2026-11-01-m2-step4-parsers.md` |
 | 2026-11-02 | The plan said a wrapped line belongs to the row above. Dumping every word's position in all five state PDFs showed that was true for one state; another mixed both directions in the same file. The parser now weighs each gap on its own | Measure the real files before trusting a rule written from one example | `devlog/2026-11-02-m2-step5-pdf.md` |
 | 2026-11-02 | Every automated test passed, and the page showed nothing: the PDF library hijacked the background worker's messages. Only running the real app in a real browser showed it; a browser test now covers it | Green tests in a simulated browser are not a working feature; look at the real screen | same |
+| 2026-11-02 | The review table passed every test. Loading Nebraska's real 8,000-row list showed 1,602 "diagnosis or supply code?" questions, and that answering them all at once would have mislabelled the real supply codes on the last page. The fix was to let the computer look each code up in the national lists it already had: 1,602 questions became 102 | Try new tools on the biggest real file; when a person would look something up, have the program do it | `devlog/2026-11-02-m2-step6-review.md` |
 
 ## Numbers to collect
 
@@ -104,6 +105,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 4 (2026-11-01) | 0.1 (11 min) | not measured | $0 | CSV/JSON/paste adapters in a Web Worker, column mapping and saved profiles; 33 new tests |
 | M2 step 4b + dev:stop (2026-11-01) | 0.1 (~10 min) | not measured | $0 | Excel via `read-excel-file` (project lead's choice); `pnpm dev:stop`; 8 new tests |
 | M2 step 5 (2026-11-02) | 0.6 (36 min) | not measured | $0 | PDF adapter; all five seed PDFs read (17,187 rows); 37 new tests, admin e2e project |
+| M2 step 6 (2026-11-02) | 08:03–08:19 | not measured | $0 | Review table, CMS lookup for codes; NE questions 1,602 → 102; 62 new tests |
 
 ## Assets to capture for slides
 

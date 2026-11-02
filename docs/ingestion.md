@@ -29,13 +29,42 @@ validates them again.
    (LA "Code Designation" 0/1/2), and whether that is `published` or `inferred`.
 5. **Review.** A table shows each normalized row with flags (unknown code shape, ambiguous
    code system, wildcard, truncated range, duplicate, description that runs onto two lines).
-   The admin can edit cells, drop rows or mark a flag as accepted.
+   The admin can edit cells, drop rows or mark a flag as accepted. Details in "Review" below.
 6. **Send to a draft.** Rows are posted in chunks so each request stays well under Workers
    CPU limits.
 7. **Checks and diff** (next section).
 8. **Category mapping.** New state categories get an automatic guess (below). The admin
    confirms them. Unmapped categories do not block publishing; they show as "Unclassified".
 9. **Publish** with the confirmation the checks ask for.
+
+## Review
+
+`buildReview` (`packages/shared/src/review.ts`) runs `parseCodeCell` on each mapped row, with
+the admin's edits applied, every time something changes; `ReviewTable.vue` shows the result.
+Each row ends up in one of four states:
+
+| Status | Meaning | What the admin does |
+| --- | --- | --- |
+| Cannot be read | `parseCodeCell` returned a problem (unrecognized code, truncated range, ...) | Edit the code (or its code system), or drop the row |
+| Needs a decision | An open flag | `category_scope`: **Whole category** or **This code only** (sets `includes_children`). `system_ambiguous`: **ICD-10-CM** or **HCPCS**. `mixed_wildcard_range`, `multiline_description`: **Accept** |
+| Ready | Nothing open | Nothing; notes (wildcard, duplicate, code system from the CMS lists, not in the CMS list) are shown but never block |
+| Dropped | The admin dropped it | Restore if needed |
+
+- **Code system** comes from, in order: the admin's edit, the source's code-system column
+  (`codeSystemFromText`: "ICD-10", "CPT", "Revenue Code", ...; unknown text is noted and the
+  code's shape decides), the code's shape.
+- **Written without dots** (NE): a checkbox, first guessed from the file (`guessUndottedIcd`:
+  more 6–7 character undotted ICD-10-CM codes than dotted codes).
+- **CMS code lists.** The page looks up every exact ICD-10-CM and HCPCS code in `ref_codes`
+  (`POST /api/admin/ref-codes/lookup`, 1,000 per request, each code once per page visit).
+  When only one list has an ambiguous code, the review settles it (NE: 1,602 open questions
+  → 102). Codes that are not in their system's list get a note and a "Not in the CMS lists"
+  filter: LA's drug classes (`H2G`), outdated codes (NE `T40.4X1A`).
+- **Bulk actions** apply to every row the filters show (status, category / subcategory,
+  search in code, description or page): set the code system (LA Pharmacy → Drug class),
+  answer the category question, accept flags.
+- **Edits** are kept per row key (the locator, `#2` for a repeat) and start over for each
+  new table. A row's edit holds only the fields that differ from the file.
 
 ## Checks before publishing
 

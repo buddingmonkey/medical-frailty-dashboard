@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import {
   applyMapping,
+  buildReview,
   type ColumnRole,
   columnProfileResponseSchema,
   columnProfileSchema,
   columnRoleLabels,
   columnRoles,
   guessColumnRoles,
+  guessUndottedIcd,
   headerKey,
   type Qualification,
   type QualificationBasis,
@@ -15,12 +17,19 @@ import {
   qualificationLabels,
   qualificationOptions,
   type RawTable,
+  REF_LOOKUP_MAX,
+  type ReferenceIndex,
+  referenceIndex,
+  referenceLookupCodes,
+  refLookupResponseSchema,
+  type ReviewEdits,
   stateListResponseSchema,
 } from '@mfcd/shared'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
+import ReviewTable from '../../components/admin/ReviewTable.vue'
 import type { ParseInput } from '../../ingest/parse'
 import type { WrapDirection } from '../../ingest/pdf-layout'
 import { runParser } from '../../ingest/run-parser'
@@ -195,6 +204,58 @@ const ruleColumnValues = computed(() => {
 // Every value in the column gets a select, starting at "Not set".
 watch(ruleColumnValues, (values) => {
   for (const v of values) if (!(v in ruleValues.value)) ruleValues.value[v] = ''
+})
+
+// --- Review (step 5): edits start over for each new table ------------------------------------
+const reviewEdits = ref<ReviewEdits>({})
+const undottedIcd = ref(false)
+let undottedGuessed = false
+watch(table, () => {
+  reviewEdits.value = {}
+  undottedGuessed = false
+})
+// Guess once per table, from the first mapping; after that the box is the admin's.
+watch(mapping, (m) => {
+  if (!m || undottedGuessed) return
+  undottedIcd.value = guessUndottedIcd(m.rows)
+  undottedGuessed = true
+})
+
+// The CMS code lists (ref_codes) for every exact ICD-10-CM and HCPCS code, asked once per code.
+// The review uses them to settle "ICD-10-CM or HCPCS?" and to show codes CMS does not list.
+const reference = ref<ReferenceIndex>(new Map())
+const lookupError = ref<string | null>(null)
+const lookupCodes = computed(() =>
+  mapping.value
+    ? referenceLookupCodes(
+        buildReview(mapping.value.rows, reviewEdits.value, { undottedIcd: undottedIcd.value }),
+      )
+    : [],
+)
+let lookupRun = 0
+watch(lookupCodes, async (codes) => {
+  const missing = codes.filter((code) => !reference.value.has(code))
+  if (missing.length === 0) return
+  const run = ++lookupRun
+  lookupError.value = null
+  try {
+    for (let i = 0; i < missing.length; i += REF_LOOKUP_MAX) {
+      const chunk = missing.slice(i, i + REF_LOOKUP_MAX)
+      const { items } = await sendJson(
+        'POST',
+        '/api/admin/ref-codes/lookup',
+        { codes: chunk },
+        refLookupResponseSchema,
+      )
+      // A newer run asks for what is still missing; keep what this one learned.
+      reference.value = referenceIndex(reference.value, chunk, items)
+      if (run !== lookupRun) return
+    }
+  } catch (error) {
+    if (run === lookupRun) {
+      lookupError.value = error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
 })
 
 const plural = (n: number, one: string, many: string) => `${String(n)} ${n === 1 ? one : many}`
@@ -493,6 +554,18 @@ const inputClass =
         </div>
       </template>
 
+      <p v-if="lookupError" role="alert" class="text-danger">
+        Could not check the codes against the CMS lists ({{ lookupError }}). The review still works,
+        but cannot settle “ICD-10-CM or HCPCS?” or show codes CMS does not list.
+      </p>
+      <ReviewTable
+        v-if="mapping && mapping.rows.length > 0"
+        v-model:edits="reviewEdits"
+        v-model:undotted-icd="undottedIcd"
+        :rows="mapping.rows"
+        :reference="reference"
+      />
+
       <div class="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -508,7 +581,7 @@ const inputClass =
         </p>
       </div>
       <p class="text-sm text-muted-foreground">
-        Next (later steps): review the rows, then send them to a draft version.
+        Next (a later step): send the reviewed rows to a draft version.
       </p>
     </template>
   </section>

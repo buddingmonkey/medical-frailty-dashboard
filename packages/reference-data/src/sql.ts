@@ -75,3 +75,14 @@ export function toSqlChunks(rows: readonly RefCodeRow[], options: ChunkOptions):
   }
   return chunks
 }
+
+/** Rows one `load` may write: no limit locally; remote loads stop at `--max-rows` (the free
+ * tier's daily D1 write limit is 100,000 rows). */
+export function loadBudget(local: boolean, maxRows: string): number {
+  if (local) return Infinity
+  const budget = Number(maxRows)
+  if (!Number.isFinite(budget) || budget <= 0) {
+    throw new Error('--max-rows must be a positive number.')
+  }
+  return budget
+}

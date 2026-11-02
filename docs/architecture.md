@@ -190,6 +190,7 @@ Admin (Access JWT required; all writes):
 | `GET /api/admin/sources/:id/file` | Download the original, always as an attachment |
 | `GET /api/admin/column-profiles?stateId=&headerKey=` | The saved column profile for a state's header layout (`headerKey()` in `packages/shared/src/ingest.ts`), or `{item: null}` |
 | `PUT /api/admin/column-profiles` | Save it: `{stateId, header, profile}`; the server computes the key; one role per column |
+| `POST /api/admin/ref-codes/lookup` | Body `{codes}`: up to 1,000 normalized codes. Returns the ones in `ref_codes` with their system (ICD-10-CM or HCPCS) and billable flag. A read sent as POST (the list does not fit in a URL); D1 is asked 100 codes per query |
 | `POST /api/admin/drafts` | Start a draft version for a state |
 | `POST /api/admin/drafts/:id/rows` | Add validated rows in chunks (≤ 500 rows per request) |
 | `GET /api/admin/drafts/:id/checks` | Run the data checks and diff against the published version |
