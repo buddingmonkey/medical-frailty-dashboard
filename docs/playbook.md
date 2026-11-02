@@ -77,18 +77,35 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 | Fix a wrong category mapping | Admin → Categories: choose the federal category, Confirm | Written (M2) |
 | Roll back a bad upload | Admin → Versions → choose the state → Restore an earlier version (two clicks) | Written (M2) |
 | Add or close a watch date | Admin → Watch dates | Written (M2) |
-| Add a new public page | Use the loop in section 3; prompt template below | _(to write after M3)_ |
+| Add a new public page | Use the loop in section 3 with the prompt template below; the state page (`apps/web/src/pages/states/[slug].vue` + `apps/api/src/seo/pages.ts`) is the example to copy | Written (M3) |
 | Download a backup | Admin → Download backup | _(to write after M6)_ |
 
-### Prompt template: add a public page _(refine after M3)_
+### Prompt template: add a public page
 
 ```
-Read docs/status.md and docs/architecture.md first.
-I want a new public page: <what it shows> for <who>.
+Read docs/status.md, docs/architecture.md ("API shape", "Caching") and docs/seo.md first.
+I want a new public page: <what it shows> for <who>, at the address <URL>.
 It should get its data from <existing API route, or "tell me if a new one is needed">.
 Don't write code yet: list the files you'd add or change, the tests you'd write,
 and any questions. After I approve, build it test-first and run pnpm check.
+The page must:
+- put its words and number formats in packages/shared, so the Vue page and the
+  server-rendered HTML say exactly the same thing;
+- be rendered by the Worker too (title, description, canonical, JSON-LD, the facts),
+  with an e2e test that reads it with JavaScript off;
+- go through the public cache, and never show a draft.
+Then show me screenshots in light and dark, on a phone width too.
 ```
+
+What M3 taught about public pages:
+
+- **Look at the real page, not only the tests.** Twice a screenshot caught what every test
+  passed: a keyboard focus outline that was invisible, and a table stretched out of shape.
+- **A cache must know everything that shapes the page**: the data, the web build and the
+  server code. A test that keeps showing old text is a cache problem until proved otherwise.
+- **Test with the data a stranger would have.** A test passed on the builder's computer only
+  because its database already held data; in CI the database was empty. Each test setup now
+  creates its own data.
 
 ## 6. Starting a similar project for your organization
 
