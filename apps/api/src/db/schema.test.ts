@@ -26,6 +26,8 @@ const TABLES = [
   'unified_mappings',
   'ref_ccsr_categories',
   'ref_ccsr',
+  'entry_unified',
+  'unified_universe',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -373,6 +375,56 @@ describe('unified categories (docs/data-model.md, "Unified categories (M5)")', (
         .bind(old?.id)
         .run(),
     ).rejects.toThrow(/FOREIGN KEY constraint failed/)
+  })
+  it('places entries in categories once each; a placement goes with its entry', async () => {
+    const cat = await insertCategory()
+    const { versionId, docId } = await db
+      .prepare(
+        `SELECT v.id AS versionId, d.id AS docId FROM dataset_versions v, source_documents d`,
+      )
+      .first<{ versionId: number; docId: number }>()
+      .then((r) => r ?? { versionId: 0, docId: 0 })
+    const entry = await insertEntry(versionId, docId)
+    const sql = `INSERT INTO entry_unified (entry_id, unified_id, basis, reviewed) VALUES (?, ?, ?, ?)`
+    await db.prepare(sql).bind(entry?.id, cat?.id, 'mapping', 1).run()
+    await expect(db.prepare(sql).bind(entry?.id, cat?.id, 'by_code', 0).run()).rejects.toThrow(
+      /UNIQUE constraint failed/,
+    )
+    const other = await insertCategory('kidney-failure')
+    await expect(db.prepare(sql).bind(entry?.id, other?.id, 'none', 0).run()).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await expect(db.prepare(sql).bind(entry?.id, other?.id, 'by_code', 2).run()).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await expect(db.prepare(sql).bind(entry?.id, 999_999, 'by_code', 0).run()).rejects.toThrow(
+      /FOREIGN KEY constraint failed/,
+    )
+    await db.prepare(`DELETE FROM dataset_versions WHERE id = ?`).bind(versionId).run()
+    const left = await db.prepare(`SELECT count(*) AS n FROM entry_unified`).first<{ n: number }>()
+    expect(left?.n).toBe(0)
+  })
+
+  it('stores placements and universes so each row costs one D1 write (WITHOUT ROWID, no extra index)', async () => {
+    // A recompute rewrites thousands of rows; every index would add a write per row.
+    for (const name of ['entry_unified', 'unified_universe']) {
+      const table = await db
+        .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?`)
+        .bind(name)
+        .first<{ sql: string }>()
+      expect(table?.sql).toMatch(/WITHOUT ROWID\s*$/)
+      const { results } = await db
+        .prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ?`)
+        .bind(name)
+        .all<{ name: string }>()
+      expect(results).toEqual([])
+    }
+    const cat = await insertCategory()
+    const sql = `INSERT INTO unified_universe (unified_id, code_norm) VALUES (?, ?)`
+    await db.prepare(sql).bind(cat?.id, 'F200').run()
+    await expect(db.prepare(sql).bind(cat?.id, 'F200').run()).rejects.toThrow(
+      /UNIQUE constraint failed/,
+    )
   })
 })
 

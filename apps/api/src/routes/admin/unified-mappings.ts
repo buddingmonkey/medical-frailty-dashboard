@@ -1,7 +1,5 @@
 import {
   ccsrGroupsCovered,
-  ccsrIndex,
-  ccsrKeyRanges,
   mappingKey,
   stateUnifiedMappingsResponseSchema,
   type UnifiedMappingStatus,
@@ -10,15 +8,16 @@ import {
   unifiedMappingSaveResponseSchema,
   unifiedSuggestion,
 } from '@mfcd/shared'
-import { and, asc, count, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
+import { loadCcsrIndex } from '../../db/ccsr'
 import { createDb, type Db } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
+import { recomputePlacements } from '../../db/placement'
 import {
   entries,
-  refCcsr,
   refCcsrCategories,
   states,
   unifiedCategories,
@@ -31,9 +30,6 @@ import type { AppEnv } from '../../types'
 // categories (M5)"). Mounted at /api/admin/states behind requireAdmin and adminWriteGuard.
 // Rows are never deleted: a change marks the current rows `superseded`, pointing at the first
 // new row. One admin may approve, their own proposal included (project lead, 2026-11-02).
-
-/** D1 binds at most 100 parameters per query: 2 per key range. */
-const RANGES_PER_QUERY = 49
 
 async function findState(db: Db, c: Context<AppEnv>) {
   const id = c.req.param('stateId') ?? ''
@@ -112,31 +108,7 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       db.select().from(unifiedCcsr),
     ])
 
-    // The ref_ccsr rows for every ICD-10-CM category the entries touch, as key range scans.
-    const ranges = ccsrKeyRanges(icd)
-    const queries = []
-    for (let i = 0; i < ranges.length; i += RANGES_PER_QUERY) {
-      const chunk = ranges.slice(i, i + RANGES_PER_QUERY)
-      queries.push(
-        db
-          .select({
-            codeNorm: refCcsr.codeNorm,
-            ccsrCategory: refCcsr.ccsrCategory,
-            isDefault: refCcsr.isDefault,
-          })
-          .from(refCcsr)
-          .where(
-            or(
-              ...chunk.map((r) =>
-                and(sql`${refCcsr.codeNorm} >= ${r.from}`, sql`${refCcsr.codeNorm} < ${r.to}`),
-              ),
-            ),
-          ),
-      )
-    }
-    const [firstQuery, ...moreQueries] = queries
-    const ccsrRows = firstQuery ? (await db.batch([firstQuery, ...moreQueries])).flat() : []
-    const index = ccsrIndex(ccsrRows.map((r) => ({ ...r, isDefault: r.isDefault === 1 ? 1 : 0 })))
+    const index = await loadCcsrIndex(db, icd)
 
     const groupsByKey = new Map<string, string[][]>()
     for (const e of icd) {
@@ -298,6 +270,8 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
         },
       }),
     ])
+    // A proposal changes no placement; an approval may.
+    if (body.approve) await recomputePlacements(db, { stateIds: [state.id] })
     return c.json(review(status))
   })
 
@@ -348,5 +322,6 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
         details: { stateCategory, stateSubcategory, rows: proposed.length },
       }),
     ])
+    await recomputePlacements(db, { stateIds: [state.id] })
     return c.json(review('approved'))
   })

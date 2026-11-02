@@ -15,6 +15,7 @@ import { Hono } from 'hono'
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
+import { recomputePlacements, universeStatements } from '../../db/placement'
 import { refCcsrCategories, unifiedCategories, unifiedCcsr, unifiedMappings } from '../../db/schema'
 import type { AppEnv } from '../../types'
 
@@ -54,12 +55,19 @@ const slugClash = (slug: string) => ({
 /** CCSR rows per insert: 2 bound parameters each, under D1's 100. */
 const CCSR_PER_INSERT = 45
 
-/** Replaces a category's CCSR group set (by id, or by slug for a row the batch creates). */
+/** A category's id, or a subquery by slug for a row the same batch creates. */
+function idOf(which: { id: number } | { slug: string }) {
+  return 'id' in which
+    ? sql<number>`${which.id}`
+    : sql<number>`(SELECT ${unifiedCategories.id} FROM ${unifiedCategories} WHERE ${unifiedCategories.slug} = ${which.slug})`
+}
+
+/**
+ * Replaces a category's CCSR group set (by id, or by slug for a row the batch creates), and
+ * rewrites its universe from the new set.
+ */
 function replaceCcsr(db: Db, which: { id: number } | { slug: string }, groups: string[]) {
-  const unifiedId =
-    'id' in which
-      ? which.id
-      : sql<number>`(SELECT ${unifiedCategories.id} FROM ${unifiedCategories} WHERE ${unifiedCategories.slug} = ${which.slug})`
+  const unifiedId = idOf(which)
   const inserts = []
   for (let i = 0; i < groups.length; i += CCSR_PER_INSERT) {
     inserts.push(
@@ -73,6 +81,7 @@ function replaceCcsr(db: Db, which: { id: number } | { slug: string }, groups: s
   return [
     ...('id' in which ? [db.delete(unifiedCcsr).where(eq(unifiedCcsr.unifiedId, which.id))] : []),
     ...inserts,
+    ...universeStatements(db, unifiedId),
   ]
 }
 
@@ -183,6 +192,8 @@ export const unifiedRoute = new Hono<AppEnv>()
     })
     if (!result) return c.json(slugClash(slug), 409)
     const id = result[0][0]?.id ?? 0
+    // A new published category takes entries by CCSR group in every state with a list.
+    if (fields.status === 'published' && ccsr.length > 0) await recomputePlacements(db, 'all')
     return c.json(unifiedSaveResponseSchema.parse({ id, slug, version: 1 }), 201)
   })
 
@@ -209,6 +220,15 @@ export const unifiedRoute = new Hono<AppEnv>()
       return c.json({ error: `Unknown CCSR group: ${unknown.join(', ')}` }, 400)
     if (await slugTaken(db, slug, id)) return c.json(slugClash(slug), 409)
 
+    const before = await db
+      .select({ ccsrCategory: unifiedCcsr.ccsrCategory })
+      .from(unifiedCcsr)
+      .where(eq(unifiedCcsr.unifiedId, id))
+    const ccsrChanged =
+      before
+        .map((g) => g.ccsrCategory)
+        .sort()
+        .join(',') !== ccsr.join(',')
     const version = current.version + (unifiedVersionChanges(current, fields) ? 1 : 0)
     // Drafts are never public; anything else (or leaving draft) can change public pages.
     const isPublic = current.status !== 'draft' || fields.status !== 'draft'
@@ -218,7 +238,7 @@ export const unifiedRoute = new Hono<AppEnv>()
         .update(unifiedCategories)
         .set({ ...fields, slug, version, updatedBy: actor, updatedAt: new Date().toISOString() })
         .where(eq(unifiedCategories.id, id)),
-      ...replaceCcsr(db, { id }, ccsr),
+      ...(ccsrChanged ? replaceCcsr(db, { id }, ccsr) : []),
       ...(isPublic ? [bumpDataVersion(db)] : []),
       auditInsert(db, {
         actorEmail: actor,
@@ -238,6 +258,10 @@ export const unifiedRoute = new Hono<AppEnv>()
       throw error
     })
     if (!result) return c.json(slugClash(slug), 409)
+    // Placements read the CCSR set and the status (published only), in every state.
+    if (isPublic && (ccsrChanged || current.status !== fields.status)) {
+      await recomputePlacements(db, 'all')
+    }
     return c.json(unifiedSaveResponseSchema.parse({ id, slug, version }))
   })
 

@@ -9,6 +9,7 @@ import { type Context, Hono } from 'hono'
 import { auditInsert } from '../../db/audit'
 import { createDb } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
+import { recomputePlacements } from '../../db/placement'
 import { datasetVersions, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
 
@@ -101,5 +102,6 @@ export const adminStates = new Hono<AppEnv>()
         },
       }),
     ])
+    await recomputePlacements(db, { stateIds: [stateId] })
     return c.json({ ok: true })
   })
