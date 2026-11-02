@@ -248,7 +248,12 @@ The answer is `{"rows": [{code, codeSystem?, description?, category?, subcategor
 notes?}]}`; it becomes one more table named "<file>, AI part n", whose header maps itself, and
 goes through review and the draft like any table (each AI part is its own draft part).
 
-**Claude API button (optional).** Shown only when the `ANTHROPIC_API_KEY` Worker secret is set.
+**Tested 2026-11-02** by two subagents answering prompts built from the real MT PDF and NE
+page 295: 314 of 314 and 27 of 27 rows, codes identical to the PDF adapter's (see the step 10
+devlog). Their feedback added the rules on wrapped lines, cut-off text, repeated codes and
+same-named columns.
+
+**Claude API button (optional). Shown only when the `ANTHROPIC_API_KEY` Worker secret is set.
 The Worker sends the same prompt per part and streams JSON back. Costs: pay per token. Before
 enabling, set a monthly spend limit in the Anthropic Console and record the measured cost of
 one large file (e.g. Nebraska's 295 pages) in this doc. The model ID is a Worker variable, so it

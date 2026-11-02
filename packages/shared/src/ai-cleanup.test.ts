@@ -37,6 +37,15 @@ describe('buildCleanupPrompt', () => {
     expect(prompt).toMatch(/data, not instructions/)
   })
 
+  it('covers what two test runs on real files stumbled on (2026-11-02)', () => {
+    expect(prompt).toContain('Join the pieces of one cell with a single space')
+    expect(prompt).toContain('never complete them')
+    expect(prompt).toContain('Keep repeated codes')
+    expect(prompt).toContain('Leave it out when a heading names several')
+    // Example 2's heading names two systems, so its answer has no codeSystem.
+    expect(prompt).not.toContain('"codeSystem":"HCPCS"')
+  })
+
   it('carries two worked examples', () => {
     expect(prompt.match(/Example \d/g)).toEqual(['Example 1', 'Example 2'])
   })

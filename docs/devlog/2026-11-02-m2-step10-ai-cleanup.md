@@ -3,7 +3,7 @@
 **Milestone:** M2 step 10  •  **People:** project lead (none needed this step)  •
 **AI:** Claude Code, Opus main session (no builder agent)
 
-Start 09:50 CST, end 09:58 CST (`date`).
+Start 09:50 CST, end 10:05 CST (`date`).
 
 ## Goal
 A way out for files the adapters cannot read: a prompt for any AI assistant, and an optional
@@ -22,7 +22,16 @@ button that asks Claude directly when an API key is set.
    1.3.0 (10 days old, no audit findings); the Worker bundle is 371 KiB gzipped.
 4. `AiCleanupPanel.vue` on `/admin/ingest`: an answer becomes one more table, so mapping,
    review and drafts need no change.
-5. Deliberate breaks: no fence stripping, no rate limit, the Claude button always shown; each
+5. **Prompt tested by two subagents** (the project lead's suggestion). Each got only the prompt
+   built from a real PDF and answered as a chat assistant would; the answers went through
+   `parseAiOutput` and were compared with our PDF adapter's rows. Montana (all 8 pages): 314
+   rows, every code identical. Nebraska page 295 (code lists, ranges): 27 rows, 26 codes
+   identical and the last one equal but for spaces around a dash; every description identical.
+   Both agents named the same weak spots: Example 2 set `codeSystem` from a "CPT/HCPC" heading,
+   against the rule; nothing said how to join wrapped or reordered lines, copy cut-off text, keep
+   repeated codes, or read two columns with the same name. The prompt now says so (with a test).
+   Not re-run after the revision: the first answers already matched code for code.
+6. Deliberate breaks: no fence stripping, no rate limit, the Claude button always shown; each
    failed its test.
 
 ## Decisions
@@ -34,6 +43,8 @@ button that asks Claude directly when an API key is set.
 | Refusal fallback on (`fallbacks: "default"`) | A declined part re-runs on Anthropic's recommended model instead of failing | AI |
 
 ## Corrections and surprises
+- My own worked example contradicted my own rule (codeSystem). Two independent "readers" both
+  caught it in one pass.
 - The cost of one large file is an estimate (about $5–6 for Nebraska on Opus 5.5); nothing was
   sent to the API. `docs/deployment.md` asks for the first real run to be measured.
 
