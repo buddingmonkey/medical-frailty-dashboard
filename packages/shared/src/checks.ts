@@ -25,6 +25,8 @@ export interface CheckEntry {
   rangeEndNorm: string | null
   stateCategory: string
   stateSubcategory: string
+  /** The state's tier ('' when none): the same code in two tiers is not a duplicate. */
+  tier: string
   descriptionPublished: string | null
   /** False for rows the source marks as not frail (GA "Yes/No" = No). */
   included: boolean
@@ -320,7 +322,7 @@ export function runChecks(input: CheckInput): CheckReport {
   const seen = new Set<string>()
   let duplicates = 0
   for (const e of entries) {
-    const key = `${codeKey(e)}|${e.stateCategory}|${e.stateSubcategory}`
+    const key = `${codeKey(e)}|${e.stateCategory}|${e.stateSubcategory}|${e.tier}`
     if (seen.has(key)) duplicates++
     else seen.add(key)
   }

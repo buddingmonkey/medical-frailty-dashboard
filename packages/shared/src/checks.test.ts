@@ -16,6 +16,7 @@ const entry = (codeNorm: string, overrides: Partial<CheckEntry> = {}): CheckEntr
   rangeEndNorm: null,
   stateCategory: 'SMI',
   stateSubcategory: '',
+  tier: '',
   descriptionPublished: `Description of ${codeNorm}`,
   included: true,
   unresolvedFlags: [],
@@ -165,6 +166,12 @@ describe('runChecks', () => {
   it('does not count one code under two categories as a duplicate (MT Z74.09)', () => {
     const input = base()
     input.draft.entries = [...codes(100), entry('F2000', { stateCategory: 'SUD' })]
+    expect(triggered(input)).not.toContain('duplicates')
+  })
+
+  it('does not count one code in two tiers as a duplicate (GA Attachments A and B)', () => {
+    const input = base()
+    input.draft.entries = [...codes(100), entry('F2000', { tier: 'Attachment B' })]
     expect(triggered(input)).not.toContain('duplicates')
   })
 
