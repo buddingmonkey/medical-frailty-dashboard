@@ -29,6 +29,7 @@ import {
 } from '@mfcd/shared'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { z } from 'zod'
 
 import AiCleanupPanel from '../../components/admin/AiCleanupPanel.vue'
@@ -401,6 +402,11 @@ const inputClass =
 
     <p v-if="parsing" class="text-muted-foreground">Reading…</p>
     <p v-if="parseError" role="alert" class="text-danger">{{ parseError }}</p>
+    <p v-if="parseError" class="max-w-prose">
+      Can’t read this file? Follow
+      <RouterLink to="/admin/guide" class="text-link underline">the guide</RouterLink>, or ask an AI
+      assistant below.
+    </p>
 
     <AiCleanupPanel
       v-if="source && stateId && !parsing"

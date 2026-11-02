@@ -55,6 +55,7 @@ declare module 'vue-router/auto-routes' {
       | '/admin/categories'
       | '/admin/drafts/(list)'
       | '/admin/drafts/[versionId]'
+      | '/admin/guide'
       | '/admin/ingest'
       | '/admin/sources'
       | '/admin/versions'
@@ -93,6 +94,13 @@ declare module 'vue-router/auto-routes' {
       '/admin/drafts/:versionId',
       { versionId: ParamValue<true> },
       { versionId: ParamValue<false> },
+      | never
+    >,
+    '/admin/guide': RouteRecordInfo<
+      '/admin/guide',
+      '/admin/guide',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
     '/admin/ingest': RouteRecordInfo<
@@ -160,6 +168,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin/categories'
         | '/admin/drafts/(list)'
         | '/admin/drafts/[versionId]'
+        | '/admin/guide'
         | '/admin/ingest'
         | '/admin/sources'
         | '/admin/versions'
@@ -208,6 +217,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'versionId'
+    }
+    'src/pages/admin/guide.vue': {
+      routes:
+        | '/admin/guide'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/admin/ingest.vue': {
       routes:

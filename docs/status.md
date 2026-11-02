@@ -194,6 +194,10 @@ _Last updated: 2026-11-02_
 | Workers Paid for one month | $5 once (user, 2026-11-01), so the 107k reference rows load in one go instead of two days per database. **Downgrade to Free by 2026-11-30** (watch date). Nothing in the code depends on the paid plan |
 | States only | The site covers the 50 states and DC; no territories (project lead, 2026-11-01) |
 | Excel reader | `read-excel-file` from npm, not SheetJS from its CDN (project lead, 2026-11-01) |
+| Add-a-state guide | Served in the app at `/admin/guide` (rendered from `docs/add-state-source.md`), linked from "Read and map" when a file cannot be read. No separate agent skill (project lead, 2026-11-02) |
+| Step 11 assumptions | Whole-category reading of bare codes and the qualification per state look right; the project lead verifies later (2026-11-02) |
+| Claude API button | Stays off; shown disabled with a tooltip that says it needs a key and costs money (project lead, 2026-11-02) |
+| Release after M2 | `v0.2.0` to production (project lead, 2026-11-02); production deploy waits for the project lead's approval in GitHub |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
