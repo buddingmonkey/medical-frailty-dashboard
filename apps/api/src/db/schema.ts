@@ -95,6 +95,26 @@ export const sourceDocuments = sqliteTable(
   (t) => [uniqueIndex('source_documents_state_sha256_idx').on(t.stateId, t.sha256)],
 )
 
+/**
+ * What each column of a state's file means (docs/ingestion.md, step 4), saved per header
+ * layout so the next file with the same headers maps itself. `profile_json` is a
+ * `columnProfileSchema` value from packages/shared.
+ */
+export const columnProfiles = sqliteTable(
+  'column_profiles',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    stateId: text('state_id')
+      .notNull()
+      .references(() => states.id),
+    headerKey: text('header_key').notNull(),
+    profileJson: text('profile_json').notNull(),
+    updatedBy: text('updated_by').notNull(),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [uniqueIndex('column_profiles_state_header_idx').on(t.stateId, t.headerKey)],
+)
+
 // ---------------------------------------------------------------------------------------------
 // Versions and entries
 

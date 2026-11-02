@@ -28,6 +28,7 @@ const signInProblem = computed(() => {
 const sections = [
   { to: '/admin', label: 'Overview' },
   { to: '/admin/sources', label: 'Source files' },
+  { to: '/admin/ingest', label: 'Read and map' },
   { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },
 ] as const

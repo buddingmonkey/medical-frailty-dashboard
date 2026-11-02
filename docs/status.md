@@ -83,7 +83,13 @@ _Last updated: 2026-11-01_
   sending; list with downloads). API: `GET /api/admin/states`, `GET, POST /api/admin/sources`,
   `GET /api/admin/sources/:id/file`. Migration `0003_seed_states` adds the 50 states and DC
   (status `none`).
-- **Next step:** M2 step 4, parser adapters (xlsx/csv, json, paste) and column mapping.
+- **M2 step 4 done, except xlsx** (branch `m2-step4-parsers`): `/admin/ingest` reads a CSV,
+  JSON or tab-separated file, or a pasted table, in a Web Worker; guesses each column's role;
+  sets the qualification rule (one value, or per qualification/tier value; published or
+  inferred); previews mapped rows; saves a column profile per state and header layout
+  (migration `0004_column_profiles`). Qualification labels live in
+  `packages/shared/src/qualification.ts`. **Excel (.xlsx) waits on open question 6.**
+- **Next step:** M2 step 5, the PDF adapter.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -142,6 +148,13 @@ _Last updated: 2026-11-01_
 5. **Territories:** the states table has the 50 states and DC. Should Puerto Rico, Guam, the
    US Virgin Islands, American Samoa and the Northern Mariana Islands be listed too? (Adding
    them later is one migration; the M3 map would need an inset.)
+6. **SheetJS for .xlsx (blocking the Excel adapter):** SheetJS CE is not on the npm registry;
+   the maintained build is a tarball from `cdn.sheetjs.com` (`docs/ingestion.md`). Claude
+   Code's auto mode refused to install a package from a URL outside the registry, so it needs
+   the project lead's OK (run `pnpm --filter @mfcd/web add
+   https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`, or allow it). Alternatives: no Excel
+   support (admins paste cells or save as CSV; none of the four seed states publishes .xlsx),
+   or a smaller registry library that reads xlsx only.
 
 ## Watch dates
 

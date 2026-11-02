@@ -7,6 +7,7 @@ import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
 import { audit } from './routes/admin/audit'
+import { columnProfilesRoute } from './routes/admin/column-profiles'
 import { sources } from './routes/admin/sources'
 import { adminStates } from './routes/admin/states'
 import { watch } from './routes/admin/watch'
@@ -42,6 +43,7 @@ export function createApp({ getJwks }: AppDeps) {
   app.route('/api/admin/watch', watch)
   app.route('/api/admin/states', adminStates)
   app.route('/api/admin/sources', sources)
+  app.route('/api/admin/column-profiles', columnProfilesRoute)
 
   // Unknown API paths get a JSON 404, never the SPA's index.html.
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))
