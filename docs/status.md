@@ -258,6 +258,10 @@ _Last updated: 2026-11-02 (M5 planned)_
    Until then, parse the PDF.
 4. **Georgia source:** URL and publish date of Attachments A and B.
 
+5. **Federal category from unified mappings (M5):** once a state category has an approved
+   unified mapping, should its entries' federal category follow the unified category's federal
+   parent (replacing the M2 federal mapping)? Step 1 leaves the federal rule unchanged.
+
 ## Watch dates
 
 **History only (since M2 step 2, 2026-11-01).** The app's `/admin/watch` page is now the
