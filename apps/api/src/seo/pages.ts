@@ -18,6 +18,8 @@ import {
   type Qualification,
   qualificationLabels,
   SITE_NAME,
+  siteNav,
+  siteNavCurrent,
   stateStatusLabels,
   STATES_AND_DC,
 } from '@mfcd/shared'
@@ -30,6 +32,8 @@ import { type Html, html, jsonLdScript } from './html'
 
 export interface PageParts {
   status: 200 | 404
+  /** The page's path, to mark the current link in the navigation. */
+  path: string
   title: string
   description: string
   /** Absolute URL. */
@@ -46,6 +50,53 @@ const HOME_DESCRIPTION =
 export const downloadName = (slug: string, versionNo: number, ext: 'csv' | 'json') =>
   `${slug}-medical-frailty-codes-v${String(versionNo)}.${ext}`
 
+/** Every state with its status, entries and date: the home page and `/states`. */
+function stateListTable(items: readonly PublicStateSummary[]): Html {
+  return html`<table>
+    <caption>
+      State frailty code lists
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">State</th>
+        <th scope="col">Status</th>
+        <th scope="col">Entries</th>
+        <th scope="col">State list dated</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map(
+        (s) =>
+          html`<tr>
+            <th scope="row"><a href="/states/${s.slug}">${s.name}</a></th>
+            <td>${stateStatusLabels[s.status]}</td>
+            <td>${s.published ? formatCount(s.published.totalEntries) : ''}</td>
+            <td>${s.published?.sourceDate ? formatDay(s.published.sourceDate) : ''}</td>
+          </tr>`,
+      )}
+    </tbody>
+  </table>`
+}
+
+export function statesPage(items: readonly PublicStateSummary[], origin: string): PageParts {
+  const withList = items.filter((s) => s.published !== null).length
+  return {
+    status: 200,
+    title: pageTitles.states,
+    description: `Every US state and DC: whether each has published a Medicaid medically frail code list, how many entries it has, and when the state dated it.`,
+    path: '/states',
+    canonical: `${origin}/states`,
+    noindex: false,
+    jsonLd: [],
+    body: html`<h1>All states</h1>
+      <p>
+        ${withList} of ${STATES_AND_DC} states and DC have a list on this site. Choose a state to
+        see its list, sources and history.
+      </p>
+      ${stateListTable(items)}`,
+  }
+}
+
 export function homePage(items: readonly PublicStateSummary[], origin: string): PageParts {
   const withList = items.filter((s) => s.published !== null).length
   const url = `${origin}/`
@@ -53,6 +104,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
     status: 200,
     title: pageTitles.home,
     description: HOME_DESCRIPTION,
+    path: '/',
     canonical: url,
     noindex: false,
     jsonLd: [
@@ -72,30 +124,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
       </p>
       <h2>States</h2>
       <p>${withList} of ${STATES_AND_DC} states and DC have a list on this site.</p>
-      <table>
-        <caption>
-          State frailty code lists
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">State</th>
-            <th scope="col">Status</th>
-            <th scope="col">Entries</th>
-            <th scope="col">State list dated</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map(
-            (s) =>
-              html`<tr>
-                <th scope="row"><a href="/states/${s.slug}">${s.name}</a></th>
-                <td>${stateStatusLabels[s.status]}</td>
-                <td>${s.published ? formatCount(s.published.totalEntries) : ''}</td>
-                <td>${s.published?.sourceDate ? formatDay(s.published.sourceDate) : ''}</td>
-              </tr>`,
-          )}
-        </tbody>
-      </table>`,
+      ${stateListTable(items)}`,
   }
 }
 
@@ -282,10 +311,11 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
     status: 200,
     title: pageTitles.state(state.name),
     description,
+    path: `/states/${state.slug}`,
     canonical: url,
     noindex: false,
     jsonLd,
-    body: html`<p><a href="/">All states</a></p>
+    body: html`<p><a href="/states">All states</a></p>
       <h1>${state.name}</h1>
       ${sentences.map((s) => html`<p>${s}</p>`)} ${listed} ${notes}`,
   }
@@ -370,6 +400,7 @@ export function comparePage(
     status: 200,
     title: pageTitles.compare,
     description: COMPARE_DESCRIPTION,
+    path: '/compare',
     canonical: `${origin}/compare`,
     noindex: true,
     jsonLd: [],
@@ -382,12 +413,28 @@ export function notFoundPage(origin: string, path: string): PageParts {
     status: 404,
     title: pageTitles.notFound,
     description: 'There is no state at this address.',
+    path,
     canonical: `${origin}${path}`,
     noindex: true,
     jsonLd: [],
     body: html`<h1>State not found</h1>
-      <p>There is no state at this address. <a href="/">See all states</a></p>`,
+      <p>There is no state at this address. <a href="/states">See all states</a></p>`,
   }
+}
+
+/** The main navigation (`siteNav`), the same links as the Vue header. */
+export function navHtml(path: string): Html {
+  const current = siteNavCurrent(path)
+  return html`<nav aria-label="Main">
+    <ul>
+      ${siteNav.map((item) => {
+        const mark = current?.path !== item.path ? '' : path === item.path ? 'page' : 'true'
+        return mark === ''
+          ? html`<li><a href="${item.path}">${item.label}</a></li>`
+          : html`<li><a href="${item.path}" aria-current="${mark}">${item.label}</a></li>`
+      })}
+    </ul>
+  </nav>`
 }
 
 /** The tags added to <head>. */
@@ -425,7 +472,7 @@ export async function renderInto(indexHtml: string, parts: PageParts): Promise<s
     })
     .on('div#app', {
       element(el) {
-        el.setInnerContent(parts.body.value, { html: true })
+        el.setInnerContent(navHtml(parts.path).value + parts.body.value, { html: true })
       },
     })
     .transform(new Response(indexHtml))
