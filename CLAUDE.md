@@ -5,8 +5,8 @@ A public site that compares the code lists US states use to mark Medicaid member
 front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
 All data is public state policy. There is no patient data, and there never will be.
 
-> **Status: M0 done (scaffolding).** Every command below works except `db:*` and the seeded
-> `e2e`, which arrive in M1. `docs/status.md` says what exists.
+> **Status: M1 in progress (data foundation).** Every command below works except
+> `db:seed:local` and the seeded `e2e`, which arrive later in M1. `docs/status.md` says what exists.
 
 ## Commands
 
@@ -16,6 +16,7 @@ pnpm check:full       # pnpm check + build + Playwright e2e + axe; run before me
 pnpm dev              # Vite + wrangler dev (local D1/R2) on http://localhost:8787
 pnpm test <filter>    # run matching Vitest tests in every workspace (no `--`: it disables the filter)
 pnpm e2e              # Playwright against a local build with seeded D1
+pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it
 pnpm db:migrate:local # apply D1 migrations to the local database
 pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
 pnpm format           # prettier --write

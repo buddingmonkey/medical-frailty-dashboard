@@ -43,6 +43,9 @@
       "binding": "DB",
       "database_name": "frailty-prod",
       "database_id": "616a538c-7b05-4b0b-8b57-403af8a3bc33",
+      // SQL from drizzle-kit (src/db/schema.ts) plus hand-written ones (FTS5). CI applies them
+      // before each deploy (roadmap M1 step 6).
+      "migrations_dir": "migrations",
     },
   ],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-prod-files" }],
@@ -58,6 +61,7 @@
           "binding": "DB",
           "database_name": "frailty-preview",
           "database_id": "851e1249-2483-4bc4-954a-6f11adf20ce1",
+          "migrations_dir": "migrations",
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-preview-files" }],

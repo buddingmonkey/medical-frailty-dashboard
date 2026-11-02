@@ -25,6 +25,8 @@ const stages: Stage[] = [
   { name: 'format', args: ['format:check'] },
   { name: 'lint', args: ['lint'] },
   { name: 'types', args: ['typecheck'] },
+  // Schema changes without a migration (scripts/db-drift.ts).
+  { name: 'db-drift', args: ['db:drift'] },
   vitest('unit'),
   vitest('component'),
   vitest('api'),

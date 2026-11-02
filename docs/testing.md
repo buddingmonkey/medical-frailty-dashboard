@@ -18,8 +18,10 @@
   every failure before reporting back.
 - Test behavior, not internals: query by role and label (`getByRole`, `getByLabelText`), not
   by CSS class.
-- No shared state between tests. API tests get a fresh migrated D1 per file (the pool does
-  this with isolated storage).
+- No shared state between tests. API tests get a fresh migrated D1 per file (the pool isolates
+  storage per file, not per test; `src/test/apply-migrations.ts` applies `migrations/`). Tests
+  in one file share that database: call `resetDb(env.DB)` from `src/test/reset-db.ts` in
+  `beforeEach` when a test needs empty tables. A test fails if a new table is missing from it.
 - **Every bug in parsing or normalization gets a fixture row** that reproduced it.
 - Required API tests (do not delete):
   - Admin routes return 401 without a JWT, 401 with a bad signature/aud/expired token, 403
@@ -46,7 +48,9 @@
   build. Specs fail on any console error (so a CSP violation fails), and run axe in both themes.
   First run on a new machine: `pnpm --filter @mfcd/web exec playwright install chromium`.
 - **`pnpm check`** is `scripts/check.ts`, run directly by Node 26 (type stripping). Stages:
-  format, lint, types, unit, component, api; `--full` adds build and e2e. It keeps going after a
+  format, lint, types, db-drift, unit, component, api; `--full` adds build and e2e. `db-drift`
+  (`scripts/db-drift.ts`) runs `drizzle-kit generate` and fails if it writes a file, i.e. the
+  schema changed without a migration; the new migration is left in place to review. It keeps going after a
   failure so one run shows everything, and each failing line names its log file.
 
 ### Access and site-gate tests (M0 step 5)
@@ -73,6 +77,7 @@ see `SITE_MODE=public` (set in `apps/api/vitest.config.ts`).
 
 ```bash
 pnpm check                    # everything except e2e, one summary line per stage
+pnpm db:drift                 # only the schema-vs-migrations check
 pnpm test codes               # tests whose file matches "codes" (no `--`: it disables the filter)
 pnpm exec vitest run --project api   # one layer: unit | component | api
 pnpm e2e                      # Playwright (builds, seeds local D1, starts wrangler dev)

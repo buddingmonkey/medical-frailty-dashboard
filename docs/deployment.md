@@ -104,8 +104,8 @@ to Workers Paid ($5/month) rather than re-architecting.
 The smoke test calls `/api/public/health` with the environment's service token (expects
 `ok: true`, the right `environment` and `X-Robots-Tag: noindex`), then checks that a request
 without a token is redirected to the Access login. **From M1** the deploy also runs
-`wrangler d1 migrations apply` (and, for production, backs up D1 to R2 first); M0 has no
-migrations and no data.
+`wrangler d1 migrations apply` (and, for production, records a D1 Time Travel bookmark first;
+see "Backups and restore").
 
 - The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
 - Migrations must be backward-compatible with the previous Worker version (add columns and
@@ -119,7 +119,7 @@ migrations and no data.
 | --- | --- | --- |
 | Before every publish | The Worker writes the state's current published version as JSON to R2 | 20 per state |
 | Weekly full dump | Worker Cron Trigger (Sunday) → JSON of every table to R2 `backups/weekly/` | 12 weeks |
-| Before each production deploy | CI runs `wrangler d1 export` and uploads to R2 | 10 |
+| Before each production deploy | CI records the D1 Time Travel bookmark (`wrangler d1 time-travel info`) in the deploy log, then migrates. Not `wrangler d1 export`: it refuses databases with virtual tables, and `entries_fts` is one (user, 2026-11-01) | 7 days (Time Travel window) |
 | Manual download | Admin page "Download backup" → `GET /api/admin/backup` streams JSON to the admin's computer | Your computer |
 | Point in time | D1 Time Travel (`wrangler d1 time-travel restore`) | 7 days free / 30 days paid |
 
@@ -129,7 +129,9 @@ Restore paths, from smallest to largest:
 2. **A state's history lost:** admin → import backup JSON for that state → goes through the
    normal draft → checks → publish flow.
 3. **Whole database bad:** `wrangler d1 time-travel restore frailty-prod --timestamp=<before>`,
-   or create a new D1 from a `wrangler d1 export` SQL file and point the binding at it.
+   (or `--bookmark=<from the deploy log>`), or rebuild a new D1 from the latest weekly JSON
+   dump. `wrangler d1 export` works only after dropping `entries_fts` (recreate it and run
+   `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')` afterwards).
 
 Test restore path 2 in E2E, and do a path 3 drill on the preview database once before launch.
 

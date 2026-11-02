@@ -42,7 +42,13 @@ _Last updated: 2026-11-01_
   builder agent with the standing rules (model `inherit`; the main session may pass a cheaper
   model for pure rote coding). A proof run on Haiku repeated its rules correctly. The "add a
   state source" skill moved to M2 step 12. **M0 is complete.**
-- **Next step:** M1 step 1 (Drizzle schema and first migration).
+- **M1 step 1 done** (branch `m1-step1-schema`): Drizzle schema for every table
+  (`apps/api/src/db/schema.ts`), migrations `0000_init` (generated) and `0001_entries_fts`
+  (hand-written FTS5 + triggers), enums shared from `packages/shared/src/enums.ts` as CHECK
+  constraints, `pnpm db:generate`, `pnpm db:migrate:local`, and a `db-drift` stage in
+  `pnpm check`. Pre-deploy backups use D1 Time Travel, because D1 cannot export a database with
+  an FTS5 table (`docs/deployment.md`).
+- **Next step:** M1 step 2 (`packages/shared/codes.ts`).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -77,6 +83,10 @@ _Last updated: 2026-11-01_
 | SEO and GEO | Best practices; AI crawlers welcome so AI gets the right information. Worker renders real HTML for public pages. `Content-Signal: search=yes, ai-input=yes, ai-train=yes`. See `docs/seo.md` (user, 2026-11-01). **`ai-train=yes` is provisional:** the legal team may revisit it because pages quote AMA-copyrighted CPT text |
 | Domain and hosting | The project lead buys a domain in M7, or gives the site to an organization to host. Keep the site portable (user, 2026-11-01) |
 | Branch protection | Ruleset on `main` with no bypass, not even for admins (user, 2026-11-01) |
+| D1 backups before production migrations | D1 Time Travel bookmark logged by CI, not `wrangler d1 export` (refuses FTS5 databases) (user, 2026-11-01) |
+| IDs and dates | Integer IDs (states keep the 2-letter code); ISO-8601 text dates (user, 2026-11-01) |
+| State page URLs | Lowercase postal code, `/states/ga`; the database enforces `slug = lower(id)` (user, 2026-11-01) |
+| Code page URLs | Computed from code system + code, e.g. `/codes/icd-10-cm/F20.0`; no slug column (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
