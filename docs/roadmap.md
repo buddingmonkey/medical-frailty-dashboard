@@ -28,6 +28,8 @@ running totals in `docs/talk-notes.md`.
    (The `.gitignore` additions for build outputs and `.dev.vars` were done in step 1.)
 7. Cloudflare: create preview + prod Workers, D1, R2, Access applications (whole host); deploy
    from CI. Leave Cloudflare's "Block AI bots" / managed robots.txt off (`docs/seo.md`). **Check:** both URLs ask for Google login; after login the placeholder page loads.
+   **Built 2026-11-01** (see devlog). workers.dev has no bot settings; they are checked when a
+   domain is added. Migrations and the pre-release D1 backup join the deploy in M1.
 8. `.claude/agents/builder.md` (standing rules for builders) and a project skill for "add a
    new state source" once M2 shows what the steps are.
 
@@ -44,6 +46,8 @@ running totals in `docs/talk-notes.md`.
    `docs/sources.md`.
 5. Diff + checks engine (pure functions in `packages/shared`) with tests for every check in
    `docs/ingestion.md`.
+6. Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
+   for production a D1 export to R2 before migrating (`docs/deployment.md`).
 
 ## M2 Ingestion (admin)
 
@@ -131,6 +135,9 @@ and evidence that target users find the site useful and use it correctly.
 6. Turn on Cloudflare Web Analytics (free, no cookies, so no consent banner) to see which
    pages people use after launch.
 7. `security-review`, restore drill, rate limits verified.
+   Portability: pass the D1 database IDs in at deploy time from GitHub environment variables
+   (like `ACCESS_*`) instead of committing them in `wrangler.jsonc`, so a new host can deploy
+   without editing code (project lead, 2026-11-01).
 8. Go live (`docs/deployment.md`, "Going live"). Domain: the project lead buys one, or the
    site is given to an organization to host on its own domain. Then add the `Sitemap:` line to
    the public `robots.txt` (`apps/api/src/routes/robots.ts`) and set canonical URLs to that host.

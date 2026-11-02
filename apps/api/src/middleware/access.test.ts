@@ -121,6 +121,16 @@ describe('site gate, SITE_MODE=private', () => {
       (await call('/api/public/health', { token, vars: { ACCESS_TEAM_DOMAIN: '' } })).status,
     ).toBe(401)
   })
+
+  it('fails closed when the Access secrets were never set', async () => {
+    const token = await accessToken()
+    expect(
+      (await call('/api/public/health', { token, vars: { ACCESS_AUD: undefined } })).status,
+    ).toBe(401)
+    expect(
+      (await call('/api/public/health', { token, vars: { ACCESS_TEAM_DOMAIN: undefined } })).status,
+    ).toBe(401)
+  })
 })
 
 describe('site gate, SITE_MODE=public', () => {

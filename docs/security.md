@@ -38,7 +38,8 @@ The data is public state policy, and there is no patient data. The risks are abo
     Service tokens have no email, so they never pass the admin check. Admin responses are
     `no-store` and `noindex`.
   - **Fails closed:** `SITE_MODE` other than exactly `public` = private; empty
-    `ACCESS_TEAM_DOMAIN` or `ACCESS_AUD` = every gated request is 401 (and an error is logged).
+    or unset `ACCESS_TEAM_DOMAIN` or `ACCESS_AUD` (Worker secrets, uploaded by CI) = every
+    gated request is 401 (and an error is logged).
     If the certs cannot be fetched, the request fails with a 500, never a pass.
   - Rejected tokens are logged as a warning with the `jose` error code only (no token, no email).
   - The dev identity counts as an admin, so `pnpm dev` exercises the gate and admin pages
@@ -141,8 +142,11 @@ X-Frame-Options: DENY
   days, CI's install fails; wait, don't add an exception. CodeQL default setup (JavaScript/
   TypeScript and Actions, managed by GitHub). `pnpm audit --prod --audit-level high` in CI.
 - GitHub Actions pinned to commit SHAs (with the version in a comment); workflow
-  `permissions: contents: read`; checkout without persisted credentials. The deploy job
-  (step 7) uses a Cloudflare API token scoped to this Worker, D1 database and R2 bucket only.
+  `permissions: contents: read`; checkout without persisted credentials. Deploys (step 7)
+  run in GitHub environments with their own Cloudflare API token each; tokens can only be
+  limited to the project's dedicated Cloudflare account (`docs/deployment.md`). Production
+  deploys need the project lead's approval and a tag on a `main` commit; `pnpm cf` refuses a
+  production deploy from a laptop.
 - **Ruleset on `main`** (no bypass, not even for admins; user, 2026-11-01): pull request
   required (0 approvals, since the owner cannot approve their own PR), status checks `check`,
   `audit` and `gitleaks` must pass on an up-to-date branch, CodeQL results must have no high or

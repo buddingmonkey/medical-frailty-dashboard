@@ -1,0 +1,110 @@
+# Deploys one Worker and smoke-tests it (docs/deployment.md, "Environments and CI/CD").
+# Called by ci.yml: preview on every push to main, production on a `v*` tag after the
+# `production` environment's required reviewer approves.
+#
+# Per-environment settings live in the GitHub environment, not in the repo:
+#   secrets   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET
+#   variables ACCESS_TEAM_DOMAIN, ACCESS_AUD, SITE_URL
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment, also the expected ENVIRONMENT var (preview or production)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.SITE_URL }}
+    # Never cancel a deploy halfway; a newer one waits its turn.
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      TARGET: ${{ inputs.environment }}
+      SITE_URL: ${{ vars.SITE_URL }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A `v*` tag can point at any commit; production only runs code that is on main.
+      - name: Check the tag is on main
+        if: inputs.environment == 'production'
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @mfcd/web build
+
+      # ACCESS_* go up as Worker secrets with the deploy, so a new Worker is never live without
+      # them (and while they are missing the Worker answers 401 anyway).
+      - name: Write Worker secrets file
+        env:
+          ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+        run: |
+          test -n "$ACCESS_TEAM_DOMAIN" && test -n "$ACCESS_AUD" && test -n "$SITE_URL" || {
+            echo "::error::Set ACCESS_TEAM_DOMAIN, ACCESS_AUD and SITE_URL in the $TARGET environment"
+            exit 1
+          }
+          umask 077
+          jq -n '{ACCESS_TEAM_DOMAIN: env.ACCESS_TEAM_DOMAIN, ACCESS_AUD: env.ACCESS_AUD}' \
+            > "$RUNNER_TEMP/worker-secrets.json"
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          args=(deploy --secrets-file "$RUNNER_TEMP/worker-secrets.json")
+          # Top level of wrangler.jsonc is production; preview is `--env preview`.
+          if [ "$TARGET" != production ]; then args+=(--env "$TARGET"); fi
+          pnpm --filter @mfcd/api exec wrangler "${args[@]}"
+
+      - name: Remove Worker secrets file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/worker-secrets.json"
+
+      # 1. With the CI service token: the Worker answers, in the right environment, still private.
+      # 2. Without a token: Access sends the visitor to the login page.
+      - name: Smoke test
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          headers="$RUNNER_TEMP/headers.txt"
+          body=$(curl -sS --fail-with-body --retry 5 --retry-all-errors --retry-delay 3 \
+            -D "$headers" \
+            -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+            -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+            "$SITE_URL/api/public/health")
+          echo "$body" | jq -e --arg env "$TARGET" '.ok == true and .environment == $env' > /dev/null \
+            || { echo "::error::Unexpected health response: $body"; exit 1; }
+          grep -qi '^x-robots-tag: noindex' "$headers" \
+            || { echo "::error::Missing X-Robots-Tag: noindex (site should be private)"; exit 1; }
+
+          read -r code location < <(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$SITE_URL/")
+          [ "$code" = 302 ] && [[ "$location" == https://*.cloudflareaccess.com/* ]] \
+            || { echo "::error::Expected a redirect to the Access login, got $code $location"; exit 1; }
+          echo "Smoke test passed: health ok with the service token; login required without it."

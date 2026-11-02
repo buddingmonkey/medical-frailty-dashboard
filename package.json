@@ -16,7 +16,9 @@
     "test": "vitest run",
     "e2e": "pnpm --filter @mfcd/web build && pnpm --filter @mfcd/web e2e",
     "check": "node scripts/check.ts",
-    "check:full": "node scripts/check.ts --full"
+    "check:full": "node scripts/check.ts --full",
+    "cf": "node scripts/cf.ts",
+    "deploy:preview": "pnpm --filter @mfcd/web build && node scripts/cf.ts deploy --env preview"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

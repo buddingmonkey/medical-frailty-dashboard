@@ -29,23 +29,38 @@
     "traces": { "enabled": true },
   },
   // SITE_MODE: anything but "public" keeps the whole site behind Access (fail closed).
-  // ACCESS_*: filled in when the Access application exists (roadmap M0 step 7). While empty,
-  // every gated request gets a 401.
+  // ACCESS_TEAM_DOMAIN and ACCESS_AUD are Worker secrets, not vars: CI uploads them with each
+  // deploy from GitHub environment variables (docs/deployment.md). While unset, every gated
+  // request gets a 401.
   "vars": {
     "ENVIRONMENT": "production",
     "SITE_MODE": "private",
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": "",
   },
+  // Database IDs are identifiers, not secrets. Before M7 they move to deploy-time variables so
+  // a new host can deploy without editing this file (roadmap M7).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "frailty-prod",
+      "database_id": "616a538c-7b05-4b0b-8b57-403af8a3bc33",
+    },
+  ],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-prod-files" }],
   "env": {
     "preview": {
       "name": "frailty-dashboard-preview",
       "vars": {
         "ENVIRONMENT": "preview",
         "SITE_MODE": "private",
-        "ACCESS_TEAM_DOMAIN": "",
-        "ACCESS_AUD": "",
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "frailty-preview",
+          "database_id": "851e1249-2483-4bc4-954a-6f11adf20ce1",
+        },
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-preview-files" }],
     },
   },
 }
