@@ -93,7 +93,10 @@ per day if bulk-seeding many.
 day's free write quota, which preview and production share. The loader works in chunks and
 resumes, so the first load takes about **two days per database** at $0; later updates load
 only changed codes (`packages/reference-data/README.md`). Entries carry three indexes plus the
-FTS index, so a state version may cost about 5 writes per entry (estimate, not measured; measure in M2): GA's ~6,000 rows ≈ 30k writes.
+FTS index, so a state version may cost about 5 writes per entry (estimate; local D1 does not
+report `rows_written`, so measure it on preview in M2 step 11): GA's ~6,000 rows ≈ 30k writes,
+NE's 8,183 entries ≈ 40k. After the downgrade to Free (2026-11-30), load at most two large
+states per day.
 
 Watch for: a publish that writes > 100k rows in one day (free tier), and search traffic that
 misses the cache. Turn on a Cloudflare usage notification. If either becomes a problem, switch

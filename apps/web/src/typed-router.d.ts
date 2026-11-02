@@ -52,6 +52,8 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/admin/(overview)'
       | '/admin/audit'
+      | '/admin/drafts/(list)'
+      | '/admin/drafts/[versionId]'
       | '/admin/ingest'
       | '/admin/sources'
       | '/admin/watch'
@@ -68,6 +70,20 @@ declare module 'vue-router/auto-routes' {
       '/admin/audit',
       Record<never, never>,
       Record<never, never>,
+      | never
+    >,
+    '/admin/drafts/(list)': RouteRecordInfo<
+      '/admin/drafts/(list)',
+      '/admin/drafts',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/drafts/[versionId]': RouteRecordInfo<
+      '/admin/drafts/[versionId]',
+      '/admin/drafts/:versionId',
+      { versionId: ParamValue<true> },
+      { versionId: ParamValue<false> },
       | never
     >,
     '/admin/ingest': RouteRecordInfo<
@@ -125,6 +141,8 @@ declare module 'vue-router/auto-routes' {
         | '/admin'
         | '/admin/(overview)'
         | '/admin/audit'
+        | '/admin/drafts/(list)'
+        | '/admin/drafts/[versionId]'
         | '/admin/ingest'
         | '/admin/sources'
         | '/admin/watch'
@@ -148,6 +166,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/admin/drafts/(list).vue': {
+      routes:
+        | '/admin/drafts/(list)'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/drafts/[versionId].vue': {
+      routes:
+        | '/admin/drafts/[versionId]'
+      views:
+        | never
+      pathParamNames:
+        | 'versionId'
     }
     'src/pages/admin/ingest.vue': {
       routes:

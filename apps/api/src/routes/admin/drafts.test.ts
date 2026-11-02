@@ -54,6 +54,7 @@ async function createDraft(stateId = 'MT') {
 }
 
 const source = (expectedEntries: number, extra: object = {}) => ({
+  part: 'Table 1',
   expectedEntries,
   invalidRowCount: 0,
   namedStateIds: [],
@@ -154,6 +155,15 @@ describe('/api/admin/drafts', () => {
     })
   })
 
+  it('numbers drafts created at the same moment without a clash', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => send('POST', '/api/admin/drafts', { stateId: 'MT' })),
+    )
+    expect(results.map((r) => r.status)).toEqual([201, 201, 201, 201, 201])
+    const rows = await db.select().from(datasetVersions)
+    expect(rows.map((r) => r.versionNo).sort()).toEqual([1, 2, 3, 4, 5])
+  })
+
   it('refuses an unknown state', async () => {
     expect((await send('POST', '/api/admin/drafts', { stateId: 'ZZ' })).status).toBe(400)
   })
@@ -162,17 +172,27 @@ describe('/api/admin/drafts', () => {
     const draft = await createDraft()
     const path = `/api/admin/drafts/${String(draft.id)}`
     expect((await send('PUT', `${path}/sources/${String(mtSource)}`, source(3))).status).toBe(200)
-    await send('POST', `${path}/rows`, { sourceDocumentId: mtSource, entries: [entry('F20.0')] })
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [entry('F20.0')],
+    })
     const res = await send('POST', `${path}/rows`, {
       sourceDocumentId: mtSource,
+      part: 'Table 1',
       entries: [entry('F31.0'), entry('F32.9', { attributes: { included: false, flags: [] } })],
     })
     expect(res.status).toBe(200)
 
     const d = await detail(draft.id)
     expect(d.rowCount).toBe(3)
-    expect(d.sources).toEqual([
-      expect.objectContaining({ sourceDocumentId: mtSource, expectedEntries: 3, storedEntries: 3 }),
+    expect(d.parts).toEqual([
+      expect.objectContaining({
+        sourceDocumentId: mtSource,
+        part: 'Table 1',
+        expectedEntries: 3,
+        storedEntries: 3,
+      }),
     ])
     const stored = await db.select().from(entries).where(eq(entries.versionId, draft.id))
     expect(stored.map((e) => e.codeNorm)).toEqual(['F200', 'F310', 'F329'])
@@ -183,11 +203,56 @@ describe('/api/admin/drafts', () => {
     const draft = await createDraft()
     const path = `/api/admin/drafts/${String(draft.id)}`
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(1))
-    await send('POST', `${path}/rows`, { sourceDocumentId: mtSource, entries: [entry('F20.0')] })
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [entry('F20.0')],
+    })
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(1))
-    await send('POST', `${path}/rows`, { sourceDocumentId: mtSource, entries: [entry('F31.0')] })
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [entry('F31.0')],
+    })
     const stored = await db.select().from(entries).where(eq(entries.versionId, draft.id))
     expect(stored.map((e) => e.codeNorm)).toEqual(['F310'])
+  })
+
+  it('keeps the other parts of a file when one part is sent again (NE: two tables)', async () => {
+    const draft = await createDraft()
+    const path = `/api/admin/drafts/${String(draft.id)}`
+    const icd = { ...source(1), part: 'Pages 2–294' }
+    const cpt = { ...source(1), part: 'Page 295' }
+    const cptRow = entry('33230', { codeSystem: 'cpt', codeNorm: '33230' })
+    await send('PUT', `${path}/sources/${String(mtSource)}`, icd)
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: icd.part,
+      entries: [entry('F20.0')],
+    })
+    await send('PUT', `${path}/sources/${String(mtSource)}`, cpt)
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: cpt.part,
+      entries: [cptRow],
+    })
+    await send('PUT', `${path}/sources/${String(mtSource)}`, cpt)
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: cpt.part,
+      entries: [cptRow],
+    })
+
+    const stored = await db.select().from(entries).where(eq(entries.versionId, draft.id))
+    expect(stored.map((e) => [e.sourcePart, e.codeNorm]).sort()).toEqual([
+      ['Page 295', '33230'],
+      ['Pages 2–294', 'F200'],
+    ])
+    expect((await detail(draft.id)).parts.map((p) => [p.part, p.storedEntries])).toEqual([
+      ['Page 295', 1],
+      ['Pages 2–294', 1],
+    ])
+    expect((await checks(draft.id)).report.canPublish).toBe(true)
   })
 
   it('refuses rows whose code does not read the same on the server, and says which', async () => {
@@ -196,6 +261,7 @@ describe('/api/admin/drafts', () => {
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(2))
     const res = await send('POST', `${path}/rows`, {
       sourceDocumentId: mtSource,
+      part: 'Table 1',
       entries: [entry('F20.0'), entry('F31.0', { codeNorm: 'F999' })],
     })
     expect(res.status).toBe(400)
@@ -206,7 +272,11 @@ describe('/api/admin/drafts', () => {
   it('refuses rows for a source not added to the draft, or more rows than announced', async () => {
     const draft = await createDraft()
     const path = `/api/admin/drafts/${String(draft.id)}`
-    const rows = { sourceDocumentId: mtSource, entries: [entry('F20.0'), entry('F31.0')] }
+    const rows = {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [entry('F20.0'), entry('F31.0')],
+    }
     expect((await send('POST', `${path}/rows`, rows)).status).toBe(400)
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(1))
     expect((await send('POST', `${path}/rows`, rows)).status).toBe(400)
@@ -228,6 +298,7 @@ describe('/api/admin/drafts', () => {
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(2, { namedStateIds: ['MT'] }))
     await send('POST', `${path}/rows`, {
       sourceDocumentId: mtSource,
+      part: 'Table 1',
       entries: [
         entry('F20.0'),
         entry('F20', {
@@ -253,7 +324,11 @@ describe('/api/admin/drafts', () => {
     // Same rows, same token; different rows, different token.
     expect((await checks(draft.id)).token).toBe(result.token)
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(1))
-    await send('POST', `${path}/rows`, { sourceDocumentId: mtSource, entries: [entry('F20.0')] })
+    await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [entry('F20.0')],
+    })
     expect((await checks(draft.id)).token).not.toBe(result.token)
   })
 
@@ -264,6 +339,7 @@ describe('/api/admin/drafts', () => {
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(3, { namedStateIds: ['NE'] }))
     await send('POST', `${path}/rows`, {
       sourceDocumentId: mtSource,
+      part: 'Table 1',
       entries: [entry('F20.0'), entry('F32.9')],
     })
 
@@ -282,6 +358,7 @@ describe('/api/admin/drafts', () => {
     await send('PUT', `${path}/sources/${String(mtSource)}`, source(2))
     await send('POST', `${path}/rows`, {
       sourceDocumentId: mtSource,
+      part: 'Table 1',
       entries: [entry('F20.0'), entry('G41')],
     })
     const { report } = await checks(draft.id)
@@ -289,6 +366,24 @@ describe('/api/admin/drafts', () => {
       triggered: true,
       count: 1,
     })
+  })
+
+  it('checks more ICD-10-CM codes than D1 binds in one query', async () => {
+    const draft = await createDraft()
+    const path = `/api/admin/drafts/${String(draft.id)}`
+    const many = Array.from({ length: 150 }, (_, i) =>
+      entry(`F${String(10 + Math.floor(i / 10))}.${String(i % 10)}`),
+    )
+    await send('PUT', `${path}/sources/${String(mtSource)}`, source(150))
+    const res = await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: many,
+    })
+    expect(res.status).toBe(200)
+    const { report } = await checks(draft.id)
+    // F20.0 is the only one in this test's ref_codes.
+    expect(report.checks.find((c) => c.id === 'unknown_icd10cm')?.count).toBe(149)
   })
 
   it('discards a draft, which then takes no more rows', async () => {

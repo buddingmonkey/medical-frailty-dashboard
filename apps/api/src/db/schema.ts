@@ -162,15 +162,34 @@ export const versionSources = sqliteTable(
     sourceDocumentId: integer('source_document_id')
       .notNull()
       .references(() => sourceDocuments.id),
-    /** Entries the browser said it would send for this source (an upload that stopped half
-     * way leaves fewer; the checks block). */
-    expectedEntries: integer('expected_entries').notNull().default(0),
-    /** Rows of this source that could not be read and were not dropped in review. */
-    invalidRowCount: integer('invalid_row_count').notNull().default(0),
-    /** States the file names (title, headers), as a JSON array of 2-letter codes. */
-    namedStateIdsJson: text('named_state_ids_json').notNull().default('[]'),
   },
   (t) => [primaryKey({ columns: [t.versionId, t.sourceDocumentId] })],
+)
+
+/**
+ * One table or sheet of a source, as sent to a draft (NE's PDF has two tables; an Excel file
+ * one per sheet). Re-sending a part replaces only its entries. The counts let the checks see
+ * an upload that stopped half way.
+ */
+export const draftParts = sqliteTable(
+  'draft_parts',
+  {
+    versionId: integer('version_id')
+      .notNull()
+      .references(() => datasetVersions.id, { onDelete: 'cascade' }),
+    sourceDocumentId: integer('source_document_id')
+      .notNull()
+      .references(() => sourceDocuments.id),
+    /** Table or sheet name from the parser ("Pages 2–294", "Sheet1"). */
+    part: text('part').notNull(),
+    /** Entries the browser said it would send. */
+    expectedEntries: integer('expected_entries').notNull(),
+    /** Rows that could not be read and were not dropped in review. */
+    invalidRowCount: integer('invalid_row_count').notNull(),
+    /** States the file names (title, headers), as a JSON array of 2-letter codes. */
+    namedStateIdsJson: text('named_state_ids_json').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.versionId, t.sourceDocumentId, t.part] })],
 )
 
 export const entries = sqliteTable(
@@ -201,6 +220,8 @@ export const entries = sqliteTable(
       .references(() => sourceDocuments.id),
     /** Page, sheet or row in the source document. */
     sourceLocator: text('source_locator'),
+    /** The table or sheet of the source the entry came from (`draft_parts.part`). */
+    sourcePart: text('source_part').notNull().default(''),
   },
   (t) => [
     index('entries_version_code_idx').on(t.versionId, t.codeNorm),

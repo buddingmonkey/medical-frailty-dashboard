@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "caedc16d-6475-4e7f-bb74-6ae79abb356b",
+  "id": "725fee8c-56d2-4347-8137-33cd5d894c2a",
   "prevId": "48ac4f4d-beb8-4e41-b2d2-f7ca71abaf9c",
   "tables": {
     "app_meta": {
@@ -521,6 +521,82 @@
         }
       }
     },
+    "draft_parts": {
+      "name": "draft_parts",
+      "columns": {
+        "version_id": {
+          "name": "version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_document_id": {
+          "name": "source_document_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "part": {
+          "name": "part",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expected_entries": {
+          "name": "expected_entries",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "invalid_row_count": {
+          "name": "invalid_row_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "named_state_ids_json": {
+          "name": "named_state_ids_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "draft_parts_version_id_dataset_versions_id_fk": {
+          "name": "draft_parts_version_id_dataset_versions_id_fk",
+          "tableFrom": "draft_parts",
+          "tableTo": "dataset_versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "draft_parts_source_document_id_source_documents_id_fk": {
+          "name": "draft_parts_source_document_id_source_documents_id_fk",
+          "tableFrom": "draft_parts",
+          "tableTo": "source_documents",
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "draft_parts_version_id_source_document_id_part_pk": {
+          "columns": ["version_id", "source_document_id", "part"],
+          "name": "draft_parts_version_id_source_document_id_part_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "entries": {
       "name": "entries",
       "columns": {
@@ -646,6 +722,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "source_part": {
+          "name": "source_part",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
         }
       },
       "indexes": {
@@ -1016,30 +1100,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "expected_entries": {
-          "name": "expected_entries",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "invalid_row_count": {
-          "name": "invalid_row_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "named_state_ids_json": {
-          "name": "named_state_ids_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'[]'"
         }
       },
       "indexes": {},

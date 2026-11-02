@@ -119,9 +119,15 @@ describe('validateDraftEntry', () => {
 describe('draftRowsRequestSchema', () => {
   it('takes at most 500 entries', () => {
     const entries = Array.from({ length: 501 }, () => entry())
-    expect(draftRowsRequestSchema.safeParse({ sourceDocumentId: 1, entries }).success).toBe(false)
     expect(
-      draftRowsRequestSchema.safeParse({ sourceDocumentId: 1, entries: entries.slice(1) }).success,
+      draftRowsRequestSchema.safeParse({ sourceDocumentId: 1, part: 'Sheet1', entries }).success,
+    ).toBe(false)
+    expect(
+      draftRowsRequestSchema.safeParse({
+        sourceDocumentId: 1,
+        part: 'Sheet1',
+        entries: entries.slice(1),
+      }).success,
     ).toBe(true)
   })
 })

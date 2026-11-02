@@ -35,7 +35,12 @@ export interface PdfLayoutResult {
   tables: RawTable[]
   /** The direction used: the one asked for, or the one detected. */
   wrap: WrapDirection
+  /** Text before the first table (title lines, a contents page), for the state-name check. */
+  titleText: string
 }
+
+/** Enough title text to name a state; a contents page can be long. */
+const MAX_TITLE_TEXT = 2_000
 
 /** Header runs closer than this many heights are one header cell ("Code" "Type"). */
 const WORD_GAP = 0.5
@@ -131,6 +136,8 @@ const isPageNumber = (line: Line) =>
 interface PageHeader {
   /** Header cells, left to right, with the x-range of their text. */
   cells: { text: string; x: number; end: number }[]
+  /** Index of the header line (lines above it are a title). */
+  index: number
   /** Index of the first line below the header. */
   bodyStart: number
 }
@@ -162,7 +169,7 @@ function findHeader(lines: Line[]): PageHeader | null {
     previousY = next.y
     bodyStart = i + 1
   }
-  return { cells, bodyStart }
+  return { cells, index, bodyStart }
 }
 
 function nearest<T>(values: T[], target: number, position: (v: T) => number): T | undefined {
@@ -522,10 +529,18 @@ export function rebuildPdfTables(pages: PdfPageText[], options: PdfLayoutOptions
   // Typed up front: assigned in the loop, so TypeScript must not narrow it to null.
   let current = null as TableDraft | null
   let reference: number[] = []
+  let titleText = ''
+  const addTitle = (lines: Line[]) => {
+    for (const line of lines) {
+      if (titleText.length >= MAX_TITLE_TEXT) return
+      titleText = `${titleText} ${line.runs.map((r) => r.text).join(' ')}`.trim()
+    }
+  }
 
   for (const page of pages) {
     const lines = toLines(page.items)
     const header = findHeader(lines)
+    if (drafts.length === 0) addTitle(header ? lines.slice(0, header.index) : lines)
     if (header) {
       if (header.cells.length > MAX_COLUMNS) {
         throw new ParseError(
@@ -568,6 +583,7 @@ export function rebuildPdfTables(pages: PdfPageText[], options: PdfLayoutOptions
   const wrap = options.wrap === 'auto' ? detectWrap(drafts) : options.wrap
   return {
     wrap,
+    titleText: titleText.slice(0, MAX_TITLE_TEXT),
     tables: drafts.map((d) => ({
       name:
         d.firstPage === d.lastPage

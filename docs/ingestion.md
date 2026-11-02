@@ -75,6 +75,7 @@ ones, type the state code), or **info**.
 | Check | Level |
 | --- | --- |
 | Draft has 0 rows | block |
+| A part has fewer entries stored than the browser announced (an upload that stopped half way) | block (send that part again) |
 | More than 2% of rows fail schema validation or have an unparseable code | block (fix or drop them first) |
 | Draft state ≠ the state named in the file (e.g. the header says "Montana" but the draft is for NE) | confirm, typed |
 | Rows removed vs published ≥ 30%, or row count changes by ≥ 50% | confirm, typed |
@@ -105,6 +106,29 @@ ones, type the state code), or **info**.
 The admin downloads the diff as CSV if they want to check it offline. The report is stored in
 `dataset_versions.check_report_json`, and publishing requires the report's token, so the admin
 cannot publish rows that changed after the checks ran.
+
+## Sending to a draft (`SendToDraft.vue`, `/admin/drafts/:id`)
+
+- `toDraftEntries` (`packages/shared/src/drafts.ts`) turns the review into entries: one per
+  code (a cell with `33230 and 33240` gives two), dropped rows left out, rows that cannot be
+  read counted as invalid. Open review flags travel in `attributes.flags`; GA's "Yes/No" in
+  `attributes.included`; the rationale in `attributes.notes`; LA's raw designation in
+  `attributes.qualificationValue`. Column roles `Included (Yes/No)` and `Notes / rationale`
+  read these from the file.
+- The **source document** is found by the file's SHA-256 among the state's stored files; a
+  file not stored yet must be stored on "Source files" first (its title, URL and date are the
+  citation). A pasted table picks a stored file by hand.
+- The **part** is the parser's table name (`Pages 2–294`, `Sheet1`, `Pasted table`). One file
+  can give several parts (NE's PDF: the ICD table and the CPT/HCPCS page); sending a part
+  again replaces only that part. A draft can hold parts of several files (GA A + B).
+- **States named in the file** (`findNamedStates`): the file name, the PDF's title text
+  (lines before the first table, `titleText` from the PDF adapter), table names, headers and
+  the first 10 rows. Longer names win ("West Virginia" is not also Virginia).
+- Upload: create the draft (if new) → `PUT` the part → `POST` rows in chunks of 500. A failure
+  shows the error; sending again starts that part over in the same draft.
+- The draft page shows the parts, the checks by level, the diff per code system, a paged list
+  of changes, a CSV download (cells that start with `=`, `+`, `-` or `@` get a leading `'` so
+  a spreadsheet does not run them), and Discard.
 
 Publishing, rollback and backups are described in `docs/data-model.md` ("Replacing a state's
 list").

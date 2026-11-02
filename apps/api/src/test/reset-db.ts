@@ -6,6 +6,7 @@ export async function resetDb(db: D1Database): Promise<void> {
     [
       'UPDATE states SET published_version_id = NULL',
       'DELETE FROM entries',
+      'DELETE FROM draft_parts',
       'DELETE FROM version_sources',
       'DELETE FROM dataset_versions',
       'DELETE FROM category_mappings',

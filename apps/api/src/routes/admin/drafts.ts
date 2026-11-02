@@ -16,13 +16,14 @@ import {
   sha256Hex,
   validateDraftEntry,
 } from '@mfcd/shared'
-import { and, asc, count, desc, eq, inArray, max, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import {
   datasetVersions,
+  draftParts,
   entries,
   refCodes,
   sourceDocuments,
@@ -35,10 +36,10 @@ import type { AppEnv } from '../../types'
 // adminWriteGuard. Every write is limited to one draft (`version_id`) whose status is 'draft':
 // published and superseded versions are never changed here.
 
-/** Entry columns bound per INSERT; D1 allows 100 parameters per statement. */
-const ROWS_PER_INSERT = 6
-/** Codes per ref_codes lookup. */
-const LOOKUP_CHUNK = 100
+/** D1 binds at most 100 parameters per statement. */
+const D1_MAX_PARAMS = 100
+/** Codes per ref_codes lookup: D1 binds at most 100 parameters, and the code system is one. */
+const LOOKUP_CHUNK = 99
 
 const idParam = routeIdSchema
 
@@ -92,31 +93,43 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
   })
 }
 
-async function sourcesOf(db: Db, versionId: number) {
+/** Each part (table or sheet) sent to a draft, with how many of its entries arrived. */
+async function partsOf(db: Db, versionId: number) {
   const rows = await db
     .select({
-      sourceDocumentId: versionSources.sourceDocumentId,
+      sourceDocumentId: draftParts.sourceDocumentId,
+      part: draftParts.part,
       title: sourceDocuments.title,
       sha256: sourceDocuments.sha256,
-      expectedEntries: versionSources.expectedEntries,
-      invalidRowCount: versionSources.invalidRowCount,
-      namedStateIdsJson: versionSources.namedStateIdsJson,
+      expectedEntries: draftParts.expectedEntries,
+      invalidRowCount: draftParts.invalidRowCount,
+      namedStateIdsJson: draftParts.namedStateIdsJson,
     })
+    .from(draftParts)
+    .innerJoin(sourceDocuments, eq(draftParts.sourceDocumentId, sourceDocuments.id))
+    .where(eq(draftParts.versionId, versionId))
+    .orderBy(asc(draftParts.sourceDocumentId), asc(draftParts.part))
+  const stored = await db
+    .select({ sourceDocumentId: entries.sourceDocumentId, part: entries.sourcePart, n: count() })
+    .from(entries)
+    .where(eq(entries.versionId, versionId))
+    .groupBy(entries.sourceDocumentId, entries.sourcePart)
+  const storedBy = new Map(stored.map((s) => [`${String(s.sourceDocumentId)}|${s.part}`, s.n]))
+  return rows.map(({ namedStateIdsJson, ...r }) => ({
+    ...r,
+    storedEntries: storedBy.get(`${String(r.sourceDocumentId)}|${r.part}`) ?? 0,
+    namedStateIds: namedStateIdsSchema.parse(JSON.parse(namedStateIdsJson)),
+  }))
+}
+
+/** SHA-256 of every source file linked to a version. */
+async function sourceHashes(db: Db, versionId: number): Promise<string[]> {
+  const rows = await db
+    .select({ sha256: sourceDocuments.sha256 })
     .from(versionSources)
     .innerJoin(sourceDocuments, eq(versionSources.sourceDocumentId, sourceDocuments.id))
     .where(eq(versionSources.versionId, versionId))
-    .orderBy(asc(versionSources.sourceDocumentId))
-  const stored = await db
-    .select({ sourceDocumentId: entries.sourceDocumentId, n: count() })
-    .from(entries)
-    .where(eq(entries.versionId, versionId))
-    .groupBy(entries.sourceDocumentId)
-  const storedBy = new Map(stored.map((s) => [s.sourceDocumentId, s.n]))
-  return rows.map(({ namedStateIdsJson, ...r }) => ({
-    ...r,
-    storedEntries: storedBy.get(r.sourceDocumentId) ?? 0,
-    namedStateIds: namedStateIdsSchema.parse(JSON.parse(namedStateIdsJson)),
-  }))
+  return rows.map((r) => r.sha256)
 }
 
 /** The rows' fingerprint: changes whenever an entry or a source of the draft changes. */
@@ -126,12 +139,12 @@ async function draftToken(db: Db, versionId: number): Promise<string> {
     .from(entries)
     .where(eq(entries.versionId, versionId))
     .orderBy(asc(entries.id))
-  const sources = await db
+  const parts = await db
     .select()
-    .from(versionSources)
-    .where(eq(versionSources.versionId, versionId))
-    .orderBy(asc(versionSources.sourceDocumentId))
-  const text = JSON.stringify({ versionId, ids: ids.map((r) => r.id), sources })
+    .from(draftParts)
+    .where(eq(draftParts.versionId, versionId))
+    .orderBy(asc(draftParts.sourceDocumentId), asc(draftParts.part))
+  const text = JSON.stringify({ versionId, ids: ids.map((r) => r.id), parts })
   return sha256Hex(new Uint8Array(new TextEncoder().encode(text)))
 }
 
@@ -153,10 +166,11 @@ async function knownIcd10cm(db: Db, codes: readonly string[]): Promise<Set<strin
   return new Set(results.flat().map((r) => r.codeNorm))
 }
 
-function entryRow(versionId: number, sourceDocumentId: number, e: DraftEntry) {
+function entryRow(versionId: number, sourceDocumentId: number, part: string, e: DraftEntry) {
   return {
     versionId,
     sourceDocumentId,
+    sourcePart: part,
     codeSystem: e.codeSystem,
     rawCode: e.rawCode,
     codeNorm: e.codeNorm,
@@ -205,15 +219,12 @@ export const draftsRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const [state] = await db.select({ id: states.id }).from(states).where(eq(states.id, stateId))
     if (!state) return c.json({ error: 'Unknown state' }, 400)
-    const [last] = await db
-      .select({ n: max(datasetVersions.versionNo) })
-      .from(datasetVersions)
-      .where(eq(datasetVersions.stateId, stateId))
     const [created] = await db
       .insert(datasetVersions)
       .values({
         stateId,
-        versionNo: (last?.n ?? 0) + 1,
+        // One statement, so two drafts created at once cannot get the same number.
+        versionNo: sql`(SELECT coalesce(max(version_no), 0) + 1 FROM dataset_versions WHERE state_id = ${stateId})`,
         status: 'draft',
         label: label === '' ? null : label,
         createdBy: actorOf(c),
@@ -238,7 +249,7 @@ export const draftsRoute = new Hono<AppEnv>()
     return c.json(
       draftDetailSchema.parse({
         ...draftSummarySchema.parse(version),
-        sources: await sourcesOf(db, version.id),
+        parts: await partsOf(db, version.id),
       }),
     )
   })
@@ -261,6 +272,7 @@ export const draftsRoute = new Hono<AppEnv>()
     if (doc?.stateId !== version.stateId) {
       return c.json({ error: 'That source document is not stored for this state' }, 400)
     }
+    const { part } = body.data
     const values = {
       expectedEntries: body.data.expectedEntries,
       invalidRowCount: body.data.invalidRowCount,
@@ -269,12 +281,22 @@ export const draftsRoute = new Hono<AppEnv>()
     await db.batch([
       db
         .delete(entries)
-        .where(and(eq(entries.versionId, version.id), eq(entries.sourceDocumentId, sourceId.data))),
+        .where(
+          and(
+            eq(entries.versionId, version.id),
+            eq(entries.sourceDocumentId, sourceId.data),
+            eq(entries.sourcePart, part),
+          ),
+        ),
       db
         .insert(versionSources)
-        .values({ versionId: version.id, sourceDocumentId: sourceId.data, ...values })
+        .values({ versionId: version.id, sourceDocumentId: sourceId.data })
+        .onConflictDoNothing(),
+      db
+        .insert(draftParts)
+        .values({ versionId: version.id, sourceDocumentId: sourceId.data, part, ...values })
         .onConflictDoUpdate({
-          target: [versionSources.versionId, versionSources.sourceDocumentId],
+          target: [draftParts.versionId, draftParts.sourceDocumentId, draftParts.part],
           set: values,
         }),
       rowCountUpdate(db, version.id),
@@ -293,7 +315,7 @@ export const draftsRoute = new Hono<AppEnv>()
     if (!id.success) return c.json({ error: 'Not found' }, 404)
     const body = draftRowsRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid rows' }, 400)
-    const { sourceDocumentId, entries: sent } = body.data
+    const { sourceDocumentId, part, entries: sent } = body.data
     for (const [index, e] of sent.entries()) {
       const problem = validateDraftEntry(e)
       if (problem) return c.json({ error: problem, index }, 400)
@@ -303,27 +325,36 @@ export const draftsRoute = new Hono<AppEnv>()
     if (!version) return c.json({ error: 'Not found' }, 404)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
     const [link] = await db
-      .select({ expected: versionSources.expectedEntries })
-      .from(versionSources)
+      .select({ expected: draftParts.expectedEntries })
+      .from(draftParts)
       .where(
         and(
-          eq(versionSources.versionId, version.id),
-          eq(versionSources.sourceDocumentId, sourceDocumentId),
+          eq(draftParts.versionId, version.id),
+          eq(draftParts.sourceDocumentId, sourceDocumentId),
+          eq(draftParts.part, part),
         ),
       )
     if (!link) return c.json({ error: 'Add the source to the draft first' }, 400)
     const [stored] = await db
       .select({ n: count() })
       .from(entries)
-      .where(and(eq(entries.versionId, version.id), eq(entries.sourceDocumentId, sourceDocumentId)))
+      .where(
+        and(
+          eq(entries.versionId, version.id),
+          eq(entries.sourceDocumentId, sourceDocumentId),
+          eq(entries.sourcePart, part),
+        ),
+      )
     if ((stored?.n ?? 0) + sent.length > link.expected) {
       return c.json({ error: 'More rows than the source announced; send the source again' }, 400)
     }
 
-    const rows = sent.map((e) => entryRow(version.id, sourceDocumentId, e))
+    const rows = sent.map((e) => entryRow(version.id, sourceDocumentId, part, e))
+    // Every column of a row is one parameter; adding a column must not break the limit.
+    const perInsert = Math.floor(D1_MAX_PARAMS / Object.keys(rows[0] ?? { x: 0 }).length)
     const inserts = []
-    for (let i = 0; i < rows.length; i += ROWS_PER_INSERT) {
-      inserts.push(db.insert(entries).values(rows.slice(i, i + ROWS_PER_INSERT)))
+    for (let i = 0; i < rows.length; i += perInsert) {
+      inserts.push(db.insert(entries).values(rows.slice(i, i + perInsert)))
     }
     const [first, ...rest] = inserts
     if (first) await db.batch([first, ...rest, rowCountUpdate(db, version.id)])
@@ -344,13 +375,13 @@ export const draftsRoute = new Hono<AppEnv>()
       .where(eq(states.id, version.stateId))
     const publishedId = state?.publishedVersionId ?? null
     const draftEntries = await checkEntries(db, version.id)
-    const sources = await sourcesOf(db, version.id)
+    const parts = await partsOf(db, version.id)
     const published =
       publishedId === null
         ? null
         : {
             entries: await checkEntries(db, publishedId),
-            sourceSha256s: (await sourcesOf(db, publishedId)).map((s) => s.sha256),
+            sourceSha256s: await sourceHashes(db, publishedId),
           }
     const icd = draftEntries
       .filter((e) => e.codeSystem === 'icd10cm')
@@ -360,12 +391,12 @@ export const draftsRoute = new Hono<AppEnv>()
       stateId: version.stateId,
       draft: {
         entries: draftEntries,
-        invalidRowCount: sources.reduce((sum, s) => sum + s.invalidRowCount, 0),
-        incompleteSources: sources
-          .filter((s) => s.storedEntries !== s.expectedEntries)
-          .map((s) => s.title),
-        sourceSha256s: sources.map((s) => s.sha256),
-        namedStateIds: [...new Set(sources.flatMap((s) => s.namedStateIds))],
+        invalidRowCount: parts.reduce((sum, p) => sum + p.invalidRowCount, 0),
+        incompleteSources: parts
+          .filter((p) => p.storedEntries !== p.expectedEntries)
+          .map((p) => `${p.title} (${p.part})`),
+        sourceSha256s: await sourceHashes(db, version.id),
+        namedStateIds: [...new Set(parts.flatMap((p) => p.namedStateIds))],
       },
       published,
       knownIcd10cm: await knownIcd10cm(db, icd),

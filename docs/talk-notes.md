@@ -63,6 +63,7 @@ literacy, little or no coding.
 | 2026-11-02 | The plan said a wrapped line belongs to the row above. Dumping every word's position in all five state PDFs showed that was true for one state; another mixed both directions in the same file. The parser now weighs each gap on its own | Measure the real files before trusting a rule written from one example | `devlog/2026-11-02-m2-step5-pdf.md` |
 | 2026-11-02 | Every automated test passed, and the page showed nothing: the PDF library hijacked the background worker's messages. Only running the real app in a real browser showed it; a browser test now covers it | Green tests in a simulated browser are not a working feature; look at the real screen | same |
 | 2026-11-02 | The review table passed every test. Loading Nebraska's real 8,000-row list showed 1,602 "diagnosis or supply code?" questions, and that answering them all at once would have mislabelled the real supply codes on the last page. The fix was to let the computer look each code up in the national lists it already had: 1,602 questions became 102 | Try new tools on the biggest real file; when a person would look something up, have the program do it | `devlog/2026-11-02-m2-step6-review.md` |
+| 2026-11-02 | Every unit test passed. Then real files and parallel browser tests found three bugs in an hour: two clicks at once got the same draft number; a long list broke a database limit by one; and Nebraska's PDF, which holds two tables, would have lost the first when the second was sent | Unit tests check what you thought of; the real file and two people clicking at once check what you didn't | `devlog/2026-11-02-m2-step7-drafts.md` |
 
 ## Numbers to collect
 
@@ -106,6 +107,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M2 step 4b + dev:stop (2026-11-01) | 0.1 (~10 min) | not measured | $0 | Excel via `read-excel-file` (project lead's choice); `pnpm dev:stop`; 8 new tests |
 | M2 step 5 (2026-11-02) | 0.6 (36 min) | not measured | $0 | PDF adapter; all five seed PDFs read (17,187 rows); 37 new tests, admin e2e project |
 | M2 step 6 (2026-11-02) | 08:03–08:19 | not measured | $0 | Review table, CMS lookup for codes; NE questions 1,602 → 102; 62 new tests |
+| M2 step 7 (2026-11-02) | 08:32–09:22 | not measured | $0 | Draft versions, server checks, diff + CSV; 3 bugs found only with real files or parallel tests |
 
 ## Assets to capture for slides
 

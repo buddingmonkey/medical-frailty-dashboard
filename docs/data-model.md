@@ -51,6 +51,8 @@ dataset_versions    id, state_id, version_no, status ('draft'|'published'|'super
                     published_by, published_at, check_report_json, row_count
 
 version_sources     version_id, source_document_id          (many-to-many)
+draft_parts         version_id, source_document_id, part, expected_entries, invalid_row_count,
+                    named_state_ids_json   (one per table/sheet sent to a draft; PK of the first three)
 
 entries             id, version_id, code_system, raw_code, code_norm, match_kind
                     ('exact'|'prefix'|'range'), range_end_norm, includes_children (0/1/null),
@@ -58,7 +60,8 @@ entries             id, version_id, code_system, raw_code, code_norm, match_kind
                     attributes_json (rationale, yes/no, LA designation, ...),
                     qualification ('standalone'|'needs_support'|'supporting_only'|'unknown'),
                     qualification_basis ('published'|'inferred'), 
-                    source_document_id, source_locator (page/sheet/row)
+                    source_document_id, source_locator (page/sheet/row),
+                    source_part (the table or sheet: `draft_parts.part`)
 
 category_mappings   id, state_id, state_category, state_subcategory, federal_category,
                     method ('auto'|'manual'), confidence, mapped_by, mapped_at

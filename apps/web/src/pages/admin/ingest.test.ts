@@ -28,6 +28,7 @@ const cms: Record<string, 'icd10cm' | 'hcpcs'> = { A0103: 'icd10cm', E09349: 'ic
 function fakeApi(savedProfile: unknown = null) {
   const saves: Saved[] = []
   const lookups: string[][] = []
+  const draftSources: unknown[] = []
   server.use(
     http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),
     http.get('/api/admin/watch', () => HttpResponse.json({ items: [] })),
@@ -56,6 +57,48 @@ function fakeApi(savedProfile: unknown = null) {
       saves.push((await request.json()) as Saved)
       return HttpResponse.json({ ok: true })
     }),
+    http.get('/api/admin/sources', () =>
+      HttpResponse.json({
+        items: [
+          {
+            id: 11,
+            stateId: 'LA',
+            title: 'Louisiana HR1 codes',
+            url: null,
+            publisherDate: '2026-07-21',
+            retrievedAt: '2026-11-01T12:00:00.000Z',
+            fileType: 'pdf',
+            sha256: 'a'.repeat(64),
+            byteSize: 10,
+            uploadedBy: 'admin@example.org',
+            versions: [],
+          },
+        ],
+      }),
+    ),
+    http.get('/api/admin/drafts', () => HttpResponse.json({ items: [] })),
+    http.post('/api/admin/drafts', () =>
+      HttpResponse.json(
+        {
+          item: {
+            id: 4,
+            stateId: 'LA',
+            versionNo: 1,
+            status: 'draft',
+            label: null,
+            createdBy: 'admin@example.org',
+            createdAt: '2026-11-02T14:00:00.000Z',
+            rowCount: 0,
+          },
+        },
+        { status: 201 },
+      ),
+    ),
+    http.put('/api/admin/drafts/4/sources/11', async ({ request }) => {
+      draftSources.push(await request.json())
+      return HttpResponse.json({ ok: true })
+    }),
+    http.post('/api/admin/drafts/4/rows', () => HttpResponse.json({ ok: true, stored: 2 })),
     http.post('/api/admin/ref-codes/lookup', async ({ request }) => {
       const { codes } = (await request.json()) as { codes: string[] }
       lookups.push(codes)
@@ -66,7 +109,7 @@ function fakeApi(savedProfile: unknown = null) {
       return HttpResponse.json({ items })
     }),
   )
-  return { saves, lookups }
+  return { saves, lookups, draftSources }
 }
 
 let user: ReturnType<typeof userEvent.setup>
@@ -195,6 +238,7 @@ describe('/admin/ingest', () => {
     await user.selectOptions(screen.getByLabelText('State'), 'Montana')
     const pdf = makePdf([
       [
+        { text: 'Montana Medically Frail Condition List', x: 40, y: 20, bold: true },
         { text: 'Code', x: 40, y: 50, bold: true },
         { text: 'Code Name', x: 120, y: 50, bold: true },
         { text: 'F20.0', x: 40, y: 70 },
@@ -209,6 +253,8 @@ describe('/admin/ingest', () => {
     const rows = await screen.findByRole('table', { name: 'Mapped rows (first 20)' })
     expect(within(rows).getByText('Paranoid schizophrenia with a second line')).toBeTruthy()
     expect(within(rows).getByText('page 1, line 1')).toBeTruthy()
+    // The title names the state; the send panel says so (the state-mismatch check reads it).
+    expect(screen.getByText(/States named in the file: MT\./)).toBeTruthy()
     const wrap = screen.getByLabelText<HTMLSelectElement>('Wrapped lines')
     expect(wrap.value).toBe('auto')
     expect(wrap.selectedOptions[0]?.textContent).toContain('found: below the code')
@@ -269,6 +315,21 @@ describe('/admin/ingest', () => {
     )
     await start()
     expect(await screen.findByText(/Could not check the codes against the CMS lists/)).toBeTruthy()
+  })
+
+  it('sends the reviewed rows of a pasted table to a new draft', async () => {
+    const api = fakeApi()
+    await start(`Louisiana list\tCode\nx\tF20.0\ny\tF31.0\n`)
+    const panel = screen.getByRole('region', { name: 'Send to a draft' })
+    expect(within(panel).getByText(/2 entries from 2 rows/)).toBeTruthy()
+    await within(panel).findByRole('option', { name: 'Louisiana HR1 codes' })
+    await user.selectOptions(within(panel).getByLabelText('Source document'), '11')
+    await user.click(within(panel).getByRole('button', { name: 'Send to draft' }))
+    expect(await within(panel).findByRole('link', { name: 'Open draft v1' })).toBeTruthy()
+    // The header names Louisiana: the state-mismatch check gets it.
+    expect(api.draftSources).toEqual([
+      { part: 'Pasted table', expectedEntries: 2, invalidRowCount: 0, namedStateIds: ['LA'] },
+    ])
   })
 
   it('reads a CSV file, and refuses a PDF it cannot read', async () => {

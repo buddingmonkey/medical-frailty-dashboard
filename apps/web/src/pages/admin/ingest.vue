@@ -7,6 +7,7 @@ import {
   columnProfileSchema,
   columnRoleLabels,
   columnRoles,
+  findNamedStates,
   guessColumnRoles,
   guessUndottedIcd,
   headerKey,
@@ -22,6 +23,7 @@ import {
   referenceIndex,
   referenceLookupCodes,
   refLookupResponseSchema,
+  sha256Hex,
   type ReviewEdits,
   stateListResponseSchema,
 } from '@mfcd/shared'
@@ -30,6 +32,7 @@ import { computed, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
 import ReviewTable from '../../components/admin/ReviewTable.vue'
+import SendToDraft from '../../components/admin/SendToDraft.vue'
 import type { ParseInput } from '../../ingest/parse'
 import type { WrapDirection } from '../../ingest/pdf-layout'
 import { runParser } from '../../ingest/run-parser'
@@ -57,6 +60,8 @@ const parsing = ref(false)
 const pasteText = ref('')
 /** PDF only: how wrapped lines were read (null for other files). */
 const pdfWrap = ref<WrapDirection | null>(null)
+/** PDF only: its title text, for the state-name check. */
+const titleText = ref('')
 const wrapChoice = ref<WrapDirection | 'auto'>('auto')
 const wrapLabels: Record<WrapDirection, string> = {
   above: 'above the code',
@@ -73,11 +78,13 @@ async function parse(input: ParseInput, again = false) {
   if (!again) {
     tables.value = []
     pdfWrap.value = null
+    titleText.value = ''
   }
   try {
     const result = await runParser(input)
     tables.value = result.tables
     pdfWrap.value = result.pdfWrap ?? null
+    titleText.value = result.titleText ?? ''
     tableIndex.value = 0
   } catch (error) {
     parseError.value = error instanceof Error ? error.message : 'Could not read this file.'
@@ -86,11 +93,22 @@ async function parse(input: ParseInput, again = false) {
   }
 }
 
+/** The file read: its hash finds the stored source document; null for a pasted table. */
+const fileInfo = ref<{ name: string; sha256: string } | null>(null)
+
 async function onFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
   wrapChoice.value = 'auto'
-  await parse({ kind: 'file', name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  // Hash before parsing: the bytes may be handed to the worker.
+  fileInfo.value = { name: file.name, sha256: await sha256Hex(bytes) }
+  await parse({ kind: 'file', name: file.name, bytes })
+}
+
+function onPaste() {
+  fileInfo.value = null
+  return parse({ kind: 'paste', text: pasteText.value })
 }
 
 // Read the same PDF again with the admin's choice.
@@ -225,13 +243,16 @@ watch(mapping, (m) => {
 // The review uses them to settle "ICD-10-CM or HCPCS?" and to show codes CMS does not list.
 const reference = ref<ReferenceIndex>(new Map())
 const lookupError = ref<string | null>(null)
-const lookupCodes = computed(() =>
+/** The review of the mapped rows: shown in ReviewTable, sent to a draft by SendToDraft. */
+const review = computed(() =>
   mapping.value
-    ? referenceLookupCodes(
-        buildReview(mapping.value.rows, reviewEdits.value, { undottedIcd: undottedIcd.value }),
-      )
-    : [],
+    ? buildReview(mapping.value.rows, reviewEdits.value, {
+        undottedIcd: undottedIcd.value,
+        reference: reference.value,
+      })
+    : null,
 )
+const lookupCodes = computed(() => (review.value ? referenceLookupCodes(review.value) : []))
 let lookupRun = 0
 watch(lookupCodes, async (codes) => {
   const missing = codes.filter((code) => !reference.value.has(code))
@@ -256,6 +277,17 @@ watch(lookupCodes, async (codes) => {
       lookupError.value = error instanceof Error ? error.message : 'Unknown error'
     }
   }
+})
+
+// States the file names (file name, table names, headers, first rows), for the checks.
+const namedStateIds = computed(() => {
+  const states = statesQuery.data.value ?? []
+  const texts = [fileInfo.value?.name ?? '', titleText.value]
+  for (const t of tables.value) {
+    texts.push(t.name, t.header.join(' '))
+    for (const r of t.rows.slice(0, 10)) texts.push(r.cells.join(' '))
+  }
+  return findNamedStates(texts, states)
 })
 
 const plural = (n: number, one: string, many: string) => `${String(n)} ${n === 1 ? one : many}`
@@ -345,7 +377,7 @@ const inputClass =
           type="button"
           class="mt-2 rounded border border-border px-3 py-1.5 hover:bg-surface"
           :disabled="pasteText.trim() === ''"
-          @click="parse({ kind: 'paste', text: pasteText })"
+          @click="onPaste"
         >
           Read pasted table
         </button>
@@ -559,11 +591,10 @@ const inputClass =
         but cannot settle “ICD-10-CM or HCPCS?” or show codes CMS does not list.
       </p>
       <ReviewTable
-        v-if="mapping && mapping.rows.length > 0"
+        v-if="review && review.rows.length > 0"
         v-model:edits="reviewEdits"
         v-model:undotted-icd="undottedIcd"
-        :rows="mapping.rows"
-        :reference="reference"
+        :review="review"
       />
 
       <div class="flex flex-wrap items-center gap-3">
@@ -580,9 +611,14 @@ const inputClass =
           Could not save: {{ save.error.value.message }}
         </p>
       </div>
-      <p class="text-sm text-muted-foreground">
-        Next (a later step): send the reviewed rows to a draft version.
-      </p>
+      <SendToDraft
+        v-if="review && review.rows.length > 0"
+        :state-id="stateId"
+        :part="table.name"
+        :review="review"
+        :sha256="fileInfo?.sha256 ?? null"
+        :named-state-ids="namedStateIds"
+      />
     </template>
   </section>
 </template>

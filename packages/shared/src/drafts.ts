@@ -68,7 +68,7 @@ export const routeIdSchema = z.coerce.number().int().positive()
 /** Query of `GET /api/admin/drafts`. */
 export const draftListQuerySchema = z.object({ stateId })
 
-/** `version_sources.named_state_ids_json`; anything unreadable counts as no names. */
+/** `draft_parts.named_state_ids_json`; anything unreadable counts as no names. */
 export const namedStateIdsSchema = z.array(z.string()).catch([])
 
 /** Body of `POST /api/admin/drafts`. */
@@ -77,12 +77,16 @@ export const draftCreateSchema = z.object({
   label: z.string().trim().max(200).default(''),
 })
 
+/** A table or sheet of a source file ("Pages 2–294", "Sheet1"). */
+const part = z.string().trim().min(1).max(200)
+
 /**
- * Body of `PUT /api/admin/drafts/:id/sources/:sourceId`: adds a source to the draft, or starts
- * it over (its entries are deleted). The rows follow in chunks; `expectedEntries` lets the
- * checks see an upload that stopped half way.
+ * Body of `PUT /api/admin/drafts/:id/sources/:sourceId`: adds one part (table or sheet) of a
+ * source to the draft, or starts that part over (its entries are deleted). The rows follow in
+ * chunks; `expectedEntries` lets the checks see an upload that stopped half way.
  */
 export const draftSourceSchema = z.object({
+  part,
   expectedEntries: z
     .number()
     .int()
@@ -96,6 +100,7 @@ export type DraftSource = z.infer<typeof draftSourceSchema>
 /** Body of `POST /api/admin/drafts/:id/rows`. */
 export const draftRowsRequestSchema = z.object({
   sourceDocumentId: id,
+  part,
   entries: z.array(draftEntrySchema).min(1).max(DRAFT_CHUNK),
 })
 
@@ -114,9 +119,11 @@ export type DraftSummary = z.infer<typeof draftSummarySchema>
 export const draftListResponseSchema = z.object({ items: z.array(draftSummarySchema) })
 
 export const draftDetailSchema = draftSummarySchema.extend({
-  sources: z.array(
+  /** One item per part (table or sheet) of each source sent. */
+  parts: z.array(
     z.object({
       sourceDocumentId: id,
+      part: z.string(),
       title: z.string(),
       sha256: z.string(),
       expectedEntries: z.number().int().nonnegative(),

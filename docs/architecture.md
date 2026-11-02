@@ -191,9 +191,13 @@ Admin (Access JWT required; all writes):
 | `GET /api/admin/column-profiles?stateId=&headerKey=` | The saved column profile for a state's header layout (`headerKey()` in `packages/shared/src/ingest.ts`), or `{item: null}` |
 | `PUT /api/admin/column-profiles` | Save it: `{stateId, header, profile}`; the server computes the key; one role per column |
 | `POST /api/admin/ref-codes/lookup` | Body `{codes}`: up to 1,000 normalized codes. Returns the ones in `ref_codes` with their system (ICD-10-CM or HCPCS) and billable flag. A read sent as POST (the list does not fit in a URL); D1 is asked 100 codes per query |
-| `POST /api/admin/drafts` | Start a draft version for a state |
-| `POST /api/admin/drafts/:id/rows` | Add validated rows in chunks (≤ 500 rows per request) |
-| `GET /api/admin/drafts/:id/checks` | Run the data checks and diff against the published version |
+| `GET /api/admin/drafts?stateId=` | A state's open drafts, newest first |
+| `POST /api/admin/drafts` | Start a draft version for a state (`{stateId}`); the version number is set in the same statement, so two at once cannot clash |
+| `GET /api/admin/drafts/:id` | The version, with one item per part sent (file, table, entries stored of expected, invalid rows, states named) |
+| `PUT /api/admin/drafts/:id/sources/:sourceId` | Add one part (table or sheet) of a stored source: `{part, expectedEntries, invalidRowCount, namedStateIds}`. Sending a part again deletes only its entries. The source must belong to the draft's state; only a `draft` changes (409 otherwise) |
+| `POST /api/admin/drafts/:id/rows` | `{sourceDocumentId, part, entries}`, ≤ 500 entries. Each entry is re-parsed (`validateDraftEntry`); a mismatch answers 400 with its `index`, and nothing is stored. More entries than announced: 400 |
+| `GET /api/admin/drafts/:id/checks` | Runs `runChecks` on the stored rows (ref_codes for unknown ICD-10-CM, the published version for the diff), stores `{report, token, ranAt}` in `check_report_json`. `token` is a SHA-256 of the entry ids and parts |
+| `POST /api/admin/drafts/:id/discard` | Mark a draft `discarded` (kept for the record) |
 | `POST /api/admin/drafts/:id/publish` | Publish (needs the confirmation token from the checks) |
 | `POST /api/admin/states/:st/rollback` | Re-publish an earlier version |
 | `PUT /api/admin/category-mappings/:id` | Remap a state category to a federal category |

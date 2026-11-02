@@ -24,6 +24,8 @@ export interface ParseResult {
   tables: RawTable[]
   /** PDF only: the wrap direction used (chosen, or detected under 'auto'). */
   pdfWrap?: WrapDirection
+  /** PDF only: text before the first table (titles), for the state-name check. */
+  titleText?: string
 }
 
 const QUOTE = '"'
@@ -205,8 +207,12 @@ export function parseSource(input: ParseInput): Promise<ParseResult> {
       case 'pdf': {
         // pdf.js is large: load it only when a PDF is read.
         const { parsePdf } = await import('./pdf')
-        const { tables, wrap } = await parsePdf(input.bytes, input.name, input.wrap ?? 'auto')
-        return { tables, pdfWrap: wrap }
+        const { tables, wrap, titleText } = await parsePdf(
+          input.bytes,
+          input.name,
+          input.wrap ?? 'auto',
+        )
+        return { tables, pdfWrap: wrap, titleText }
       }
       case 'xlsx':
         return { tables: await parseXlsx(input.bytes, input.name) }
