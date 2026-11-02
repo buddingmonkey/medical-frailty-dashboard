@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { type AiComplete, claudeComplete } from './ai/claude'
 import type { GetJwks } from './auth/access'
 import { adminWriteGuard } from './middleware/admin-write-guard'
+import { publicCache } from './middleware/public-cache'
 import { publicGetOnly } from './middleware/public-get-only'
 import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
@@ -18,6 +19,7 @@ import { adminStates } from './routes/admin/states'
 import { watch } from './routes/admin/watch'
 import { whoami } from './routes/admin/whoami'
 import { health } from './routes/public/health'
+import { publicStates } from './routes/public/states'
 import { robots } from './routes/robots'
 import type { AppEnv } from './types'
 
@@ -38,6 +40,9 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
 
   app.use('/api/public/*', publicGetOnly)
   app.route('/api/public/health', health)
+  app.use('/api/public/states', publicCache)
+  app.use('/api/public/states/*', publicCache)
+  app.route('/api/public/states', publicStates)
 
   // Admin pages and API: the only places admin features may live (CLAUDE.md).
   const adminOnly = requireAdmin(getJwks)
