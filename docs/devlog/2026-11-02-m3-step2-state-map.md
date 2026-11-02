@@ -35,6 +35,10 @@ pointer or keyboard focus, and a table view of the same data.
 | Before any hover, the card shows the first state with a list | An empty card says nothing | AI |
 
 ## Corrections and surprises
+- CI failed the three map e2e tests that passed locally: the public e2e Worker used the default
+  local D1, which on this machine is the `pnpm dev` database (migrated, four states) and in CI
+  an empty one, so `/api/public/states` answered 500. It now migrates its own D1
+  (`.wrangler/e2e-public`), like the admin project.
 - The focus outline passed every automated check (axe does not judge SVG strokes) and was
   invisible on screen. Only the screenshot caught it.
 

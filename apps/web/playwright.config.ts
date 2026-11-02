@@ -8,6 +8,7 @@ const PORT = 8788
 // made-up admin, with its own local D1 (migrations applied first). Tests: e2e/*.admin.spec.ts.
 const ADMIN_PORT = 8789
 const ADMIN_STATE = '.wrangler/e2e-admin'
+const PUBLIC_STATE = '.wrangler/e2e-public'
 const isCI = Boolean(process.env['CI'])
 
 export default defineConfig({
@@ -33,7 +34,12 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `pnpm --dir ../api exec wrangler dev --port ${String(PORT)} --var ENVIRONMENT:test --var SITE_MODE:public`,
+      // Its own local D1 with every migration (the 50 states and DC, no lists), so the run never
+      // depends on what `pnpm dev` left in the default local database.
+      command:
+        `pnpm --dir ../api exec wrangler d1 migrations apply DB --local --persist-to ${PUBLIC_STATE}` +
+        ` && pnpm --dir ../api exec wrangler dev --port ${String(PORT)} --persist-to ${PUBLIC_STATE}` +
+        ' --var ENVIRONMENT:test --var SITE_MODE:public',
       url: `http://localhost:${String(PORT)}/api/public/health`,
       reuseExistingServer: !isCI,
       timeout: 60_000,
