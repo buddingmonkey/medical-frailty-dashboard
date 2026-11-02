@@ -108,6 +108,13 @@ without a token is redirected to the Access login. **From M1** the deploy also r
 see "Backups and restore").
 
 - The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
+- **Never edit a migration after a remote database has applied it** (from M1 step 6 on). Until
+  then, M1 regenerated `0000_init` twice (no remote D1 had applied it).
+- **Changing a CHECK constraint makes drizzle-kit rebuild the table** (create a copy, copy the
+  rows, drop the old table, rename). Dropping `entries` also drops the FTS triggers, silently.
+  Any migration that rebuilds `entries` must recreate the three triggers from
+  `0001_entries_fts.sql` and run `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')`. The
+  FTS tests in `apps/api/src/db/schema.test.ts` fail if the triggers are missing.
 - Migrations must be backward-compatible with the previous Worker version (add columns and
   tables first, drop them in a later release), because migrations run before the new code is live.
 - Rollback a bad deploy: `wrangler rollback` to the previous Worker version (data is not

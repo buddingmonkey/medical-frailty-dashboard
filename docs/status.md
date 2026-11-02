@@ -48,7 +48,10 @@ _Last updated: 2026-11-01_
   constraints, `pnpm db:generate`, `pnpm db:migrate:local`, and a `db-drift` stage in
   `pnpm check`. Pre-deploy backups use D1 Time Travel, because D1 cannot export a database with
   an FTS5 table (`docs/deployment.md`).
-- **Next step:** M1 step 2 (`packages/shared/codes.ts`).
+- **M1 step 2 done** (branch `m1-step2-codes`): `packages/shared/src/codes.ts` (split, normalize,
+  wildcards, ranges, code-system inference, display, code URLs, `entryCovers`) with 103
+  table-driven tests from the real files. New code system `drug_class` (LA pharmacy).
+- **Next step:** M1 step 3 (`packages/reference-data`, `ref_codes` from CMS files).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -116,7 +119,7 @@ here; that page is seeded from this table. Approximate dates are marked ~.
 | ~2027-04-29 | End of the 6-month enforcement stay for the 26 plaintiff states (6 months from 2026-10-29; confirm against the order) | Plaintiff states' frailty processes may change | Opinion, "Relief" |
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
-| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text, and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 
@@ -128,6 +131,11 @@ rollback. See `docs/ingestion.md` ("Checks before publishing") and `docs/data-mo
 
 ## How the user likes to work
 
+- **Within a milestone, keep going** (user, 2026-11-01): show the plan briefly, then build
+  without waiting for approval, merge each step's PR when CI is green, and move to the next
+  step. Ask questions only when blocked on a product or legal decision. **The hard gate is the
+  end of a milestone:** stop there for the project lead's review. Production tags still need
+  explicit approval.
 - The user works with a team of lawyers. On legal questions (what the ruling means, how
   qualification is described, disclaimers, CPT text) the lawyers decide. Present research and
   a recommendation, label it as not legal advice, and expect changes.
