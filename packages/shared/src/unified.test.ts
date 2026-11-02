@@ -165,18 +165,18 @@ describe('unifiedOf', () => {
       want: { unifiedIds: [1], basis: 'by_code', reviewed: false },
     },
     {
-      name: 'rule 4: a mapping to a draft category counts nowhere publicly',
+      name: 'rule 4: a mapping only to a draft is no mapping on public pages (falls to by_code)',
       entry: entry(),
       mappings: [row(4)],
       entryCcsr: ['MBD001'],
-      want: { unifiedIds: [], basis: 'mapping', reviewed: true },
+      want: { unifiedIds: [1], basis: 'by_code', reviewed: false },
     },
     {
-      name: 'rule 4: drafts are dropped after the CCSR filter, so publishing one only adds',
+      name: 'rule 4: public pages drop draft targets first, so the entry keeps its published one',
       entry: entry(),
       mappings: [row(4), row(2)],
       entryCcsr: ['MBD001'],
-      want: { unifiedIds: [], basis: 'mapping', reviewed: true },
+      want: { unifiedIds: [2], basis: 'mapping', reviewed: true },
     },
     {
       name: 'rule 4: a mapping to a retired category never counts (falls to by_code)',

@@ -142,9 +142,9 @@ export interface UnifiedPlacement {
  * 3. otherwise ICD-10-CM entries go by their CCSR groups, other code systems nowhere;
  * 4. retired categories never count, and drafts only with `includeDrafts`.
  *
- * Retired targets are dropped before rule 2 (a mapping to a retired category is no mapping).
- * Drafts are dropped after it, so publishing a draft only adds entries to it and never moves
- * them out of another category.
+ * Targets the caller cannot see (retired, or draft on public pages) are dropped before rule 2:
+ * a mapping to them is no mapping, so the public never loses an entry to an admin's draft.
+ * Publishing a draft can then move entries into it from another target of the same mapping.
  */
 export function unifiedOf(
   entry: {
@@ -174,14 +174,12 @@ export function unifiedOf(
   }
 
   const targets = unique(
-    approved.flatMap((m) =>
-      m.unifiedId !== null && isLive(ctx.categories.get(m.unifiedId)?.status) ? [m.unifiedId] : [],
-    ),
+    approved.flatMap((m) => (m.unifiedId !== null && visible(m.unifiedId) ? [m.unifiedId] : [])),
   )
   if (targets.length > 0) {
     const matching = targets.length > 1 ? targets.filter(sharesCcsr) : targets
     const chosen = matching.length > 0 ? matching : targets
-    return { unifiedIds: chosen.filter(visible), basis: 'mapping', reviewed: true }
+    return { unifiedIds: chosen, basis: 'mapping', reviewed: true }
   }
 
   if (!isIcd) return { unifiedIds: [], basis: 'none', reviewed: false }
@@ -191,10 +189,6 @@ export function unifiedOf(
     basis: 'by_code',
     reviewed: approved.some((m) => m.relation === 'by_code'),
   }
-}
-
-function isLive(status: UnifiedStatus | undefined): boolean {
-  return status === 'published' || status === 'draft'
 }
 
 function unique(ids: number[]): number[] {
