@@ -172,6 +172,12 @@ For a code X the search page shows each state as:
 - **Like code**: the state lists a code in another code system in the same condition group
 - **Not listed**
 
+The compare table (M4) uses the same words per cell, with rows that may be wildcards or ranges:
+a state covers a wildcard row only with a wildcard or range that contains all of it (a single
+`F10` never covers `F10.*`; it shows as a narrower code). Two spellings of one set of codes
+match exactly: `F10` with `includes_children = 1` is the same row as `F10*`
+(`comparePatternKey`).
+
 "Confirmed" in the design wiki means the first two. The other states are shown separately and
 labeled, so a "like" match never looks like an exact match.
 

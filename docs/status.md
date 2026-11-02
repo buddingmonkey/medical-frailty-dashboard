@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M3 step 4)_
+_Last updated: 2026-11-02 (M4 step 1)_
 
 ## Where things stand
 
@@ -171,6 +171,13 @@ _Last updated: 2026-11-02 (M3 step 4)_
   The public e2e D1 gets a small Montana list (`apps/web/e2e/fixtures/public-seed.sql`).
 - **M3 is complete** (PRs #37–#40, 2026-11-02). Hard stop for the project lead's review; see
   the M3 devlog entry for the summary and the questions (release, two legal items).
+- **M4 started** (project lead, 2026-11-02 14:57). **Step 1 done** (branch
+  `m4-step1-compare-api`): `GET /api/public/compare` (`buildCompare()` in
+  `packages/shared/src/compare.ts`; loader `apps/api/src/db/public-compare.ts`). Rows: one
+  category's codes, wildcards and ranges; cells: listed / covered / narrower / not listed / no
+  list; 100 rows a page. **CPU on the Free plan (10 ms) is not yet measured**: the worst case
+  (all four seed states, every unclassified entry) spent ~20 ms of JavaScript in Node. Read it on
+  preview before 2026-11-30.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
