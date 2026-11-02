@@ -62,8 +62,9 @@ _Last updated: 2026-11-01_
   `docs/ingestion.md` plus the diff and the publish confirmation gate (21 tests).
 - **M1 step 6 done** (branch `m1-step6-deploy-migrations`): the deploy records a D1 Time Travel
   bookmark, then applies migrations; a manual **Reference data** workflow loads `ref_codes` in
-  chunks (production after approval). First CI migration ran on preview (2026-11-01), and
-  80,000 of 107,173 reference rows are loaded there; run the workflow again after 00:00 UTC.
+  chunks (production after approval). First CI migration ran on preview (2026-11-01); preview
+  has all 107,173 reference rows (two runs; the second on Workers Paid). `v0.1.0` tagged; the
+  production deploy and the production reference load wait for the project lead's approval.
   **M1 is complete; waiting for the project lead's review** (milestone gate,
   `docs/devlog/2026-11-01-m1-milestone.md`). Production gets the schema with the next `v*` tag.
 - **Next step:** M2 (ingestion), after the M1 review.
@@ -105,12 +106,11 @@ _Last updated: 2026-11-01_
 | IDs and dates | Integer IDs (states keep the 2-letter code); ISO-8601 text dates (user, 2026-11-01) |
 | State page URLs | Lowercase postal code, `/states/ga`; the database enforces `slug = lower(id)` (user, 2026-11-01) |
 | Code page URLs | Computed from code system + code, e.g. `/codes/icd-10-cm/F20.0`; no slug column (user, 2026-11-01) |
+| Workers Paid for one month | $5 once (user, 2026-11-01), so the 107k reference rows load in one go instead of two days per database. **Downgrade to Free by 2026-11-30** (watch date). Nothing in the code depends on the paid plan |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
 
-- **Reference-code load:** two days per database at $0 (chosen), or Workers Paid ($5) for one
-  month to load at once? Not blocking; the load starts in M1 step 6.
 1. **Dates to watch** are in "Watch dates" below (next: ~2026-12-28, the *Massachusetts v. Oz*
    appeal deadline).
 2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
@@ -132,6 +132,7 @@ here; that page is seeded from this table. Approximate dates are marked ~.
 | Date | What | Why it matters | Source |
 | --- | --- | --- | --- |
 | ~2026-12-28 | *Massachusetts v. Oz*: CMS appeal deadline (60 days from judgment; exact date depends on when judgment was entered) | An appeal or stay may change the site's ruling note; states may loosen combination rules either way | `docs/sources.md`, "Federal and court rulings" |
+| 2026-11-30 | Downgrade the Cloudflare account from Workers Paid to Free (Workers & Pages → Plans) | The $5 was for one month only (reference-code load); check usage first so nothing still needs the paid quota | Decisions table |
 | ~2026-12 | CMS posts the January 2027 HCPCS file | Build the diff loader first, so the update loads only new and changed codes (`packages/reference-data/README.md`, "Updating") | CMS HCPCS quarterly update page |
 | ~2027-06 | CMS posts ICD-10-CM FY2028 files (valid 2027-10-01) | Load the changes into `ref_codes`; re-run checks for every state | CMS ICD-10 page |
 | 2027-01-01 | Work requirements take effect | States may publish final or revised lists before this date; re-check all seed states | H.R.1 §71119 |
