@@ -38,7 +38,11 @@ _Last updated: 2026-11-01_
   `pnpm cf` runs wrangler with this repo's own token and refuses production deploys.
   **`v0.0.1` is live** on both Workers, behind Access. Remaining: `ADMIN_EMAILS` on both
   Workers and a browser check by the project lead.
-- **Next step after that:** M0 step 8 (builder agent file), then M1.
+- **Step 8 done** (branch `m0-step8-builder`): `.claude/agents/builder.md`, an optional
+  builder agent with the standing rules (model `inherit`; the main session may pass a cheaper
+  model for pure rote coding). A proof run on Haiku repeated its rules correctly. The "add a
+  state source" skill moved to M2 step 12. **M0 is complete.**
+- **Next step:** M1 step 1 (Drizzle schema and first migration).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
