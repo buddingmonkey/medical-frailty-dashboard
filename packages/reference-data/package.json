@@ -7,14 +7,20 @@
     "build": "node src/cli.ts build",
     "load": "node src/cli.ts load",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "us-map": "node src/us-map.ts"
   },
   "dependencies": {
     "@mfcd/shared": "workspace:*",
     "fflate": "0.8.3"
   },
   "devDependencies": {
+    "@types/d3-geo": "3.1.1",
     "@types/node": "26.6.6",
+    "@types/topojson-client": "3.1.5",
+    "d3-geo": "3.1.1",
+    "topojson-client": "3.1.0",
+    "us-atlas": "3.0.1",
     "vitest": "5.0.5"
   }
 }
