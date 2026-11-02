@@ -5,8 +5,8 @@ A public site that compares the code lists US states use to mark Medicaid member
 front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
 All data is public state policy. There is no patient data, and there never will be.
 
-> **Status: planning.** The commands below come online in roadmap step M0. Until then,
-> `docs/status.md` says what exists.
+> **Status: M0 done (scaffolding).** Every command below works except `db:*` and the seeded
+> `e2e`, which arrive in M1. `docs/status.md` says what exists.
 
 ## Commands
 
@@ -23,7 +23,8 @@ pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare A
 pnpm cf <args>        # wrangler with this repo's own token (apps/api/.env.cloudflare); refuses prod deploys
 ```
 
-Production deploys happen only from CI on `main`. Never run `wrangler deploy` against production by hand.
+Production deploys happen only from CI, on a `v*` tag of a `main` commit, after the project lead
+approves. Never run `wrangler deploy` against production by hand.
 
 ## Rules
 
