@@ -169,6 +169,8 @@ _Last updated: 2026-11-02 (M3 step 4)_
   plain sentences and tables); CSV and JSON downloads at `/states/<st>/codes.csv|json`;
   `/sitemap.xml`. Public cache keys now include the Worker version (`CF_VERSION_METADATA`).
   The public e2e D1 gets a small Montana list (`apps/web/e2e/fixtures/public-seed.sql`).
+- **M3 is complete** (PRs #37–#40, 2026-11-02). Hard stop for the project lead's review; see
+  the M3 devlog entry for the summary and the questions (release, two legal items).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

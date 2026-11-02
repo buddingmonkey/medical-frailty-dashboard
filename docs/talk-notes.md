@@ -122,6 +122,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M3 step 2 (2026-11-02) | 13:33–13:39 | not measured | $0 | Home map (51 shapes precomputed, 44 KB gzipped page), card, table view; a focus outline only a screenshot caught |
 | M3 step 3 (2026-11-02) | 13:48–13:53 | not measured | $0 | State pages and their API; 12 new tests |
 | M3 step 4 (2026-11-02) | 13:57–14:16 | not measured | $0 | Server-rendered pages for crawlers, JSON-LD, CSV/JSON downloads, sitemap; 19 new tests |
+| **M3 total** (2026-11-02) | **≈ 1 h** (13:25–14:26) | not measured | $0 | 4 PRs (#37–#40); 658 Vitest + 24 e2e; map, state pages, crawler-readable HTML, downloads, sitemap |
 
 ## Assets to capture for slides
 
