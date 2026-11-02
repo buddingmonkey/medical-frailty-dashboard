@@ -1,0 +1,330 @@
+<script setup lang="ts">
+import {
+  type FederalCategory,
+  federalCategories,
+  federalCategoryInfo,
+  stateCategoriesResponseSchema,
+  type StateCategories,
+  stateListResponseSchema,
+} from '@mfcd/shared'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, reactive, ref, useId, watch } from 'vue'
+import { z } from 'zod'
+
+import { formatTimestampDate } from '../../lib/admin-watch'
+import { getJson, sendJson } from '../../lib/api'
+
+// Category mapping (roadmap M2 step 9; docs/ingestion.md, "Category auto-mapping"): each state
+// category gets a federal category. Publish stores the keyword table's guess as "auto"; an
+// admin confirms it here (launch needs every mapping confirmed). States that group codes only
+// by ICD-10-CM chapter (NE, GA) can override by chapter.
+type Category = StateCategories['categories'][number]
+type Chapter = StateCategories['chapters'][number]
+
+const id = useId()
+const queryClient = useQueryClient()
+const statesQuery = useQuery({
+  queryKey: ['admin', 'states'],
+  queryFn: async () => (await getJson('/api/admin/states', stateListResponseSchema)).items,
+  staleTime: Infinity,
+})
+const stateId = ref('')
+const stateName = computed(
+  () => statesQuery.data.value?.find((s) => s.id === stateId.value)?.name ?? '',
+)
+const query = useQuery({
+  queryKey: computed(() => ['admin', 'categories', stateId.value]),
+  queryFn: () =>
+    getJson(`/api/admin/states/${stateId.value}/categories`, stateCategoriesResponseSchema),
+  enabled: computed(() => stateId.value !== ''),
+})
+
+const choices = federalCategories.filter((c) => c !== 'unmapped')
+const label = (c: FederalCategory) => federalCategoryInfo[c].label
+const nameOf = (c: { stateCategory: string; stateSubcategory: string }) =>
+  [c.stateCategory || '(no category)', c.stateSubcategory].filter(Boolean).join(' / ')
+const keyOf = (c: { stateCategory: string; stateSubcategory: string }) =>
+  `${c.stateCategory}\u0000${c.stateSubcategory}`
+
+// The select of each row starts at its mapping, else the guess.
+const picked = reactive<Record<string, FederalCategory | ''>>({})
+const chapterPicked = reactive<Record<number, FederalCategory | ''>>({})
+watch(
+  () => query.data.value,
+  (data) => {
+    for (const c of data?.categories ?? []) {
+      const current = c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? ''
+      picked[keyOf(c)] = current === 'unmapped' ? '' : current
+    }
+    for (const ch of data?.chapters ?? [])
+      chapterPicked[ch.chapter] = ch.override?.federalCategory ?? ''
+  },
+  { immediate: true },
+)
+
+const categories = computed(() => query.data.value?.categories ?? [])
+const guesses = computed(() =>
+  categories.value.filter(
+    (c) =>
+      c.mapping?.method !== 'manual' &&
+      (c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped') !== 'unmapped',
+  ),
+)
+const summary = computed(() => {
+  const confirmed = categories.value.filter((c) => c.mapping?.method === 'manual').length
+  const guessed = guesses.value.length
+  const unmapped = categories.value.length - confirmed - guessed
+  return `${String(categories.value.length)} ${categories.value.length === 1 ? 'category' : 'categories'}: ${String(confirmed)} confirmed, ${String(guessed)} guessed, ${String(unmapped)} not mapped.`
+})
+const chapters = computed(() =>
+  (query.data.value?.chapters ?? []).filter(
+    (ch) => ch.publishedEntries + ch.draftEntries > 0 || ch.override !== null,
+  ),
+)
+
+function status(c: Category): string {
+  const m = c.mapping
+  if (m?.method === 'manual') {
+    return `Confirmed by ${m.mappedBy ?? 'an admin'}${m.mappedAt ? ` on ${formatTimestampDate(m.mappedAt)}` : ''}`
+  }
+  const guess = c.suggestion
+  if (m || guess) {
+    const keyword = guess ? `Guessed from “${guess.keyword}”` : 'Guessed'
+    const confidence = m?.confidence ?? guess?.confidence
+    return confidence === undefined
+      ? keyword
+      : `${keyword} (${String(Math.round(confidence * 100))}% sure)`
+  }
+  return 'Not mapped'
+}
+
+const saved = ref<string | null>(null)
+watch(stateId, () => {
+  saved.value = null
+})
+const ok = z.object({ ok: z.literal(true) })
+
+const save = useMutation({
+  mutationFn: (
+    items: { stateCategory: string; stateSubcategory: string; federalCategory: FederalCategory }[],
+  ) => sendJson('PUT', `/api/admin/states/${stateId.value}/categories`, { items }, ok),
+  onSuccess: async (_, items) => {
+    saved.value =
+      items.length === 1 && items[0]
+        ? `Confirmed ${nameOf(items[0])} as ${label(items[0].federalCategory)}.`
+        : `Confirmed ${String(items.length)} categories.`
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+  },
+})
+
+function confirmOne(c: Category) {
+  const choice = picked[keyOf(c)]
+  if (!choice) return
+  save.mutate([
+    {
+      stateCategory: c.stateCategory,
+      stateSubcategory: c.stateSubcategory,
+      federalCategory: choice,
+    },
+  ])
+}
+
+function confirmGuesses() {
+  save.mutate(
+    guesses.value.slice(0, 200).flatMap((c) => {
+      const choice = c.mapping?.federalCategory ?? c.suggestion?.federalCategory
+      return choice && choice !== 'unmapped'
+        ? [
+            {
+              stateCategory: c.stateCategory,
+              stateSubcategory: c.stateSubcategory,
+              federalCategory: choice,
+            },
+          ]
+        : []
+    }),
+  )
+}
+
+const saveChapter = useMutation({
+  mutationFn: (ch: Chapter) =>
+    sendJson(
+      'PUT',
+      `/api/admin/states/${stateId.value}/chapters/${String(ch.chapter)}`,
+      { federalCategory: chapterPicked[ch.chapter] === '' ? null : chapterPicked[ch.chapter] },
+      ok,
+    ),
+  onSuccess: async (_, ch) => {
+    saved.value = `Saved the override for chapter ${String(ch.chapter)}.`
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+  },
+})
+
+const n = (value: number) => value.toLocaleString('en-US')
+const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
+const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+</script>
+
+<template>
+  <section class="space-y-6">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl font-medium text-heading">Categories</h2>
+      <p class="max-w-prose text-muted-foreground">
+        Each state names its own categories. Map each one to a federal category from H.R.1. Guesses
+        come from a keyword table and count only after an admin confirms them.
+      </p>
+    </div>
+    <div class="max-w-xs">
+      <label :for="`${id}-state`" class="font-medium">State</label>
+      <select
+        :id="`${id}-state`"
+        v-model="stateId"
+        class="mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5"
+      >
+        <option value="" disabled>Choose a state</option>
+        <option v-for="s in statesQuery.data.value ?? []" :key="s.id" :value="s.id">
+          {{ s.name }}
+        </option>
+      </select>
+    </div>
+
+    <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
+    <p v-if="save.error.value || saveChapter.error.value" role="alert" class="text-danger">
+      Could not save: {{ (save.error.value ?? saveChapter.error.value)?.message }}
+    </p>
+    <p v-if="query.error.value" role="alert" class="text-danger">
+      Could not load the categories: {{ query.error.value.message }}
+    </p>
+
+    <template v-if="stateId && query.data.value">
+      <p v-if="categories.length === 0" class="text-muted-foreground">
+        {{ stateName }} has no rows yet. Send a list to a draft first.
+      </p>
+      <template v-else>
+        <div class="flex flex-wrap items-center gap-3">
+          <p>{{ summary }}</p>
+          <button
+            v-if="guesses.length > 0"
+            type="button"
+            :class="smallButton"
+            :disabled="save.isPending.value"
+            @click="confirmGuesses"
+          >
+            Confirm all {{ guesses.length }} guesses
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <caption class="sr-only">
+              Categories of
+              {{
+                stateName
+              }}
+            </caption>
+            <thead class="border-b border-border text-muted-foreground">
+              <tr>
+                <th scope="col" class="py-2 pr-4 font-medium">State category</th>
+                <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
+                <th scope="col" class="py-2 pr-4 font-medium">Now</th>
+                <th scope="col" class="py-2 font-medium">Federal category</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(c, i) in categories"
+                :key="keyOf(c)"
+                class="border-b border-border align-top"
+              >
+                <th scope="row" class="py-2 pr-4 font-medium">{{ nameOf(c) }}</th>
+                <td class="py-2 pr-4 text-right">
+                  {{ n(c.publishedEntries) }}
+                  <span v-if="c.draftEntries > 0" class="block text-xs text-muted-foreground"
+                    >{{ n(c.draftEntries) }} in drafts</span
+                  >
+                </td>
+                <td class="py-2 pr-4">
+                  <span v-if="c.mapping" class="block">{{ label(c.mapping.federalCategory) }}</span>
+                  <span class="block text-xs text-muted-foreground">{{ status(c) }}</span>
+                </td>
+                <td class="py-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <label :for="`${id}-c-${i}`" class="sr-only"
+                      >Federal category for {{ nameOf(c) }}</label
+                    >
+                    <select :id="`${id}-c-${i}`" v-model="picked[keyOf(c)]" :class="selectClass">
+                      <option value="" disabled>Choose</option>
+                      <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
+                    </select>
+                    <button
+                      type="button"
+                      :class="smallButton"
+                      :disabled="!picked[keyOf(c)] || save.isPending.value"
+                      :aria-label="`Confirm ${nameOf(c)}`"
+                      @click="confirmOne(c)"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <section v-if="chapters.length > 0" class="space-y-3" :aria-labelledby="`${id}-ch`">
+        <h3 :id="`${id}-ch`" class="font-display text-xl font-medium text-heading">
+          Override by ICD-10-CM chapter
+        </h3>
+        <p class="max-w-prose text-muted-foreground">
+          For states that group codes only by chapter (Nebraska, Georgia). An override wins over the
+          category mapping for the ICD-10-CM codes in that chapter.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <caption class="sr-only">
+              ICD-10-CM chapters
+            </caption>
+            <thead class="border-b border-border text-muted-foreground">
+              <tr>
+                <th scope="col" class="py-2 pr-4 font-medium">Chapter</th>
+                <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
+                <th scope="col" class="py-2 font-medium">Override</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ch in chapters" :key="ch.chapter" class="border-b border-border align-top">
+                <th scope="row" class="py-2 pr-4 font-medium">{{ ch.chapter }}. {{ ch.title }}</th>
+                <td class="py-2 pr-4 text-right">{{ n(ch.publishedEntries + ch.draftEntries) }}</td>
+                <td class="py-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <label :for="`${id}-ch-${ch.chapter}`" class="sr-only"
+                      >Override for chapter {{ ch.chapter }}</label
+                    >
+                    <select
+                      :id="`${id}-ch-${ch.chapter}`"
+                      v-model="chapterPicked[ch.chapter]"
+                      :class="selectClass"
+                    >
+                      <option value="">Use the category mapping</option>
+                      <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
+                    </select>
+                    <button
+                      type="button"
+                      :class="smallButton"
+                      :disabled="saveChapter.isPending.value"
+                      :aria-label="`Save chapter ${ch.chapter}`"
+                      @click="saveChapter.mutate(ch)"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+  </section>
+</template>

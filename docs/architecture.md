@@ -200,8 +200,10 @@ Admin (Access JWT required; all writes):
 | `POST /api/admin/drafts/:id/discard` | Mark a draft `discarded` (kept for the record) |
 | `POST /api/admin/drafts/:id/publish` | `{token, confirmations}`. Re-runs the checks; a token that no longer matches the rows answers 409; missing confirmations 400 with `missing`. Then the R2 backup of the replaced version, then one `db.batch()`: merge duplicates, supersede, publish, move the state pointer, bump `data_version`, audit |
 | `GET /api/admin/states/:stateId/versions` | A state's versions, newest first |
+| `GET /api/admin/states/:stateId/categories` | Categories of the published version and open drafts (counts, mapping, keyword guess), and the 22 ICD-10-CM chapters (counts, override) |
+| `PUT /api/admin/states/:stateId/categories` | `{items: [{stateCategory, stateSubcategory, federalCategory}]}` (≤ 200): confirmed mappings |
+| `PUT /api/admin/states/:stateId/chapters/:chapter` | `{federalCategory}` sets a chapter override, `null` clears it |
 | `POST /api/admin/states/:stateId/rollback` | `{versionId}`: re-publish a superseded version of the same state, in one batch (404 for another state's version, 409 for one that was never published) |
-| `PUT /api/admin/category-mappings/:id` | Remap a state category to a federal category |
 | `POST /api/admin/ai-cleanup` | Optional; only exists when `ANTHROPIC_API_KEY` is set |
 | `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |
 | `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |

@@ -220,6 +220,16 @@ become `unknown`, and the screen lists them.
 States that only group by ICD chapter (Nebraska) have no categories to map. For those, a
 per-state default category (set by the admin) applies, plus per-chapter overrides.
 
+**Built in M2 step 9.** Publish stores the keyword guess for every new category
+(`method = 'auto'`, never over an existing mapping). `/admin/categories` lists the categories of
+the published version and open drafts with their counts, the stored mapping or guess, and
+"Confirm" per row or "Confirm all guesses"; confirmed mappings are `manual`. The default for a
+state without categories is simply the mapping of its blank category ("(no category)").
+Chapter overrides live in `chapter_mappings`. The rule, in `federalCategoryOf()`
+(`packages/shared/src/category-mapping.ts`): a chapter override (ICD-10-CM entries only) wins,
+then the category mapping, else `unmapped`. Every change moves the published version's
+`content_updated_at` and bumps `data_version`.
+
 ## AI cleanup
 
 Used when a file does not parse into usable rows (scanned PDF, merged cells, free text).
