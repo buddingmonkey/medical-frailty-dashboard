@@ -23,6 +23,7 @@ import {
   type PageParts,
   renderInto,
   statePage,
+  statesPage,
 } from '../seo/pages'
 import type { AppEnv } from '../types'
 
@@ -92,6 +93,10 @@ export const pagesRoute = new Hono<AppEnv>()
   .get('/', pageCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))
     return sendPage(c, homePage(items, origin(c)))
+  })
+  .get('/states', pageCache, async (c) => {
+    const { items } = await publicSummaries(createDb(c.env.DB))
+    return sendPage(c, statesPage(items, origin(c)))
   })
   .get('/compare', pageCache, async (c) => {
     const parsed = compareQueryOf(c)
@@ -173,6 +178,7 @@ export const pagesRoute = new Hono<AppEnv>()
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       url(`${base}/`, newest),
+      url(`${base}/states`, newest),
       ...items.map((s) => url(`${base}/states/${s.slug}`, s.published?.updatedAt?.slice(0, 10))),
       '</urlset>',
       '',

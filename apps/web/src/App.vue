@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 
+import SiteNav from './components/SiteNav.vue'
 import ThemeMenu from './components/ThemeMenu.vue'
 </script>
 
@@ -13,19 +14,15 @@ import ThemeMenu from './components/ThemeMenu.vue'
   </a>
 
   <header class="border-b-4 border-highlight bg-header text-on-header">
-    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
-      <RouterLink to="/" class="font-display text-2xl font-medium text-on-header no-underline">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-5 pb-3">
+      <RouterLink
+        to="/"
+        class="mr-auto font-display text-2xl font-medium text-on-header no-underline"
+      >
         Medical Frailty Coding Dashboard
       </RouterLink>
-      <div class="flex items-center gap-6">
-        <nav aria-label="Main">
-          <ul class="flex gap-5">
-            <li><RouterLink to="/" class="text-on-header">States</RouterLink></li>
-            <li><RouterLink to="/compare" class="text-on-header">Compare</RouterLink></li>
-          </ul>
-        </nav>
-        <ThemeMenu />
-      </div>
+      <SiteNav />
+      <ThemeMenu />
     </div>
   </header>
 

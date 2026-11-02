@@ -179,6 +179,8 @@ describe('/states/:slug', () => {
     await renderRoute('/states/zz')
 
     expect(await screen.findByRole('heading', { level: 1, name: 'State not found' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'See all states' }).getAttribute('href')).toBe('/')
+    expect(screen.getByRole('link', { name: 'See all states' }).getAttribute('href')).toBe(
+      '/states',
+    )
   })
 })

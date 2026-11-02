@@ -86,7 +86,7 @@ function categoryName(category: string, subcategory: string) {
 
   <section v-else-if="notFound" class="max-w-prose space-y-4">
     <h1 class="font-display text-3xl font-medium text-heading">State not found</h1>
-    <p>There is no state at this address. <RouterLink to="/">See all states</RouterLink></p>
+    <p>There is no state at this address. <RouterLink to="/states">See all states</RouterLink></p>
   </section>
 
   <p v-else-if="error" role="alert" class="text-danger">
@@ -95,7 +95,7 @@ function categoryName(category: string, subcategory: string) {
 
   <article v-else-if="data && state" class="space-y-10">
     <header class="space-y-2">
-      <p class="text-sm"><RouterLink to="/" class="text-link">All states</RouterLink></p>
+      <p class="text-sm"><RouterLink to="/states" class="text-link">All states</RouterLink></p>
       <h1 class="font-display text-4xl font-medium text-heading">{{ state.name }}</h1>
     </header>
 

@@ -145,6 +145,27 @@ export const pageTitles = {
   state: (name: string) => `${name} medical frailty codes | ${SITE_NAME}`,
   notFound: `State not found | ${SITE_NAME}`,
   compare: `Compare states by category | ${SITE_NAME}`,
+  states: `All states | ${SITE_NAME}`,
+}
+
+/**
+ * The main navigation, in order, for the Vue header and the server-rendered HTML. Add a page
+ * here when it exists (Search in M5, About in M7), never before: a link must not 404.
+ * `section` marks the link current on deeper pages too (`/states/ga` is under States).
+ */
+export const siteNav = [
+  { label: 'Home', path: '/', section: false },
+  { label: 'States', path: '/states', section: true },
+  { label: 'Compare', path: '/compare', section: true },
+] as const
+
+/** The nav entry a path belongs to, or null. */
+export function siteNavCurrent(path: string): (typeof siteNav)[number] | null {
+  return (
+    siteNav.find((item) =>
+      item.section ? path === item.path || path.startsWith(`${item.path}/`) : path === item.path,
+    ) ?? null
+  )
 }
 
 /** A state's own category for people: `Cancer › Solid`, or "(no category)". */

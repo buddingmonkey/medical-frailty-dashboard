@@ -184,6 +184,9 @@ _Last updated: 2026-11-02 (end of M4)_
   `noindex` HTML and `/compare.csv` (every row).
 - **M4 is complete** (PRs #42–#44, 2026-11-02) and reviewed: wording joins the legal list,
   CPU is acceptable for now, `v0.4.0` tagged for production.
+- **Main navigation** (project lead's request, 2026-11-02): a nav bar in the header (Home,
+  States, Compare; a menu button on phones; the list is `siteNav` in shared, also in the
+  server-rendered HTML) and a new `/states` page. Search and About join the list in M5 and M7.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

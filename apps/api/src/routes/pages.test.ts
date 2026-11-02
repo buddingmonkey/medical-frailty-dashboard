@@ -258,6 +258,7 @@ describe('GET /sitemap.xml', () => {
       '<url><loc>http://frailty.example.org/states/ga</loc><lastmod>2026-11-02</lastmod></url>',
     )
     expect(xml).toContain('<loc>http://frailty.example.org/states/mt</loc>')
+    expect(xml).toContain('<loc>http://frailty.example.org/states</loc>')
   })
 })
 
@@ -316,5 +317,40 @@ describe('GET /compare.csv', () => {
   it('answers 400 for a bad selection', async () => {
     const res = await get('/compare.csv?states=GA')
     expect(res.status).toBe(400)
+  })
+})
+
+describe('main navigation in the server-rendered HTML', () => {
+  it('every page carries the same links, the current one marked', async () => {
+    for (const [path, current] of [
+      ['/', 'Home'],
+      ['/states', 'States'],
+      ['/states/ga', 'States'],
+      ['/compare', 'Compare'],
+    ] as const) {
+      const html = await (await get(path)).text()
+      expect(html, path).toContain('<nav aria-label="Main">')
+      for (const [label, href] of [
+        ['Home', '/'],
+        ['States', '/states'],
+        ['Compare', '/compare'],
+      ] as const) {
+        const mark =
+          label !== current ? '' : path === href ? ' aria-current="page"' : ' aria-current="true"'
+        expect(html, `${path} ${label}`).toContain(`<a href="${href}"${mark}>${label}</a>`)
+      }
+    }
+  })
+})
+
+describe('GET /states (server-rendered)', () => {
+  it('lists every state with a link to its page', async () => {
+    const res = await get('/states')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain('<title>All states | Medical Frailty Coding Dashboard</title>')
+    expect(html).toMatch(/<link rel="canonical" href="http:\/\/[^"]+\/states" \/>/)
+    expect(html).toContain('<h1>All states</h1>')
+    expect(html).toContain('<a href="/states/ga">Georgia</a>')
   })
 })
