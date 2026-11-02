@@ -63,11 +63,16 @@ _Last updated: 2026-11-01_
 - **M1 step 6 done** (branch `m1-step6-deploy-migrations`): the deploy records a D1 Time Travel
   bookmark, then applies migrations; a manual **Reference data** workflow loads `ref_codes` in
   chunks (production after approval). First CI migration ran on preview (2026-11-01); preview
-  has all 107,173 reference rows (two runs; the second on Workers Paid). `v0.1.0` tagged; the
-  production deploy and the production reference load wait for the project lead's approval.
-  **M1 is complete; waiting for the project lead's review** (milestone gate,
-  `docs/devlog/2026-11-01-m1-milestone.md`). Production gets the schema with the next `v*` tag.
-- **Next step:** M2 (ingestion), after the M1 review.
+  has all 107,173 reference rows (two runs; the second on Workers Paid). **M1 is complete and
+  reviewed.** `v0.1.0` is in production (2026-11-01): schema and FTS applied by CI, and the
+  production reference load finished the same day (run 41387560691, 22 chunks, all 107,173
+  rows).
+- **M2 step 1 done** (branch `m2-step1-admin-shell`): `/admin` layout (section nav, "Signed in
+  as" from `whoami`, Access sign-out link, a clear message on 401/403), an overview page, and
+  `/admin/audit` (newest first, "Load older" paging). API: `GET /api/admin/audit?limit=&before=`
+  and `auditInsert()` (`apps/api/src/db/audit.ts`), which returns an unrun insert so later
+  steps can put the audit row in the same `db.batch()` as publish and rollback.
+- **Next step:** M2 step 2, the watch dates page.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

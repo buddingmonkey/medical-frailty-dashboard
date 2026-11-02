@@ -78,3 +78,12 @@ test('a saved theme is applied before the app script runs', async ({ page }) => 
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 })
+
+test('admin pages and the audit API refuse a visitor who is not signed in', async ({ request }) => {
+  for (const path of ['/admin', '/admin/audit', '/api/admin/audit']) {
+    const res = await request.get(path)
+    expect(res.status(), path).toBe(401)
+    expect(res.headers()['x-robots-tag'], path).toBe('noindex, nofollow')
+    expect(res.headers()['cache-control'], path).toBe('no-store')
+  }
+})

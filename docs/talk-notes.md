@@ -93,6 +93,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M1 step 5 (2026-11-01) | 0.05 (3 min) | not measured | $0 | Pre-publish checks and diff; 21 tests |
 | M1 step 6 (2026-11-01) | 0.05 (4 min) | not measured | $0 | Migrations and restore bookmark in the deploy; reference-data workflow |
 | **M1 total** (2026-11-01) | **≈ 1.1 h** | not measured | $0 | 7 PRs; 276 tests (M0: 44); 107,173 reference codes |
+| M2 step 1 (2026-11-01) | 0.1 (5 min) | not measured | $0 | Admin shell, audit log API and page; 17 new tests |
 
 ## Assets to capture for slides
 

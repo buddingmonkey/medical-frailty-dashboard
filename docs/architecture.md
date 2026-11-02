@@ -193,7 +193,7 @@ Admin (Access JWT required; all writes):
 | `PUT /api/admin/category-mappings/:id` | Remap a state category to a federal category |
 | `POST /api/admin/ai-cleanup` | Optional; only exists when `ANTHROPIC_API_KEY` is set |
 | `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |
-| `GET /api/admin/audit` | Audit log |
+| `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |
 | `GET, POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close (close requires a resolution note) |
 
 ## Caching
