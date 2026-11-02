@@ -184,6 +184,7 @@ describe('/admin/ingest', () => {
             basis: 'published',
           },
           defaultCategory: '',
+          defaultTier: '',
         },
       },
     ])
@@ -207,6 +208,14 @@ describe('/admin/ingest', () => {
     expect(screen.getByLabelText<HTMLSelectElement>('Qualification for “2”').value).toBe(
       'supporting_only',
     )
+  })
+
+  it('sets a tier for every row when the file has no tier column (Georgia)', async () => {
+    fakeApi()
+    await start('Code\tDescription\nF20.0\tSchizophrenia\n')
+    await user.type(screen.getByLabelText('Tier for every row'), 'Attachment A')
+    const preview = screen.getByRole('table', { name: 'Mapped rows (first 20)' })
+    expect(within(preview).getByText('Attachment A')).toBeTruthy()
   })
 
   it('names a blank designation “(blank)” among the values with no qualification', async () => {
