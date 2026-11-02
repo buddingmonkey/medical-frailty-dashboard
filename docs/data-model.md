@@ -6,7 +6,7 @@ The design wiki says "type of code" for two different things. In code and docs w
 
 | Term | Meaning | Examples |
 | --- | --- | --- |
-| **Code system** | The coding standard a code belongs to | ICD-10-CM (diagnoses), ICD-10-PCS, CPT, HCPCS Level II, NDC, revenue code, other |
+| **Code system** | The coding standard a code belongs to | ICD-10-CM (diagnoses), ICD-10-PCS, CPT, HCPCS Level II, NDC, revenue code, drug class (LA pharmacy `H2G`), other |
 | **State category** | The label a state puts on a code, exactly as published | LA "SMI", "Temporary disabling"; MT "SCMC", "SID-SDD-SPD"; NE ICD chapter headings |
 | **Federal category** | Our fixed list based on the H.R.1 medically frail definition. Each state category maps to one | See below |
 | **Entry** | One row from a state's list: a code (or wildcard/range) + its state category + published text |
@@ -119,7 +119,29 @@ Pure functions, unit-tested against every pattern found in the seed files:
 | `D57.0X` | prefix `D570` | Trailing X after digits is a wildcard, **except** ICD-10-CM 7th-character placeholders like `W01.0XXA`, which are exact codes. Check against `ref_codes` |
 | `L89.500-L89...` | range `L89500`–? | Truncated range in the MT PDF. Flag for review; do not guess the end |
 | `F20` (3-char category) | exact `F20`, `includes_children=null` | Unclear whether the state means only that code or the whole category. Flag; admin decides per state (a state-level default) |
-| `28400` (5 digits) | CPT | `\d{5}` → CPT; `\d{4}[FTU]` → CPT Cat II/III; `[A-V]\d{4}` → HCPCS Level II; letter+digits pattern with ICD shape → ICD-10-CM |
+| `28400` (5 digits) | CPT | `\d{5}` → CPT; `\d{4}[FTU]` → CPT Cat II/III/PLA; `[A-V]\d{4}` → HCPCS Level II; letter+digits pattern with ICD shape → ICD-10-CM; 3–4 digits → revenue |
+| `S06.2*`, `D89.81*`, `I63.*` (LA) | prefix `S062`, `D8981`, `I63` | A wildcard can follow any position, not only the dot |
+| `D80-D83` (LA) | range `D80`–`D83`, `includes_children=null` | Bare categories: flag `category_scope`, admin decides, as for `F20` |
+| `M30-M31.*` (LA) | range of whole categories `M30`–`M31` | Wildcard on one end only: read as whole categories, flag `mixed_wildcard_range` |
+| `E08.621-E08.622` (LA) | range `E08621`–`E08622` | Exact codes; covers only codes of the same length |
+| `H2G`, `ZAF` (LA pharmacy) | drug class `H2G` | Same shape as an ICD-10-CM category (`C7A`), so the code system must come from the source's sub-category; never inferred |
+| `C96.Z`, `F03.A2`, `M35.0B` (GA) | `C96Z`, `F03A2`, `M350B` | Letters can appear in any position after the first digit |
+
+`parseCodeCell(raw, { system?, undottedIcd? })` in `packages/shared/src/codes.ts` implements this
+table (tests: `codes.test.ts`, one row per pattern). Results are **codes** (ready to store),
+**flags** on codes that need an admin's decision (`category_scope`, `system_ambiguous`,
+`mixed_wildcard_range`), and **problems** that stop the row for manual entry
+(`truncated_range`, `unclear_range`, `reversed_range`, `mixed_system_range`,
+`system_mismatch`, `unrecognized`, `empty`). `undottedIcd` is a per-source setting (on for
+NE): there, letter + 4 digits could be ICD-10-CM or HCPCS and is flagged until `ref_codes`
+settles it. Elsewhere it is HCPCS. Matching ignores dots either way: NE `A0103` and a dotted
+`A01.03` from another state share one `code_norm`.
+
+**Coverage** (`entryCovers`): an exact entry covers itself, plus its children when
+`includes_children = 1`; a prefix covers every code that starts with it; a wildcard range
+compares each end against the code's leading characters (`F41.*-F42.*` covers `F41.1` and
+`F42.9`); any other range compares whole codes of the same length (`32851`–`32854`).
+`includes_children = null` counts as 0 until the admin sets a state default.
 
 The code system comes from the source column when one exists (GA has "Code Type"). Otherwise
 it is inferred from the pattern above. Ambiguous cases (HCPCS `J1234` versus an ICD-10-CM code

@@ -4,7 +4,11 @@ import { z } from 'zod'
 // apps/api builds its CHECK constraints from these arrays, so the database, the API and the
 // browser share one list. Adding a value needs a migration; removing one needs a data check.
 
-/** The coding standard a code belongs to (glossary: "code system"). */
+/**
+ * The coding standard a code belongs to (glossary: "code system"). `drug_class`: the 3-character
+ * therapeutic class codes on LA's pharmacy rows (`H2G`); they share a shape with ICD-10-CM
+ * categories, so only the source's column or section can set it (docs/sources.md, Louisiana).
+ */
 export const codeSystems = [
   'icd10cm',
   'icd10pcs',
@@ -12,10 +16,23 @@ export const codeSystems = [
   'hcpcs',
   'ndc',
   'revenue',
+  'drug_class',
   'other',
 ] as const
 export const codeSystemSchema = z.enum(codeSystems)
 export type CodeSystem = z.infer<typeof codeSystemSchema>
+
+/** Display names. CPT is the AMA's name; we never show AMA descriptors (docs/data-model.md). */
+export const codeSystemLabels: Record<CodeSystem, string> = {
+  icd10cm: 'ICD-10-CM',
+  icd10pcs: 'ICD-10-PCS',
+  cpt: 'CPT',
+  hcpcs: 'HCPCS Level II',
+  ndc: 'NDC',
+  revenue: 'Revenue code',
+  drug_class: 'Drug class',
+  other: 'Other',
+}
 
 /** How an entry matches codes: one code, everything under a prefix, or a range of codes. */
 export const matchKinds = ['exact', 'prefix', 'range'] as const

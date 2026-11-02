@@ -40,7 +40,7 @@ running totals in `docs/talk-notes.md`.
 1. **Done** (branch `m1-step1-schema`). Drizzle schema + first migration for every table in `docs/data-model.md`, FTS5 table.
    Include what `docs/seo.md` needs: a stable URL slug per state and code, and the state's
    publish date plus our last-updated date on each published version.
-2. `packages/shared/codes.ts`: normalization, wildcard, range, list splitting, code-system
+2. **Done** (branch `m1-step2-codes`). `packages/shared/codes.ts`: normalization, wildcard, range, list splitting, code-system
    inference. Table-driven tests from every pattern in `docs/sources.md`.
 3. `packages/reference-data`: build `ref_codes` from the CMS ICD-10-CM and HCPCS Level II
    files (current fiscal year) into a seed SQL file. Document the yearly update in this doc.

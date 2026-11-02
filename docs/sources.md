@@ -17,7 +17,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - Columns: `Code | Code Type | Description | Yes/ No | Rationale`. Every row reviewed so far is
   "Yes". Keep `yes_no` and `rationale` in `attributes_json`. If a later file has "No" rows,
   they are **not** frail codes. Do not publish them as included (add an ingestion check).
-- Codes are dotted (`F10.26`) and sometimes parent categories (`F01`, `F10`).
+- Codes are dotted (`F10.26`) and sometimes parent categories (`F01`, `F10`). Letters can
+  sit anywhere after the first digit (`C7A.010`, `C96.Z`, `F03.A2`, `M35.0B`), and 7th-character
+  placeholders (`S06.2X0A`, `T84.50XA`) are exact codes. No wildcards or ranges in
+  Attachment A (profiled 2026-11-01, 1,684 codes).
 - The header row repeats on every page; skip repeated headers.
 - **A and B are two tiers** (user, 2026-11-01). Source page:
   https://pathways.georgia.gov/hr-1-changes-pathways (A: "satisfy the criteria"; B: "may
@@ -69,6 +72,14 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - Other sub-categories seen: "Pregnancy Status & ...", "Encounter", "Supporting",
   "Secondary Diagnosis General".
 - Descriptions wrap onto several lines; the code sits on the first line.
+- **Code shapes in the PDF** (profiled 2026-11-01, 2,117 codes): 5-digit CPT (666), HCPCS
+  letter + 4 digits (481), dotted ICD-10-CM (~520), 3-character categories (182), revenue
+  codes of 3 or 4 digits (117), wildcards `I63.*`, `S06.2*`, `D89.81*` (~55), and single
+  ranges `F41.*-F42.*`, `J7500-J7599`, `D80-D83`, `M30-M31.*`, `E08.621-E08.622`.
+- **Pharmacy rows** hold HCPCS drug codes (`J1630` haloperidol) and 3-character drug class codes
+  (`H2G` "ANTIPSYCHOTICS,PHENOTHIAZINES", `H7P`, `ZAF`; 67 rows). The class codes look like
+  First Databank HIC3 classes (not confirmed). They share a shape with ICD-10-CM categories,
+  so ingestion sets code system `drug_class` for the Pharmacy sub-category.
 
 ## Montana (MT)
 

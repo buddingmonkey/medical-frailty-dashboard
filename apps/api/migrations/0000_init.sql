@@ -45,7 +45,7 @@ CREATE TABLE `condition_members` (
 	`code_norm` text NOT NULL,
 	`range_end_norm` text,
 	FOREIGN KEY (`group_id`) REFERENCES `condition_groups`(`id`) ON UPDATE no action ON DELETE cascade,
-	CONSTRAINT "condition_members_code_system_check" CHECK("condition_members"."code_system" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'other')),
+	CONSTRAINT "condition_members_code_system_check" CHECK("condition_members"."code_system" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')),
 	CONSTRAINT "condition_members_match_kind_check" CHECK("condition_members"."match_kind" IN ('exact', 'prefix', 'range')),
 	CONSTRAINT "condition_members_range_end_check" CHECK(("condition_members"."match_kind" = 'range') = ("condition_members"."range_end_norm" IS NOT NULL))
 );
@@ -93,7 +93,7 @@ CREATE TABLE `entries` (
 	`source_locator` text,
 	FOREIGN KEY (`version_id`) REFERENCES `dataset_versions`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`source_document_id`) REFERENCES `source_documents`(`id`) ON UPDATE no action ON DELETE no action,
-	CONSTRAINT "entries_code_system_check" CHECK("entries"."code_system" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'other')),
+	CONSTRAINT "entries_code_system_check" CHECK("entries"."code_system" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')),
 	CONSTRAINT "entries_match_kind_check" CHECK("entries"."match_kind" IN ('exact', 'prefix', 'range')),
 	CONSTRAINT "entries_range_end_check" CHECK(("entries"."match_kind" = 'range') = ("entries"."range_end_norm" IS NOT NULL)),
 	CONSTRAINT "entries_includes_children_check" CHECK("entries"."includes_children" IN (0, 1)),

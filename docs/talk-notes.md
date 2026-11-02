@@ -51,6 +51,9 @@ literacy, little or no coding.
 | 2026-11-01 | After the ruleset went on, the AI tried to push straight to `main` on purpose. GitHub refused it. The devlog for that step had to go through a pull request like everything else | A rule you have not tried to break is a rule you only hope works | `devlog/2026-11-01-m0-step6-github.md` |
 | 2026-11-01 | The plan said "export the database to R2 before each production deploy". Cloudflare's docs say export refuses any database with a full-text search table, which the site needs. Caught while planning; the backup became a point-in-time restore bookmark | Check each step against the platform's real limits before building; a backup you can't take is worse than none | `devlog/2026-11-01-m1-step1-schema.md` |
 | 2026-11-01 | The AI's first test of its own safety check "passed", but the edit meant to break things had matched nothing. It noticed and redid the test | Before trusting a passing safety check, confirm you actually broke something | same |
+| 2026-11-01 | Counting every code in the real files by shape found six patterns the docs had missed. One, Louisiana's drug class codes, looks exactly like an ICD-10 diagnosis category and would have been filed under the wrong code system | Have the AI measure the real data before it writes rules | `devlog/2026-11-01-m1-step2-codes.md` |
+| 2026-11-01 | Ten steps in, the project lead switched from approving every step to "stop only at the end of a milestone" | Trust grows with a track record; move the checkpoint, keep a hard stop | same |
+| 2026-11-01 | All 124 unit tests passed, then GitHub's code scanner failed the PR: three text patterns could freeze the server on a crafted upload or URL. Tests reproduced the slowdown before the fix | Automated security checks find what your own tests never thought to try | `devlog/2026-11-01-m1-step2-codes.md` |
 
 ## Numbers to collect
 
@@ -81,6 +84,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 7 (2026-11-01) | 0.2 (11 min build, plus account setup) | not measured | $0 | Cloudflare account, D1, R2, Access, CI deploys |
 | M0 step 8 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Builder agent; **M0 total ≈ 1.5 h of building** |
 | M1 step 1 (2026-11-01) | 0.2 (12 min) | not measured | $0 | Schema, migrations, FTS5, drift check; 75 Vitest tests |
+| M1 step 2 (2026-11-01) | 0.25 (15 min) | not measured | $0 | Code normalization; 103 table-driven tests |
 
 ## Assets to capture for slides
 

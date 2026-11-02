@@ -59,6 +59,9 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
   browser test caught it (`docs/devlog/2026-11-01-m0-step4-tests.md`). Also check that the
   break really happened: in M1 step 1 a first "proof" changed nothing, so it proved nothing
   (`docs/devlog/2026-11-01-m1-step1-schema.md`).
+- **Let the security scanner block merges.** In M1 step 2 every test passed, but CodeQL found
+  three patterns an attacker could use to stall the server. Never merge with a red check, even
+  one that is "only" security (`docs/devlog/2026-11-01-m1-step2-codes.md`).
 - **Check each plan step against the platform's documented limits.** The plan said to back
   up the database with an export the platform refuses for this kind of database. Asking the
   AI to read the official docs while planning caught it before anyone relied on that backup.

@@ -1,6 +1,6 @@
 {
-  "id": "f91e7d2c-3073-48a8-b324-b850cc7386d2",
-  "prevId": "95aeff7e-6b24-439f-966c-108dd7cfd888",
+  "id": "c612187f-877b-43d8-ae33-2a7b83a3223e",
+  "prevId": "ba369550-8b13-48c0-b86d-3b60f4434c32",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -302,7 +302,7 @@
       "checkConstraints": {
         "condition_members_code_system_check": {
           "name": "condition_members_code_system_check",
-          "value": "\"condition_members\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'other')"
+          "value": "\"condition_members\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')"
         },
         "condition_members_match_kind_check": {
           "name": "condition_members_match_kind_check",
@@ -621,7 +621,7 @@
       "checkConstraints": {
         "entries_code_system_check": {
           "name": "entries_code_system_check",
-          "value": "\"entries\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'other')"
+          "value": "\"entries\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')"
         },
         "entries_match_kind_check": {
           "name": "entries_match_kind_check",
