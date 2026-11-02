@@ -154,6 +154,17 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   (`33230 and 33240`), comma lists across lines (`T2042, X2042, T2043, ...`) and multi-range
   lines (`E1037-E1224 and E1229-E1295`). The normalizer must split these into separate entries.
 
+## Codes the seed lists contain that ICD-10-CM FY2027 does not
+
+Found by the CCSR coverage check (M5 step 2, 2026-11-02; `pnpm --filter @mfcd/reference-data
+ccsr-coverage` against local D1 with GA, LA, MT and NE published). 16 codes in the GA, LA and NE
+lists are not ICD-10-CM codes in FY2027: `A16`, `C97`, `F30.0`, `G41`, `M80.0XXS`*, `O75.7`,
+`S06.7`, `S22.1`, `S22.8`, `S33.7`, `S42.8`, `S52.8`, `S62.8`, `S93.2`, `T65.22XA`*, `X20.42`*
+(normalized forms `M800XS`, `T6522A`, `X2042`; the starred display forms are our reading).
+Some are deleted codes (e.g. `A16` became a header-only chapter split long ago; check before
+reporting), some look like typos or truncations. Four more matched only by prefix: `C64.12`,
+`H42.19`, `M23.1`, `R57.2`. Not yet traced to a state and page; do that before contacting a state.
+
 ## Federal and court rulings
 
 - ***Massachusetts v. Oz*, D. Mass. No. 1:26-cv-12962-RGS, Dkt. 147, 2026-10-29** (Judge
