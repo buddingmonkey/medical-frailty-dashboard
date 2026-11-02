@@ -1,5 +1,6 @@
 import {
   type CheckEntry,
+  type DraftChecksResponse,
   draftChecksResponseSchema,
   draftCreateSchema,
   draftDetailSchema,
@@ -10,16 +11,21 @@ import {
   draftSourceSchema,
   draftSummarySchema,
   entryAttributesSchema,
+  publishRequestSchema,
+  publishResponseSchema,
   namedStateIdsSchema,
   routeIdSchema,
   runChecks,
   sha256Hex,
   validateDraftEntry,
+  verifyConfirmations,
 } from '@mfcd/shared'
-import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, min, notInArray, sql } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
+import { backupVersion } from '../../db/backup'
+import { bumpDataVersion } from '../../db/meta'
 import { createDb, type Db } from '../../db/client'
 import {
   datasetVersions,
@@ -72,6 +78,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       rangeEndNorm: entries.rangeEndNorm,
       stateCategory: entries.stateCategory,
       stateSubcategory: entries.stateSubcategory,
+      tier: entries.tier,
       descriptionPublished: entries.descriptionPublished,
       attributesJson: entries.attributesJson,
     })
@@ -86,6 +93,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       rangeEndNorm: r.rangeEndNorm,
       stateCategory: r.stateCategory,
       stateSubcategory: r.stateSubcategory,
+      tier: r.tier ?? '',
       descriptionPublished: r.descriptionPublished,
       included: attributes.success ? attributes.data.included : true,
       unresolvedFlags: attributes.success ? attributes.data.flags : [],
@@ -197,6 +205,50 @@ const rowCountUpdate = (db: Db, versionId: number) =>
       checkReportJson: null,
     })
     .where(and(eq(datasetVersions.id, versionId), eq(datasetVersions.status, 'draft')))
+
+type Version = NonNullable<Awaited<ReturnType<typeof findVersion>>>
+
+/** The checks report for a draft, with the token of its rows (docs/ingestion.md). */
+async function runDraftChecks(db: Db, version: Version): Promise<DraftChecksResponse> {
+  const [state] = await db
+    .select({ publishedVersionId: states.publishedVersionId })
+    .from(states)
+    .where(eq(states.id, version.stateId))
+  const publishedId = state?.publishedVersionId ?? null
+  const draftEntries = await checkEntries(db, version.id)
+  const parts = await partsOf(db, version.id)
+  const published =
+    publishedId === null
+      ? null
+      : {
+          entries: await checkEntries(db, publishedId),
+          sourceSha256s: await sourceHashes(db, publishedId),
+        }
+  const icd = draftEntries
+    .filter((e) => e.codeSystem === 'icd10cm')
+    .flatMap((e) => (e.rangeEndNorm ? [e.codeNorm, e.rangeEndNorm] : [e.codeNorm]))
+
+  const report = runChecks({
+    stateId: version.stateId,
+    draft: {
+      entries: draftEntries,
+      invalidRowCount: parts.reduce((sum, p) => sum + p.invalidRowCount, 0),
+      incompleteSources: parts
+        .filter((p) => p.storedEntries !== p.expectedEntries)
+        .map((p) => `${p.title} (${p.part})`),
+      sourceSha256s: await sourceHashes(db, version.id),
+      namedStateIds: [...new Set(parts.flatMap((p) => p.namedStateIds))],
+    },
+    published,
+    knownIcd10cm: await knownIcd10cm(db, icd),
+  })
+  return draftChecksResponseSchema.parse({
+    report,
+    token: await draftToken(db, version.id),
+    ranAt: new Date().toISOString(),
+    hasPublished: published !== null,
+  })
+}
 
 export const draftsRoute = new Hono<AppEnv>()
   .get('/', async (c) => {
@@ -369,44 +421,7 @@ export const draftsRoute = new Hono<AppEnv>()
     const version = await findVersion(db, id.data)
     if (!version) return c.json({ error: 'Not found' }, 404)
 
-    const [state] = await db
-      .select({ publishedVersionId: states.publishedVersionId })
-      .from(states)
-      .where(eq(states.id, version.stateId))
-    const publishedId = state?.publishedVersionId ?? null
-    const draftEntries = await checkEntries(db, version.id)
-    const parts = await partsOf(db, version.id)
-    const published =
-      publishedId === null
-        ? null
-        : {
-            entries: await checkEntries(db, publishedId),
-            sourceSha256s: await sourceHashes(db, publishedId),
-          }
-    const icd = draftEntries
-      .filter((e) => e.codeSystem === 'icd10cm')
-      .flatMap((e) => (e.rangeEndNorm ? [e.codeNorm, e.rangeEndNorm] : [e.codeNorm]))
-
-    const report = runChecks({
-      stateId: version.stateId,
-      draft: {
-        entries: draftEntries,
-        invalidRowCount: parts.reduce((sum, p) => sum + p.invalidRowCount, 0),
-        incompleteSources: parts
-          .filter((p) => p.storedEntries !== p.expectedEntries)
-          .map((p) => `${p.title} (${p.part})`),
-        sourceSha256s: await sourceHashes(db, version.id),
-        namedStateIds: [...new Set(parts.flatMap((p) => p.namedStateIds))],
-      },
-      published,
-      knownIcd10cm: await knownIcd10cm(db, icd),
-    })
-    const result = draftChecksResponseSchema.parse({
-      report,
-      token: await draftToken(db, version.id),
-      ranAt: new Date().toISOString(),
-      hasPublished: published !== null,
-    })
+    const result = await runDraftChecks(db, version)
     if (version.status === 'draft') {
       await db
         .update(datasetVersions)
@@ -414,6 +429,100 @@ export const draftsRoute = new Hono<AppEnv>()
         .where(and(eq(datasetVersions.id, version.id), eq(datasetVersions.status, 'draft')))
     }
     return c.json(result)
+  })
+
+  // Publish (docs/data-model.md, "Replacing a state's list"): only what was checked, with every
+  // confirmation the checks ask for; a backup of the replaced version first; then one batch,
+  // every statement limited to this state or this version.
+  .post('/:id/publish', async (c) => {
+    const id = idParam.safeParse(c.req.param('id'))
+    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    const body = publishRequestSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: 'Invalid request' }, 400)
+    const db = createDb(c.env.DB)
+    const version = await findVersion(db, id.data)
+    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (version.status !== 'draft') return c.json({ error: 'Only a draft can be published' }, 409)
+
+    const checks = await runDraftChecks(db, version)
+    if (checks.token !== body.data.token) {
+      return c.json({ error: 'The rows changed since the checks ran. Run the checks again.' }, 409)
+    }
+    const verdict = verifyConfirmations(checks.report, version.stateId, body.data.confirmations)
+    if (!verdict.ok) {
+      return c.json({ error: 'Some checks are not confirmed', missing: verdict.missing }, 400)
+    }
+
+    const stateId = version.stateId
+    const [state] = await db
+      .select({ publishedVersionId: states.publishedVersionId })
+      .from(states)
+      .where(eq(states.id, stateId))
+    const previous = state?.publishedVersionId ?? null
+    const backupKey =
+      previous === null ? null : await backupVersion(db, c.env.FILES, stateId, previous)
+    const now = new Date().toISOString()
+    const actor = actorOf(c)
+
+    // Duplicates (same code, category, subcategory and tier): keep the first.
+    const firsts = db
+      .select({ id: min(entries.id) })
+      .from(entries)
+      .where(eq(entries.versionId, version.id))
+      .groupBy(
+        entries.codeSystem,
+        entries.matchKind,
+        entries.codeNorm,
+        sql`coalesce(${entries.rangeEndNorm}, '')`,
+        entries.stateCategory,
+        entries.stateSubcategory,
+        sql`coalesce(${entries.tier}, '')`,
+      )
+    await db.batch([
+      db
+        .delete(entries)
+        .where(and(eq(entries.versionId, version.id), notInArray(entries.id, firsts))),
+      db
+        .update(datasetVersions)
+        .set({ status: 'superseded' })
+        .where(and(eq(datasetVersions.stateId, stateId), eq(datasetVersions.status, 'published'))),
+      db
+        .update(datasetVersions)
+        .set({
+          status: 'published',
+          publishedBy: actor,
+          publishedAt: now,
+          contentUpdatedAt: now,
+          checkReportJson: JSON.stringify(checks),
+          rowCount: sql`(SELECT count(*) FROM entries WHERE version_id = ${version.id})`,
+        })
+        .where(
+          and(
+            eq(datasetVersions.id, version.id),
+            eq(datasetVersions.stateId, stateId),
+            eq(datasetVersions.status, 'draft'),
+          ),
+        ),
+      db
+        .update(states)
+        .set({ publishedVersionId: version.id, status: 'published', updatedAt: now })
+        .where(eq(states.id, stateId)),
+      bumpDataVersion(db),
+      auditInsert(db, {
+        actorEmail: actor,
+        action: 'version.publish',
+        target: `version:${String(version.id)}`,
+        details: {
+          stateId,
+          versionNo: version.versionNo,
+          replaced: previous,
+          backupKey,
+          confirmed: Object.keys(body.data.confirmations),
+          diff: checks.report.diff.totals,
+        },
+      }),
+    ])
+    return c.json(publishResponseSchema.parse({ ok: true, backupKey }))
   })
 
   .post('/:id/discard', async (c) => {

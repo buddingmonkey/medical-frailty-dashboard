@@ -98,7 +98,9 @@ ones, type the state code), or **info**.
 - **Invalid share** = invalid rows ÷ (valid + invalid rows). "Removed" = published codes the
   draft lacks ÷ published codes. "Row count change" compares entry rows.
 - **Unknown ICD-10-CM** counts distinct codes, wildcard prefixes and range ends.
-- A **duplicate** is the same code under the same category and subcategory.
+- A **duplicate** is the same code under the same category, subcategory and tier (GA lists some
+  codes in both Attachment A and B; those are two tiers, not a duplicate). Publish keeps the
+  first and deletes the rest.
 - **Typed confirmations** must match the draft's state code (case and spaces ignored).
 - The report **token** (publish only what was checked) is part of the publish route (roadmap
   M2 step 8).

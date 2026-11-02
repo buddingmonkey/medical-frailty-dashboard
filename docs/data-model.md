@@ -249,7 +249,14 @@ never edits published rows in place:
    R2 (`backups/<state>/<version>.json`).
 5. **Rollback** re-points `published_version_id` to any earlier version. Superseded versions
    are kept (they are small), so rollback needs no restore.
-6. Unpublished drafts older than 30 days are deleted by a scheduled job.
+6. Unpublished drafts older than 30 days are deleted by a scheduled job (not built yet).
+
+Built in M2 step 8 (`apps/api/src/routes/admin/drafts.ts`, `states.ts`). Publish needs the
+checks token (the rows must be the ones checked) and every confirmation; duplicates (same
+code, category, subcategory and tier) are merged in the same batch. Public queries read
+through `publishedEntries()` (`apps/api/src/db/published.ts`), which the rollback test compares
+row for row. A second publish at the same moment fails on the one-published-version index and
+changes nothing.
 
 No API route deletes or updates rows across more than one state. A test enforces that every
 admin write query filters by `state_id` or `version_id`.
