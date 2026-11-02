@@ -72,7 +72,13 @@ _Last updated: 2026-11-01_
   `/admin/audit` (newest first, "Load older" paging). API: `GET /api/admin/audit?limit=&before=`
   and `auditInsert()` (`apps/api/src/db/audit.ts`), which returns an unrun insert so later
   steps can put the audit row in the same `db.batch()` as publish and rollback.
-- **Next step:** M2 step 2, the watch dates page.
+- **M2 step 2 done** (branch `m2-step2-watch-dates`): `/admin/watch` (Open grouped as Overdue /
+  Due within 14 days / Later / No date yet; History tab; add, edit, close with a required
+  note; repeating items), a due-soon banner on every admin page, and
+  `GET, POST /api/admin/watch`, `PUT /api/admin/watch/:id`. Migration `0002_seed_watch_items`
+  copies the table below into `watch_items`; preview and production get it with the next
+  deploy. The state picker waits for loaded states (step 8); the API already takes `stateId`.
+- **Next step:** M2 step 3, source upload to R2.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -116,8 +122,8 @@ _Last updated: 2026-11-01_
 
 ## Open questions
 
-1. **Dates to watch** are in "Watch dates" below (next: ~2026-12-28, the *Massachusetts v. Oz*
-   appeal deadline).
+1. **Dates to watch** live in the app at `/admin/watch` (next: 2026-11-30, the Workers Paid
+   downgrade; ~2026-12-28, the *Massachusetts v. Oz* appeal deadline).
 2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
    supporting code, 2 = supporting evidence only (SHVS 2026-09-11 + a fit against the data).
    Not confirmed by LDH, so it is shown as "inferred". The "code system" explanation does not
@@ -131,8 +137,9 @@ _Last updated: 2026-11-01_
 
 ## Watch dates
 
-Dates we must act on. Until the `/admin/watch` page exists (roadmap M2 step 2), track them
-here; that page is seeded from this table. Approximate dates are marked ~.
+**History only (since M2 step 2, 2026-11-01).** The app's `/admin/watch` page is now the
+source of truth; migration `0002_seed_watch_items` copied this table into it. Add, edit and
+close dates there, not here. Approximate dates are marked ~.
 
 | Date | What | Why it matters | Source |
 | --- | --- | --- | --- |

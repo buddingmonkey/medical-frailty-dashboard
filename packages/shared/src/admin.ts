@@ -35,3 +35,6 @@ export const auditListResponseSchema = z.object({
 })
 
 export type AuditListResponse = z.infer<typeof auditListResponseSchema>
+
+/** A numeric row id in a URL path, e.g. `PUT /api/admin/watch/:id`. */
+export const idParamSchema = z.coerce.number().int().positive()

@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 
 import type { GetJwks } from './auth/access'
+import { adminWriteGuard } from './middleware/admin-write-guard'
 import { publicGetOnly } from './middleware/public-get-only'
 import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
 import { audit } from './routes/admin/audit'
+import { watch } from './routes/admin/watch'
 import { whoami } from './routes/admin/whoami'
 import { health } from './routes/public/health'
 import { robots } from './routes/robots'
@@ -30,10 +32,12 @@ export function createApp({ getJwks }: AppDeps) {
   // Admin pages and API: the only places admin features may live (CLAUDE.md).
   const adminOnly = requireAdmin(getJwks)
   app.use('/api/admin/*', adminOnly)
+  app.use('/api/admin/*', adminWriteGuard)
   app.use('/admin', adminOnly)
   app.use('/admin/*', adminOnly)
   app.route('/api/admin/whoami', whoami)
   app.route('/api/admin/audit', audit)
+  app.route('/api/admin/watch', watch)
 
   // Unknown API paths get a JSON 404, never the SPA's index.html.
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))

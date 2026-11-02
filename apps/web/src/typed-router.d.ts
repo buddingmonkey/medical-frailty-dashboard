@@ -52,6 +52,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/admin/(overview)'
       | '/admin/audit'
+      | '/admin/watch'
     >,
     '/admin/(overview)': RouteRecordInfo<
       '/admin/(overview)',
@@ -63,6 +64,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/audit': RouteRecordInfo<
       '/admin/audit',
       '/admin/audit',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/watch': RouteRecordInfo<
+      '/admin/watch',
+      '/admin/watch',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -101,6 +109,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin'
         | '/admin/(overview)'
         | '/admin/audit'
+        | '/admin/watch'
       views:
         | 'default'
       pathParamNames:
@@ -117,6 +126,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/audit.vue': {
       routes:
         | '/admin/audit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/watch.vue': {
+      routes:
+        | '/admin/watch'
       views:
         | never
       pathParamNames:

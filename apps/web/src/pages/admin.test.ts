@@ -1,15 +1,21 @@
 import { screen } from '@testing-library/vue'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { server } from '../test/msw-server'
 import { renderRoute } from '../test/render-route'
+
+const noWatchItems = http.get('/api/admin/watch', () => HttpResponse.json({ items: [] }))
 
 const emptyAudit = http.get('/api/admin/audit', () =>
   HttpResponse.json({ items: [], nextBefore: null }),
 )
 
 describe('/admin layout', () => {
+  beforeEach(() => {
+    server.use(noWatchItems)
+  })
+
   it('shows who is signed in, a sign-out link and the admin sections', async () => {
     server.use(
       http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),

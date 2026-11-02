@@ -1,0 +1,38 @@
+-- Hand-written data migration: the watch dates tracked in docs/status.md ("Watch dates") before
+-- the /admin/watch page existed (roadmap M2 step 2). From here on the app is the source of truth.
+-- state_id stays NULL: no states are loaded yet, and the column references `states`.
+-- Approximate dates use the first day the item could be due.
+INSERT INTO `watch_items` (`title`, `kind`, `state_id`, `due_date`, `date_is_approximate`, `why_md`, `links_json`, `created_by`) VALUES
+('Massachusetts v. Oz: CMS appeal deadline', 'court', NULL, '2026-12-28', 1,
+ '60 days from judgment; the exact date depends on when judgment was entered. An appeal or stay may change the site''s ruling note; states may loosen combination rules either way.',
+ '[{"label":"Opinion (MSJ decision, PDF)","url":"https://hpmmatters.publichealth.gwu.edu/sites/g/files/zaxdzs6671/files/2026-10/MSJ%20Decision%20(Mass%20v.%20Oz)%20(1).pdf"}]',
+ 'seed: docs/status.md'),
+('Downgrade Cloudflare from Workers Paid to Free', 'internal', NULL, '2026-11-30', 0,
+ 'The $5 was for one month only (reference-code load). Check usage first so nothing still needs the paid quota. Workers & Pages, Plans.',
+ NULL, 'seed: docs/status.md'),
+('CMS posts the January 2027 HCPCS file', 'federal', NULL, '2026-12-01', 1,
+ 'Build the diff loader first, so the update loads only new and changed codes (packages/reference-data/README.md, "Updating").',
+ '[{"label":"CMS HCPCS quarterly update","url":"https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update"}]',
+ 'seed: docs/status.md'),
+('Work requirements take effect', 'federal', NULL, '2027-01-01', 0,
+ 'States may publish final or revised lists before this date; re-check all seed states. H.R.1 section 71119.',
+ '[{"label":"Public Law 119-21","url":"https://www.govinfo.gov/content/pkg/PLAW-119publ21/html/PLAW-119publ21.htm"}]',
+ 'seed: docs/status.md'),
+('End of the 6-month enforcement stay for the 26 plaintiff states', 'court', NULL, '2027-04-29', 1,
+ '6 months from 2026-10-29; confirm against the order ("Relief"). Plaintiff states'' frailty processes may change.',
+ '[{"label":"Opinion (MSJ decision, PDF)","url":"https://hpmmatters.publichealth.gwu.edu/sites/g/files/zaxdzs6671/files/2026-10/MSJ%20Decision%20(Mass%20v.%20Oz)%20(1).pdf"}]',
+ 'seed: docs/status.md'),
+('CMS posts ICD-10-CM FY2028 files (valid 2027-10-01)', 'federal', NULL, '2027-06-01', 1,
+ 'Load the changes into ref_codes; re-run checks for every state.',
+ '[{"label":"CMS ICD-10 codes","url":"https://www.cms.gov/medicare/coding-billing/icd-10-codes"}]',
+ 'seed: docs/status.md'),
+('Taylor v. Kennedy (D. Md. 1:26-cv-03705) pending', 'court', NULL, NULL, 0,
+ 'A ruling could change the federal rules again. See docs/sources.md, "Federal and court rulings".',
+ NULL, 'seed: docs/status.md'),
+('LDH confirms Louisiana "Code Designation" meaning', 'state_list', NULL, NULL, 0,
+ 'Louisiana. Remove the "inferred" label, or fix the mapping (docs/sources.md, Louisiana).',
+ '[{"label":"LDH work requirements page","url":"https://ldh.la.gov/Medicaid/work-requirements"}]',
+ 'seed: docs/status.md'),
+('Legal team review', 'internal', NULL, NULL, 0,
+ 'Qualification badges, federal category labels (categories.ts), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank''s licensed HIC3 classes; we show only the state''s own text), and ai-train=yes in robots.txt. Badges may be removed or reworded; the AI training signal may change.',
+ NULL, 'seed: docs/status.md');

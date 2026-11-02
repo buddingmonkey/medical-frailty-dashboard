@@ -214,7 +214,12 @@ federal effective dates, re-checking a state's list). The admin page `/admin/wat
 - Closing an item needs a resolution note ("No appeal filed; checked PACER 2026-12-29"). The
   close is written to `audit_log`. Closed items stay visible under a "History" tab.
 - `repeat_days` makes a recurring item: closing it creates the next one (e.g. re-check each
-  state's source page every 90 days).
+  state's source page every 90 days), `repeat_days` after the old due date, or after the
+  close date (UTC) if that has already passed or there was no due date
+  (`nextRepeatDate` in `packages/shared/src/watch.ts`).
+- Links are http(s) only (zod), so a stored link cannot run script. "Why" and resolution notes
+  are shown as plain text, despite the `_md` column names.
+- Grouping uses the admin's local date; "due soon" is today through today + 14 days.
 - Publishing a state version automatically creates (or moves) a "Re-check <state> list" item
   90 days later.
 - Every admin page shows a small banner with the count of overdue and due-soon items, linking

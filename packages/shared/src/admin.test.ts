@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { auditListResponseSchema, auditQuerySchema, whoamiResponseSchema } from './admin'
+import {
+  auditListResponseSchema,
+  auditQuerySchema,
+  idParamSchema,
+  whoamiResponseSchema,
+} from './admin'
 
 describe('whoamiResponseSchema', () => {
   it('accepts an email and drops anything else', () => {
@@ -58,5 +63,14 @@ describe('auditListResponseSchema', () => {
   it('allows null details and no next page', () => {
     const body = { items: [], nextBefore: null }
     expect(auditListResponseSchema.parse(body)).toEqual(body)
+  })
+})
+
+describe('idParamSchema', () => {
+  it('accepts positive whole numbers only', () => {
+    expect(idParamSchema.parse('12')).toBe(12)
+    for (const bad of ['0', '-1', '1.5', 'abc', '']) {
+      expect(idParamSchema.safeParse(bad).success).toBe(false)
+    }
   })
 })
