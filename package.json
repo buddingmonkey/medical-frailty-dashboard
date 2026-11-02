@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @mfcd/web build && concurrently -k -n web,api -c blue,magenta \"pnpm --filter @mfcd/web build --watch\" \"pnpm --filter @mfcd/api dev\"",
+    "dev:stop": "node scripts/dev-stop.ts",
     "build": "pnpm --filter @mfcd/web build && pnpm --filter @mfcd/api build",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --parallel typecheck",
