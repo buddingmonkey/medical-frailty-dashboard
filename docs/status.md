@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M3 step 1)_
+_Last updated: 2026-11-02 (M3 step 2)_
 
 ## Where things stand
 
@@ -158,6 +158,9 @@ _Last updated: 2026-11-02 (M3 step 1)_
   version by code system, federal category and qualification; source date; whether every
   mapping is confirmed) behind `publicCache` (Cache API keyed on `data_version`; private mode
   never stores). The Cache API only works on a custom domain, not `*.workers.dev`.
+- **M3 step 2 done** (branch `m3-step2-state-map`): the home page map (`StateMap`, shapes
+  precomputed from us-atlas at build time into `@mfcd/shared/us-map`), the state card on hover
+  or focus, and a Map/Table switch (table first on small screens). Announced states are hatched.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

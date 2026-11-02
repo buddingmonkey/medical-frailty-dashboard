@@ -7,7 +7,7 @@
 | Language | TypeScript (strict) everywhere | One language, shared types and schemas |
 | Front end | Vue 3 (`<script setup>`), Vue Router, Vite, Tailwind CSS v4 | User's choice |
 | Front-end data | TanStack Query for Vue (server cache); small Pinia store only for UI state if needed | Caching, retries and loading states without hand-written stores |
-| Map | `d3-geo` + `us-atlas` TopoJSON rendered as inline SVG (Albers USA) | Small, no tile server, no API key, fully accessible |
+| Map | `d3-geo` + `us-atlas` (Albers USA), run once at build time in `packages/reference-data` (`src/us-map.ts`) into plain SVG paths (`packages/shared/src/us-map.json`, imported as `@mfcd/shared/us-map`). Browser and Worker ship no d3 | Small, no tile server, no API key, fully accessible; the same paths serve the server-rendered page (M3 step 4) |
 | API | [Hono](https://hono.dev) on Cloudflare Workers (`nodejs_compat` on) | Small, typed routes, built for Workers, runs in Node for tests too |
 | Validation | zod schemas in `packages/shared`, used by both the browser and the API | One definition of a valid row |
 | Database | Cloudflare D1 (SQLite) via Drizzle ORM + drizzle-kit migrations | Free tier, relational, SQL migrations in git |
@@ -46,7 +46,8 @@ apps/
     wrangler.jsonc
 packages/
   shared/              zod schemas, API types, code normalization (pure functions, no I/O)
-  reference-data/      builds ref_codes (ICD-10-CM, HCPCS) from pinned CMS files; resumable loader
+  reference-data/      builds ref_codes (ICD-10-CM, HCPCS) from pinned CMS files; resumable loader;
+                       builds the US map paths (`pnpm --filter @mfcd/reference-data us-map`)
 fixtures/              small excerpts of real state files + expected normalized output
 docs/
 ```
@@ -70,6 +71,8 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   server, which drizzle-kit does not start). `pnpm audit --prod` is clean. Migrations: change
   `apps/api/src/db/schema.ts`, run `pnpm db:generate`, review the SQL. Virtual tables (FTS5)
   and triggers go in hand-written migrations (`drizzle-kit generate --custom --name <x>`).
+- **`d3-geo` 3.1.1, `topojson-client` 3.1.0, `us-atlas` 3.0.1** (dev only, `packages/reference-data`):
+  build the map paths. A test fails if the committed `us-map.json` no longer matches.
 - **`fflate` 0.8.x** unzips the CMS files in `packages/reference-data` (no dependencies).
 - **ESLint 10**, flat config built with `defineConfig()` from `eslint/config`
   (`tseslint.config()` is deprecated). Linting is type-aware (`strictTypeChecked`).

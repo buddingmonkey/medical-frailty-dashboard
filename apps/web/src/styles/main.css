@@ -44,6 +44,12 @@
   --color-badge-unknown: #2f2f2f;
   --color-badge-unknown-bg: #e6e6e6;
 
+  /* Home map. Published states are solid, announced ones hatched, so status is not colour alone. */
+  --color-map-published: #26578c;
+  --color-map-announced: #ab872e;
+  --color-map-none: #e3e8ef;
+  --color-map-border: #ffffff;
+
   /* Open-licensed (SIL OFL) fonts, self-hosted from npm (Fontsource). */
   --font-display: 'Jost Variable', 'Futura', 'Avenir Next', ui-sans-serif, sans-serif;
   --font-sans: 'Source Sans 3 Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
@@ -84,6 +90,10 @@
     --color-badge-support-bg: #30205a;
     --color-badge-unknown: #dde1e7;
     --color-badge-unknown-bg: #2a3442;
+    --color-map-published: #6fa3e0;
+    --color-map-announced: #f7c343;
+    --color-map-none: #26374f;
+    --color-map-border: #0a1424;
   }
 }
 
@@ -115,6 +125,10 @@
   --color-badge-support-bg: #30205a;
   --color-badge-unknown: #dde1e7;
   --color-badge-unknown-bg: #2a3442;
+  --color-map-published: #6fa3e0;
+  --color-map-announced: #f7c343;
+  --color-map-none: #26374f;
+  --color-map-border: #0a1424;
 }
 
 /* `dark:` variant for the rare case a token is not enough; matches both ways of being dark. */

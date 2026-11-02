@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./icd-chapters": "./src/icd-chapters.ts"
+    "./icd-chapters": "./src/icd-chapters.ts",
+    "./us-map": "./src/us-map.ts"
   },
   "scripts": {
     "test": "vitest run",
