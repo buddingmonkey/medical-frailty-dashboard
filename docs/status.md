@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 planned)_
+_Last updated: 2026-11-02 (M5 step 1)_
 
 ## Where things stand
 
@@ -187,6 +187,9 @@ _Last updated: 2026-11-02 (M5 planned)_
 - **Main navigation** (project lead's request, 2026-11-02): a nav bar in the header (Home,
   States, Compare; a menu button on phones; the list is `siteNav` in shared, also in the
   server-rendered HTML) and a new `/states` page. Search and About join the list in M6 and M8.
+- **M5 started** (project lead, 2026-11-02). **Step 1 done** (branch `m5-step1-unified`):
+  migration `0007_unified_categories` and `unifiedOf()` in `packages/shared/src/unified.ts`
+  (spec: `docs/data-model.md`, "Unified categories (M5)"). No routes or UI yet.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -257,6 +260,10 @@ _Last updated: 2026-11-02 (M5 planned)_
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
 4. **Georgia source:** URL and publish date of Attachments A and B.
+
+5. **Federal category from unified mappings (M5):** once a state category has an approved
+   unified mapping, should its entries' federal category follow the unified category's federal
+   parent (replacing the M2 federal mapping)? Step 1 leaves the federal rule unchanged.
 
 ## Watch dates
 

@@ -112,7 +112,8 @@ the public pages say who reviewed it and when.
    Mappings from a state category to one or more unified categories with a SKOS relation
    (exact, close, broad, narrow, related), basis, confidence, rationale, citation, mapped and
    reviewed by, status (proposed, approved, superseded; never deleted). An entry's federal
-   category follows its approved unified mapping; the M2 federal mapping stays as the fallback.
+   category is unchanged for now; whether an approved unified mapping should set it is an
+   open question (`docs/status.md`).
    **Check:** schema and shared tests; migration applies to a copy of preview's data.
 2. **CCSR reference data.** `packages/reference-data` downloads AHRQ's DXCCSR (pinned version and
    SHA-256), builds `ref_ccsr` (ICD-10-CM code → CCSR category, one-to-many, default flag) and

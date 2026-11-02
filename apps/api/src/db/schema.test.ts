@@ -21,6 +21,9 @@ const TABLES = [
   'audit_log',
   'watch_items',
   'entries_fts',
+  'unified_categories',
+  'unified_ccsr',
+  'unified_mappings',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -184,6 +187,166 @@ describe('schema', () => {
     await expect(seedState('GA', 'georgia')).rejects.toThrow(/CHECK constraint failed/)
     await expect(seedState('NE', 'NE')).rejects.toThrow(/CHECK constraint failed/)
     await seedState('NE', 'ne')
+  })
+})
+
+describe('unified categories (docs/data-model.md, "Unified categories (M5)")', () => {
+  beforeEach(async () => {
+    await resetDb(db)
+    await seedState()
+  })
+
+  function insertCategory(slug = 'serious-mental-illness', federal = 'disabling_mental_disorder') {
+    return db
+      .prepare(
+        `INSERT INTO unified_categories (slug, label, definition, federal_category, created_by, updated_by)
+         VALUES (?, 'Serious mental illness', 'Psychoses', ?, 'admin', 'admin') RETURNING id`,
+      )
+      .bind(slug, federal)
+      .first<{ id: number }>()
+  }
+
+  function insertMapping(fields: {
+    unifiedId: number | null
+    relation?: string
+    status?: string
+    reviewedBy?: string | null
+    reviewedAt?: string | null
+  }) {
+    return db
+      .prepare(
+        `INSERT INTO unified_mappings (state_id, state_category, unified_id, relation, basis,
+                                       confidence, mapped_by, status, reviewed_by, reviewed_at)
+         VALUES ('LA', 'SMI', ?, ?, 'state_text', 'high', 'admin', ?, ?, ?) RETURNING id`,
+      )
+      .bind(
+        fields.unifiedId,
+        fields.relation ?? 'exact',
+        fields.status ?? 'proposed',
+        fields.reviewedBy ?? null,
+        fields.reviewedAt ?? null,
+      )
+      .first<{ id: number }>()
+  }
+
+  it('fills defaults: draft, version 1, timestamps, empty subcategory', async () => {
+    const cat = await insertCategory()
+    const row = await db
+      .prepare(
+        `SELECT status, version, sort_order, created_at, updated_at FROM unified_categories WHERE id = ?`,
+      )
+      .bind(cat?.id)
+      .first<{
+        status: string
+        version: number
+        sort_order: number
+        created_at: string
+        updated_at: string
+      }>()
+    expect(row).toMatchObject({ status: 'draft', version: 1, sort_order: 0 })
+    expect(row?.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+    expect(row?.updated_at).toMatch(/Z$/)
+    const mapping = await insertMapping({ unifiedId: cat?.id ?? null })
+    const m = await db
+      .prepare(`SELECT state_subcategory, mapped_at FROM unified_mappings WHERE id = ?`)
+      .bind(mapping?.id)
+      .first<{ state_subcategory: string; mapped_at: string }>()
+    expect(m?.state_subcategory).toBe('')
+    expect(m?.mapped_at).toMatch(/Z$/)
+  })
+
+  it('keeps slugs unique, lowercase letters, digits and hyphens', async () => {
+    await insertCategory('kidney-failure-2')
+    await expect(insertCategory('kidney-failure-2')).rejects.toThrow(/UNIQUE constraint failed/)
+    for (const slug of ['Kidney-failure', 'kidney failure', 'kidney_failure', 'niñez', ''])
+      await expect(insertCategory(slug)).rejects.toThrow(/CHECK constraint failed/)
+  })
+
+  it('needs a real federal parent: not "unmapped", not an unknown value', async () => {
+    await expect(insertCategory('a', 'unmapped')).rejects.toThrow(/CHECK constraint failed/)
+    await expect(insertCategory('b', 'SUD')).rejects.toThrow(/CHECK constraint failed/)
+    await insertCategory('c', 'state_specific')
+  })
+
+  it('rejects unknown statuses on categories', async () => {
+    const cat = await insertCategory()
+    await expect(
+      db.prepare(`UPDATE unified_categories SET status = 'live' WHERE id = ?`).bind(cat?.id).run(),
+    ).rejects.toThrow(/CHECK constraint failed/)
+  })
+
+  it('ties by_code to an empty target, and every other relation to a target', async () => {
+    const cat = await insertCategory()
+    await expect(insertMapping({ unifiedId: cat?.id ?? 0, relation: 'by_code' })).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await expect(insertMapping({ unifiedId: null, relation: 'exact' })).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await insertMapping({ unifiedId: null, relation: 'by_code' })
+    await insertMapping({ unifiedId: cat?.id ?? 0, relation: 'broad' })
+  })
+
+  it('rejects unknown relations, bases, confidences and statuses on mappings', async () => {
+    const cat = await insertCategory()
+    const m = await insertMapping({ unifiedId: cat?.id ?? 0 })
+    for (const set of [
+      `relation = 'same'`,
+      `basis = 'ai'`,
+      `confidence = 'certain'`,
+      `status = 'rejected'`,
+    ])
+      await expect(
+        db.prepare(`UPDATE unified_mappings SET ${set} WHERE id = ?`).bind(m?.id).run(),
+      ).rejects.toThrow(/CHECK constraint failed/)
+  })
+
+  it('approves a mapping only with a reviewer and a review time', async () => {
+    const cat = await insertCategory()
+    const id = cat?.id ?? 0
+    await expect(insertMapping({ unifiedId: id, status: 'approved' })).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await expect(
+      insertMapping({ unifiedId: id, status: 'approved', reviewedBy: 'admin' }),
+    ).rejects.toThrow(/CHECK constraint failed/)
+    await insertMapping({
+      unifiedId: id,
+      status: 'approved',
+      reviewedBy: 'admin',
+      reviewedAt: '2026-11-02T22:00:00.000Z',
+    })
+  })
+
+  it('links CCSR groups to a category, once each, and checks foreign keys', async () => {
+    const cat = await insertCategory()
+    const sql = `INSERT INTO unified_ccsr (unified_id, ccsr_category) VALUES (?, ?)`
+    await db.prepare(sql).bind(cat?.id, 'MBD001').run()
+    await expect(db.prepare(sql).bind(cat?.id, 'MBD001').run()).rejects.toThrow(
+      /UNIQUE constraint failed/,
+    )
+    await expect(db.prepare(sql).bind(999_999, 'MBD002').run()).rejects.toThrow(
+      /FOREIGN KEY constraint failed/,
+    )
+    await expect(insertMapping({ unifiedId: 999_999 })).rejects.toThrow(
+      /FOREIGN KEY constraint failed/,
+    )
+  })
+
+  it('points a superseded mapping at the row that replaced it', async () => {
+    const cat = await insertCategory()
+    const old = await insertMapping({ unifiedId: cat?.id ?? 0 })
+    const next = await insertMapping({ unifiedId: cat?.id ?? 0 })
+    await db
+      .prepare(`UPDATE unified_mappings SET status = 'superseded', superseded_by = ? WHERE id = ?`)
+      .bind(next?.id, old?.id)
+      .run()
+    await expect(
+      db
+        .prepare(`UPDATE unified_mappings SET superseded_by = 999999 WHERE id = ?`)
+        .bind(old?.id)
+        .run(),
+    ).rejects.toThrow(/FOREIGN KEY constraint failed/)
   })
 })
 

@@ -87,3 +87,33 @@ export type WatchKind = z.infer<typeof watchKindSchema>
 export const watchStatuses = ['open', 'done', 'dismissed'] as const
 export const watchStatusSchema = z.enum(watchStatuses)
 export type WatchStatus = z.infer<typeof watchStatusSchema>
+
+// Unified categories (docs/data-model.md, "Unified categories (M5)").
+
+/**
+ * How a state category relates to a unified category (SKOS): `exact` the same set, `close`
+ * nearly, `broad` the unified category is broader, `narrow` it is narrower, `related`.
+ * `by_code`: the state category is not a meaningful group; each code goes by its CCSR group.
+ */
+export const mappingRelations = ['exact', 'close', 'broad', 'narrow', 'related', 'by_code'] as const
+export const mappingRelationSchema = z.enum(mappingRelations)
+export type MappingRelation = z.infer<typeof mappingRelationSchema>
+
+/** Why a mapping holds: the state's own text, an admin's judgement, CCSR, or inferred. */
+export const mappingBases = ['state_text', 'admin_judgement', 'ccsr_agreement', 'inferred'] as const
+export const mappingBasisSchema = z.enum(mappingBases)
+export type MappingBasis = z.infer<typeof mappingBasisSchema>
+
+export const mappingConfidences = ['high', 'medium', 'low'] as const
+export const mappingConfidenceSchema = z.enum(mappingConfidences)
+export type MappingConfidence = z.infer<typeof mappingConfidenceSchema>
+
+/** Public pages show `published` unified categories only; `retired` ones never count. */
+export const unifiedStatuses = ['draft', 'published', 'retired'] as const
+export const unifiedStatusSchema = z.enum(unifiedStatuses)
+export type UnifiedStatus = z.infer<typeof unifiedStatusSchema>
+
+/** Mappings are never deleted: a change marks the old row `superseded`. */
+export const unifiedMappingStatuses = ['proposed', 'approved', 'superseded'] as const
+export const unifiedMappingStatusSchema = z.enum(unifiedMappingStatuses)
+export type UnifiedMappingStatus = z.infer<typeof unifiedMappingStatusSchema>

@@ -9,11 +9,16 @@
 import {
   codeSystems,
   federalCategories,
+  mappingBases,
+  mappingConfidences,
   mappingMethods,
+  mappingRelations,
   matchKinds,
   qualificationBases,
   qualifications,
   stateStatuses,
+  unifiedMappingStatuses,
+  unifiedStatuses,
   versionStatuses,
   watchKinds,
   watchStatuses,
@@ -265,6 +270,107 @@ export const categoryMappings = sqliteTable(
     check('category_mappings_federal_check', oneOf(t.federalCategory, federalCategories)),
     check('category_mappings_method_check', oneOf(t.method, mappingMethods)),
     check('category_mappings_confidence_check', sql`${t.confidence} BETWEEN 0 AND 1`),
+  ],
+)
+
+// ---------------------------------------------------------------------------------------------
+// Unified categories (docs/data-model.md, "Unified categories (M5)")
+
+/** A unified category's federal parent: any federal category but "unmapped". */
+const parentCategories = federalCategories.filter((c) => c !== 'unmapped')
+
+/** Admin-curated categories the many-state views compare (`/compare/<slug>`). */
+export const unifiedCategories = sqliteTable(
+  'unified_categories',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    slug: text('slug').notNull(),
+    label: text('label').notNull(),
+    definition: text('definition').notNull(),
+    includes: text('includes'),
+    excludes: text('excludes'),
+    /** The parent shown in the overview. */
+    federalCategory: text('federal_category', { enum: federalCategories }).notNull(),
+    status: text('status', { enum: unifiedStatuses }).notNull().default('draft'),
+    /** +1 on each edit of label, definition, includes or excludes. */
+    version: integer('version').notNull().default(1),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdBy: text('created_by').notNull(),
+    createdAt: timestamp('created_at'),
+    updatedBy: text('updated_by').notNull(),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [
+    uniqueIndex('unified_categories_slug_idx').on(t.slug),
+    check(
+      'unified_categories_slug_check',
+      sql`${t.slug} <> '' AND ${t.slug} NOT GLOB '*[^a-z0-9-]*'`,
+    ),
+    check('unified_categories_federal_check', oneOf(t.federalCategory, parentCategories)),
+    check('unified_categories_status_check', oneOf(t.status, unifiedStatuses)),
+    check('unified_categories_version_check', sql`${t.version} >= 1`),
+  ],
+)
+
+/** The CCSR groups whose ICD-10-CM codes belong to a unified category (codes: `ref_ccsr`). */
+export const unifiedCcsr = sqliteTable(
+  'unified_ccsr',
+  {
+    unifiedId: integer('unified_id')
+      .notNull()
+      .references(() => unifiedCategories.id, { onDelete: 'cascade' }),
+    /** AHRQ CCSR category, e.g. `MBD001`. */
+    ccsrCategory: text('ccsr_category').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.unifiedId, t.ccsrCategory] })],
+)
+
+/**
+ * A state category → one unified category (one row per target). Belongs to the state, like
+ * category_mappings. Never deleted: a change marks the old row `superseded` and points
+ * `superseded_by` at the new one. `by_code` rows have no target: each code goes by its CCSR.
+ */
+export const unifiedMappings = sqliteTable(
+  'unified_mappings',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    stateId: text('state_id')
+      .notNull()
+      .references(() => states.id),
+    stateCategory: text('state_category').notNull(),
+    stateSubcategory: text('state_subcategory').notNull().default(''),
+    unifiedId: integer('unified_id').references(() => unifiedCategories.id),
+    relation: text('relation', { enum: mappingRelations }).notNull(),
+    basis: text('basis', { enum: mappingBases }).notNull(),
+    confidence: text('confidence', { enum: mappingConfidences }).notNull(),
+    rationale: text('rationale'),
+    citation: text('citation'),
+    mappedBy: text('mapped_by').notNull(),
+    mappedAt: timestamp('mapped_at'),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: text('reviewed_at'),
+    status: text('status', { enum: unifiedMappingStatuses }).notNull().default('proposed'),
+    supersededBy: integer('superseded_by').references((): AnySQLiteColumn => unifiedMappings.id),
+  },
+  (t) => [
+    index('unified_mappings_state_category_idx').on(
+      t.stateId,
+      t.stateCategory,
+      t.stateSubcategory,
+      t.status,
+    ),
+    check('unified_mappings_relation_check', oneOf(t.relation, mappingRelations)),
+    check('unified_mappings_basis_check', oneOf(t.basis, mappingBases)),
+    check('unified_mappings_confidence_check', oneOf(t.confidence, mappingConfidences)),
+    check('unified_mappings_status_check', oneOf(t.status, unifiedMappingStatuses)),
+    check(
+      'unified_mappings_by_code_check',
+      sql`(${t.relation} = 'by_code') = (${t.unifiedId} IS NULL)`,
+    ),
+    check(
+      'unified_mappings_reviewed_check',
+      sql`${t.status} <> 'approved' OR (${t.reviewedBy} IS NOT NULL AND ${t.reviewedAt} IS NOT NULL)`,
+    ),
   ],
 )
 

@@ -36,6 +36,60 @@ Plus two of our own:
    disabling", MT Tier 2 "Frailty indicators")
 7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Unclassified"
 
+## Unified categories (M5)
+
+Three levels (project lead, 2026-11-02): **federal** (the law, above), **unified** (curated by
+admins, e.g. "Serious mental illness", "Kidney failure and dialysis") and **state** (each state's
+own categories, exactly as written). Unified categories are what the many-state views compare.
+
+```
+unified_categories   id, slug (unique; URL /compare/<slug>), label, definition, includes, excludes,
+                     federal_category (any but 'unmapped'; the parent shown in the overview),
+                     status ('draft'|'published'|'retired'), version (+1 on each edit of label,
+                     definition, includes or excludes), sort_order,
+                     created_by, created_at, updated_by, updated_at
+unified_ccsr         unified_id → unified_categories, ccsr_category (e.g. 'MBD001')   PK both
+                     (the CCSR groups whose ICD-10-CM codes belong to the category; codes come
+                     from ref_ccsr in step 2)
+unified_mappings     id, state_id, state_category, state_subcategory,
+                     unified_id → unified_categories (NULL only for 'by_code'),
+                     relation ('exact'|'close'|'broad'|'narrow'|'related'|'by_code'),
+                     basis ('state_text'|'admin_judgement'|'ccsr_agreement'|'inferred'),
+                     confidence ('high'|'medium'|'low'), rationale, citation,
+                     mapped_by, mapped_at, reviewed_by, reviewed_at,
+                     status ('proposed'|'approved'|'superseded'), superseded_by → unified_mappings
+```
+
+- Relations follow SKOS: `exact` (the same set), `close` (nearly), `broad` (the unified category is
+  broader than the state's), `narrow` (narrower), `related`. `by_code` means "this state category
+  is not a meaningful group (GA and NE have none): place each code by its CCSR group".
+  CHECK: `(relation = 'by_code') = (unified_id IS NULL)`; `status = 'approved'` needs
+  `reviewed_by` and `reviewed_at`.
+- One state category may map to several unified categories (one row per target). Rows are never
+  deleted: a change marks the old row `superseded` and points `superseded_by` at the new one.
+- One admin may approve (project lead, 2026-11-02); the public pages say who reviewed it and when.
+
+**Which unified categories an entry counts under** (`unifiedOf()` in
+`packages/shared/src/unified.ts`, one rule for admin and public pages):
+
+1. Take the approved mappings of the entry's state category (`mappingKey()`).
+2. Label targets (rows with a `unified_id`): one target → that one. Several → the targets whose
+   CCSR groups include one of the entry's CCSR groups (ICD-10-CM only); none match, or not
+   ICD-10-CM → all targets. Basis `mapping`.
+3. Otherwise (an approved `by_code` row, or no approved mapping yet): ICD-10-CM entries go to every
+   unified category whose CCSR groups include one of the entry's; basis `by_code`, reviewed only
+   if a `by_code` row is approved. Other code systems → none ("Unclassified").
+4. Public pages use published unified categories only; retired ones never count.
+
+The entry's CCSR groups come from a lookup passed in (step 2 builds `ref_ccsr`); a wildcard or
+range entry takes the groups of the codes it covers. The entry's **federal** category is
+unchanged in step 1 (M2 mapping and chapter overrides); whether an approved unified mapping
+should set it is an open question for the project lead (`docs/status.md`).
+
+**Full code lists.** A unified category's universe of ICD-10-CM codes is every code in its CCSR
+groups. The drill-down uses it to show codes no state lists (roadmap M5 step 6). Other code
+systems have no universe: only codes some state lists are shown.
+
 ## Tables (D1 / SQLite)
 
 ```
