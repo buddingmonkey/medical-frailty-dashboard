@@ -39,8 +39,10 @@ Production deploys happen only from CI on `main`. Never run `wrangler deploy` ag
 - **Admin is behind Cloudflare Access**, and the API also checks the Access JWT. Never add an
   admin route outside `/admin` or `/api/admin`. See `docs/security.md`.
 - **Secrets** go in `wrangler secret` or `.dev.vars` (gitignored). The repo is public.
-- **Keep subagents small:** one roadmap step per builder, then commit and stop. Use Sonnet for
-  rote doc, search and refactor work.
+- **Builders are optional.** The main session plans with the project lead, and reviews,
+  writes the devlog and opens the PR. It may hand one approved step to the `builder` agent
+  (`.claude/agents/builder.md`): one step per builder, commit and stop. Builders use the main
+  session's model; pass Sonnet only for pure rote work (doc edits, search, mechanical refactors).
 - Do not read a large doc in full. `grep -n` for the section, then read that range.
 - **Keep the devlog.** At the end of every session that changed the plan or code, and at
   every milestone, add an entry to `docs/devlog/` (template in its README). Promote lessons to

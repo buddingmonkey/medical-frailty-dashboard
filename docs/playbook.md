@@ -25,6 +25,10 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 - `docs/status.md` says where things stand. **Read it first, and ask the AI to read it first.**
 - `docs/roadmap.md` breaks work into small numbered steps. One step = one AI session.
 - `docs/devlog/` records what happened in each session.
+- `.claude/agents/builder.md` is an optional helper agent. Once you and the AI agree a plan,
+  the AI may hand the building to it. The builder follows the same rules, commits, and reports
+  back. The main AI session still reviews its work and opens the pull request, so you deal with
+  one assistant, not several.
 
 ## 3. The basic loop (works for any change)
 

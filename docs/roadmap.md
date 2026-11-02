@@ -32,6 +32,8 @@ running totals in `docs/talk-notes.md`.
    domain is added. Migrations and the pre-release D1 backup join the deploy in M1.
 8. `.claude/agents/builder.md` (standing rules for builders) and a project skill for "add a
    new state source" once M2 shows what the steps are.
+   **Builder done 2026-11-01**: model `inherit` by default; the main session may pick a cheaper
+   model for pure rote coding (project lead). The state-source skill moves to M2 (step 12 below).
 
 ## M1 Data foundation
 
@@ -66,6 +68,9 @@ running totals in `docs/talk-notes.md`.
     secret.
 11. **Check:** load all four seed states through the UI on preview; re-load MT with a
     deliberately wrong file (e.g. NE's) and confirm the typed-confirm checks stop it.
+12. Project skill "add a new state source": the steps for adding a state's source, written
+    from what loading the four seed states actually took (moved from M0 step 8). Where it lives
+    is the project lead's call: `.claude/skills/` is kept untracked for third-party skills.
 
 ## M3 Home page
 
