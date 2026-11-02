@@ -31,16 +31,13 @@ _Last updated: 2026-11-01_
   reporting, data-error issue template, `SECURITY.md`, `CONTRIBUTING.md`, README setup steps.
   `main` is protected by a ruleset with **no bypass**: every change goes through a PR with
   green checks; a direct push is refused (tested).
-- **Step 7 built** (branch `m0-step7-cloudflare`): dedicated Cloudflare account; D1
-  (`frailty-preview`, `frailty-prod`), R2 (`frailty-preview-files`, `frailty-prod-files`) and
-  an Access application per host (Google, 24 h). CI deploys preview on `main` and production on
-  `v*` tags after approval, with a smoke test (`.github/workflows/deploy.yml`). `pnpm cf` runs
-  wrangler with this repo's own token and refuses production deploys. The preview Worker is
-  live behind Access (deployed once by hand from the branch).
-  **Still to do for the step's check:** the project lead creates the production CI token and
-  `ci-smoke-prod` service token and sets the 4 `production` secrets; the AI adds the service
-  policy to the production Access app; merge; tag `v0.0.1` and approve; set `ADMIN_EMAILS` on
-  both Workers; open both URLs in a browser.
+- **Step 7 done** (PRs #8–#10): dedicated Cloudflare account; D1 (`frailty-preview`,
+  `frailty-prod`), R2 (`frailty-preview-files`, `frailty-prod-files`) and an Access
+  application per host (Google, 24 h, Service Auth for CI). CI deploys preview on `main` and
+  production on `v*` tags after approval, with a smoke test (`.github/workflows/deploy.yml`).
+  `pnpm cf` runs wrangler with this repo's own token and refuses production deploys.
+  **`v0.0.1` is live** on both Workers, behind Access. Remaining: `ADMIN_EMAILS` on both
+  Workers and a browser check by the project lead.
 - **Next step after that:** M0 step 8 (builder agent file), then M1.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.

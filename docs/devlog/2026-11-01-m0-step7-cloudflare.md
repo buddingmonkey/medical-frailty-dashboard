@@ -66,8 +66,17 @@ both URLs ask for a Google login and show the placeholder page after it.
   first deploy. Reported before building on it.
 - **Downloading a workflow linter was blocked** by the session's safety rules (code from the
   internet). The workflows were checked as YAML only; CI validates them for real.
-- **Not verified yet:** the service-token smoke test (the token secret lives only in GitHub)
-  and production. Both run after the merge and the `v0.0.1` tag.
+- **The first CI smoke test failed without an error message** (PR #9). `read` returns 1
+  when its input has no trailing newline, and `set -e` ended the step. Fixed with a `\n` in curl's
+  output format. Linting would not have caught it: it is valid shell.
+- **The first production deploy's smoke test got Cloudflare error 1042** (404): a brand-new
+  Worker can take up to a minute to answer on workers.dev, and the test retried for only 15 s.
+  A re-run passed; retries now last about a minute (PR #10). Preview missed this because it
+  had been deployed by hand first.
+- The project lead installed actionlint (checksum-verified) after the AI's own download was
+  blocked; both workflows lint clean.
+- The session's safety rules also stopped the AI from merging a PR the project lead had not
+  named. The project lead then said "merge 9 yourself".
 
 ## What a non-technical builder should take from this
 
@@ -85,10 +94,9 @@ both URLs ask for a Google login and show the placeholder page after it.
 
 ## Open threads
 
-- After merge: the `deploy preview` job must pass (first real service-token test).
-- Project lead: create `mfcd-ci-prod` and `ci-smoke-prod`, and set the 4 `production` secrets.
-  The AI then adds the `ci-smoke-prod` Service Auth policy to the production Access app.
-- Tag `v0.0.1`, approve, check both URLs in a browser (the step's acceptance check).
+- Done after the merge: production secrets and `ci-smoke-prod` policy; preview and
+  production (`v0.0.1`) deployed from CI with passing smoke tests.
+- Project lead: check both URLs in a browser (the step's acceptance check).
 - Project lead: set `ADMIN_EMAILS` on both Workers with `pnpm cf secret put`.
 - Before M7: D1 IDs as deploy-time variables. M1: migrations and backup in the deploy.
 - Service tokens expire November 2027.
