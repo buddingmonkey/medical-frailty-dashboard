@@ -98,7 +98,48 @@ running totals in `docs/talk-notes.md`.
    Server-rendered HTML per `docs/seo.md`; compare combinations are `noindex` (state and
    code pages are the canonical homes of each fact).
 
-## M5 Code search
+## M5 Compare across many states
+
+Project lead, 2026-11-02, after the M4 review: a table with one column per state does not scale
+to 51. Research and the approved mockup (https://claude.ai/artifact/CNrREiYvQSpfgNvcnR9VAz;
+sources in `docs/devlog/2026-11-02-m5-plan.md`) give three category levels and five views.
+Decisions: this comes before code search; CCSR is used from the start (downloaded from AHRQ at
+load time, never committed; licence on the legal list); one admin may approve a mapping, and
+the public pages say who reviewed it and when.
+
+1. **Unified categories (data model).** Admin-curated categories between the federal ones and
+   each state's own: definition, includes, excludes, federal parent, draft/published, version.
+   Mappings from a state category to one or more unified categories with a SKOS relation
+   (exact, close, broad, narrow, related), basis, confidence, rationale, citation, mapped and
+   reviewed by, status (proposed, approved, superseded; never deleted). An entry's federal
+   category follows its approved unified mapping; the M2 federal mapping stays as the fallback.
+   **Check:** schema and shared tests; migration applies to a copy of preview's data.
+2. **CCSR reference data.** `packages/reference-data` downloads AHRQ's DXCCSR (pinned version and
+   SHA-256), builds `ref_ccsr` (ICD-10-CM code → CCSR category, one-to-many, default flag) and
+   the category names; local loader and the Reference data workflow, like `ref_codes`.
+   **Check:** every ICD-10-CM code in the seed states finds its CCSR categories.
+3. **Admin: unified categories and mappings.** A page to create and edit unified categories,
+   and a mapping screen per state: each state category with its codes' CCSR spread as the
+   suggestion, relation, basis, confidence, rationale and citation; approve (one admin,
+   labelled); every change in the audit log and a `data_version` bump.
+4. **Coverage summary.** Computed after publish and mapping changes: per state × unified
+   category (codes listed, universe, share qualifying alone) and per state pair (similarity on
+   expanded codes). `GET /api/public/overview`. **Check:** the Free plan's CPU limit holds on
+   preview (the numbers are read, not computed, per request).
+5. **Overview matrix** (`/compare`): states × unified categories grouped by federal category;
+   sort by any column, overall, or "similar states together"; each cell a number and a shade;
+   a cell opens the drill-down. Server-rendered; a real table (WCAG 1.3.1, 1.4.1).
+6. **Category drill-down** (`/compare/<unified category>`): codes grouped by ICD-10-CM
+   category, ranked by how many states list them; filters (everyone, gaps, only one state);
+   focus state; details per code with each state's tier and badge. The M4 table stays as the
+   leaf view and the CSV.
+7. **Compare 2–4 states** and **states like mine**: only the differences, grouped by unified
+   category, with shared and only-in counts and similarity; a ranked "most similar states"
+   list on each state page that opens the comparison.
+8. **Tile map**: one unified category across all states, equal tiles with abbreviation and
+   number, a table beneath; on the home page beside the status map.
+
+## M6 Code search
 
 1. FTS search endpoint with code-number and description matching, state and system filters.
 2. Search page with results as you type (debounced).
@@ -108,13 +149,13 @@ running totals in `docs/talk-notes.md`.
 5. Code detail pages server-rendered with `DefinedTerm` JSON-LD, a plain-sentence answer per
    state, and a sitemap entry for every listed code (`docs/seo.md`).
 
-## M6 Admin completion
+## M7 Admin completion
 
 1. Manual backup download and backup import (restore path 2).
 2. Weekly cron backup + draft cleanup.
 3. Remap screen polish: bulk remap, see affected entries before saving.
 
-## M7 Hardening and launch
+## M8 Hardening and launch
 
 Launch gate (user, 2026-11-01): **at least 2 states with every category mapping confirmed**,
 and evidence that target users find the site useful and use it correctly.

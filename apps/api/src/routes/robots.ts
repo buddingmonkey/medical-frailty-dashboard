@@ -8,7 +8,7 @@ import type { AppEnv } from '../types'
 // (crawling the API would only burn the free request quota; data downloads are linked from
 // pages instead). Content-Signal follows https://contentsignals.org: search, AI answers and
 // AI training are all allowed (project lead, 2026-11-01).
-// Add a `Sitemap:` line when the site has a sitemap and its final domain (roadmap M7).
+// Add a `Sitemap:` line when the site has a sitemap and its final domain (roadmap M8).
 const PRIVATE = `# Medical Frailty Coding Dashboard is not public yet.
 User-agent: *
 Disallow: /

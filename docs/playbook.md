@@ -79,7 +79,7 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 | Add or close a watch date | Admin → Watch dates | Written (M2) |
 | Add a new public page | Use the loop in section 3 with the prompt template below; the state page (`apps/web/src/pages/states/[slug].vue` + `apps/api/src/seo/pages.ts`) is the example to copy | Written (M3) |
 | Add a page with choices (filters, pickers) | Put every choice in the URL and read it back on load; the compare page (`apps/web/src/pages/compare.vue`, `lib/public-compare.ts`) is the example to copy | Written (M4) |
-| Download a backup | Admin → Download backup | _(to write after M6)_ |
+| Download a backup | Admin → Download backup | _(to write after M7)_ |
 
 ### Prompt template: add a public page
 
@@ -118,4 +118,4 @@ What carried over from this project to any "compare public documents" site:
 4. Choose hosting by cost first: free tiers go a long way for read-mostly public sites.
 5. Keep a devlog from day one.
 
-_(Expand with the setup steps, costs and time once M0–M7 are done.)_
+_(Expand with the setup steps, costs and time once M0–M8 are done.)_

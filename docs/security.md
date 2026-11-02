@@ -33,7 +33,7 @@ The data is public state policy, and there is no patient data. The risks are abo
 - **Implemented in M0 step 5** (`apps/api/src/auth/access.ts`, `middleware/site-gate.ts`,
   `middleware/require-admin.ts`):
   - The **site gate** (private mode) accepts **any identity Access let in**: admins, guest
-    testers (M7) and service tokens (CI). Only admin routes check `ADMIN_EMAILS` (user, 2026-11-01).
+    testers (M8) and service tokens (CI). Only admin routes check `ADMIN_EMAILS` (user, 2026-11-01).
   - **Admin routes** are `/admin`, `/admin/*` and `/api/admin/*`, checked in every `SITE_MODE`.
     Service tokens have no email, so they never pass the admin check. Admin responses are
     `no-store` and `noindex`.

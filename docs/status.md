@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (end of M4)_
+_Last updated: 2026-11-02 (M5 planned)_
 
 ## Where things stand
 
@@ -186,7 +186,7 @@ _Last updated: 2026-11-02 (end of M4)_
   CPU is acceptable for now, `v0.4.0` tagged for production.
 - **Main navigation** (project lead's request, 2026-11-02): a nav bar in the header (Home,
   States, Compare; a menu button on phones; the list is `siteNav` in shared, also in the
-  server-rendered HTML) and a new `/states` page. Search and About join the list in M5 and M7.
+  server-rendered HTML) and a new `/states` page. Search and About join the list in M6 and M8.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -211,7 +211,7 @@ _Last updated: 2026-11-02 (end of M4)_
 | Georgia A/B | Two tiers, loaded as one version; tier kept in `entries.tier` |
 | Tiers and qualification | Show **each state's own rule**: the state's tier label plus a badge (qualifies alone / needs another code / supporting evidence / state doesn't say), with "inferred" shown where we deduced it. Site-wide note on the 2026-10-29 *Massachusetts v. Oz* ruling. Compare and search can filter to "qualifies alone" (user, 2026-11-01, after research showed the ruling does not strike down tiers). **Provisional:** the user works with a team of lawyers who may ask to remove or reword the badges later |
 | Look and feel | Colours based on the Georgetown CCF palette; open-licensed fonts (Jost headings, Source Sans 3 body, IBM Plex Mono codes), self-hosted; no serif for now. **Not an official CCF site**: no CCF name or logo; branding may be added later (user, 2026-11-01) |
-| Dark mode | Light, dark and "follow system" must all work before launch. Tokens for both themes exist; the switch comes in M0 step 4; axe runs in both themes in M7 (user, 2026-11-01) |
+| Dark mode | Light, dark and "follow system" must all work before launch. Tokens for both themes exist; the switch comes in M0 step 4; axe runs in both themes in M8 (user, 2026-11-01) |
 | Static files and the Worker | Until launch every request runs the Worker first (one place for headers; site gate covers assets). At go-live, `/assets/*` moves to direct serving with a `_headers` file (user, 2026-11-01) |
 | CSP styles | No `'unsafe-inline'` for `style-src` (user, 2026-11-01) |
 | Logs | Workers Logs + Traces on, query strings redacted; free tier (user, 2026-11-01) |
@@ -219,7 +219,7 @@ _Last updated: 2026-11-02 (end of M4)_
 | Site gate | Before launch, anyone Access lets in may see the site (admins, guest testers, CI service token); admin routes also need `ADMIN_EMAILS` (user, 2026-11-01) |
 | robots.txt | Private: disallow all. Public: allow the site, disallow `/admin` and `/api/`; add a sitemap at launch (user asked for a good one from the start, 2026-11-01) |
 | SEO and GEO | Best practices; AI crawlers welcome so AI gets the right information. Worker renders real HTML for public pages. `Content-Signal: search=yes, ai-input=yes, ai-train=yes`. See `docs/seo.md` (user, 2026-11-01). **`ai-train=yes` is provisional:** the legal team may revisit it because pages quote AMA-copyrighted CPT text |
-| Domain and hosting | The project lead buys a domain in M7, or gives the site to an organization to host. Keep the site portable (user, 2026-11-01) |
+| Domain and hosting | The project lead buys a domain in M8, or gives the site to an organization to host. Keep the site portable (user, 2026-11-01) |
 | Branch protection | Ruleset on `main` with no bypass, not even for admins (user, 2026-11-01) |
 | D1 backups before production migrations | D1 Time Travel bookmark logged by CI, not `wrangler d1 export` (refuses FTS5 databases) (user, 2026-11-01) |
 | IDs and dates | Integer IDs (states keep the 2-letter code); ISO-8601 text dates (user, 2026-11-01) |
@@ -234,10 +234,13 @@ _Last updated: 2026-11-02 (end of M4)_
 | Release after M2 | `v0.2.0` in production 2026-11-02 (approved by the project lead; run 41492763306): migrations 0002–0006 applied, smoke test passed. No state data in production yet |
 | Release after M3 | `v0.3.0` in production 2026-11-02 (run 41523353868); production still has no state lists |
 | Release after M4 | `v0.4.0` tagged 2026-11-02 at the project lead's request; production deploy waits for the lead's approval in GitHub |
+| Three category levels (M5) | Federal, unified (admin-curated) and state-specific; all five mockup views; M5 before code search (project lead, 2026-11-02; `docs/devlog/2026-11-02-m5-plan.md`) |
+| CCSR (M5) | Used from the start; downloaded from AHRQ at load time, pinned by version and SHA-256, never committed (AHRQ states no licence) (project lead + AI, 2026-11-02) |
+| Mapping approval (M5) | One admin may approve; public pages say who reviewed it and when (project lead, 2026-11-02) |
 | Compare CPU on the Free plan | Acceptable for now (project lead, 2026-11-02); measure on preview in the lead's signed-in browser before the 2026-11-30 downgrade |
-| Professional site basics | Added to M7 (favicon and icons, share image, footer links, privacy and accessibility statements, `security.txt`, print styles) (project lead, 2026-11-02) |
+| Professional site basics | Added to M8 (favicon and icons, share image, footer links, privacy and accessibility statements, `security.txt`, print styles) (project lead, 2026-11-02) |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
-| Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
+| Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M8) |
 
 ## Open questions
 
@@ -272,7 +275,7 @@ close dates there, not here. Approximate dates are marked ~.
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
 | No date | Legal team decides the licence of the compiled lists (for the `license` field in the state pages' `Dataset` JSON-LD and the downloads; left out until then) | Search engines recommend a licence on datasets | `docs/seo.md` |
-| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk; for M5, the CCSR licence and citation (AHRQ states no terms), the unified category labels and the match words (exact, close, broad, narrow) | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 
