@@ -32,6 +32,11 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   research: dch.georgia.gov/document/document/medical-frailty-list-schedule-b0. Load both into
   one version with `tier` = "Attachment A" / "Attachment B". The Board added some HIV
   diagnoses in 2026-08 (The Current, 2026-08-14).
+- **Attachment B page 60** ends with a row that has no code: "Nonsuicidal self-harm" (Yes,
+  "Intentional self-harm - indicates severe psychiatric vulnerability"). Probably `R45.88`;
+  ask the state. The PDF adapter keeps it as a row without a code (2026-11-02).
+- PDF layout (2026-11-02): columns shift between pages, the header repeats on some pages only,
+  page 151 centers its codes, and wrapped text sits above the code line (bottom-aligned).
 - Georgia has no category column; the user will map categories (likely per ICD chapter, as for
   Nebraska) or use the rationale text as a hint.
 
@@ -76,6 +81,13 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - Other sub-categories seen: "Pregnancy Status & ...", "Encounter", "Supporting",
   "Secondary Diagnosis General".
 - Descriptions wrap onto several lines; the code sits on the first line.
+- **PDF layout** (2026-11-02): header only on page 1, on two lines ("Code / Designation"),
+  centered over left-aligned data. The printer joined close cells into one text run ("… 5HT M
+  H7X", "0 Bronchiectasis"), and descriptions overflow under the code column (clipped on
+  paper, full text in the PDF). Read by the adapter: 2,526 rows; sub-category × designation
+  counts are higher than the earlier `pdftotext` profile above (e.g. Primary Diagnosis 0 → 656,
+  1 → 253, 2 → 28), which missed wrapped rows. Two rows have no designation in the source
+  (`96414`, `E08.621-E08.622`).
 - **Code shapes in the PDF** (profiled 2026-11-01, 2,117 codes): 5-digit CPT (666), HCPCS
   letter + 4 digits (481), dotted ICD-10-CM (~520), 3-character categories (182), revenue
   codes of 3 or 4 digits (117), wildcards `I63.*`, `S06.2*`, `D89.81*` (~55), and single
@@ -103,6 +115,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - Truncated ranges: `L89.500-L89` (the PDF cuts the column). Flag for manual entry.
 - The same code can appear under several condition names (`Z74.09` three times). These are
   separate entries, not duplicates.
+- **PDF layout** (2026-11-02): title lines and a "Medically Frail IFC" line above the header,
+  header only on page 1, and mixed alignment: on pages 3–4 the code is on the top line of its
+  row and the tier/category on the bottom line; on page 2 the code is on the bottom line with
+  the name wrapped above. 314 rows.
 
 ## Nebraska (NE)
 
@@ -113,6 +129,9 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 | [Work Requirements page](https://dhhs.ne.gov/Pages/WorkRequirements.aspx) | | Landing page linking both |
 
 - ICD codes have **no dots** (`A0103`) except wildcards (`A15.x`).
+- PDF layout (2026-11-02): page 1 is a contents page; each page has a chapter title, the header
+  and a "Page n of 295" footer. 8,146 ICD rows (pages 2–294) and 27 CPT/HCPCS rows (page 295).
+  `E09.349,` has a stray trailing comma in the source.
 - Grouped only by ICD-10 chapter; no frailty categories (see `docs/ingestion.md`,
   "Category auto-mapping").
 - The CPT/HCPCS section uses ranges with en-dashes (`32851–32854`), hyphens, "and" lists

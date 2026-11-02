@@ -1,14 +1,13 @@
 /// <reference lib="webworker" />
 // Runs the parser adapters off the main thread (docs/security.md, "Upload safety").
-import { type ParseInput, parseSource } from './parse'
+import { type ParseInput, type ParseResult, parseSource } from './parse'
 
-export type WorkerReply =
-  { ok: true; tables: Awaited<ReturnType<typeof parseSource>> } | { ok: false; message: string }
+export type WorkerReply = { ok: true; result: ParseResult } | { ok: false; message: string }
 
 self.onmessage = (event: MessageEvent<ParseInput>) => {
   parseSource(event.data).then(
-    (tables) => {
-      self.postMessage({ ok: true, tables } satisfies WorkerReply)
+    (result) => {
+      self.postMessage({ ok: true, result } satisfies WorkerReply)
     },
     (error: unknown) => {
       const message =

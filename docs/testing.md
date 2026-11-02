@@ -5,10 +5,10 @@
 | Layer | Tool | Where | What it covers |
 | --- | --- | --- | --- |
 | Unit | Vitest | `packages/shared/**/*.test.ts` | Code normalization, wildcard/range parsing, code-system inference, category auto-mapping, diff + checks logic. **The most important tests in the repo** |
-| Parser | Vitest (jsdom/happy-dom) | `apps/web/src/ingest/**/*.test.ts` | Each adapter against `fixtures/<state>/` excerpts → expected normalized JSON |
+| Parser | Vitest (jsdom) | `apps/web/src/ingest/**/*.test.ts` | Each adapter; PDF layout on synthetic pages and on real pages of each seed state (`fixtures/pdf-pages-*.json`) |
 | Component | Vitest + `@testing-library/vue` + MSW | `apps/web/src/**/*.test.ts` | User-visible behavior: pick states, see table, search results, admin review table. Mock the API with MSW, never mock composables |
 | API | Vitest + `@cloudflare/vitest-plugin` | `apps/api/src/**/*.test.ts` | Routes running in workerd with a real local D1 and R2 (Miniflare). Auth middleware, site gate, publish/rollback, per-state write isolation |
-| E2E | Playwright | `apps/web/e2e/` | Main journeys in Chromium against `wrangler dev` with seeded local D1: home map → state, compare, search → code detail, admin ingest → publish → rollback |
+| E2E | Playwright | `apps/web/e2e/` | Main journeys in Chromium against `wrangler dev` with seeded local D1: home map → state, compare, search → code detail, admin ingest → publish → rollback. `*.admin.spec.ts` run in the `admin` project: a second Worker on :8789 in development mode (the localhost bypass signs in `e2e-admin@localhost`) with its own migrated local D1 in `apps/api/.wrangler/e2e-admin` |
 | Accessibility | `@axe-core/playwright` | in E2E specs | No serious/critical axe violations on every public page. State agencies often need Section 508 / WCAG 2.1 AA |
 | Deployed smoke | Playwright (small spec) | CI after deploy | Preview: everything returns 401/302 without Access. Production after launch: public pages 200, `/api/admin/*` 401 |
 
@@ -66,7 +66,13 @@ see `SITE_MODE=public` (set in `apps/api/vitest.config.ts`).
 
 ## Fixtures
 
-`fixtures/<state>/` holds, for each seed file:
+**PDF pages (M2 step 5):** `apps/web/src/ingest/fixtures/pdf-pages-<file>.json` keep only the
+text runs of chosen pages, so no PDF is committed (about 180 KB in all). To rewrite them, put
+the state PDFs in a folder as `ga-a.pdf`, `ga-b.pdf`, `la.pdf`, `mt.pdf`, `ne.pdf` and run
+`PDF_SOURCE_DIR=<folder> pnpm test pdf-pages.make` (skipped otherwise). `fixtures/make-pdf.ts`
+writes small PDFs for tests of the pdf.js side, in Vitest and e2e.
+
+Planned for the seed lists: `fixtures/<state>/` holds, for each seed file:
 
 - `excerpt.pdf` or `excerpt.xlsx`: a few pages that cover every quirk in `docs/sources.md`
   (wrapped descriptions, wildcards, ranges, repeated headers). These are public government

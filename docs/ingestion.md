@@ -88,13 +88,56 @@ Each adapter: `(file: File) => Promise<RawTable[]>` (one table per PDF page grou
 | --- | --- | --- |
 | `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. Old `.xls` is not supported |
 | `csv` | native (`apps/web/src/ingest/parse.ts`) | RFC 4180 quoting, one linear pass, no regexes. `.txt` is read as tab-separated |
-| `pdf` | `pdfjs-dist` (pinned, current) with `isEvalSupported: false` | Rebuilds rows from text positions: cluster by y, split columns by the x-positions of the header cells. Handles the wrapped descriptions in the GA/LA/MT PDFs (a line with no code is a continuation of the row above) |
+| `pdf` | `pdfjs-dist` (pinned, legacy build), in a worker it starts from ours | See "PDF adapter" below |
 | `json` | native | Accepts an array of objects with any keys; column mapping step decides which key is what |
 | `paste` | native | Paste a tab-separated table straight from a spreadsheet |
 
 Limits: 25 MB per file, 2,000 PDF pages, 100,000 rows, 100 columns. Parsing runs in a Web
-Worker (`worker.ts`, started by `run-parser.ts`) so the page stays responsive and pdf.js runs
+Worker (`worker.ts`, started by `run-parser.ts`; module format, so pdf.js's 1.7 MB chunk loads
+only for a PDF) so the page stays responsive and pdf.js runs
 off the main thread; where there is no `Worker` (jsdom tests) the same adapters run directly.
+
+### PDF adapter
+
+`pdf.ts` extracts each text run (text, x, y, width, height, font); `pdf-layout.ts` rebuilds
+the tables. Tested on synthetic pages and on real pages of all four seed states
+(`fixtures/pdf-pages-*.json`, text runs only, written by `fixtures/pdf-pages.make.test.ts`).
+
+1. **Lines:** runs whose baselines are within half a text height.
+2. **Header:** the first line with two or more cells, one naming a code column
+   (`guessColumnRoles`), and above the first line holding a code (GA data lines say
+   "ICD-10-CM"). Up to two lines below it in the header's font and without codes join it (LA's
+   "Code / Designation"). Lines above the header (titles, NE's chapter names) are skipped, and
+   so are page-number lines ("Page 2 of 295") and pages before the first header (NE's
+   contents page). A header that repeats continues the table; a different one starts a new
+   table (NE: ICD pages, then the CPT page).
+3. **Columns, per page:** cells are left-aligned, so the x where runs start cluster at the
+   column edges; the clusters on the most lines win. Headers are not used for edges because
+   LA centers them (its "Code" header starts 29 pt right of the codes), and GA's columns move
+   from page to page. A run goes to the last column that starts at or before it, so GA's
+   centered codes and LA's one code printed far right still land in the code column. LA's
+   printer sometimes wrote two cells as one run ("… 5HT M H7X", "0 Bronchiectasis"): a run that
+   crosses into an empty column is split at the space nearest the edge, only if the split
+   leaves a code on the right or one word on the left. Text that overflows under the next
+   column (clipped on paper) stays whole.
+4. **Rows:** one per line with a code. A code ending in a comma, hyphen or "and" on a line of
+   its own continues ("33927, 33928, 33929," / "33935, 33945"); NE's "E09.349," has a
+   description on its line, so it is a stray comma. The lines without a code between two codes
+   go to the row above, the row below, or rarely a row of their own. Each gap is split to make
+   the rows most row-like: no value written twice ("Tier 1 … Tier 1 …"), no empty column that
+   nearly every row fills, no cell that starts in lower case. The splits are chosen for the
+   whole table at once (dynamic programming), because one file can mix alignments: MT puts the
+   code at the top of some rows and at the bottom of others. A row of its own is kept only
+   when joining it would write a value twice (GA-B page 60 has a row with no code).
+5. **Wrap direction** breaks ties: "above" (Excel's default bottom alignment: GA, MT, NE) or
+   "below" (LA). It is detected from lower-case continuations, line spacing and page
+   starts/ends; the admin can force it on the page ("Wrapped lines"), which also turns the
+   per-gap weighing into a fixed rule.
+
+Results on the full files (2026-11-02): GA-A 1,686 rows, GA-B 4,488 (one without a code), LA
+2,526, MT 314, NE 8,146 ICD + 27 CPT/HCPCS rows; every column's values consistent (one tier
+and category per MT row, LA designations only 0/1/2 or blank where the source is blank).
+Reading LA's 73 pages takes under a second in Chromium.
 
 Column mapping (`packages/shared/src/ingest.ts`): `guessColumnRoles` reads the header (tested
 on the real GA, LA and MT headers), the admin confirms, and the profile is saved per state and

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { makePdf } from './fixtures/make-pdf'
 import { ParseError, parseDelimited, parseJson, parseSource } from './parse'
 
 const bytes = (s: string) => new TextEncoder().encode(s)
@@ -70,16 +71,16 @@ describe('parseJson', () => {
 
 describe('parseSource', () => {
   it('parses a CSV file, dropping a byte-order mark', async () => {
-    const [table] = await parseSource({
-      kind: 'file',
-      name: 'mt.csv',
-      bytes: bytes('﻿Code\nF20.0'),
-    })
+    const {
+      tables: [table],
+    } = await parseSource({ kind: 'file', name: 'mt.csv', bytes: bytes('﻿Code\nF20.0') })
     expect(table?.header).toEqual(['Code'])
   })
 
   it('parses pasted spreadsheet cells as tab-separated', async () => {
-    const [table] = await parseSource({ kind: 'paste', text: 'Code\tDescription\nF20.0\tS' })
+    const {
+      tables: [table],
+    } = await parseSource({ kind: 'paste', text: 'Code\tDescription\nF20.0\tS' })
     expect(table).toEqual({
       name: 'Pasted table',
       header: ['Code', 'Description'],
@@ -90,7 +91,7 @@ describe('parseSource', () => {
   it('reads every sheet of an Excel file, numbers kept as the text in the cell', async () => {
     // fixtures/sample.xlsx comes from fixtures/make-sample-xlsx.py.
     const xlsx = new Uint8Array(readFileSync(join(import.meta.dirname, 'fixtures/sample.xlsx')))
-    const tables = await parseSource({ kind: 'file', name: 'sample.xlsx', bytes: xlsx })
+    const { tables } = await parseSource({ kind: 'file', name: 'sample.xlsx', bytes: xlsx })
 
     expect(tables.map((t) => t.name)).toEqual(['LA', 'MT'])
     expect(tables[0]?.header).toEqual([
@@ -124,10 +125,33 @@ describe('parseSource', () => {
     ).rejects.toThrow('not a readable Excel workbook')
   })
 
-  it('says which file types are not supported yet', async () => {
+  it('reads a PDF table and says which way wrapped text was read', async () => {
+    const pdf = makePdf([
+      [
+        { text: 'Code', x: 40, y: 50, bold: true },
+        { text: 'Description', x: 120, y: 50, bold: true },
+        { text: 'F20.0', x: 40, y: 70 },
+        { text: 'Paranoid schizophrenia', x: 120, y: 70 },
+        { text: 'with a second line', x: 120, y: 82 },
+        { text: 'F20.1', x: 40, y: 104 },
+        { text: 'Disorganized schizophrenia', x: 120, y: 104 },
+      ],
+    ])
+    const auto = await parseSource({ kind: 'file', name: 'la.pdf', bytes: pdf })
+    expect(auto.pdfWrap).toBe('below')
+    expect(auto.tables[0]?.rows.map((r) => r.cells)).toEqual([
+      ['F20.0', 'Paranoid schizophrenia with a second line'],
+      ['F20.1', 'Disorganized schizophrenia'],
+    ])
+    const above = await parseSource({ kind: 'file', name: 'la.pdf', bytes: pdf, wrap: 'above' })
+    expect(above.pdfWrap).toBe('above')
+    expect(above.tables[0]?.rows[1]?.cells[1]).toBe('with a second line Disorganized schizophrenia')
+  })
+
+  it('refuses a PDF it cannot read, and file types it does not know', async () => {
     await expect(
       parseSource({ kind: 'file', name: 'a.pdf', bytes: bytes('%PDF-') }),
-    ).rejects.toThrow('PDF')
+    ).rejects.toThrow('a.pdf is not a readable PDF.')
     await expect(parseSource({ kind: 'file', name: 'a.docx', bytes: bytes('x') })).rejects.toThrow(
       ParseError,
     )

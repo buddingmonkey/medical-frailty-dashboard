@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test'
 // does not clash with `pnpm dev` on :8787. `pnpm e2e` builds first. SITE_MODE=public because no
 // Access sits in front of local wrangler; the API tests cover the gate.
 const PORT = 8788
+// Admin pages: a second Worker in development mode, whose localhost-only bypass signs in a
+// made-up admin, with its own local D1 (migrations applied first). Tests: e2e/*.admin.spec.ts.
+const ADMIN_PORT = 8789
+const ADMIN_STATE = '.wrangler/e2e-admin'
 const isCI = Boolean(process.env['CI'])
 
 export default defineConfig({
@@ -13,14 +17,36 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   reporter: isCI ? 'github' : 'line',
   use: {
-    baseURL: `http://localhost:${String(PORT)}`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: `pnpm --dir ../api exec wrangler dev --port ${String(PORT)} --var ENVIRONMENT:test --var SITE_MODE:public`,
-    url: `http://localhost:${String(PORT)}/api/public/health`,
-    reuseExistingServer: !isCI,
-    timeout: 60_000,
-  },
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /\.admin\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${String(PORT)}` },
+    },
+    {
+      name: 'admin',
+      testMatch: /\.admin\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${String(ADMIN_PORT)}` },
+    },
+  ],
+  webServer: [
+    {
+      command: `pnpm --dir ../api exec wrangler dev --port ${String(PORT)} --var ENVIRONMENT:test --var SITE_MODE:public`,
+      url: `http://localhost:${String(PORT)}/api/public/health`,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      command:
+        `pnpm --dir ../api exec wrangler d1 migrations apply DB --local --persist-to ${ADMIN_STATE}` +
+        ` && pnpm --dir ../api exec wrangler dev --port ${String(ADMIN_PORT)}` +
+        ` --persist-to ${ADMIN_STATE} --var ENVIRONMENT:development` +
+        ' --var DEV_ADMIN_EMAIL:e2e-admin@localhost --var SITE_MODE:public',
+      url: `http://localhost:${String(ADMIN_PORT)}/api/public/health`,
+      reuseExistingServer: !isCI,
+      timeout: 90_000,
+    },
+  ],
 })

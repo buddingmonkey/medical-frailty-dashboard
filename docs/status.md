@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-01_
+_Last updated: 2026-11-02_
 
 ## Where things stand
 
@@ -89,7 +89,14 @@ _Last updated: 2026-11-01_
   inferred); previews mapped rows; saves a column profile per state and header layout
   (migration `0004_column_profiles`). Qualification labels live in
   `packages/shared/src/qualification.ts`. Excel (.xlsx) through `read-excel-file`, each sheet a table (project lead's choice).
-- **Next step:** M2 step 5, the PDF adapter.
+- **M2 step 5 done** (branch `m2-step5-pdf`): `/admin/ingest` reads PDFs. pdf.js
+  (`pdfjs-dist` 6.4.299, legacy build) runs in a worker started from the parser worker;
+  `pdf-layout.ts` rebuilds rows (column edges from the data, header found above the first code,
+  per-gap row splits for wrapped text; see `docs/ingestion.md`, "PDF adapter"). The admin can
+  force the wrap direction ("Wrapped lines"). Reads all four seed states' full PDFs; fixtures
+  are text-run snapshots of 25 real pages. New `admin` e2e project (local Worker on :8789 with
+  the dev bypass). Open: GA-B page 60 has a row with no code (`docs/sources.md`).
+- **Next step:** M2 step 6, the review table.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

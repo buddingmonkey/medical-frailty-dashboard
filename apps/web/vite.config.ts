@@ -16,6 +16,8 @@ export default defineConfig({
     vue(),
     tailwindcss(),
   ],
+  // Module workers, so the parser worker can split code: pdf.js (1.7 MB) loads only for a PDF.
+  worker: { format: 'es' },
   // `pnpm --filter @mfcd/web dev` (hot reload on :5173) sends API calls to `pnpm dev` (:8787).
   server: { proxy: { '/api': 'http://localhost:8787' } },
 })

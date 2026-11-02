@@ -21,6 +21,8 @@ import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
+import type { ParseInput } from '../../ingest/parse'
+import type { WrapDirection } from '../../ingest/pdf-layout'
 import { runParser } from '../../ingest/run-parser'
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
@@ -44,13 +46,29 @@ const table = computed<RawTable | undefined>(() => tables.value[tableIndex.value
 const parseError = ref<string | null>(null)
 const parsing = ref(false)
 const pasteText = ref('')
+/** PDF only: how wrapped lines were read (null for other files). */
+const pdfWrap = ref<WrapDirection | null>(null)
+const wrapChoice = ref<WrapDirection | 'auto'>('auto')
+const wrapLabels: Record<WrapDirection, string> = {
+  above: 'above the code',
+  below: 'below the code',
+}
+let lastInput: ParseInput | null = null
 
-async function parse(input: Parameters<typeof runParser>[0]) {
+/** `again`: the same file read another way; keep the current tables (and the focused wrap
+ * select) on screen until the new ones arrive. */
+async function parse(input: ParseInput, again = false) {
+  lastInput = input
   parseError.value = null
   parsing.value = true
-  tables.value = []
+  if (!again) {
+    tables.value = []
+    pdfWrap.value = null
+  }
   try {
-    tables.value = await runParser(input)
+    const result = await runParser(input)
+    tables.value = result.tables
+    pdfWrap.value = result.pdfWrap ?? null
     tableIndex.value = 0
   } catch (error) {
     parseError.value = error instanceof Error ? error.message : 'Could not read this file.'
@@ -61,8 +79,14 @@ async function parse(input: Parameters<typeof runParser>[0]) {
 
 async function onFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (file)
-    await parse({ kind: 'file', name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })
+  if (!file) return
+  wrapChoice.value = 'auto'
+  await parse({ kind: 'file', name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })
+}
+
+// Read the same PDF again with the admin's choice.
+async function onWrapChange() {
+  if (lastInput?.kind === 'file') await parse({ ...lastInput, wrap: wrapChoice.value }, true)
 }
 
 // --- Column mapping ---------------------------------------------------------------------------
@@ -243,7 +267,8 @@ const inputClass =
           @change="onFile"
         />
         <p class="mt-1 text-sm text-muted-foreground">
-          Excel (.xlsx), CSV, JSON or tab-separated text. Each Excel sheet is its own table.
+          Excel (.xlsx), PDF, CSV, JSON or tab-separated text. Each Excel sheet, and each PDF table
+          with its own header, is its own table.
         </p>
       </div>
       <div>
@@ -270,8 +295,28 @@ const inputClass =
     <p v-if="parseError" role="alert" class="text-danger">{{ parseError }}</p>
 
     <template v-if="table && stateId">
+      <div v-if="pdfWrap" class="max-w-prose">
+        <label :for="`${id}-wrap`" class="font-medium">Wrapped lines</label>
+        <select
+          :id="`${id}-wrap`"
+          v-model="wrapChoice"
+          :class="inputClass"
+          class="max-w-xs"
+          :aria-describedby="`${id}-wrap-help`"
+          @change="onWrapChange"
+        >
+          <option value="auto">Detect (found: {{ wrapLabels[pdfWrap] }})</option>
+          <option value="above">Extra lines sit {{ wrapLabels.above }}</option>
+          <option value="below">Extra lines sit {{ wrapLabels.below }}</option>
+        </select>
+        <p :id="`${id}-wrap-help`" class="mt-1 text-sm text-muted-foreground">
+          A long cell in a PDF wraps onto extra lines. Check the mapped rows below: if a description
+          is joined to the wrong code, choose the other way.
+        </p>
+      </div>
+
       <div v-if="tables.length > 1" class="max-w-xs">
-        <label :for="`${id}-sheet`" class="font-medium">Sheet</label>
+        <label :for="`${id}-sheet`" class="font-medium">{{ pdfWrap ? 'Table' : 'Sheet' }}</label>
         <select :id="`${id}-sheet`" v-model="tableIndex" :class="inputClass">
           <option v-for="(t, i) in tables" :key="i" :value="i">{{ t.name }}</option>
         </select>
@@ -402,7 +447,8 @@ const inputClass =
           role="alert"
           class="rounded border-l-4 border-highlight bg-surface px-4 py-2 text-foreground"
         >
-          No qualification chosen for: {{ mapping.unmappedQualificationValues.join(', ') }}. Those
+          No qualification chosen for:
+          {{ mapping.unmappedQualificationValues.map((v) => v || '(blank)').join(', ') }}. Those
           rows will show “{{ qualificationLabels.unknown }}”.
         </p>
 
