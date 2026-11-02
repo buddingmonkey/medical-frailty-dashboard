@@ -8,6 +8,7 @@ import {
   federalCategorySchema,
   type Qualification,
   qualifications,
+  type StateStatus,
   stateStatusSchema,
   versionStatusSchema,
 } from './enums'
@@ -110,3 +111,37 @@ export type PublicStateDetail = z.infer<typeof publicStateDetailResponseSchema>
 export type SystemCounts = Record<CodeSystem, number>
 export type FederalCategoryCounts = Record<FederalCategory, number>
 export type QualificationCounts = Record<Qualification, number>
+
+// Wording and formatting shared by the Vue pages and the Worker's server-rendered HTML
+// (docs/seo.md: both must show the same facts).
+
+export const SITE_NAME = 'Medical Frailty Coding Dashboard'
+
+/** The site covers the 50 states and DC (project lead, 2026-11-01). */
+export const STATES_AND_DC = 51
+
+/** Status words for people, not the database: "published" means published on this site. */
+export const stateStatusLabels: Record<StateStatus, string> = {
+  published: 'List on this site',
+  announced: 'List announced, not on this site yet',
+  none: 'No list yet',
+}
+
+export const formatCount = (n: number): string => n.toLocaleString('en-US')
+
+/** `2026-09-15` → "September 15, 2026", read as a calendar date (no time zone shift). */
+export function formatDay(day: string): string {
+  return new Date(`${day.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+/** Page titles, the same in the browser tab and the server-rendered HTML. */
+export const pageTitles = {
+  home: `${SITE_NAME}: compare state Medicaid frailty code lists`,
+  state: (name: string) => `${name} medical frailty codes | ${SITE_NAME}`,
+  notFound: `State not found | ${SITE_NAME}`,
+}

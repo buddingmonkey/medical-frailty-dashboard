@@ -4,6 +4,9 @@ import {
   codeSystemLabels,
   type FederalCategory,
   federalCategoryInfo,
+  formatCount,
+  formatDay,
+  pageTitles,
   type Qualification,
   qualificationLabels,
 } from '@mfcd/shared'
@@ -12,7 +15,8 @@ import { RouterLink, useRoute } from 'vue-router'
 
 import MarkdownView from '../../components/MarkdownView.vue'
 import { ApiError } from '../../lib/api'
-import { formatCount, formatDay, formatTimestampDay, usePublicState } from '../../lib/public-states'
+import { usePageTitle } from '../../lib/page-title'
+import { usePublicState } from '../../lib/public-states'
 
 // One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
 // the federal ones, the source documents, version history and our notes.
@@ -24,6 +28,9 @@ const { data, error, isPending } = usePublicState(slug)
 const notFound = computed(() => error.value instanceof ApiError && error.value.status === 404)
 const state = computed(() => data.value?.state ?? null)
 const published = computed(() => state.value?.published ?? null)
+usePageTitle(() =>
+  notFound.value ? pageTitles.notFound : state.value ? pageTitles.state(state.value.name) : null,
+)
 
 function nonZero<K extends string>(counts: Record<K, number>, label: (key: K) => string) {
   return (Object.entries(counts) as [K, number][])
@@ -107,7 +114,7 @@ function categoryName(category: string, subcategory: string) {
             <dd class="text-lg font-semibold">
               Version {{ published.versionNo
               }}<template v-if="published.updatedAt"
-                >, updated {{ formatTimestampDay(published.updatedAt) }}</template
+                >, updated {{ formatDay(published.updatedAt) }}</template
               >
             </dd>
           </div>
@@ -206,8 +213,29 @@ function categoryName(category: string, subcategory: string) {
             <span class="text-muted-foreground">
               · {{ s.fileType.toUpperCase() }}
               <template v-if="s.publisherDate">· dated {{ formatDay(s.publisherDate) }}</template>
-              · retrieved {{ formatTimestampDay(s.retrievedAt) }}
+              · retrieved {{ formatDay(s.retrievedAt) }}
             </span>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="downloads-heading" class="space-y-4">
+        <h2 id="downloads-heading" class="font-display text-2xl font-medium text-heading">
+          Downloads
+        </h2>
+        <p class="max-w-prose">
+          Every entry, with its federal category and the source document it came from.
+        </p>
+        <ul class="list-disc space-y-1 pl-6">
+          <li>
+            <a :href="`/states/${state.slug}/codes.csv`" download class="text-link"
+              >{{ state.name }} codes (CSV)</a
+            >
+          </li>
+          <li>
+            <a :href="`/states/${state.slug}/codes.json`" download class="text-link"
+              >{{ state.name }} codes (JSON)</a
+            >
           </li>
         </ul>
       </section>
@@ -234,7 +262,7 @@ function categoryName(category: string, subcategory: string) {
                 <th scope="row" class="py-2 pr-4 font-normal">{{ v.versionNo }}</th>
                 <td class="py-2 pr-4">{{ v.status === 'published' ? 'Current' : 'Replaced' }}</td>
                 <td class="py-2 pr-4">
-                  {{ v.publishedAt ? formatTimestampDay(v.publishedAt) : '' }}
+                  {{ v.publishedAt ? formatDay(v.publishedAt) : '' }}
                 </td>
                 <td class="py-2 text-right tabular-nums">{{ formatCount(v.rowCount) }}</td>
               </tr>

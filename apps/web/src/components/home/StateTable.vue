@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { PublicStateSummary } from '@mfcd/shared'
+import { formatCount, formatDay, type PublicStateSummary, stateStatusLabels } from '@mfcd/shared'
 import { RouterLink } from 'vue-router'
-
-import { formatCount, formatDay, stateStatusLabels } from '../../lib/public-states'
 
 // The map's data as a table: for screen readers, small screens and anyone who prefers it.
 

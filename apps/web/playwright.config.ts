@@ -34,10 +34,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // Its own local D1 with every migration (the 50 states and DC, no lists), so the run never
+      // Its own local D1 with every migration and one small list (e2e/fixtures/public-seed.sql:
+      // Montana), so the run never
       // depends on what `pnpm dev` left in the default local database.
       command:
         `pnpm --dir ../api exec wrangler d1 migrations apply DB --local --persist-to ${PUBLIC_STATE}` +
+        ` && pnpm --dir ../api exec wrangler d1 execute DB --local --persist-to ${PUBLIC_STATE}` +
+        ' --file ../web/e2e/fixtures/public-seed.sql' +
         ` && pnpm --dir ../api exec wrangler dev --port ${String(PORT)} --persist-to ${PUBLIC_STATE}` +
         ' --var ENVIRONMENT:test --var SITE_MODE:public',
       url: `http://localhost:${String(PORT)}/api/public/health`,

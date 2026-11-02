@@ -8,5 +8,7 @@ export interface AppEnv {
     identity?: AccessIdentity
     /** Set by the public cache middleware: the `data_version` the response is built from. */
     dataVersion?: number
+    /** The built index.html, once a server-rendered page has fetched it. */
+    indexHtml?: string
   }
 }

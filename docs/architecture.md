@@ -178,6 +178,8 @@ Public (read only, `GET`, cacheable):
 | --- | --- |
 | `/api/public/states` | Every state and DC by name: status, and for a published list its version number, source date (the version's, else its newest source's), last update, entry counts by code system, federal category (`federalCategoryOf`) and qualification, and whether every category mapping is confirmed. `dataVersion` too. Feeds the home map (`publicStatesResponseSchema`) |
 | `/api/public/states/:slug` | One state (`ga` or `GA`): the same summary, `notesMd`, the published version's sources (non-http URLs shown as unknown), published and replaced versions (never drafts), and its categories with federal category, entries and whether the mapping is confirmed (`publicStateDetailResponseSchema`). 404 for anything else. Counting is shared with the list (`apps/api/src/db/public-summary.ts`) |
+| `/states/:slug/codes.csv`, `/states/:slug/codes.json` | Downloads of a published list (not under `/api/`, so crawlers may fetch them): every entry with its federal category and source citation. 404 when the state has no list |
+| `/`, `/states/:slug`, `/sitemap.xml` | Server-rendered HTML pages and the sitemap (`apps/api/src/routes/pages.ts`, `docs/seo.md`) |
 | `/api/public/categories` | The federal categories and how each state maps to them |
 | `/api/public/compare?category=&states=GA,LA&system=` | Codes in that category for each selected state, aligned by code |
 | `/api/public/codes/search?q=&states=&system=` | FTS search over code numbers and descriptions |
@@ -222,9 +224,12 @@ low enough to stay inside the free tier. **While `SITE_MODE` is private, skip th
 and send `Cache-Control: private`**, so a response that needed a login is never stored where
 someone without one could read it.
 
-The middleware is `apps/api/src/middleware/public-cache.ts` (`publicCache`): it reads
-`data_version` (one row), and in public mode looks up the URL plus `__dv=<version>` in
-`caches.default`; only 200 responses are stored. Non-GET and private-mode responses get
+The middleware is `apps/api/src/middleware/public-cache.ts` (`publicCache`, or `cachePublic()`
+with options): it reads `data_version` (one row), and in public mode looks up the URL plus
+`__dv=<data_version>` and `__wv=<Worker version id>` (`CF_VERSION_METADATA`, so a deploy starts
+with an empty cache) in `caches.default`; only 200 responses are stored. Server-rendered pages
+add a hash of the built `index.html` to the key and tell browsers to revalidate
+(`max-age=0, must-revalidate`) while the edge keeps its copy 5 minutes. Non-GET and private-mode responses get
 `Cache-Control: private, no-store`. The Cache API is a no-op on `*.workers.dev` hosts, so the
 shared cache starts working only on a custom domain (M7); until then each request reads D1
 (about 68 ms locally for the four seed states, 17k entries).
