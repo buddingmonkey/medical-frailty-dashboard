@@ -103,8 +103,16 @@ _Last updated: 2026-11-02_
   the rows shown. Every exact ICD-10-CM/HCPCS code is looked up in `ref_codes`
   (`POST /api/admin/ref-codes/lookup`): settles NE's "ICD-10-CM or HCPCS?" and shows codes CMS
   does not list. Also fixed `pnpm db:ref:local`, which refused every local load since M1 step 6.
-  GA "Yes/No" (excluded rows) still has no column role; it comes with the draft rows (step 7).
-- **Next step:** M2 step 7, draft versions (chunked rows, checks report, diff).
+- **M2 step 7 done** (branch `m2-step7-drafts`): reviewed rows go to a draft version
+  ("Send to a draft" on `/admin/ingest`; `/admin/drafts` and `/admin/drafts/:id` with the parts,
+  checks by level, diff per code system, change list, CSV download, discard). Drafts API
+  (`/api/admin/drafts*`) re-parses every entry on the server, stores rows per **part** (table
+  or sheet; migration `0005_draft_parts`: table `draft_parts`, column `entries.source_part`),
+  runs the checks against D1 and stores the report with a token for step 8. New block check:
+  incomplete upload. Column roles `Included (Yes/No)` and `Notes / rationale` (GA). The PDF
+  adapter keeps its title text for the state-name check. Real files: NE (both tables, 8,183
+  entries) sends in ~1.4 s and checks in ~0.2 s locally.
+- **Next step:** M2 step 8, publish and rollback.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

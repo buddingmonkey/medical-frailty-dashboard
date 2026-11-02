@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import {
   acceptableFlags,
-  buildReview,
   type CodeSystem,
   codeSystemLabels,
   codeSystems,
   formatCode,
   type MappedRow,
   type Qualification,
-  type ReferenceIndex,
   qualificationLabels,
   qualificationOptions,
   type ReviewEdits,
   type ReviewFlag,
+  type ReviewResult,
   reviewFlagLabels,
   reviewNoteLabels,
   type ReviewRow,
@@ -22,11 +21,9 @@ import { computed, reactive, ref, useId, watch } from 'vue'
 
 // Review of mapped rows (docs/ingestion.md, step 5): flags, inline edits, drops. The edits are
 // a v-model so the page can send the reviewed rows to a draft (step 7).
-const props = defineProps<{
-  rows: MappedRow[]
-  /** CMS code lists for the codes looked up so far; the page fetches them. */
-  reference?: ReferenceIndex
-}>()
+// The page builds the review (buildReview) from the rows, these edits and the CMS lookups, so
+// the same result feeds this table, the lookups and the draft upload.
+const props = defineProps<{ review: ReviewResult }>()
 const edits = defineModel<ReviewEdits>('edits', { required: true })
 /** The source writes ICD-10-CM codes without dots (NE). */
 const undottedIcd = defineModel<boolean>('undottedIcd', { required: true })
@@ -34,12 +31,7 @@ const undottedIcd = defineModel<boolean>('undottedIcd', { required: true })
 const id = useId()
 const PAGE_SIZE = 50
 
-const review = computed(() =>
-  buildReview(props.rows, edits.value, {
-    undottedIcd: undottedIcd.value,
-    ...(props.reference ? { reference: props.reference } : {}),
-  }),
-)
+const review = computed(() => props.review)
 
 // --- Filters ----------------------------------------------------------------------------------
 type Show =

@@ -38,6 +38,8 @@ export interface CheckInput {
     entries: CheckEntry[]
     /** Rows that failed the schema or had no readable code; not in `entries`. */
     invalidRowCount: number
+    /** Titles of sources with fewer entries stored than the browser said it would send. */
+    incompleteSources: string[]
     sourceSha256s: string[]
     /** States the source files name (in a header or title), as 2-letter codes. */
     namedStateIds: string[]
@@ -52,6 +54,7 @@ export type CheckLevel = 'block' | 'confirm' | 'confirm_typed' | 'info'
 export type CheckId =
   | 'empty'
   | 'invalid_rows'
+  | 'incomplete_upload'
   | 'state_mismatch'
   | 'large_change'
   | 'code_system_missing'
@@ -235,6 +238,14 @@ export function runChecks(input: CheckInput): CheckReport {
     invalidShare > CHECK_LIMITS.invalidRowShare,
     `${n(draft.invalidRowCount)} of ${n(totalRows)} rows (${pct(invalidShare)}) failed validation or have no readable code. Fix or drop them first (limit ${pct(CHECK_LIMITS.invalidRowShare)}).`,
     draft.invalidRowCount,
+  )
+
+  add(
+    'incomplete_upload',
+    'block',
+    draft.incompleteSources.length > 0,
+    `Not every row arrived for: ${draft.incompleteSources.join('; ') || 'none'}. Send those rows again.`,
+    draft.incompleteSources.length,
   )
 
   const otherStates = [...new Set(draft.namedStateIds.filter((s) => s !== stateId))]

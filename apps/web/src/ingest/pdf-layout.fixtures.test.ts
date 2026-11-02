@@ -143,8 +143,13 @@ describe('Louisiana (printed to PDF, wrapped text below the code)', () => {
 })
 
 describe('Montana (title, mixed alignment)', () => {
-  const { tables } = read(mt)
+  const { tables, titleText } = read(mt)
   const table = tables[0]
+
+  it('keeps the title text for the state-name check', () => {
+    expect(titleText).toContain('Medically Frail')
+    expect(titleText).not.toContain('Condition Name')
+  })
 
   it('skips the title lines and reads one tier and category per row', () => {
     expect(table?.header).toEqual(['Category', 'Category', 'Condition Name', 'Code', 'Code Name'])
@@ -177,7 +182,11 @@ describe('Montana (title, mixed alignment)', () => {
 })
 
 describe('Nebraska (contents page, chapters, CPT table)', () => {
-  const { tables } = read(ne)
+  const { tables, titleText } = read(ne)
+
+  it('keeps the contents page text for the state-name check', () => {
+    expect(titleText).toMatch(/Nebraska/i)
+  })
 
   it('skips the contents page and the page numbers, and starts a table per header', () => {
     expect(tables.map((t) => [t.name, t.header])).toEqual([

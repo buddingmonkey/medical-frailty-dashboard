@@ -1,4 +1,4 @@
-import type { MappedRow, ReferenceIndex, ReviewEdits } from '@mfcd/shared'
+import { buildReview, type MappedRow, type ReferenceIndex, type ReviewEdits } from '@mfcd/shared'
 import { render, screen, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
@@ -16,6 +16,9 @@ const row = (locator: string, rawCode: string, extra: Partial<MappedRow> = {}): 
   tier: '',
   qualification: 'standalone',
   qualificationBasis: 'published',
+  qualificationValue: '',
+  included: true,
+  notes: '',
   ...extra,
 })
 
@@ -31,8 +34,10 @@ function setup(
   const Harness = defineComponent(
     () => () =>
       h(ReviewTable, {
-        rows,
-        ...(reference ? { reference } : {}),
+        review: buildReview(rows, edits.value, {
+          undottedIcd: undottedIcd.value,
+          ...(reference ? { reference } : {}),
+        }),
         edits: edits.value,
         'onUpdate:edits': (v: ReviewEdits) => {
           edits.value = v

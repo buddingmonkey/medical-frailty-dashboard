@@ -16,7 +16,7 @@ const MT = ['Category (tier)', 'Category', 'Condition Name', 'Code', 'Code Name'
 
 describe('guessColumnRoles', () => {
   it('reads the Georgia headers', () => {
-    expect(guessColumnRoles(GA)).toEqual(['code', 'codeSystem', 'description', 'ignore', 'ignore'])
+    expect(guessColumnRoles(GA)).toEqual(['code', 'codeSystem', 'description', 'included', 'notes'])
   })
 
   it('reads the Louisiana headers, code last', () => {
@@ -130,6 +130,9 @@ describe('applyMapping', () => {
       tier: '',
       qualification: 'standalone',
       qualificationBasis: 'inferred',
+      qualificationValue: '0',
+      included: true,
+      notes: '',
     })
     expect(rows[1]).toMatchObject({ rawCode: 'F32.9', qualification: 'supporting_only' })
   })
@@ -141,6 +144,30 @@ describe('applyMapping', () => {
     expect(result.blankRows).toBe(1)
     expect(result.noCodeRows).toEqual(['row 6', 'row 7'])
     expect(result.unmappedQualificationValues).toEqual(['7'])
+  })
+
+  it('reads Georgia’s Yes/No column as included, and keeps the rationale', () => {
+    const ga: RawTable = {
+      name: 'Attachment A',
+      header: GA,
+      rows: [
+        { locator: 'row 2', cells: ['F20.0', 'ICD-10', 'Schizophrenia', 'Yes', 'SMI'] },
+        { locator: 'row 3', cells: ['F32.9', 'ICD-10', 'Depression', ' no ', 'Not severe'] },
+        { locator: 'row 4', cells: ['F31.0', 'ICD-10', 'Bipolar', '', ''] },
+      ],
+    }
+    const { rows } = applyMapping(
+      ga,
+      columnProfileSchema.parse({
+        roles: guessColumnRoles(GA),
+        qualification: { mode: 'fixed', value: 'standalone', basis: 'published' },
+      }),
+    )
+    expect(rows.map((r) => [r.included, r.notes, r.qualificationValue])).toEqual([
+      [true, 'SMI', ''],
+      [false, 'Not severe', ''],
+      [true, '', ''],
+    ])
   })
 
   it('uses the default category when the file has none', () => {

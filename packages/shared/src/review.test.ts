@@ -20,6 +20,9 @@ const row = (rawCode: string, extra: Partial<MappedRow> = {}): MappedRow => ({
   tier: '',
   qualification: 'standalone',
   qualificationBasis: 'published',
+  qualificationValue: '',
+  included: true,
+  notes: '',
   ...extra,
 })
 

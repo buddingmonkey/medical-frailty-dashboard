@@ -137,6 +137,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 | [Work Requirements page](https://dhhs.ne.gov/Pages/WorkRequirements.aspx) | | Landing page linking both |
 
 - ICD codes have **no dots** (`A0103`) except wildcards (`A15.x`).
+- **As a draft** (2026-11-02): both tables of the PDF go to one draft as two parts: 8,146
+  ICD-10-CM entries (pages 2–294) and 37 from page 295 (28 CPT, 8 HCPCS, 1 ICD). The contents
+  page names Nebraska, so the state-name check sees it. Checks: 102 rows with open flags
+  (confirm), 1 duplicate.
 - PDF layout (2026-11-02): page 1 is a contents page; each page has a chapter title, the header
   and a "Page n of 295" footer. 8,146 ICD rows (pages 2–294) and 27 CPT/HCPCS rows (page 295).
   `E09.349,` has a stray trailing comma in the source.
