@@ -37,7 +37,7 @@ playbook's task table now points at it. Where the skill file lives is the projec
   measured. Hosting: $0 beyond the one-month Workers Paid plan. Claude API: $0 (no key).
 
 ## Questions for the project lead
-1. Preview half of step 11 (your Access login): steps in `docs/status.md`, open question 0.
+1. ~~Preview half of step 11~~ done 2026-11-02 in your signed-in browser (step 11 devlog).
 2. Where the "add a state source" skill file should live.
 3. The run's assumptions (`docs/status.md`): bare 3-character codes as whole categories;
    qualification per state (GA A alone, GA B needs another code, MT Tier 2 and NE "state doesn't

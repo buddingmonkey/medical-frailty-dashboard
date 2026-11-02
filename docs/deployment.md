@@ -93,10 +93,12 @@ per day if bulk-seeding many.
 day's free write quota, which preview and production share. The loader works in chunks and
 resumes, so the first load takes about **two days per database** at $0; later updates load
 only changed codes (`packages/reference-data/README.md`). Entries carry three indexes plus the
-FTS index, so a state version may cost about 5 writes per entry (estimate; local D1 does not
-report `rows_written`, so measure it on preview in M2 step 11): GA's ~6,000 rows ≈ 30k writes,
-NE's 8,183 entries ≈ 40k. After the downgrade to Free (2026-11-30), load at most two large
-states per day.
+FTS index. **Measured on preview (2026-11-02, `wrangler d1 insights`): 4.3 rows written per
+entry** (109,486 rows written for 25,338 entries). GA's 6,173 entries ≈ 27k writes, NE's 8,183 ≈
+35k, all four seed states ≈ 74k. On Free (from 2026-11-30, 100k writes a day shared by preview
+and production) that is one full load a day; a re-load of a large state the same day can hit
+the limit, and queries then fail until 00:00 UTC. Discarded drafts keep their rows (storage, not
+writes).
 
 Watch for: a publish that writes > 100k rows in one day (free tier), and search traffic that
 misses the cache. Turn on a Cloudflare usage notification. If either becomes a problem, switch

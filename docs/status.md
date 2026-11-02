@@ -131,13 +131,17 @@ _Last updated: 2026-11-02_
   hour). **Off until the project lead sets `ANTHROPIC_API_KEY`** (cost estimate in
   `docs/deployment.md`: about $5–6 for Nebraska's whole file on Opus 5.5). The real API call is
   untested; tests use a fake.
+- **M2 step 11 done on preview too** (2026-11-02, driven in the project lead's signed-in
+  browser): the same four states published on preview with identical counts; the wrong file
+  (NE's PDF as MT) asked for "MT" twice, the button stayed disabled with "NE" typed, and the API
+  itself answered 400 (`missing: state_mismatch, large_change`); discarded, MT still v1. Writes
+  per entry measured: 4.3 (`docs/deployment.md`).
 - **M2 step 11, local half done** (branch `m2-step11-seed-run`, 2026-11-02): all four seed
   states loaded, reviewed, sent, checked and published through the UI on `pnpm dev` with the
   real reference codes, in 38 s of browser time: GA 6,046 codes (A and B in one draft, tier per
   file; new "Tier for every row" field), LA 2,423 (85 drug classes), MT 309, NE 8,182 (two
   tables). Re-loading Montana with Nebraska's PDF asked for the state code typed twice (file
-  names NE; 44% of codes gone) and could not be published with "NE" typed. **Preview half
-  waits for the project lead** (Access login; see "Open questions").
+  names NE; 44% of codes gone) and could not be published with "NE" typed. Preview: see above.
 - **Assumptions in that run, for the project lead:** bare 3-character codes read as whole
   categories; GA A = qualifies alone, GA B = needs another code (both "the state says so"); MT
   Tier 1 = qualifies alone, Tier 2 = state doesn't say; NE = state doesn't say; LA designation
@@ -147,7 +151,7 @@ _Last updated: 2026-11-02_
   `docs/add-state-source.md`, the step-by-step guide written from the step 11 run (also linked
   from `CLAUDE.md` and the playbook's task table). The project lead decides where the skill
   wrapper goes (`.claude/skills/` is untracked); it only needs to point at that doc.
-- **M2 is complete apart from the preview half of step 11.** Hard stop for the project lead's
+- **M2 is complete.** Hard stop for the project lead's
   review (PRs #20–#33). See the M2 devlog entry for the summary and the questions.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
@@ -195,11 +199,6 @@ _Last updated: 2026-11-02_
 
 ## Open questions
 
-0. **M2 step 11 on preview** (needs the project lead's Access login): on the preview site, store
-   and load the four seed PDFs as in the step 11 devlog, then re-load Montana with Nebraska's
-   file and check that publish stays disabled. Then look up `rows_written` for the day in the
-   Cloudflare dashboard (D1 → frailty-preview → Metrics) and put the writes per entry in
-   `docs/deployment.md`. Do it before the downgrade to Free (2026-11-30).
 
 1. **Dates to watch** live in the app at `/admin/watch` (next: 2026-11-30, the Workers Paid
    downgrade; ~2026-12-28, the *Massachusetts v. Oz* appeal deadline).
