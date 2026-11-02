@@ -17,6 +17,7 @@
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@mfcd/shared": "workspace:*",
     "@tanstack/vue-query": "5.105.0",
+    "read-excel-file": "9.3.14",
     "vue": "3.5.44",
     "vue-router": "5.4.0",
     "zod": "4.6.7"

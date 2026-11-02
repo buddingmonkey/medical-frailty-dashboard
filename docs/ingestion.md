@@ -86,7 +86,7 @@ Each adapter: `(file: File) => Promise<RawTable[]>` (one table per PDF page grou
 
 | Adapter | Library | Notes |
 | --- | --- | --- |
-| `xlsx` | SheetJS CE, installed from the official `cdn.sheetjs.com` tarball at a pinned version (0.20.3 is the newest, 2024-07-18) | **Not** the npm `xlsx@0.18.5` package, which is unmaintained and has known CVEs. **Not installed yet:** waiting on the project lead (status.md, open questions). Until then: paste the cells, or save as CSV |
+| `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. Old `.xls` is not supported |
 | `csv` | native (`apps/web/src/ingest/parse.ts`) | RFC 4180 quoting, one linear pass, no regexes. `.txt` is read as tab-separated |
 | `pdf` | `pdfjs-dist` (pinned, current) with `isEvalSupported: false` | Rebuilds rows from text positions: cluster by y, split columns by the x-positions of the header cells. Handles the wrapped descriptions in the GA/LA/MT PDFs (a line with no code is a continuation of the row above) |
 | `json` | native | Accepts an array of objects with any keys; column mapping step decides which key is what |

@@ -242,7 +242,9 @@ const inputClass =
           class="mt-1 block"
           @change="onFile"
         />
-        <p class="mt-1 text-sm text-muted-foreground">CSV, JSON or tab-separated text.</p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          Excel (.xlsx), CSV, JSON or tab-separated text. Each Excel sheet is its own table.
+        </p>
       </div>
       <div>
         <label :for="`${id}-paste`" class="font-medium">Paste a table</label>

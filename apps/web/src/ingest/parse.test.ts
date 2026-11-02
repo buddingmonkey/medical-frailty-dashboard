@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { ParseError, parseDelimited, parseJson, parseSource } from './parse'
@@ -82,6 +85,43 @@ describe('parseSource', () => {
       header: ['Code', 'Description'],
       rows: [{ cells: ['F20.0', 'S'], locator: 'row 2' }],
     })
+  })
+
+  it('reads every sheet of an Excel file, numbers kept as the text in the cell', async () => {
+    // fixtures/sample.xlsx comes from fixtures/make-sample-xlsx.py.
+    const xlsx = new Uint8Array(readFileSync(join(import.meta.dirname, 'fixtures/sample.xlsx')))
+    const tables = await parseSource({ kind: 'file', name: 'sample.xlsx', bytes: xlsx })
+
+    expect(tables.map((t) => t.name)).toEqual(['LA', 'MT'])
+    expect(tables[0]?.header).toEqual([
+      'Category',
+      'Sub-Category',
+      'Group',
+      'Code Designation',
+      'Description',
+      'Code',
+    ])
+    expect(tables[0]?.rows[0]).toEqual({
+      cells: ['Mental Health', 'SMI', 'G1', '0', 'Schizophrenia', 'F20.0'],
+      locator: 'LA row 2',
+    })
+    expect(tables[0]?.rows.at(-1)).toEqual({
+      cells: ['Mental Health', 'SMI', 'G1', '2', 'Depression, unspecified', 'F32.9'],
+      locator: 'LA row 4',
+    })
+    expect(tables[1]?.rows[0]?.cells).toEqual([
+      'Tier 1',
+      'Physical',
+      'MS',
+      'G35',
+      'Multiple sclerosis',
+    ])
+  })
+
+  it('refuses a file named .xlsx that is not a workbook', async () => {
+    await expect(
+      parseSource({ kind: 'file', name: 'a.xlsx', bytes: bytes('not a zip') }),
+    ).rejects.toThrow('not a readable Excel workbook')
   })
 
   it('says which file types are not supported yet', async () => {

@@ -88,7 +88,7 @@ _Last updated: 2026-11-01_
   sets the qualification rule (one value, or per qualification/tier value; published or
   inferred); previews mapped rows; saves a column profile per state and header layout
   (migration `0004_column_profiles`). Qualification labels live in
-  `packages/shared/src/qualification.ts`. **Excel (.xlsx): project lead chose a smaller npm library (next PR).**
+  `packages/shared/src/qualification.ts`. Excel (.xlsx) through `read-excel-file`, each sheet a table (project lead's choice).
 - **Next step:** M2 step 5, the PDF adapter.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
@@ -100,7 +100,7 @@ _Last updated: 2026-11-01_
 | Topic | Decision |
 | --- | --- |
 | Hosting | Cloudflare: one Worker serves the Vue build (static assets) and the API; D1 for data; R2 for source files and backups |
-| Parsing | In the admin's browser (pdf.js, SheetJS). The server receives validated JSON rows only |
+| Parsing | In the admin's browser (pdf.js, read-excel-file). The server receives validated JSON rows only |
 | AI cleanup | Both: a copy-paste prompt (free, always available) and an optional Claude API button that appears only when an API key secret is set |
 | Admin auth | Cloudflare Access with Google login, plus JWT verification in the Worker |
 | Pre-launch | The **whole site** is behind Access until the user marks it live. After launch, only `/admin*` and `/api/admin*` stay protected |
@@ -130,6 +130,7 @@ _Last updated: 2026-11-01_
 | Code page URLs | Computed from code system + code, e.g. `/codes/icd-10-cm/F20.0`; no slug column (user, 2026-11-01) |
 | Workers Paid for one month | $5 once (user, 2026-11-01), so the 107k reference rows load in one go instead of two days per database. **Downgrade to Free by 2026-11-30** (watch date). Nothing in the code depends on the paid plan |
 | States only | The site covers the 50 states and DC; no territories (project lead, 2026-11-01) |
+| Excel reader | `read-excel-file` from npm, not SheetJS from its CDN (project lead, 2026-11-01) |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
@@ -147,13 +148,6 @@ _Last updated: 2026-11-01_
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
 4. **Georgia source:** URL and publish date of Attachments A and B.
-5. **SheetJS for .xlsx (blocking the Excel adapter):** SheetJS CE is not on the npm registry;
-   the maintained build is a tarball from `cdn.sheetjs.com` (`docs/ingestion.md`). Claude
-   Code's auto mode refused to install a package from a URL outside the registry, so it needs
-   the project lead's OK (run `pnpm --filter @mfcd/web add
-   https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`, or allow it). Alternatives: no Excel
-   support (admins paste cells or save as CSV; none of the four seed states publishes .xlsx),
-   or a smaller registry library that reads xlsx only.
 
 ## Watch dates
 
