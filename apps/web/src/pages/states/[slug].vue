@@ -1,0 +1,252 @@
+<script setup lang="ts">
+import {
+  type CodeSystem,
+  codeSystemLabels,
+  type FederalCategory,
+  federalCategoryInfo,
+  type Qualification,
+  qualificationLabels,
+} from '@mfcd/shared'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+
+import MarkdownView from '../../components/MarkdownView.vue'
+import { ApiError } from '../../lib/api'
+import { formatCount, formatDay, formatTimestampDay, usePublicState } from '../../lib/public-states'
+
+// One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
+// the federal ones, the source documents, version history and our notes.
+
+const route = useRoute('/states/[slug]')
+const slug = computed(() => route.params.slug.toLowerCase())
+const { data, error, isPending } = usePublicState(slug)
+
+const notFound = computed(() => error.value instanceof ApiError && error.value.status === 404)
+const state = computed(() => data.value?.state ?? null)
+const published = computed(() => state.value?.published ?? null)
+
+function nonZero<K extends string>(counts: Record<K, number>, label: (key: K) => string) {
+  return (Object.entries(counts) as [K, number][])
+    .filter(([, n]) => n > 0)
+    .map(([key, n]) => ({ key, label: label(key), n }))
+}
+
+const countTables = computed(() => {
+  const p = published.value
+  if (!p) return []
+  return [
+    {
+      caption: 'Entries by code system',
+      heading: 'Code system',
+      rows: nonZero(p.bySystem, (k: CodeSystem) => codeSystemLabels[k]),
+    },
+    {
+      caption: 'Entries by federal category',
+      heading: 'Federal category',
+      rows: nonZero(p.byFederalCategory, (k: FederalCategory) => federalCategoryInfo[k].label),
+    },
+    {
+      caption: 'Entries by whether a code qualifies alone',
+      heading: 'Qualification',
+      rows: nonZero(p.byQualification, (k: Qualification) => qualificationLabels[k]),
+    },
+  ]
+})
+
+function categoryName(category: string, subcategory: string) {
+  if (category === '' && subcategory === '') return '(no category)'
+  return subcategory === '' ? category : `${category} › ${subcategory}`
+}
+</script>
+
+<template>
+  <p v-if="isPending" class="text-muted-foreground">Loading…</p>
+
+  <section v-else-if="notFound" class="max-w-prose space-y-4">
+    <h1 class="font-display text-3xl font-medium text-heading">State not found</h1>
+    <p>There is no state at this address. <RouterLink to="/">See all states</RouterLink></p>
+  </section>
+
+  <p v-else-if="error" role="alert" class="text-danger">
+    This state could not be loaded. Please try again later.
+  </p>
+
+  <article v-else-if="data && state" class="space-y-10">
+    <header class="space-y-2">
+      <p class="text-sm"><RouterLink to="/" class="text-link">All states</RouterLink></p>
+      <h1 class="font-display text-4xl font-medium text-heading">{{ state.name }}</h1>
+    </header>
+
+    <section v-if="!published" class="max-w-prose">
+      <p v-if="state.status === 'announced'" class="text-lg">
+        {{ state.name }} has announced a list of medical frailty codes. It is not on this site yet.
+      </p>
+      <p v-else class="text-lg">
+        {{ state.name }} has not published a list of medical frailty codes that we know of.
+      </p>
+    </section>
+
+    <template v-else>
+      <section aria-labelledby="summary-heading" class="space-y-3">
+        <h2 id="summary-heading" class="sr-only">Summary</h2>
+        <dl class="grid gap-4 sm:grid-cols-3">
+          <div class="rounded-lg border border-border bg-surface p-4">
+            <dt class="text-sm text-muted-foreground">Entries on the list</dt>
+            <dd class="text-2xl font-semibold tabular-nums">
+              {{ formatCount(published.totalEntries) }}
+            </dd>
+          </div>
+          <div class="rounded-lg border border-border bg-surface p-4">
+            <dt class="text-sm text-muted-foreground">State list dated</dt>
+            <dd class="text-lg font-semibold">
+              {{ published.sourceDate ? formatDay(published.sourceDate) : 'Not stated' }}
+            </dd>
+          </div>
+          <div class="rounded-lg border border-border bg-surface p-4">
+            <dt class="text-sm text-muted-foreground">On this site</dt>
+            <dd class="text-lg font-semibold">
+              Version {{ published.versionNo
+              }}<template v-if="published.updatedAt"
+                >, updated {{ formatTimestampDay(published.updatedAt) }}</template
+              >
+            </dd>
+          </div>
+        </dl>
+        <p class="max-w-prose text-sm text-muted-foreground">
+          An entry is one line of the state’s list: a single code, or a group of codes written with
+          a wildcard or a range.
+        </p>
+      </section>
+
+      <section aria-labelledby="counts-heading" class="space-y-4">
+        <h2 id="counts-heading" class="font-display text-2xl font-medium text-heading">
+          What the list contains
+        </h2>
+        <div class="grid gap-6 md:grid-cols-3">
+          <table
+            v-for="t in countTables"
+            :key="t.caption"
+            class="w-full self-start text-left text-sm"
+          >
+            <caption class="pb-2 text-left font-semibold text-heading">
+              {{
+                t.caption
+              }}
+            </caption>
+            <thead class="sr-only">
+              <tr>
+                <th scope="col">{{ t.heading }}</th>
+                <th scope="col">Entries</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in t.rows" :key="row.key" class="border-b border-border">
+                <th scope="row" class="py-1.5 pr-4 font-normal">{{ row.label }}</th>
+                <td class="py-1.5 text-right tabular-nums">{{ formatCount(row.n) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="categories-heading" class="space-y-4">
+        <h2 id="categories-heading" class="font-display text-2xl font-medium text-heading">
+          Categories
+        </h2>
+        <p class="max-w-prose">
+          How each of {{ state.name }}’s own categories fits the federal categories in the law. A
+          mapping that is not yet confirmed is our best guess from the category’s name.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">
+              {{
+                state.name
+              }}’s categories
+            </caption>
+            <thead class="border-b-2 border-border">
+              <tr>
+                <th scope="col" class="py-2 pr-4">State category</th>
+                <th scope="col" class="py-2 pr-4">Federal category</th>
+                <th scope="col" class="py-2 pr-4 text-right">Entries</th>
+                <th scope="col" class="py-2">Mapping</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="c in data.categories"
+                :key="`${c.stateCategory}\u0000${c.stateSubcategory}\u0000${c.federalCategory}`"
+                class="border-b border-border"
+              >
+                <th scope="row" class="py-2 pr-4 font-normal">
+                  {{ categoryName(c.stateCategory, c.stateSubcategory) }}
+                </th>
+                <td class="py-2 pr-4">{{ federalCategoryInfo[c.federalCategory].label }}</td>
+                <td class="py-2 pr-4 text-right tabular-nums">{{ formatCount(c.entries) }}</td>
+                <td class="py-2">{{ c.confirmed ? 'Confirmed' : 'Not yet confirmed' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="sources-heading" class="space-y-4">
+        <h2 id="sources-heading" class="font-display text-2xl font-medium text-heading">Sources</h2>
+        <ul class="list-disc space-y-1 pl-6">
+          <li v-for="s in data.sources" :key="s.title">
+            <a
+              v-if="s.url"
+              :href="s.url"
+              rel="noopener noreferrer external"
+              target="_blank"
+              class="text-link"
+              >{{ s.title }}</a
+            >
+            <span v-else>{{ s.title }} (link not known)</span>
+            <span class="text-muted-foreground">
+              · {{ s.fileType.toUpperCase() }}
+              <template v-if="s.publisherDate">· dated {{ formatDay(s.publisherDate) }}</template>
+              · retrieved {{ formatTimestampDay(s.retrievedAt) }}
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="versions-heading" class="space-y-4">
+        <h2 id="versions-heading" class="font-display text-2xl font-medium text-heading">
+          Version history
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">
+              Version history
+            </caption>
+            <thead class="border-b-2 border-border">
+              <tr>
+                <th scope="col" class="py-2 pr-4">Version</th>
+                <th scope="col" class="py-2 pr-4">Status</th>
+                <th scope="col" class="py-2 pr-4">Published here</th>
+                <th scope="col" class="py-2 text-right">Entries</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="v in data.versions" :key="v.versionNo" class="border-b border-border">
+                <th scope="row" class="py-2 pr-4 font-normal">{{ v.versionNo }}</th>
+                <td class="py-2 pr-4">{{ v.status === 'published' ? 'Current' : 'Replaced' }}</td>
+                <td class="py-2 pr-4">
+                  {{ v.publishedAt ? formatTimestampDay(v.publishedAt) : '' }}
+                </td>
+                <td class="py-2 text-right tabular-nums">{{ formatCount(v.rowCount) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+
+    <section v-if="data.notesMd" aria-labelledby="notes-heading" class="space-y-4">
+      <h2 id="notes-heading" class="font-display text-2xl font-medium text-heading">Notes</h2>
+      <MarkdownView :source="data.notesMd" :shift="2" />
+    </section>
+  </article>
+</template>

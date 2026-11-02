@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M3 step 2)_
+_Last updated: 2026-11-02 (M3 step 3)_
 
 ## Where things stand
 
@@ -161,6 +161,9 @@ _Last updated: 2026-11-02 (M3 step 2)_
 - **M3 step 2 done** (branch `m3-step2-state-map`): the home page map (`StateMap`, shapes
   precomputed from us-atlas at build time into `@mfcd/shared/us-map`), the state card on hover
   or focus, and a Map/Table switch (table first on small screens). Announced states are hatched.
+- **M3 step 3 done** (branch `m3-step3-state-page`): `/states/:slug` (summary, counts, the
+  state's categories and their federal mapping, sources, version history, notes) and
+  `GET /api/public/states/:slug`. Counting shared in `apps/api/src/db/public-summary.ts`.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

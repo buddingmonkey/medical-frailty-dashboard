@@ -177,7 +177,7 @@ Public (read only, `GET`, cacheable):
 | Route | Returns |
 | --- | --- |
 | `/api/public/states` | Every state and DC by name: status, and for a published list its version number, source date (the version's, else its newest source's), last update, entry counts by code system, federal category (`federalCategoryOf`) and qualification, and whether every category mapping is confirmed. `dataVersion` too. Feeds the home map (`publicStatesResponseSchema`) |
-| `/api/public/states/:st` | One state's summary, sources, notes |
+| `/api/public/states/:slug` | One state (`ga` or `GA`): the same summary, `notesMd`, the published version's sources (non-http URLs shown as unknown), published and replaced versions (never drafts), and its categories with federal category, entries and whether the mapping is confirmed (`publicStateDetailResponseSchema`). 404 for anything else. Counting is shared with the list (`apps/api/src/db/public-summary.ts`) |
 | `/api/public/categories` | The federal categories and how each state maps to them |
 | `/api/public/compare?category=&states=GA,LA&system=` | Codes in that category for each selected state, aligned by code |
 | `/api/public/codes/search?q=&states=&system=` | FTS search over code numbers and descriptions |
