@@ -33,6 +33,7 @@ last-updated date).
 | Integer IDs, ISO-8601 text dates | Readable in exports and the D1 console | Project lead, on AI recommendation |
 | Schema drift check in `pnpm check` | Catches a schema edit without a migration; costs 0.5 s | Project lead, on AI recommendation (planned for CI only; it was fast enough for every run) |
 | `state_subcategory` is `''`, not NULL | SQLite treats NULLs as distinct, so a unique key with a NULL column lets duplicates through | AI, in the approved plan |
+| State URLs use the lowercase postal code (`/states/ga`) | Short, matches `docs/seo.md` | Project lead |
 | At most one published version per state, enforced by a partial unique index | A bug in publish cannot leave two lists live | AI |
 
 ## Corrections and surprises
@@ -46,8 +47,9 @@ last-updated date).
 - **A self-test that tested nothing.** The first drift-check trial used a search-and-replace
   that matched no line, so "no drift" proved nothing. The AI noticed the edit had not applied
   and repeated the trial properly.
-- **Open:** `docs/seo.md` shows state URLs as `/states/ga`; the plan's example slug was
-  `louisiana`. The `slug` column supports either; the project lead picks before seeding.
+- **A doc and the plan disagreed on state URLs.** `docs/seo.md` had `/states/ga`; the plan's
+  example slug was `louisiana`. Found while writing the docs. The project lead chose the postal
+  code, and a CHECK constraint now enforces `slug = lower(id)`.
 
 ## What a non-technical builder should take from this
 - Ask the AI to check the platform's limits for each plan step against its official docs. A
@@ -63,6 +65,5 @@ last-updated date).
 - Tests: 54 API (13 new), 15 unit (10 new), 6 component, 5 e2e; all passing.
 
 ## Open threads
-- State URL slug: `/states/ga` (as in `docs/seo.md`) or `/states/georgia`.
 - M1 step 2: `codes.ts`, including the code URL function.
 - M1 step 6: record the Time Travel bookmark in `deploy.yml`, then migrate.

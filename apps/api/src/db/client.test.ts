@@ -13,7 +13,7 @@ describe('createDb', () => {
 
   it('reads and writes typed rows through Drizzle', async () => {
     const db = createDb(env.DB)
-    await db.insert(states).values({ id: 'MT', slug: 'montana', name: 'Montana', fips: '30' })
+    await db.insert(states).values({ id: 'MT', slug: 'mt', name: 'Montana', fips: '30' })
     const [version] = await db
       .insert(datasetVersions)
       .values({
@@ -26,14 +26,14 @@ describe('createDb', () => {
     expect(version).toMatchObject({ status: 'draft', statePublishedDate: '2026-09-29' })
 
     const [state] = await db.select().from(states).where(eq(states.id, 'MT'))
-    expect(state).toMatchObject({ slug: 'montana', status: 'none', publishedVersionId: null })
+    expect(state).toMatchObject({ slug: 'mt', status: 'none', publishedVersionId: null })
   })
 })
 
 describe('resetDb', () => {
   it('empties every table, so new tables cannot be forgotten', async () => {
     const db = createDb(env.DB)
-    await db.insert(states).values({ id: 'NE', slug: 'nebraska', name: 'Nebraska', fips: '31' })
+    await db.insert(states).values({ id: 'NE', slug: 'ne', name: 'Nebraska', fips: '31' })
     await resetDb(env.DB)
 
     const { results } = await env.DB.prepare(

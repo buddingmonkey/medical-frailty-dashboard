@@ -24,7 +24,7 @@ const TABLES = [
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
-async function seedState(id = 'LA', slug = 'louisiana') {
+async function seedState(id = 'LA', slug = id.toLowerCase()) {
   await db
     .prepare(`INSERT INTO states (id, slug, name, fips) VALUES (?, ?, ?, ?)`)
     .bind(id, slug, `State ${id}`, '22')
@@ -162,8 +162,10 @@ describe('schema', () => {
     await expect(insert.bind(3).run()).rejects.toThrow(/UNIQUE constraint failed/)
   })
 
-  it('requires a unique state slug', async () => {
-    await expect(seedState('XL', 'louisiana')).rejects.toThrow(/UNIQUE constraint failed/)
+  it('requires the state slug to be the lowercase postal code (user, 2026-11-01)', async () => {
+    await expect(seedState('GA', 'georgia')).rejects.toThrow(/CHECK constraint failed/)
+    await expect(seedState('NE', 'NE')).rejects.toThrow(/CHECK constraint failed/)
+    await seedState('NE', 'ne')
   })
 })
 

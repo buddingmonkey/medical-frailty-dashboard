@@ -1,6 +1,6 @@
 {
-  "id": "54750341-8ca5-40da-8fc3-fd7510642b01",
-  "prevId": "25805143-6da4-4202-9ac9-c8aa5f401c7f",
+  "id": "f91e7d2c-3073-48a8-b324-b850cc7386d2",
+  "prevId": "95aeff7e-6b24-439f-966c-108dd7cfd888",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -915,6 +915,10 @@
         "states_id_check": {
           "name": "states_id_check",
           "value": "length(\"states\".\"id\") = 2 AND \"states\".\"id\" = upper(\"states\".\"id\")"
+        },
+        "states_slug_check": {
+          "name": "states_slug_check",
+          "value": "\"states\".\"slug\" = lower(\"states\".\"id\")"
         },
         "states_status_check": {
           "name": "states_status_check",

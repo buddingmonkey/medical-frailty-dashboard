@@ -145,6 +145,7 @@ CREATE TABLE `states` (
 	`updated_at` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
 	FOREIGN KEY (`published_version_id`) REFERENCES `dataset_versions`(`id`) ON UPDATE no action ON DELETE no action,
 	CONSTRAINT "states_id_check" CHECK(length("states"."id") = 2 AND "states"."id" = upper("states"."id")),
+	CONSTRAINT "states_slug_check" CHECK("states"."slug" = lower("states"."id")),
 	CONSTRAINT "states_status_check" CHECK("states"."status" IN ('none', 'announced', 'published'))
 );
 --> statement-breakpoint

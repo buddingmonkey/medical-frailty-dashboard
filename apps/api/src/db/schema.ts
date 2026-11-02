@@ -54,7 +54,7 @@ export const states = sqliteTable(
   {
     /** Two-letter postal code, uppercase. */
     id: text('id').primaryKey(),
-    /** URL slug, e.g. `louisiana`. Never changes once published (docs/seo.md). */
+    /** URL slug: the lowercase postal code (`/states/ga`; user, 2026-11-01). Never changes. */
     slug: text('slug').notNull().unique(),
     name: text('name').notNull(),
     fips: text('fips').notNull(),
@@ -68,6 +68,7 @@ export const states = sqliteTable(
   },
   (t) => [
     check('states_id_check', sql`length(${t.id}) = 2 AND ${t.id} = upper(${t.id})`),
+    check('states_slug_check', sql`${t.slug} = lower(${t.id})`),
     check('states_status_check', oneOf(t.status, stateStatuses)),
   ],
 )

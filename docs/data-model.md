@@ -34,7 +34,7 @@ Plus two of our own:
 ## Tables (D1 / SQLite)
 
 ```
-states              id (2-letter), slug (URL, unique, never changes), name, fips, status ('none'|'announced'|'published'),
+states              id (2-letter), slug (URL: lowercase postal code, `ga`), name, fips, status ('none'|'announced'|'published'),
                     published_version_id → dataset_versions, notes_md, updated_at
 
 source_documents    id, state_id, title, url, publisher_date, retrieved_at,

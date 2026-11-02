@@ -85,13 +85,12 @@ _Last updated: 2026-11-01_
 | Branch protection | Ruleset on `main` with no bypass, not even for admins (user, 2026-11-01) |
 | D1 backups before production migrations | D1 Time Travel bookmark logged by CI, not `wrangler d1 export` (refuses FTS5 databases) (user, 2026-11-01) |
 | IDs and dates | Integer IDs (states keep the 2-letter code); ISO-8601 text dates (user, 2026-11-01) |
+| State page URLs | Lowercase postal code, `/states/ga`; the database enforces `slug = lower(id)` (user, 2026-11-01) |
 | Code page URLs | Computed from code system + code, e.g. `/codes/icd-10-cm/F20.0`; no slug column (user, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
 ## Open questions
 
-- **State URL slug:** `docs/seo.md` uses `/states/ga`; `/states/georgia` reads better. The
-   `states.slug` column supports either. Decide before the seed data (later in M1).
 1. **Dates to watch** are in "Watch dates" below (next: ~2026-12-28, the *Massachusetts v. Oz*
    appeal deadline).
 2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
