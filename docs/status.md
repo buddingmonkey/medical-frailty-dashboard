@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 2)_
+_Last updated: 2026-11-02 (M5 step 3)_
 
 ## Where things stand
 
@@ -193,6 +193,9 @@ _Last updated: 2026-11-02 (M5 step 2)_
 - **M5 step 2 done** (branch `m5-step2-ccsr`): AHRQ CCSR v2026.1 in `ref_ccsr` /
   `ref_ccsr_categories` (migration 0008; downloaded and pinned, never committed); longest-prefix
   lookup in `@mfcd/shared/ccsr`. 16 invalid codes in the seed lists noted in `docs/sources.md`.
+- **M5 step 3 done** (branch `m5-step3-admin-unified`): `/admin/unified` and `/admin/mappings`
+  with their APIs; mappings superseded, never deleted; one admin may approve. Open: should a
+  never-published draft be retirable (refused now)?
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
