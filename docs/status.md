@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M4 step 2)_
+_Last updated: 2026-11-02 (end of M4)_
 
 ## Where things stand
 
@@ -181,7 +181,9 @@ _Last updated: 2026-11-02 (M4 step 2)_
 - **M4 step 2 done** (branch `m4-step2-compare-page`): `/compare` (federal or a state's own
   category, code system, states, "qualifies alone"; the URL holds the selection; 100 rows a
   page; legend), "Compare" in the header and on each state category row, server-rendered
-  `noindex` HTML and `/compare.csv` (every row). **M4 is complete.**
+  `noindex` HTML and `/compare.csv` (every row).
+- **M4 is complete** (PRs #42–#43, 2026-11-02). Hard stop for the project lead's review; see
+  the M4 devlog entry for the questions (CPU on the Free plan, wording, release).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
