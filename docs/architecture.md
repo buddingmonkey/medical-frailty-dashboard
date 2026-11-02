@@ -194,7 +194,7 @@ Admin (Access JWT required; all writes):
 | `POST /api/admin/ai-cleanup` | Optional; only exists when `ANTHROPIC_API_KEY` is set |
 | `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |
 | `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |
-| `GET, POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close (close requires a resolution note) |
+| `GET /api/admin/watch?status=open\|closed`, `POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close. `PUT` body is `{action: 'edit', ...fields}` or `{action: 'close', status, resolutionMd}`; a closed item answers 409 |
 
 ## Caching
 

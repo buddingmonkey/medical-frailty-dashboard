@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
+import WatchBanner from '../components/admin/WatchBanner.vue'
 import { ApiError, getJson } from '../lib/api'
 
 // The Worker has already checked the Access token before this page loads; this call only
@@ -26,6 +27,7 @@ const signInProblem = computed(() => {
 
 const sections = [
   { to: '/admin', label: 'Overview' },
+  { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },
 ] as const
 </script>
@@ -51,6 +53,8 @@ const sections = [
     >
       {{ signInProblem }}
     </p>
+
+    <WatchBanner />
 
     <div class="flex flex-col gap-8 md:flex-row">
       <nav aria-label="Admin" class="md:w-48 md:shrink-0">

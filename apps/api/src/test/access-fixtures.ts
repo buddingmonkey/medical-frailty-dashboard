@@ -68,6 +68,8 @@ interface CallOptions {
   token?: string
   host?: string
   method?: string
+  /** Sent as JSON. */
+  body?: unknown
   vars?: Partial<Env>
 }
 
@@ -75,10 +77,15 @@ interface CallOptions {
 export function call(path: string, options: CallOptions = {}): Promise<Response> {
   const headers = new Headers()
   if (options.token) headers.set('Cf-Access-Jwt-Assertion', options.token)
+  if (options.body !== undefined) headers.set('content-type', 'application/json')
   return Promise.resolve(
     app.request(
       `http://${options.host ?? 'frailty.example.com'}${path}`,
-      { method: options.method ?? 'GET', headers },
+      {
+        method: options.method ?? 'GET',
+        headers,
+        ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+      },
       {
         ...env,
         ENVIRONMENT: 'test',

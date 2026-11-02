@@ -15,6 +15,13 @@
       "when": 1793590912486,
       "tag": "0001_entries_fts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793595156271,
+      "tag": "0002_seed_watch_items",
+      "breakpoints": true
     }
   ]
 }

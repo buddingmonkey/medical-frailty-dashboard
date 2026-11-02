@@ -94,6 +94,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M1 step 6 (2026-11-01) | 0.05 (4 min) | not measured | $0 | Migrations and restore bookmark in the deploy; reference-data workflow |
 | **M1 total** (2026-11-01) | **≈ 1.1 h** | not measured | $0 | 7 PRs; 276 tests (M0: 44); 107,173 reference codes |
 | M2 step 1 (2026-11-01) | 0.1 (5 min) | not measured | $0 | Admin shell, audit log API and page; 17 new tests |
+| M2 step 2 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Watch dates page and banner; status.md table seeded into the app; 39 new tests |
 
 ## Assets to capture for slides
 

@@ -1,10 +1,12 @@
 import { screen, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { server } from '../../test/msw-server'
 import { renderRoute } from '../../test/render-route'
+
+const noWatchItems = http.get('/api/admin/watch', () => HttpResponse.json({ items: [] }))
 
 const whoami = http.get('/api/admin/whoami', () =>
   HttpResponse.json({ email: 'admin@example.org' }),
@@ -22,6 +24,10 @@ function entry(id: number, action: string, details: Record<string, unknown> | nu
 }
 
 describe('/admin/audit', () => {
+  beforeEach(() => {
+    server.use(noWatchItems)
+  })
+
   it('lists admin actions as a table, details as plain text', async () => {
     server.use(
       whoami,
