@@ -75,7 +75,7 @@ interface CallOptions {
   /** Overrides the JSON content type, or null for none. */
   contentType?: string | null
   /** Raw body, sent as is (instead of `body`). */
-  rawBody?: string
+  rawBody?: string | Uint8Array<ArrayBuffer>
   vars?: Partial<Env>
 }
 
