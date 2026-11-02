@@ -104,7 +104,7 @@ jobs:
           grep -qi '^x-robots-tag: noindex' "$headers" \
             || { echo "::error::Missing X-Robots-Tag: noindex (site should be private)"; exit 1; }
 
-          read -r code location < <(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$SITE_URL/")
+          read -r code location < <(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "$SITE_URL/")
           [ "$code" = 302 ] && [[ "$location" == https://*.cloudflareaccess.com/* ]] \
             || { echo "::error::Expected a redirect to the Access login, got $code $location"; exit 1; }
           echo "Smoke test passed: health ok with the service token; login required without it."
