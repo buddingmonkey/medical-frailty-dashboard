@@ -188,6 +188,8 @@ Admin (Access JWT required; all writes):
 | `GET /api/admin/sources?stateId=&sha256=` | A state's stored source files, newest first, with the versions built from each; `sha256` finds one file (the duplicate check) |
 | `POST /api/admin/sources?stateId=&title=&fileType=&sha256=&url=&publisherDate=` | Body: the raw file (`application/octet-stream`, ≤ 25 MB; the only non-JSON write). The Worker re-hashes it and checks its first bytes against `fileType`. Same file already stored for the state: 200 with `duplicate: true`, nothing written. Else R2 (random key, `attachment`), then the row and audit: 201 |
 | `GET /api/admin/sources/:id/file` | Download the original, always as an attachment |
+| `GET /api/admin/column-profiles?stateId=&headerKey=` | The saved column profile for a state's header layout (`headerKey()` in `packages/shared/src/ingest.ts`), or `{item: null}` |
+| `PUT /api/admin/column-profiles` | Save it: `{stateId, header, profile}`; the server computes the key; one role per column |
 | `POST /api/admin/drafts` | Start a draft version for a state |
 | `POST /api/admin/drafts/:id/rows` | Add validated rows in chunks (≤ 500 rows per request) |
 | `GET /api/admin/drafts/:id/checks` | Run the data checks and diff against the published version |

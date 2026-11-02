@@ -29,6 +29,13 @@
       "when": 1793595850801,
       "tag": "0003_seed_states",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793596703148,
+      "tag": "0004_column_profiles",
+      "breakpoints": true
     }
   ]
 }

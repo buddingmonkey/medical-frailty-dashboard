@@ -70,6 +70,8 @@ ref_codes           code_system, code_norm, description, parent_norm, chapter, b
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
 condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm
 
+column_profiles     id, state_id, header_key, profile_json, updated_by, updated_at
+                    UNIQUE(state_id, header_key); what each column of a state's file means
 app_meta            key, value                              (data_version, site settings)
 audit_log           id, at, actor_email, action, target, details_json
 

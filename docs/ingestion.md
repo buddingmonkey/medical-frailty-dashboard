@@ -86,13 +86,21 @@ Each adapter: `(file: File) => Promise<RawTable[]>` (one table per PDF page grou
 
 | Adapter | Library | Notes |
 | --- | --- | --- |
-| `xlsx` / `csv` | SheetJS CE, installed from the official `cdn.sheetjs.com` tarball at a pinned version | **Not** the npm `xlsx@0.18.5` package, which is unmaintained and has known CVEs |
+| `xlsx` | SheetJS CE, installed from the official `cdn.sheetjs.com` tarball at a pinned version (0.20.3 is the newest, 2024-07-18) | **Not** the npm `xlsx@0.18.5` package, which is unmaintained and has known CVEs. **Not installed yet:** waiting on the project lead (status.md, open questions). Until then: paste the cells, or save as CSV |
+| `csv` | native (`apps/web/src/ingest/parse.ts`) | RFC 4180 quoting, one linear pass, no regexes. `.txt` is read as tab-separated |
 | `pdf` | `pdfjs-dist` (pinned, current) with `isEvalSupported: false` | Rebuilds rows from text positions: cluster by y, split columns by the x-positions of the header cells. Handles the wrapped descriptions in the GA/LA/MT PDFs (a line with no code is a continuation of the row above) |
 | `json` | native | Accepts an array of objects with any keys; column mapping step decides which key is what |
 | `paste` | native | Paste a tab-separated table straight from a spreadsheet |
 
-Limits: 25 MB per file, 2,000 PDF pages, 100,000 rows. Parsing runs in a Web Worker so the
-page stays responsive and pdf.js runs off the main thread.
+Limits: 25 MB per file, 2,000 PDF pages, 100,000 rows, 100 columns. Parsing runs in a Web
+Worker (`worker.ts`, started by `run-parser.ts`) so the page stays responsive and pdf.js runs
+off the main thread; where there is no `Worker` (jsdom tests) the same adapters run directly.
+
+Column mapping (`packages/shared/src/ingest.ts`): `guessColumnRoles` reads the header (tested
+on the real GA, LA and MT headers), the admin confirms, and the profile is saved per state and
+header layout (`column_profiles`). The qualification rule is one value for the file, or read
+from the qualification or tier column, each value mapped by the admin; values left "Not set"
+become `unknown`, and the screen lists them.
 
 ## Category auto-mapping
 

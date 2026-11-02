@@ -9,6 +9,7 @@ export async function resetDb(db: D1Database): Promise<void> {
       'DELETE FROM version_sources',
       'DELETE FROM dataset_versions',
       'DELETE FROM category_mappings',
+      'DELETE FROM column_profiles',
       'DELETE FROM source_documents',
       'DELETE FROM watch_items',
       'DELETE FROM condition_members',
