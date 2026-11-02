@@ -182,8 +182,8 @@ _Last updated: 2026-11-02 (end of M4)_
   category, code system, states, "qualifies alone"; the URL holds the selection; 100 rows a
   page; legend), "Compare" in the header and on each state category row, server-rendered
   `noindex` HTML and `/compare.csv` (every row).
-- **M4 is complete** (PRs #42–#43, 2026-11-02). Hard stop for the project lead's review; see
-  the M4 devlog entry for the questions (CPU on the Free plan, wording, release).
+- **M4 is complete** (PRs #42–#44, 2026-11-02) and reviewed: wording joins the legal list,
+  CPU is acceptable for now, `v0.4.0` tagged for production.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -229,6 +229,10 @@ _Last updated: 2026-11-02 (end of M4)_
 | Step 11 assumptions | Whole-category reading of bare codes and the qualification per state look right; the project lead verifies later (2026-11-02) |
 | Claude API button | Stays off; shown disabled with a tooltip that says it needs a key and costs money (project lead, 2026-11-02) |
 | Release after M2 | `v0.2.0` in production 2026-11-02 (approved by the project lead; run 41492763306): migrations 0002–0006 applied, smoke test passed. No state data in production yet |
+| Release after M3 | `v0.3.0` in production 2026-11-02 (run 41523353868); production still has no state lists |
+| Release after M4 | `v0.4.0` tagged 2026-11-02 at the project lead's request; production deploy waits for the lead's approval in GitHub |
+| Compare CPU on the Free plan | Acceptable for now (project lead, 2026-11-02); measure on preview in the lead's signed-in browser before the 2026-11-30 downgrade |
+| Professional site basics | Added to M7 (favicon and icons, share image, footer links, privacy and accessibility statements, `security.txt`, print styles) (project lead, 2026-11-02) |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M7) |
 
@@ -265,7 +269,7 @@ close dates there, not here. Approximate dates are marked ~.
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
 | No date | Legal team decides the licence of the compiled lists (for the `license` field in the state pages' `Dataset` JSON-LD and the downloads; left out until then) | Search engines recommend a licence on datasets | `docs/seo.md` |
-| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), and `ai-train=yes` in `robots.txt` | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 

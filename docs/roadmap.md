@@ -130,6 +130,14 @@ and evidence that target users find the site useful and use it correctly.
 4. Disclaimer, about/methodology page (how matching, "like" codes and qualification badges
    work), a dated note on court rulings (*Massachusetts v. Oz*), AMA notice, and a
    "Report a problem" link (a mailto, or a GitHub issue template for data errors).
+   **Professional site basics** (project lead, 2026-11-02): favicon (SVG + 32 px PNG), Apple
+   touch icon and `site.webmanifest` with the theme colour (our own simple mark; no CCF logo);
+   an Open Graph / Twitter share image; a footer with About/methodology, disclaimer, source
+   code, Report a problem and "data last updated"; a privacy note (no cookies, cookieless
+   analytics, no personal data) and an accessibility statement; `/.well-known/security.txt`
+   pointing to GitHub private vulnerability reporting; print styles for the compare table;
+   a title and description on every page. **Check:** e2e finds the icons, manifest, share
+   image and footer links on every public page type.
 5. **Usability gate.** Invite 3–5 target users (state Medicaid staff, provider association
    staff, advocates) as guests in the preview Access policy. Give each one the task script in
    `docs/usability.md` (written in this step) with no help:
