@@ -58,6 +58,21 @@ ones, type the state code), or **info**.
 | Same source file hash as the published version | confirm ("nothing changed?") |
 | Summary: added, removed, changed description, changed category, per code system | info |
 
+**Implementation:** `runChecks` and `verifyConfirmations` in `packages/shared/src/checks.ts`
+(pure functions; one test per row above). Definitions the table leaves open:
+
+- A **code** is its code system, match kind, code and range end. The same code under two
+  categories (MT `Z74.09`) is one code; moving it to another category is "category changed",
+  not a removal plus an addition. A range `32851-32854` and an exact `32851` are different
+  codes.
+- **Invalid share** = invalid rows ÷ (valid + invalid rows). "Removed" = published codes the
+  draft lacks ÷ published codes. "Row count change" compares entry rows.
+- **Unknown ICD-10-CM** counts distinct codes, wildcard prefixes and range ends.
+- A **duplicate** is the same code under the same category and subcategory.
+- **Typed confirmations** must match the draft's state code (case and spaces ignored).
+- The report **token** (publish only what was checked) is part of the publish route (roadmap
+  M2 step 8).
+
 The admin downloads the diff as CSV if they want to check it offline. The report is stored in
 `dataset_versions.check_report_json`, and publishing requires the report's token, so the admin
 cannot publish rows that changed after the checks ran.

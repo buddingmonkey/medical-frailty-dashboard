@@ -3,7 +3,7 @@
 **Milestone:** M1 step 3  •  **People:** project lead (not involved in this step)  •
 **AI:** Claude Code, Opus main session (no builder agent)
 
-Start 21:33 CST, end 21:46 CST (from the PC clock). The first part overlapped with the
+Start 21:33 CST, end 21:45 CST (commit time). The first part overlapped with the
 CodeQL fix on PR #13.
 
 ## Goal
@@ -55,7 +55,7 @@ from CMS's public-domain files, and document the yearly update.
   how we found CMS's new code format.
 
 ## Numbers
-- Time: about 13 minutes.
+- Time: about 12 minutes.
 - AI cost: not measured. Hosting: $0 (local only).
 - Reference rows: 107,173 (22 chunks). Local load: ~20 s.
 - Tests: 13 refdata (new), 148 unit (+24), 55 API (+1), 6 component; all passing.

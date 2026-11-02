@@ -3,7 +3,7 @@
 **Milestone:** M1 step 4  •  **People:** project lead (not involved in this step)  •
 **AI:** Claude Code, Opus main session (no builder agent)
 
-Start 21:46 CST, end 21:53 CST (from the PC clock).
+Start 21:45 CST, end 21:49 CST (commit times; an earlier draft of this entry had guessed times).
 
 ## Goal
 The federal categories, with the statute's wording confirmed and cited, and the keyword
@@ -41,7 +41,7 @@ table that suggests a federal category for each state category.
   relies on it. Then a lawyer can check one file.
 
 ## Numbers
-- Time: about 7 minutes.
+- Time: about 4 minutes.
 - AI cost: not measured. Hosting: $0.
 - Tests: 28 new (176 unit total); all passing.
 
