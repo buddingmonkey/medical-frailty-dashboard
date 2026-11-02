@@ -70,6 +70,12 @@ interface CallOptions {
   method?: string
   /** Sent as JSON. */
   body?: unknown
+  /** Origin header; defaults to the site's own origin for writes. null = none. */
+  origin?: string | null
+  /** Overrides the JSON content type, or null for none. */
+  contentType?: string | null
+  /** Raw body, sent as is (instead of `body`). */
+  rawBody?: string
   vars?: Partial<Env>
 }
 
@@ -77,15 +83,24 @@ interface CallOptions {
 export function call(path: string, options: CallOptions = {}): Promise<Response> {
   const headers = new Headers()
   if (options.token) headers.set('Cf-Access-Jwt-Assertion', options.token)
-  if (options.body !== undefined) headers.set('content-type', 'application/json')
+  const host = options.host ?? 'frailty.example.com'
+  const method = options.method ?? 'GET'
+  const write = !['GET', 'HEAD'].includes(method)
+  const origin = options.origin === undefined ? (write ? `http://${host}` : null) : options.origin
+  if (origin !== null) headers.set('Origin', origin)
+  const contentType =
+    options.contentType === undefined
+      ? options.body !== undefined || options.rawBody !== undefined
+        ? 'application/json'
+        : null
+      : options.contentType
+  if (contentType !== null) headers.set('content-type', contentType)
+  const body =
+    options.rawBody ?? (options.body === undefined ? undefined : JSON.stringify(options.body))
   return Promise.resolve(
     app.request(
-      `http://${options.host ?? 'frailty.example.com'}${path}`,
-      {
-        method: options.method ?? 'GET',
-        headers,
-        ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
-      },
+      `http://${host}${path}`,
+      { method, headers, ...(body === undefined ? {} : { body }) },
       {
         ...env,
         ENVIRONMENT: 'test',

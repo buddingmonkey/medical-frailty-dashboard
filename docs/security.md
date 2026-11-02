@@ -59,6 +59,7 @@ unless the Access application bypasses that path.)
   other method returns 405.
 - CSRF: Access cookies are `SameSite=Lax`; the API also rejects writes whose `Origin` is not
   the site's own origin, and requires `Content-Type: application/json` (no form posts).
+  Code: `apps/api/src/middleware/admin-write-guard.ts` (403 / 415 / 413).
 - Every write is limited to one `state_id`/`version_id` (see `docs/data-model.md`) and
   recorded in `audit_log` with the admin's email.
 - Inputs: zod-validate every body, query and path parameter. Reject unknown keys. Cap sizes

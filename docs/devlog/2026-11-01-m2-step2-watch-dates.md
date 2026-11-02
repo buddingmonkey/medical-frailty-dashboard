@@ -36,17 +36,24 @@ Workers Paid downgrade, the *Mass. v. Oz* appeal window) are tracked where admin
 | Banner groups by the admin's local date; repeat dates use UTC | The page is read by people in US time zones; the server has no time zone | AI |
 
 ## Corrections and surprises
+- **The first admin write routes shipped without the CSRF layer `docs/security.md` promises**
+  (own-origin check, JSON only, 5 MB cap). Found while reading the security doc for step 3,
+  before the PR merged. Added `adminWriteGuard` (`apps/api/src/middleware/admin-write-guard.ts`)
+  with 7 tests to the same PR. Access cookies are `SameSite=Lax`, so this was the second layer
+  missing, not the only one.
 - Stopping the dev server with `pgrep -f` matched the stopping command's own shell and killed
   it. Listing PIDs with `ps` first, then `kill` by number, worked.
 
 ## What a non-technical builder should take from this
+- Before merging the first feature of a new kind (first upload, first write), reread the
+  security doc's section for it. Promises written there are easy to forget in the code.
 - When you move a to-do list from a document into the app, say which one is the source of
   truth from now on, in both places.
 
 ## Numbers
 - Time: about 8 minutes.
 - AI cost: not measured. Hosting: $0.
-- Tests: 21 unit, 11 API, 7 component new (unit 223, component 20, API 70, e2e 6).
+- Tests: 21 unit, 18 API, 7 component new (unit 223, component 20, API 77, e2e 6).
 
 ## Open threads
 - Step 8 creates a "Re-check <state> list" item 90 days after each publish.
