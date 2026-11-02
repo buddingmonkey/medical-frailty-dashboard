@@ -17,7 +17,15 @@ import ThemeMenu from './components/ThemeMenu.vue'
       <RouterLink to="/" class="font-display text-2xl font-medium text-on-header no-underline">
         Medical Frailty Coding Dashboard
       </RouterLink>
-      <ThemeMenu />
+      <div class="flex items-center gap-6">
+        <nav aria-label="Main">
+          <ul class="flex gap-5">
+            <li><RouterLink to="/" class="text-on-header">States</RouterLink></li>
+            <li><RouterLink to="/compare" class="text-on-header">Compare</RouterLink></li>
+          </ul>
+        </nav>
+        <ThemeMenu />
+      </div>
     </div>
   </header>
 

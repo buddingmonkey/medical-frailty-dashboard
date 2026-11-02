@@ -1,6 +1,13 @@
 import {
   type CodeSystem,
   codeSystemLabels,
+  compareCellText,
+  compareFiledUnder,
+  compareQualificationText,
+  type CompareQuery,
+  type CompareResult,
+  compareSearchParams,
+  compareSubject,
   type FederalCategory,
   federalCategoryInfo,
   formatCount,
@@ -281,6 +288,92 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
     body: html`<p><a href="/">All states</a></p>
       <h1>${state.name}</h1>
       ${sentences.map((s) => html`<p>${s}</p>`)} ${listed} ${notes}`,
+  }
+}
+
+const COMPARE_DESCRIPTION =
+  'Compare the medical frailty codes of any number of states, one category at a time: which ' +
+  'codes each state lists, covers with a wildcard or range, or leaves out.'
+
+/** `/compare.csv?…` for a selection: every row, so no page. */
+export const compareCsvPath = (query: CompareQuery) =>
+  `/compare.csv?${compareSearchParams({ ...query, page: 1 }).toString()}`
+
+/**
+ * `/compare`: never indexed (each combination is a view of facts whose home is the state page),
+ * canonical to the bare `/compare`. Renders the table for the selection in the URL, if any.
+ */
+export function comparePage(
+  origin: string,
+  view: { query: CompareQuery; result: CompareResult } | { error: string } | null,
+): PageParts {
+  const intro = html`<h1>Compare states by category</h1>
+    <p>
+      Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
+      least one of them lists in that category; each column shows what that state’s whole list says
+      about it.
+    </p>`
+  let body: Html
+  if (view === null) {
+    body = html`${intro}
+      <p>Pick a category and at least one state to see the table.</p>`
+  } else if ('error' in view) {
+    body = html`${intro}
+      <p>${view.error}</p>`
+  } else {
+    const { query, result } = view
+    const names = new Map(result.states.map((s) => [s.id, s.name]))
+    const subject = compareSubject(query, (id) => names.get(id) ?? id)
+    body = html`${intro}
+      <h2>${subject}: codes by state</h2>
+      <p>
+        ${formatCount(result.totalRows)} codes, page ${result.page} of ${result.pageCount}.
+        <a href="${compareCsvPath(query)}">Download all rows (CSV)</a>
+      </p>
+      <table>
+        <caption>
+          ${subject}: codes by state
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Code</th>
+            <th scope="col">Description</th>
+            ${result.states.map((s) => html`<th scope="col"><a href="/states/${s.slug}">${s.name}</a></th>`)}
+          </tr>
+        </thead>
+        <tbody>
+          ${result.rows.map(
+            (row) =>
+              html`<tr>
+                <th scope="row">${row.display}</th>
+                <td>${row.description ?? ''}</td>
+                ${row.cells.map((cell, i) => {
+                  const stateId = result.states[i]?.id ?? ''
+                  const m = cell.match
+                  const filed = m ? compareFiledUnder(query, stateId, m) : null
+                  const text = [
+                    compareCellText(cell),
+                    m?.tier,
+                    m ? compareQualificationText(m) : null,
+                    filed ? `filed under ${filed}` : null,
+                  ]
+                    .filter((part) => part !== null && part !== undefined && part !== '')
+                    .join('; ')
+                  return html`<td>${text}</td>`
+                })}
+              </tr>`,
+          )}
+        </tbody>
+      </table>`
+  }
+  return {
+    status: 200,
+    title: pageTitles.compare,
+    description: COMPARE_DESCRIPTION,
+    canonical: `${origin}/compare`,
+    noindex: true,
+    jsonLd: [],
+    body,
   }
 }
 

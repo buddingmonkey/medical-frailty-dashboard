@@ -6,7 +6,7 @@ import {
   stateStatusLabels,
 } from '@mfcd/shared'
 import { useQuery } from '@tanstack/vue-query'
-import { type MaybeRefOrGetter, toValue } from 'vue'
+import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
 import { getJson } from './api'
 
@@ -19,10 +19,11 @@ export function usePublicStates() {
   })
 }
 
-/** `GET /api/public/states/:slug`: one state's page. */
+/** `GET /api/public/states/:slug`: one state's page. Waits while the slug is empty. */
 export function usePublicState(slug: MaybeRefOrGetter<string>) {
   return useQuery({
     queryKey: ['public', 'state', slug],
+    enabled: computed(() => toValue(slug) !== ''),
     queryFn: () =>
       getJson(
         `/api/public/states/${encodeURIComponent(toValue(slug))}`,

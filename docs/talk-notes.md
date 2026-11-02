@@ -125,6 +125,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M3 step 4 (2026-11-02) | 13:57–14:16 | not measured | $0 | Server-rendered pages for crawlers, JSON-LD, CSV/JSON downloads, sitemap; 19 new tests |
 | **M3 total** (2026-11-02) | **≈ 1 h** (13:25–14:26) | not measured | $0 | 4 PRs (#37–#40); 658 Vitest + 24 e2e; map, state pages, crawler-readable HTML, downloads, sitemap |
 | M4 step 1 (2026-11-02) | 14:57–15:08 | not measured | $0 | Compare API: one category aligned across states; 22 new tests; a deliberate break found dead code |
+| M4 step 2 (2026-11-02) | 15:12–15:27 | not measured | $0 | Compare page: shareable URL, CSV, crawler HTML (noindex); 15 new Vitest + 4 e2e |
 
 ## Assets to capture for slides
 

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildCompare,
+  compareCellText,
+  compareFiledUnder,
+  compareQualificationText,
+  compareSubject,
   type CompareEntry,
   type CompareInput,
   compareQuerySchema,
@@ -342,5 +346,61 @@ describe('buildCompare', () => {
       description: 'Psych diagnostic evaluation',
       descriptionSource: 'MT',
     })
+  })
+})
+
+describe('compare wording', () => {
+  const match = {
+    display: 'F20.*',
+    tier: null,
+    qualification: 'needs_support' as const,
+    qualificationBasis: 'inferred' as const,
+    stateCategory: 'SMI',
+    stateSubcategory: '',
+    federalCategory: 'disabling_mental_disorder' as const,
+  }
+
+  it('says what each cell means in a few words', () => {
+    expect(compareCellText({ status: 'exact', match, narrowerCount: 0 })).toBe('Listed')
+    expect(compareCellText({ status: 'covered', match, narrowerCount: 0 })).toBe('Covered by F20.*')
+    expect(compareCellText({ status: 'narrower', match: null, narrowerCount: 1 })).toBe(
+      '1 narrower code listed',
+    )
+    expect(compareCellText({ status: 'narrower', match: null, narrowerCount: 4 })).toBe(
+      '4 narrower codes listed',
+    )
+    expect(compareCellText({ status: 'no_list', match: null, narrowerCount: 0 })).toBe(
+      'No list on this site',
+    )
+    expect(compareQualificationText(match)).toBe('Needs another code (inferred)')
+    expect(compareQualificationText({ ...match, qualificationBasis: 'published' })).toBe(
+      'Needs another code',
+    )
+  })
+
+  it('names the category only when it is not the one being compared', () => {
+    expect(
+      compareFiledUnder({ category: 'disabling_mental_disorder', ownSubcategory: '' }, 'MT', match),
+    ).toBeNull()
+    expect(compareFiledUnder({ category: 'sud', ownSubcategory: '' }, 'MT', match)).toBe('SMI')
+    expect(
+      compareFiledUnder({ category: 'sud', ownSubcategory: '' }, 'GA', {
+        ...match,
+        stateCategory: '',
+      }),
+    ).toBe('Disabling mental disorder')
+    const own = { ownState: 'MT', ownCategory: 'smi', ownSubcategory: '' }
+    expect(compareFiledUnder(own, 'MT', match)).toBeNull()
+    expect(compareFiledUnder(own, 'GA', match)).toBe('SMI')
+  })
+
+  it('names what is compared', () => {
+    const name = (id: string) => (id === 'MT' ? 'Montana' : id)
+    expect(compareSubject({ category: 'sud', ownSubcategory: '' }, name)).toBe(
+      'Substance use disorder',
+    )
+    expect(
+      compareSubject({ ownState: 'MT', ownCategory: 'Cancer', ownSubcategory: 'Solid' }, name),
+    ).toBe('Montana: Cancer › Solid')
   })
 })

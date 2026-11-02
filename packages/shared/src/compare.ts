@@ -16,7 +16,9 @@ import {
   qualifications,
   qualificationSchema,
 } from './enums'
-import { STATES_AND_DC } from './public'
+import { federalCategoryInfo } from './categories'
+import { STATES_AND_DC, stateCategoryName } from './public'
+import { qualificationLabels } from './qualification'
 
 // Compare by category (roadmap M4; docs/architecture.md, "API shape"). Rows are the codes,
 // wildcards and ranges the selected states list in one category; columns are the states. Each
@@ -457,4 +459,59 @@ export function buildCompare(
     pageCount,
     rows,
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Wording, shared by the Vue page, the server-rendered HTML and the CSV
+
+/** The cell's first line: `Listed`, `Covered by F20.*`, `3 narrower codes listed`. */
+export function compareCellText(cell: CompareCell): string {
+  switch (cell.status) {
+    case 'covered':
+      return cell.match ? `Covered by ${cell.match.display}` : compareStatusLabels.covered
+    case 'narrower':
+      return cell.narrowerCount === 1
+        ? '1 narrower code listed'
+        : `${String(cell.narrowerCount)} narrower codes listed`
+    default:
+      return compareStatusLabels[cell.status]
+  }
+}
+
+/** The state's rule for the entry: `Qualifies alone`, `Needs another code (inferred)`. */
+export function compareQualificationText(match: CompareMatch): string {
+  const label = qualificationLabels[match.qualification]
+  return match.qualificationBasis === 'inferred' ? `${label} (inferred)` : label
+}
+
+/**
+ * Where the state files the entry, when that is not the category being compared: the state's
+ * own category name, or the federal category's label when the state has no categories.
+ */
+export function compareFiledUnder(
+  query: Pick<CompareQuery, 'category' | 'ownState' | 'ownCategory' | 'ownSubcategory'>,
+  stateId: string,
+  match: CompareMatch,
+): string | null {
+  if (query.category !== undefined) {
+    if (match.federalCategory === query.category) return null
+  } else if (
+    stateId === query.ownState &&
+    mappingKey(match.stateCategory, match.stateSubcategory) ===
+      mappingKey(query.ownCategory ?? '', query.ownSubcategory)
+  ) {
+    return null
+  }
+  return match.stateCategory === '' && match.stateSubcategory === ''
+    ? federalCategoryInfo[match.federalCategory].label
+    : stateCategoryName(match.stateCategory, match.stateSubcategory)
+}
+
+/** What the table compares: a federal category's label, or `Montana: SMI`. */
+export function compareSubject(
+  query: Pick<CompareQuery, 'category' | 'ownState' | 'ownCategory' | 'ownSubcategory'>,
+  stateName: (id: string) => string,
+): string {
+  if (query.category !== undefined) return federalCategoryInfo[query.category].label
+  return `${stateName(query.ownState ?? '')}: ${stateCategoryName(query.ownCategory ?? '', query.ownSubcategory)}`
 }

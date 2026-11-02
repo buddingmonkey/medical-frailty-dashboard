@@ -1,5 +1,7 @@
 import {
   codeSystemLabels,
+  compareCellText,
+  compareQuerySchema,
   federalCategoryInfo,
   qualificationBasisLabels,
   qualificationLabels,
@@ -9,10 +11,12 @@ import {
 import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
+import { publicCompare } from '../db/public-compare'
 import { publicStateDetail, publishedEntriesForDownload } from '../db/public-state'
 import { publicSummaries } from '../db/public-summary'
 import { cachePublic, publicCache } from '../middleware/public-cache'
 import {
+  comparePage,
   downloadName,
   homePage,
   notFoundPage,
@@ -77,10 +81,84 @@ async function downloadData(c: Context<AppEnv>) {
   return { detail, published: detail.state.published, rows }
 }
 
+/** The compare query in the URL: null when there is none, else the parsed query or an error. */
+function compareQueryOf(c: Context<AppEnv>) {
+  const raw = c.req.query()
+  if (Object.keys(raw).length === 0) return null
+  return compareQuerySchema.safeParse(raw)
+}
+
 export const pagesRoute = new Hono<AppEnv>()
   .get('/', pageCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))
     return sendPage(c, homePage(items, origin(c)))
+  })
+  .get('/compare', pageCache, async (c) => {
+    const parsed = compareQueryOf(c)
+    if (parsed === null) return sendPage(c, comparePage(origin(c), null))
+    if (!parsed.success) {
+      return sendPage(c, comparePage(origin(c), { error: 'This comparison link is not valid.' }))
+    }
+    const load = await publicCompare(createDb(c.env.DB), parsed.data)
+    return sendPage(
+      c,
+      comparePage(
+        origin(c),
+        load.ok
+          ? { query: parsed.data, result: load.result }
+          : { error: `Unknown state: ${load.unknownStates.join(', ')}` },
+      ),
+    )
+  })
+  .get('/compare.csv', publicCache, async (c) => {
+    const parsed = compareQueryOf(c)
+    if (!parsed?.success) return c.json({ error: 'Invalid compare query' }, 400)
+    const query = parsed.data
+    const load = await publicCompare(createDb(c.env.DB), query, { allRows: true })
+    if (!load.ok) return c.json({ error: `Unknown state: ${load.unknownStates.join(', ')}` }, 400)
+    const { result } = load
+    const perState = [
+      'status',
+      'entry',
+      'tier',
+      'qualification',
+      'qualification_basis',
+      'state_category',
+      'federal_category',
+    ]
+    const csv = toCsv([
+      [
+        'code_system',
+        'code',
+        'description',
+        'description_source',
+        ...result.states.flatMap((s) => perState.map((col) => `${s.id}_${col}`)),
+      ],
+      ...result.rows.map((row) => [
+        codeSystemLabels[row.codeSystem],
+        row.display,
+        row.description,
+        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        ...row.cells.flatMap((cell) => {
+          const m = cell.match
+          return [
+            compareCellText(cell),
+            m?.display ?? null,
+            m?.tier ?? null,
+            m ? qualificationLabels[m.qualification] : null,
+            m ? qualificationBasisLabels[m.qualificationBasis] : null,
+            m ? m.stateCategory : null,
+            m ? federalCategoryInfo[m.federalCategory].label : null,
+          ]
+        }),
+      ]),
+    ])
+    const subject = query.category ?? `${(query.ownState ?? '').toLowerCase()}-own`
+    const name = `compare-${subject.replaceAll('_', '-')}-${query.states.join('-').toLowerCase()}.csv`
+    return c.body(csv, 200, {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': `attachment; filename="${name}"`,
+    })
   })
   .get('/sitemap.xml', publicCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))

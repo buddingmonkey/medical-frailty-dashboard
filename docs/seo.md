@@ -42,6 +42,11 @@ and `&`. `/states/GA` answers 301 to `/states/ga`; an unknown state answers 404 
 `noindex`. Code pages follow in M5. `e2e/no-js.spec.ts` reads a state page with JavaScript
 off.
 
+**Built in M4 step 2** for `/compare?…`: always `noindex`, canonical to the bare `/compare`;
+the HTML carries the table for the selection in the URL (one page of 100 rows) and a link to
+`/compare.csv?…` (every row). Without a selection it explains the page; a bad link says so.
+`e2e/compare.spec.ts` reads it with JavaScript off.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 

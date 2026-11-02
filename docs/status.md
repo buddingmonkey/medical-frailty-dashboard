@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M4 step 1)_
+_Last updated: 2026-11-02 (M4 step 2)_
 
 ## Where things stand
 
@@ -178,6 +178,10 @@ _Last updated: 2026-11-02 (M4 step 1)_
   list; 100 rows a page. **CPU on the Free plan (10 ms) is not yet measured**: the worst case
   (all four seed states, every unclassified entry) spent ~20 ms of JavaScript in Node. Read it on
   preview before 2026-11-30.
+- **M4 step 2 done** (branch `m4-step2-compare-page`): `/compare` (federal or a state's own
+  category, code system, states, "qualifies alone"; the URL holds the selection; 100 rows a
+  page; legend), "Compare" in the header and on each state category row, server-rendered
+  `noindex` HTML and `/compare.csv` (every row). **M4 is complete.**
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
