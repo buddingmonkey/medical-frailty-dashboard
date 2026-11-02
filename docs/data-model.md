@@ -58,8 +58,9 @@ entries             id, version_id, code_system, raw_code, code_norm, match_kind
 category_mappings   id, state_id, state_category, state_subcategory, federal_category,
                     method ('auto'|'manual'), confidence, mapped_by, mapped_at
 
-ref_codes           code_system, code_norm, description, parent_norm, chapter, valid_from, valid_to
-                    (ICD-10-CM and HCPCS Level II only, built from public-domain CMS files)
+ref_codes           code_system, code_norm, description, parent_norm, chapter, billable,
+                    valid_from, valid_to  (ICD-10-CM and HCPCS Level II only, from public-domain
+                    CMS files; WITHOUT ROWID, no extra index: packages/reference-data/README.md)
 
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
 condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm

@@ -21,6 +21,10 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   sit anywhere after the first digit (`C7A.010`, `C96.Z`, `F03.A2`, `M35.0B`), and 7th-character
   placeholders (`S06.2X0A`, `T84.50XA`) are exact codes. No wildcards or ranges in
   Attachment A (profiled 2026-11-01, 1,684 codes).
+- **Against ICD-10-CM FY2027** (2026-11-01): A has 1 code CMS does not list (`G41`), B has 3
+  (`R57.2`, `T52.8X2A`, `T52.8X2S`). `G41` and `R57.2` exist in WHO ICD-10 but not in
+  ICD-10-CM. A lists 42 header (non-billable) codes and B 114, probably meaning the whole
+  category.
 - The header row repeats on every page; skip repeated headers.
 - **A and B are two tiers** (user, 2026-11-01). Source page:
   https://pathways.georgia.gov/hr-1-changes-pathways (A: "satisfy the criteria"; B: "may
@@ -80,6 +84,9 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   (`H2G` "ANTIPSYCHOTICS,PHENOTHIAZINES", `H7P`, `ZAF`; 67 rows). The class codes look like
   First Databank HIC3 classes (not confirmed). They share a shape with ICD-10-CM categories,
   so ingestion sets code system `drug_class` for the Pharmacy sub-category.
+- **Against ICD-10-CM FY2027** (2026-11-01, 647 dotted exact codes): 12 are not in ICD-10-CM
+  (1.9%), e.g. `F30.0`, `M23.1`, `O75.7`, `R57.2`, `S06.7`; several look like WHO ICD-10 codes.
+  189 are header (non-billable) codes.
 
 ## Montana (MT)
 

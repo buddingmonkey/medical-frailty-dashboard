@@ -54,6 +54,8 @@ literacy, little or no coding.
 | 2026-11-01 | Counting every code in the real files by shape found six patterns the docs had missed. One, Louisiana's drug class codes, looks exactly like an ICD-10 diagnosis category and would have been filed under the wrong code system | Have the AI measure the real data before it writes rules | `devlog/2026-11-01-m1-step2-codes.md` |
 | 2026-11-01 | Ten steps in, the project lead switched from approving every step to "stop only at the end of a milestone" | Trust grows with a track record; move the checkpoint, keep a hard stop | same |
 | 2026-11-01 | All 124 unit tests passed, then GitHub's code scanner failed the PR: three text patterns could freeze the server on a crafted upload or URL. Tests reproduced the slowdown before the fix | Automated security checks find what your own tests never thought to try | `devlog/2026-11-01-m1-step2-codes.md` |
+| 2026-11-01 | The national code list is 107,173 rows; the free database plan writes 100,000 a day. Counting first turned a deploy-day surprise into a design choice: one write per row, and a loader that picks up where it stopped | Ask how big the data is and what the free plan allows before you load it | `devlog/2026-11-01-m1-step3-reference-data.md` |
+| 2026-11-01 | This year CMS added the first diagnosis codes with a letter in the second place (`QA0`). The parser refused line 30,620 instead of skipping it, which exposed the same wrong assumption in the code that reads state lists | Make programs stop on the unexpected; silent skipping hides news | same |
 
 ## Numbers to collect
 
@@ -85,6 +87,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M0 step 8 (2026-11-01) | 0.1 (8 min) | not measured | $0 | Builder agent; **M0 total ≈ 1.5 h of building** |
 | M1 step 1 (2026-11-01) | 0.2 (12 min) | not measured | $0 | Schema, migrations, FTS5, drift check; 75 Vitest tests |
 | M1 step 2 (2026-11-01) | 0.25 (15 min) | not measured | $0 | Code normalization; 103 table-driven tests |
+| M1 step 3 (2026-11-01) | 0.2 (13 min) | not measured | $0 | CMS reference codes: 107,173 rows, resumable loader |
 
 ## Assets to capture for slides
 

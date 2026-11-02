@@ -162,6 +162,24 @@ describe('schema', () => {
     await expect(insert.bind(3).run()).rejects.toThrow(/UNIQUE constraint failed/)
   })
 
+  it('stores ref_codes so each row costs one D1 write (WITHOUT ROWID, no extra index)', async () => {
+    // ~107k rows against a 100k-writes-per-day free tier: every index would add a write per row.
+    const table = await db
+      .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'ref_codes'`)
+      .first<{ sql: string }>()
+    expect(table?.sql).toMatch(/WITHOUT ROWID\s*$/)
+    const { results } = await db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'ref_codes'`)
+      .all<{ name: string }>()
+    expect(results).toEqual([])
+    await db
+      .prepare(
+        `INSERT INTO ref_codes (code_system, code_norm, description, chapter, billable, valid_from)
+         VALUES ('icd10cm', 'F200', 'Paranoid schizophrenia', '5', 1, '2026-10-01')`,
+      )
+      .run()
+  })
+
   it('requires the state slug to be the lowercase postal code (user, 2026-11-01)', async () => {
     await expect(seedState('GA', 'georgia')).rejects.toThrow(/CHECK constraint failed/)
     await expect(seedState('NE', 'NE')).rejects.toThrow(/CHECK constraint failed/)

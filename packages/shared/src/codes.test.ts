@@ -70,6 +70,8 @@ describe('inferCodeSystem', () => {
     ['1002', 'revenue'], // LA 4-digit revenue code
     ['F200', 'icd10cm'], // undotted, 4 chars: no other system has this shape
     ['S72001A', 'icd10cm'], // undotted 7 chars
+    ['QA0.0101', 'icd10cm'], // FY2027: letter in 2nd place (only QA so far)
+    ['QA00101', 'icd10cm'],
   ])('%s -> %s', (raw, system) => {
     expect(inferCodeSystem(raw)).toEqual({ system, ambiguous: false })
   })
@@ -100,6 +102,8 @@ describe('parseCodeCell: single codes', () => {
     ['A0103', { system: 'icd10cm' }, { codeSystem: 'icd10cm', codeNorm: 'A0103' }], // NE, no dots
     ['F03.A2', undefined, { codeNorm: 'F03A2' }], // GA: letter after the dot
     ['C96.Z', undefined, { codeNorm: 'C96Z' }], // GA
+    ['QA0.0101', undefined, { codeSystem: 'icd10cm', codeNorm: 'QA00101' }], // FY2027
+    ['QA0.*', undefined, { codeNorm: 'QA0', matchKind: 'prefix' }],
     ['M35.0B', undefined, { codeNorm: 'M350B' }], // GA
     // Placeholder X followed by more characters is an exact code, not a wildcard
     ['W01.0XXA', undefined, { codeNorm: 'W010XXA', matchKind: 'exact' }],
@@ -211,6 +215,7 @@ describe('parseCodeCell: problems (the row stops for manual entry)', () => {
     ['F20-F20.9', 'unclear_range', undefined],
     ['ZAF', 'unrecognized', undefined], // a drug class without the source's code system
     ['Infections', 'unrecognized', undefined],
+    ['SMI', 'unrecognized', undefined], // a category name in the code column is not a code
     ['F20.0', 'system_mismatch', { system: 'cpt' }],
   ])('%s -> %s', (raw, problem, options) => {
     const result = parseCodeCell(raw, options)

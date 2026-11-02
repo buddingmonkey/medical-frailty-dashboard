@@ -1,0 +1,21 @@
+00001 A00     0 Cholera                                                      Cholera
+00002 A000    1 Cholera due to Vibrio cholerae 01, biovar cholerae           Cholera due to Vibrio cholerae 01, biovar cholerae
+00003 A001    1 Cholera due to Vibrio cholerae 01, biovar eltor              Cholera due to Vibrio cholerae 01, biovar eltor
+02101 C7A     0 Malignant neuroendocrine tumors                              Malignant neuroendocrine tumors
+02102 C7A0    0 Malignant carcinoid tumors                                   Malignant carcinoid tumors
+02105 C7A010  1 Malignant carcinoid tumor of the duodenum                    Malignant carcinoid tumor of the duodenum
+05877 F20     0 Schizophrenia                                                Schizophrenia
+05878 F200    1 Paranoid schizophrenia                                       Paranoid schizophrenia
+28947 O9A     0 Maternl malig or injury compl preg/childbrth                 Maternal malignant neoplasms, traumatic injuries and abuse classifiable elsewhere but complicating pregnancy, childbirth and the puerperium
+57557 S7200   0 Fracture of unspecified part of neck of femur                Fracture of unspecified part of neck of femur
+57558 S72001  0 Fracture of unspecified part of neck of right femur          Fracture of unspecified part of neck of right femur
+57559 S72001A 1 Fracture of unsp part of neck of right femur, init           Fracture of unspecified part of neck of right femur, initial encounter for closed fracture
+85204 T8450   0 Infect/inflm reaction due to unsp internal joint prosthesis  Infection and inflammatory reaction due to unspecified internal joint prosthesis
+85205 T8450XA 1 Infect/inflm reaction due to unsp int joint prosth, init     Infection and inflammatory reaction due to unspecified internal joint prosthesis, initial encounter
+97017 Z3A     0 Weeks of gestation                                           Weeks of gestation
+97019 Z3A00   1 Weeks of gestation of pregnancy not specified                Weeks of gestation of pregnancy not specified
+98399 U07     0 Emergency use of U07                                         Emergency use of U07
+98401 U071    1 COVID-19                                                     COVID-19
+30620 QA0     0 Neurodev disord related to specific genetic patho variants   Neurodevelopmental disorders related to specific genetic pathogenic variants
+30624 QA00101 1 SCN2A-related neurodevelopmental disorder                    SCN2A-related neurodevelopmental disorder
+30647 QA1798  1 Other inherited neoplm predisposition synd of mult systems   Other inherited neoplasm predisposition syndrome of multiple systems

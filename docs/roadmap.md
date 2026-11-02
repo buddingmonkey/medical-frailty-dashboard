@@ -42,7 +42,7 @@ running totals in `docs/talk-notes.md`.
    publish date plus our last-updated date on each published version.
 2. **Done** (branch `m1-step2-codes`). `packages/shared/codes.ts`: normalization, wildcard, range, list splitting, code-system
    inference. Table-driven tests from every pattern in `docs/sources.md`.
-3. `packages/reference-data`: build `ref_codes` from the CMS ICD-10-CM and HCPCS Level II
+3. **Done** (branch `m1-step3-reference-data`). `packages/reference-data`: build `ref_codes` from the CMS ICD-10-CM and HCPCS Level II
    files (current fiscal year) into a seed SQL file. Document the yearly update in this doc.
 4. Federal categories + auto-mapping keyword table. Confirm the statute wording and link it in
    `docs/sources.md`.
@@ -50,7 +50,9 @@ running totals in `docs/talk-notes.md`.
    `docs/ingestion.md`.
 6. Deploy: add `wrangler d1 migrations apply --remote` to `.github/workflows/deploy.yml`, and
    for production record the D1 Time Travel bookmark before migrating (`docs/deployment.md`,
-   "Backups and restore"; D1 cannot export a database with an FTS5 table).
+   "Backups and restore"; D1 cannot export a database with an FTS5 table). Start the
+   reference-code load on preview and production (two days each on the free tier; production
+   from CI: `packages/reference-data/README.md`).
 
 ## M2 Ingestion (admin)
 

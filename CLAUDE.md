@@ -18,6 +18,7 @@ pnpm test <filter>    # run matching Vitest tests in every workspace (no `--`: i
 pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it
 pnpm db:migrate:local # apply D1 migrations to the local database
+pnpm db:ref:local     # load the CMS reference codes (ICD-10-CM, HCPCS) into local D1, ~20 s
 pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
 pnpm format           # prettier --write
 pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare Access)

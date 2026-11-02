@@ -1,0 +1,20 @@
+{
+  "name": "@mfcd/reference-data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node src/cli.ts build",
+    "load": "node src/cli.ts load",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mfcd/shared": "workspace:*",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "vitest": "5.0.5"
+  }
+}

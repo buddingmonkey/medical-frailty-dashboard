@@ -110,13 +110,16 @@ CREATE TABLE `ref_codes` (
 	`description` text NOT NULL,
 	`parent_norm` text,
 	`chapter` text,
+	`billable` integer,
 	`valid_from` text NOT NULL,
 	`valid_to` text,
 	PRIMARY KEY(`code_system`, `code_norm`, `valid_from`),
-	CONSTRAINT "ref_codes_code_system_check" CHECK("ref_codes"."code_system" IN ('icd10cm', 'hcpcs'))
-);
+	CONSTRAINT "ref_codes_code_system_check" CHECK("ref_codes"."code_system" IN ('icd10cm', 'hcpcs')),
+	CONSTRAINT "ref_codes_billable_check" CHECK("ref_codes"."billable" IN (0, 1))
+) WITHOUT ROWID;
+-- WITHOUT ROWID added by hand (drizzle-kit cannot express it): one D1 write per row. See the
+-- comment on refCodes in src/db/schema.ts.
 --> statement-breakpoint
-CREATE INDEX `ref_codes_parent_idx` ON `ref_codes` (`code_system`,`parent_norm`);--> statement-breakpoint
 CREATE TABLE `source_documents` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`state_id` text NOT NULL,
