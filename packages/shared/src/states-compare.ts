@@ -270,11 +270,11 @@ export const statesCompareAllLabel = (n: number): string => (n === 2 ? 'Both' : 
 
 /** What the summary counts. */
 export const STATES_COMPARE_SUMMARY_NOTE =
-  'Codes here are the entries of the chosen lists (a code, wildcard or range each); a state ' +
-  'counts a code when it lists it or covers it with a broader entry.'
+  'Each code here is one entry from the chosen lists: a single code, a wildcard or a range. ' +
+  'A state counts a code when it lists it or covers it with a broader entry.'
 
 /** The intro under the heading. */
 export const STATES_COMPARE_INTRO =
-  'Where these states’ medical frailty code lists differ, grouped by the categories we compare ' +
-  'states by. A code differs when some of the states list or cover it and others do not, or ' +
+  'Where these states’ medical frailty code lists differ, grouped by the same categories as the ' +
+  'overview. A code differs when some of the states list or cover it and others do not, or ' +
   'when all of them do under different rules.'

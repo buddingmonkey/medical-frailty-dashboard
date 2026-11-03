@@ -473,7 +473,7 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     )
     // Reading notes, the same words as the Vue page.
     expect(app).toContain('<h2>Reading this table</h2>')
-    expect(app).toContain('whichever of the state’s own categories')
+    expect(app).toContain('no matter which of the state’s own categories')
     expect(app).toContain('href="/compare/codes"')
   })
 
