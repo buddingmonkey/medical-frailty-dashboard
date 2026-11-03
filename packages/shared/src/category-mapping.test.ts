@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   categoryMappingSaveSchema,
-  chapterOverrideSaveSchema,
   federalCategoriesOf,
   federalCategoryList,
   mappingKey,
@@ -98,12 +97,5 @@ describe('schemas', () => {
       categoryMappingSaveSchema.safeParse({ items: Array.from({ length: 201 }, () => item) })
         .success,
     ).toBe(false)
-  })
-
-  it('sets or clears a chapter override', () => {
-    expect(chapterOverrideSaveSchema.parse({ federalCategory: null })).toEqual({
-      federalCategory: null,
-    })
-    expect(chapterOverrideSaveSchema.safeParse({ federalCategory: 'nope' }).success).toBe(false)
   })
 })

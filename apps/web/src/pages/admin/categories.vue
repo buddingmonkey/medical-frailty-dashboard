@@ -11,7 +11,7 @@ import {
   stateListResponseSchema,
 } from '@mfcd/shared'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, nextTick, reactive, ref, useId, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, reactive, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
 import RemapPreview from '../../components/admin/RemapPreview.vue'
@@ -76,6 +76,15 @@ const guesses = computed(() =>
       (c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped') !== 'unmapped',
   ),
 )
+// "Confirm" and "Confirm all guesses" only turn a stored auto mapping into manual: no entry
+// moves, so they save at once. Any other change goes through the preview (M7 step 3).
+const isConfirmOnly = (c: Category, choice: FederalCategory | '') =>
+  c.mapping !== null && choice !== '' && c.mapping.federalCategory === choice
+const storedGuesses = computed(() =>
+  guesses.value.filter(
+    (c) => c.mapping?.method === 'auto' && c.mapping.federalCategory !== 'unmapped',
+  ),
+)
 const summary = computed(() => {
   const confirmed = categories.value.filter((c) => c.mapping?.method === 'manual').length
   const guessed = guesses.value.length
@@ -113,8 +122,12 @@ const remap = ref<{ changes: RemapChanges; from: 'categories' | 'chapters'; n: n
   null,
 )
 let remapCount = 0
-const bulkButton = useTemplateRef<HTMLButtonElement>('bulkButton')
-const bulkChapterButton = useTemplateRef<HTMLButtonElement>('bulkChapterButton')
+let opener: HTMLElement | null = null
+function openRemap(from: 'categories' | 'chapters', changes: RemapChanges) {
+  opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  remapCount += 1
+  remap.value = { from, n: remapCount, changes }
+}
 
 function toggled<T>(set: Set<T>, value: T): Set<T> {
   const next = new Set(set)
@@ -144,40 +157,29 @@ function previewCategories() {
   const to = bulkCategory.value
   if (!to) return
   const items = categories.value.filter((c) => selected.value.has(keyOf(c)))
-  remapCount += 1
-  remap.value = {
-    from: 'categories',
-    n: remapCount,
-    changes: {
-      categories: items.map((c) => ({
-        stateCategory: c.stateCategory,
-        stateSubcategory: c.stateSubcategory,
-        federalCategory: to,
-      })),
-      chapters: [],
-    },
-  }
+  openRemap('categories', {
+    categories: items.map((c) => ({
+      stateCategory: c.stateCategory,
+      stateSubcategory: c.stateSubcategory,
+      federalCategory: to,
+    })),
+    chapters: [],
+  })
 }
 function previewChapters() {
   const to = bulkChapter.value
   if (!to) return
-  remapCount += 1
-  remap.value = {
-    from: 'chapters',
-    n: remapCount,
-    changes: {
-      categories: [],
-      chapters: chapters.value
-        .filter((ch) => selectedChapters.value.has(ch.chapter))
-        .map((ch) => ({ chapter: ch.chapter, federalCategory: to === 'clear' ? null : to })),
-    },
-  }
+  openRemap('chapters', {
+    categories: [],
+    chapters: chapters.value
+      .filter((ch) => selectedChapters.value.has(ch.chapter))
+      .map((ch) => ({ chapter: ch.chapter, federalCategory: to === 'clear' ? null : to })),
+  })
 }
 async function closeRemap() {
-  const from = remap.value?.from
   remap.value = null
   await nextTick()
-  ;(from === 'chapters' ? bulkChapterButton : bulkButton).value?.focus()
+  opener?.focus()
 }
 async function remapSaved(message: string) {
   if (remap.value?.from === 'chapters') selectedChapters.value = new Set()
@@ -209,48 +211,45 @@ const save = useMutation({
   },
 })
 
+/** One row's choice: a confirm saves at once; a change is previewed as a one-item remap. */
 function confirmOne(c: Category) {
   const choice = picked[keyOf(c)]
-  if (!choice) return
-  save.mutate([
-    {
-      stateCategory: c.stateCategory,
-      stateSubcategory: c.stateSubcategory,
-      federalCategory: choice,
-    },
-  ])
+  if (!choice || choice === 'unmapped') return
+  const item = {
+    stateCategory: c.stateCategory,
+    stateSubcategory: c.stateSubcategory,
+    federalCategory: choice,
+  }
+  if (isConfirmOnly(c, choice)) save.mutate([item])
+  else openRemap('categories', { categories: [item], chapters: [] })
 }
 
 function confirmGuesses() {
   save.mutate(
-    guesses.value.slice(0, 200).flatMap((c) => {
-      const choice = c.mapping?.federalCategory ?? c.suggestion?.federalCategory
-      return choice && choice !== 'unmapped'
+    storedGuesses.value.slice(0, 200).flatMap((c) =>
+      c.mapping && c.mapping.federalCategory !== 'unmapped'
         ? [
             {
               stateCategory: c.stateCategory,
               stateSubcategory: c.stateSubcategory,
-              federalCategory: choice,
+              federalCategory: c.mapping.federalCategory,
             },
           ]
-        : []
-    }),
+        : [],
+    ),
   )
 }
 
-const saveChapter = useMutation({
-  mutationFn: (ch: Chapter) =>
-    sendJson(
-      'PUT',
-      `/api/admin/states/${stateId.value}/chapters/${String(ch.chapter)}`,
-      { federalCategory: chapterPicked[ch.chapter] === '' ? null : chapterPicked[ch.chapter] },
-      ok,
-    ),
-  onSuccess: async (_, ch) => {
-    saved.value = `Saved the override for chapter ${String(ch.chapter)}.`
-    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
-  },
-})
+const chapterChanged = (ch: Chapter) =>
+  (chapterPicked[ch.chapter] ?? '') !== (ch.override?.federalCategory ?? '')
+function previewChapter(ch: Chapter) {
+  const choice = chapterPicked[ch.chapter] ?? ''
+  if (choice === 'unmapped') return
+  openRemap('chapters', {
+    categories: [],
+    chapters: [{ chapter: ch.chapter, federalCategory: choice === '' ? null : choice }],
+  })
+}
 
 const n = (value: number) => value.toLocaleString('en-US')
 const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
@@ -283,8 +282,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
-    <p v-if="save.error.value || saveChapter.error.value" role="alert" class="text-danger">
-      Could not save: {{ (save.error.value ?? saveChapter.error.value)?.message }}
+    <p v-if="save.error.value" role="alert" class="text-danger">
+      Could not save: {{ save.error.value.message }}
     </p>
     <p v-if="query.error.value" role="alert" class="text-danger">
       Could not load the categories: {{ query.error.value.message }}
@@ -298,13 +297,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         <div class="flex flex-wrap items-center gap-3">
           <p>{{ summary }}</p>
           <button
-            v-if="guesses.length > 0"
+            v-if="storedGuesses.length > 0"
             type="button"
             :class="smallButton"
             :disabled="save.isPending.value"
             @click="confirmGuesses"
           >
-            Confirm all {{ guesses.length }} guesses
+            Confirm all {{ storedGuesses.length }} guesses
           </button>
         </div>
         <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">
@@ -327,7 +326,6 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
           </select>
           <button
-            ref="bulkButton"
             type="button"
             :class="smallButton"
             :disabled="selected.size === 0 || !bulkCategory"
@@ -406,10 +404,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                       type="button"
                       :class="smallButton"
                       :disabled="!picked[keyOf(c)] || save.isPending.value"
-                      :aria-label="`Confirm ${nameOf(c)}`"
+                      :aria-label="
+                        isConfirmOnly(c, picked[keyOf(c)] ?? '')
+                          ? `Confirm ${nameOf(c)}`
+                          : `Preview change for ${nameOf(c)}`
+                      "
                       @click="confirmOne(c)"
                     >
-                      Confirm
+                      {{ isConfirmOnly(c, picked[keyOf(c)] ?? '') ? 'Confirm' : 'Preview change' }}
                     </button>
                   </div>
                 </td>
@@ -446,7 +448,6 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
           </select>
           <button
-            ref="bulkChapterButton"
             type="button"
             :class="smallButton"
             :disabled="selectedChapters.size === 0 || !bulkChapter"
@@ -507,11 +508,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                     <button
                       type="button"
                       :class="smallButton"
-                      :disabled="saveChapter.isPending.value"
-                      :aria-label="`Save chapter ${ch.chapter}`"
-                      @click="saveChapter.mutate(ch)"
+                      :disabled="!chapterChanged(ch)"
+                      :aria-label="`Preview change for chapter ${ch.chapter}`"
+                      @click="previewChapter(ch)"
                     >
-                      Save
+                      Preview change
                     </button>
                   </div>
                 </td>

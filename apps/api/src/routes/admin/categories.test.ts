@@ -173,6 +173,16 @@ describe('/api/admin/states/:stateId/categories', () => {
   })
 
   it('confirms mappings, moves the public update date and the data version, and audits', async () => {
+    await db.insert(categoryMappings).values([
+      {
+        stateId: 'MT',
+        stateCategory: 'SMI',
+        federalCategory: 'disabling_mental_disorder',
+        method: 'auto',
+        confidence: 0.9,
+      },
+      { stateId: 'MT', stateCategory: 'SUD', federalCategory: 'sud', method: 'auto' },
+    ])
     const res = await send('PUT', '/api/admin/states/MT/categories', {
       items: [
         {
@@ -205,12 +215,10 @@ describe('/api/admin/states/:stateId/categories', () => {
   })
 
   it('refuses "unmapped" and other states’ rows stay untouched', async () => {
-    await db.insert(categoryMappings).values({
-      stateId: 'NE',
-      stateCategory: 'SMI',
-      federalCategory: 'sud',
-      method: 'manual',
-    })
+    await db.insert(categoryMappings).values([
+      { stateId: 'NE', stateCategory: 'SMI', federalCategory: 'sud', method: 'manual' },
+      { stateId: 'MT', stateCategory: 'SMI', federalCategory: 'state_specific', method: 'auto' },
+    ])
     const bad = await send('PUT', '/api/admin/states/MT/categories', {
       items: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'unmapped' }],
     })
@@ -222,19 +230,23 @@ describe('/api/admin/states/:stateId/categories', () => {
     expect(ne.map((m) => m.federalCategory)).toEqual(['sud'])
   })
 
-  it('sets and clears a chapter override', async () => {
-    const path = '/api/admin/states/MT/chapters/5'
-    expect((await send('PUT', path, { federalCategory: 'disabling_mental_disorder' })).status).toBe(
-      200,
-    )
-    expect((await categories()).chapters.find((c) => c.chapter === 5)?.override).toMatchObject({
-      federalCategory: 'disabling_mental_disorder',
-      mappedBy: ADMIN,
-    })
-    expect((await send('PUT', path, { federalCategory: null })).status).toBe(200)
-    expect(await db.select().from(chapterMappings)).toEqual([])
+  it('refuses a confirm that would change a federal category: that needs the preview', async () => {
+    await db
+      .insert(categoryMappings)
+      .values({ stateId: 'MT', stateCategory: 'SMI', federalCategory: 'sud', method: 'auto' })
+    for (const items of [
+      // A different federal category from the stored one.
+      [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'state_specific' }],
+      // No stored mapping: its entries are unmapped now and would move.
+      [{ stateCategory: 'SUD', stateSubcategory: '', federalCategory: 'sud' }],
+    ]) {
+      expect((await send('PUT', '/api/admin/states/MT/categories', { items })).status).toBe(409)
+    }
+    const [smi] = await db.select().from(categoryMappings)
+    expect(smi).toMatchObject({ federalCategory: 'sud', method: 'auto' })
+    // The chapter override route is gone: overrides change only through /remap.
     expect(
-      (await send('PUT', '/api/admin/states/MT/chapters/23', { federalCategory: 'sud' })).status,
+      (await send('PUT', '/api/admin/states/MT/chapters/5', { federalCategory: 'sud' })).status,
     ).toBe(404)
   })
 
@@ -372,12 +384,38 @@ describe('/api/admin/states/:stateId/categories/preview and /remap', () => {
     })
   })
 
+  it('Confirm changes no entry’s federal category', async () => {
+    // Every category and chapter, so the preview covers every published entry.
+    const everything = {
+      categories: [
+        {
+          stateCategory: 'SMI',
+          stateSubcategory: '',
+          federalCategory: 'disabling_mental_disorder',
+        },
+        { stateCategory: 'SUD', stateSubcategory: '', federalCategory: 'sud' },
+      ],
+      chapters: [],
+    }
+    const before = await preview(everything)
+    const res = await send('PUT', '/api/admin/states/MT/categories', {
+      items: everything.categories,
+    })
+    expect(res.status).toBe(200)
+    const after = await preview(everything)
+    expect(after.totals).toEqual(before.totals)
+    expect(after.changes.map((c) => c.movingTotal)).toEqual([0, 0])
+    const smi = await db.select().from(categoryMappings).where(eq(categoryMappings.stateId, 'MT'))
+    expect(smi.map((m) => m.method)).toEqual(['manual', 'manual'])
+  })
+
   it('refuses a stale preview with 409 and writes nothing', async () => {
     const { token } = await preview()
     // Another admin changes the SMI mapping after the preview.
-    await send('PUT', '/api/admin/states/MT/categories', {
-      items: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'state_specific' }],
-    })
+    await db
+      .update(categoryMappings)
+      .set({ federalCategory: 'state_specific' })
+      .where(eq(categoryMappings.stateCategory, 'SMI'))
     const res = await send('POST', '/api/admin/states/MT/categories/remap', { ...changes, token })
     expect(res.status).toBe(409)
     const [smi] = await db

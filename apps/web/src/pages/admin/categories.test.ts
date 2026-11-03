@@ -182,26 +182,46 @@ describe('/admin/categories', () => {
     expect(rowOf(table, 'SUD').textContent).not.toContain('unified')
   })
 
-  it('confirms one category with the chosen federal category', async () => {
-    const { saves } = fakeApi()
+  it('confirms a stored guess at once, since no entry moves', async () => {
+    const { saves, previews } = fakeApi()
+    const table = await open()
+    await user.click(within(rowOf(table, 'SMI')).getByRole('button', { name: 'Confirm SMI' }))
+    expect(saves).toEqual([
+      {
+        items: [
+          {
+            stateCategory: 'SMI',
+            stateSubcategory: '',
+            federalCategory: 'disabling_mental_disorder',
+          },
+        ],
+      },
+    ])
+    expect(previews).toEqual([])
+  })
+
+  it('previews one row’s change as a one-item remap before saving it', async () => {
+    const { saves, previews, remaps } = fakeApi()
     const table = await open()
     const row = rowOf(table, 'Miscellaneous')
     await user.selectOptions(
       within(row).getByLabelText('Federal category for Miscellaneous'),
       'state_specific',
     )
-    await user.click(within(row).getByRole('button', { name: 'Confirm Miscellaneous' }))
-    expect(saves).toEqual([
-      {
-        items: [
-          {
-            stateCategory: 'Miscellaneous',
-            stateSubcategory: '',
-            federalCategory: 'state_specific',
-          },
-        ],
-      },
-    ])
+    await user.click(within(row).getByRole('button', { name: 'Preview change for Miscellaneous' }))
+    const region = await screen.findByRole('region', { name: 'Check the remap before saving' })
+    const one = {
+      categories: [
+        { stateCategory: 'Miscellaneous', stateSubcategory: '', federalCategory: 'state_specific' },
+      ],
+      chapters: [],
+    }
+    expect(previews).toEqual([one])
+    await within(region).findByText(/50 entries will move/)
+    await user.click(within(region).getByRole('button', { name: 'Save remap' }))
+    expect(await screen.findByText('Remapped 1 item in Louisiana.')).toBeTruthy()
+    expect(remaps).toEqual([{ ...one, token: 'token-1' }])
+    expect(saves).toEqual([])
   })
 
   it('confirms every guess at once', async () => {
@@ -221,22 +241,27 @@ describe('/admin/categories', () => {
     ])
   })
 
-  it('sets a chapter override for chapters that have entries', async () => {
-    const { chapterSaves } = fakeApi()
+  it('previews a chapter override change before saving it', async () => {
+    const { chapterSaves, previews } = fakeApi()
     await open()
     const chaptersTable = screen.getByRole('table', { name: 'ICD-10-CM chapters' })
     expect(within(chaptersTable).getAllByRole('row')).toHaveLength(2)
+    const button = within(chaptersTable).getByRole('button', {
+      name: 'Preview change for chapter 5',
+    })
+    expect((button as HTMLButtonElement).disabled).toBe(true)
     await user.selectOptions(
       within(chaptersTable).getByLabelText(/Override for chapter 5/),
       'disabling_mental_disorder',
     )
-    await user.click(within(chaptersTable).getByRole('button', { name: 'Save chapter 5' }))
-    expect(chapterSaves).toEqual([
-      {
-        path: '/api/admin/states/LA/chapters/5',
-        body: { federalCategory: 'disabling_mental_disorder' },
-      },
+    await user.click(button)
+    const region = await screen.findByRole('region', { name: 'Check the remap before saving' })
+    expect(previews).toEqual([
+      { categories: [], chapters: [{ chapter: 5, federalCategory: 'disabling_mental_disorder' }] },
     ])
+    await user.click(within(region).getByRole('button', { name: 'Cancel' }))
+    expect(button).toBe(document.activeElement)
+    expect(chapterSaves).toEqual([])
   })
 
   it('previews a bulk remap of the selected categories, then saves it with the token', async () => {

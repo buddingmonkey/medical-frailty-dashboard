@@ -1,7 +1,6 @@
 import {
   autoMapCategory,
   categoryMappingSaveSchema,
-  chapterOverrideSaveSchema,
   type FederalCategory,
   federalCategories,
   federalCategoryList,
@@ -292,13 +291,34 @@ export const categoriesRoute = new Hono<AppEnv>()
     )
   })
 
-  // Confirmed (manual) mappings, up to 200 at once ("confirm all suggestions").
+  // Confirm stored mappings (auto → manual), up to 200 at once ("Confirm all guesses"). Only
+  // the federal category already stored is accepted, so no entry moves; any change of federal
+  // category goes through the preview and /remap (M7 step 3).
   .put('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
     const state = await findState(db, c)
     if (!state) return c.json({ error: 'Not found' }, 404)
     const body = categoryMappingSaveSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid mappings' }, 400)
+    const stored = await db
+      .select({
+        stateCategory: categoryMappings.stateCategory,
+        stateSubcategory: categoryMappings.stateSubcategory,
+        federalCategory: categoryMappings.federalCategory,
+      })
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateId, state.id))
+    const storedBy = new Map(
+      stored.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory]),
+    )
+    const changes = body.data.items.some(
+      (item) =>
+        storedBy.get(mappingKey(item.stateCategory, item.stateSubcategory)) !==
+        item.federalCategory,
+    )
+    if (changes) {
+      return c.json({ error: 'This changes a federal category. Preview the change first.' }, 409)
+    }
     const actor = c.var.identity?.email ?? ''
     const now = new Date().toISOString()
     const upserts = body.data.items.map((item) => {
@@ -337,42 +357,6 @@ export const categoriesRoute = new Hono<AppEnv>()
         action: 'category.map',
         target: `state:${state.id}`,
         details: { items: body.data.items },
-      }),
-    ])
-    return c.json({ ok: true })
-  })
-
-  .put('/:stateId/chapters/:chapter', async (c) => {
-    const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    const chapter = Number(c.req.param('chapter'))
-    if (!state || !icd10cmChapters.some((ch) => ch.number === chapter)) {
-      return c.json({ error: 'Not found' }, 404)
-    }
-    const body = chapterOverrideSaveSchema.safeParse(await c.req.json().catch(() => null))
-    if (!body.success) return c.json({ error: 'Invalid override' }, 400)
-    const actor = c.var.identity?.email ?? ''
-    const { federalCategory } = body.data
-    const change =
-      federalCategory === null
-        ? db
-            .delete(chapterMappings)
-            .where(and(eq(chapterMappings.stateId, state.id), eq(chapterMappings.chapter, chapter)))
-        : db
-            .insert(chapterMappings)
-            .values({ stateId: state.id, chapter, federalCategory, mappedBy: actor })
-            .onConflictDoUpdate({
-              target: [chapterMappings.stateId, chapterMappings.chapter],
-              set: { federalCategory, mappedBy: actor, mappedAt: new Date().toISOString() },
-            })
-    await db.batch([
-      change,
-      ...publicChange(db, state.id),
-      auditInsert(db, {
-        actorEmail: actor,
-        action: 'chapter.map',
-        target: `state:${state.id}`,
-        details: { chapter, federalCategory },
       }),
     ])
     return c.json({ ok: true })

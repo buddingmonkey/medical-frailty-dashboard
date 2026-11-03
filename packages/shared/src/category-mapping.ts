@@ -69,7 +69,7 @@ export const chosenCategory = z.enum(federalCategories).exclude(['unmapped'])
 export type ChosenFederalCategory = z.infer<typeof chosenCategory>
 export const categoryLabel = z.string().max(200)
 
-/** Body of `PUT /api/admin/states/:stateId/categories`: confirmed (manual) mappings. */
+/** Body of `PUT /api/admin/states/:stateId/categories`: stored mappings to confirm (manual). */
 export const categoryMappingSaveSchema = z.object({
   items: z
     .array(
@@ -82,9 +82,6 @@ export const categoryMappingSaveSchema = z.object({
     .min(1)
     .max(200),
 })
-
-/** Body of `PUT /api/admin/states/:stateId/chapters/:chapter`; null removes the override. */
-export const chapterOverrideSaveSchema = z.object({ federalCategory: chosenCategory.nullable() })
 
 const mappingInfo = z.object({
   federalCategory: z.enum(federalCategories),

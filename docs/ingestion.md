@@ -251,8 +251,11 @@ token differs; the screen then shows the new preview to check again. The save is
 `db.batch()`: one write per mapping or override (`method = 'manual'`), an audit row
 (`category.remap`, each change with from, to and the number of entries moved), the published
 version's `content_updated_at` and `data_version`. Nothing is recomputed: placements and
-similarity do not depend on the category mapping. The per-row "Confirm" and chapter "Save"
-still save at once, without a preview.
+similarity do not depend on the category mapping. Every change of a federal category or a
+chapter override takes this path, a single row's too (previewed as a one-item remap; the
+row's button reads "Preview change"). Only "Confirm" and "Confirm all guesses" save at once:
+they turn a stored `auto` mapping into `manual`, and the API refuses (409) any item whose
+federal category differs from the stored one, so no entry moves.
 
 ## AI cleanup
 
