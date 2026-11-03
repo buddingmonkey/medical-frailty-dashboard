@@ -79,6 +79,7 @@ when that milestone is done, from what actually worked (see `docs/devlog/`).
 | Add or close a watch date | Admin → Watch dates | Written (M2) |
 | Add a new public page | Use the loop in section 3 with the prompt template below; the state page (`apps/web/src/pages/states/[slug].vue` + `apps/api/src/seo/pages.ts`) is the example to copy | Written (M3) |
 | Add a page with choices (filters, pickers) | Put every choice in the URL and read it back on load; the compare page (`apps/web/src/pages/compare.vue`, `lib/public-compare.ts`) is the example to copy | Written (M4) |
+| Create a unified category and map states to it | Admin → Unified categories (choose its CCSR groups, publish), then Admin → Mappings per state (use the suggestion, save and approve) | Written (M5) |
 | Download a backup | Admin → Download backup | _(to write after M7)_ |
 
 ### Prompt template: add a public page
