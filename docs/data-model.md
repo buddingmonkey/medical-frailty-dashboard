@@ -366,7 +366,8 @@ entry_unified       entry_id, unified_id, basis, reviewed      (placements; "Cov
 state_similarity    state_a < state_b, shared, only_a, only_b, jaccard, computed_at  ("Pair similarity")
 unified_universe    unified_id, code_norm                       (universes; "Coverage summary")
 
-condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
+condition_groups    id, slug, name, definition, sources, status ('draft'|'published'),
+                    updated_by, updated_at                  ("Cancer and chemotherapy", ...; "Like codes")
 condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm
 
 column_profiles     id, state_id, header_key, profile_json, updated_by, updated_at
@@ -485,6 +486,21 @@ There is no official crosswalk from ICD-10 diagnoses to CPT/HCPCS services. v1 u
 SUD, HIV, ...) that admins edit. ICD-10-CM members are prefixes (e.g. `C00`–`D49`); CPT/HCPCS
 members are code ranges (e.g. chemotherapy administration `96401`–`96549`). Seed groups also come
 from the state categories themselves (LA "Cancer" spans diagnosis, service and pharmacy codes).
+
+Built in M6 step 4:
+- **Members** are typed as text per code system and read by `parseCodeCell` (`C00-C96`,
+  `F20.*`, `Z99.2`, `96401-96549`). A member covers its codes **and every code under them**,
+  whatever its match kind (`conditionMemberSpan` in `packages/shared/src/condition-groups.ts`).
+- **Like match:** for code X, the published groups with a member in X's system that covers X.
+  A state whose status is `not_listed` or `narrower` gets, per group, its entries in **another**
+  code system that share at least one code with a member (`entryInConditionMember`; a wildcard or
+  range entry counts when it overlaps). Same-system entries never count.
+- **Not a status.** Like codes are a list beside the status (`likeCodes`), not a sixth status: a
+  state keeps its real status ("Not listed", "Narrower codes listed") and appears again in its own
+  "Like codes" section below the others, so a like match never reads as a match.
+- **Draft until published.** Only published groups are used. Migration 0014 seeds eight groups
+  as drafts (an AI first draft; CPT as code numbers only, HCPCS and ICD-10-CM checked against
+  `ref_codes`).
 
 ## Qualification (does a code count on its own?)
 

@@ -16,6 +16,7 @@ import {
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
+import LikeCodes from '../../../components/codes/LikeCodes.vue'
 import QualificationBadge from '../../../components/compare/QualificationBadge.vue'
 import { useCodeDetail } from '../../../composables/useCodeDetail'
 import { ApiError } from '../../../lib/api'
@@ -204,5 +205,6 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
         </ul>
       </section>
     </section>
+    <LikeCodes :states="data.states" :groups="data.conditionGroups ?? []" />
   </article>
 </template>
