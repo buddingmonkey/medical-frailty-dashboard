@@ -69,22 +69,22 @@ watch(
 )
 
 const categories = computed(() => query.data.value?.categories ?? [])
-const guesses = computed(() =>
-  categories.value.filter(
-    (c) =>
-      c.mapping?.method !== 'manual' &&
-      (c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped') !== 'unmapped',
-  ),
-)
-// "Confirm" and "Confirm all guesses" only turn a stored auto mapping into manual: no entry
-// moves, so they save at once. Any other change goes through the preview (M7 step 3).
+// A confirm saves at once when it moves no published entry (M7 step 3): a stored mapping
+// confirmed unchanged, or any choice for a category with no published entries (draft only).
+// Any other change goes through the preview. The API checks the same rule.
 const isConfirmOnly = (c: Category, choice: FederalCategory | '') =>
-  c.mapping !== null && choice !== '' && c.mapping.federalCategory === choice
-const storedGuesses = computed(() =>
-  guesses.value.filter(
-    (c) => c.mapping?.method === 'auto' && c.mapping.federalCategory !== 'unmapped',
-  ),
-)
+  choice !== '' &&
+  choice !== 'unmapped' &&
+  (c.publishedEntries === 0 || c.mapping?.federalCategory === choice)
+/** The guess "Confirm all guesses" saves for a category, or null when it has none to confirm. */
+function guessOf(c: Category): ChosenFederalCategory | null {
+  if (c.mapping?.method === 'manual') return null
+  const guess = c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped'
+  return guess !== 'unmapped' && isConfirmOnly(c, guess) ? guess : null
+}
+// A suggestion for a category with published entries and no stored mapping counts as not
+// mapped (its entries are unmapped now); confirming it is a change, previewed per row.
+const guesses = computed(() => categories.value.filter((c) => guessOf(c) !== null))
 const summary = computed(() => {
   const confirmed = categories.value.filter((c) => c.mapping?.method === 'manual').length
   const guessed = guesses.value.length
@@ -226,17 +226,18 @@ function confirmOne(c: Category) {
 
 function confirmGuesses() {
   save.mutate(
-    storedGuesses.value.slice(0, 200).flatMap((c) =>
-      c.mapping && c.mapping.federalCategory !== 'unmapped'
+    guesses.value.slice(0, 200).flatMap((c) => {
+      const federalCategory = guessOf(c)
+      return federalCategory
         ? [
             {
               stateCategory: c.stateCategory,
               stateSubcategory: c.stateSubcategory,
-              federalCategory: c.mapping.federalCategory,
+              federalCategory,
             },
           ]
-        : [],
-    ),
+        : []
+    }),
   )
 }
 
@@ -297,13 +298,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         <div class="flex flex-wrap items-center gap-3">
           <p>{{ summary }}</p>
           <button
-            v-if="storedGuesses.length > 0"
+            v-if="guesses.length > 0"
             type="button"
             :class="smallButton"
             :disabled="save.isPending.value"
             @click="confirmGuesses"
           >
-            Confirm all {{ storedGuesses.length }} guesses
+            Confirm all {{ guesses.length }} guesses
           </button>
         </div>
         <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">

@@ -409,6 +409,37 @@ describe('/api/admin/states/:stateId/categories/preview and /remap', () => {
     expect(smi.map((m) => m.method)).toEqual(['manual', 'manual'])
   })
 
+  it('confirms a draft-only category at once: it moves no published entry', async () => {
+    const all = {
+      categories: [
+        {
+          stateCategory: 'SMI',
+          stateSubcategory: '',
+          federalCategory: 'disabling_mental_disorder',
+        },
+        { stateCategory: 'SUD', stateSubcategory: '', federalCategory: 'sud' },
+        {
+          stateCategory: 'Tier 2 - Frailty Indicators',
+          stateSubcategory: '',
+          federalCategory: 'state_specific',
+        },
+      ],
+      chapters: [],
+    }
+    const before = await preview(all)
+    const res = await send('PUT', '/api/admin/states/MT/categories', {
+      items: [all.categories[2]],
+    })
+    expect(res.status).toBe(200)
+    const after = await preview(all)
+    expect(after.totals).toEqual(before.totals)
+    const [tier2] = await db
+      .select()
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateCategory, 'Tier 2 - Frailty Indicators'))
+    expect(tier2).toMatchObject({ federalCategory: 'state_specific', method: 'manual' })
+  })
+
   it('refuses a stale preview with 409 and writes nothing', async () => {
     const { token } = await preview()
     // Another admin changes the SMI mapping after the preview.

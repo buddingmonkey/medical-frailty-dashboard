@@ -253,9 +253,11 @@ token differs; the screen then shows the new preview to check again. The save is
 version's `content_updated_at` and `data_version`. Nothing is recomputed: placements and
 similarity do not depend on the category mapping. Every change of a federal category or a
 chapter override takes this path, a single row's too (previewed as a one-item remap; the
-row's button reads "Preview change"). Only "Confirm" and "Confirm all guesses" save at once:
-they turn a stored `auto` mapping into `manual`, and the API refuses (409) any item whose
-federal category differs from the stored one, so no entry moves.
+row's button reads "Preview change"). "Confirm" and "Confirm all guesses" save at once only
+when they move no published entry: a stored mapping confirmed unchanged (`auto` → `manual`),
+or a category with no published entries (draft only, whose guess publish has not stored
+yet). The API checks this and answers 409 otherwise. A suggestion for a category with
+published entries and no stored mapping counts as "not mapped" in the summary.
 
 ## AI cleanup
 

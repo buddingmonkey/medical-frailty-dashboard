@@ -59,6 +59,34 @@ const data = {
       mapping: null,
       suggestion: null,
     },
+    {
+      // In open drafts only: publish has not stored its guess yet, and confirming it moves no
+      // published entry.
+      stateCategory: 'Tier 2',
+      stateSubcategory: '',
+      publishedEntries: 0,
+      draftEntries: 3,
+      placedEntries: 0,
+      placedFederal: [],
+      mapping: null,
+      suggestion: { federalCategory: 'state_specific', keyword: 'tier', confidence: 0.5 },
+    },
+    {
+      // A suggestion with published entries and no stored mapping: its entries are unmapped
+      // now, so confirming it is a change and needs the preview.
+      stateCategory: 'Cancer',
+      stateSubcategory: '',
+      publishedEntries: 5,
+      draftEntries: 0,
+      placedEntries: 0,
+      placedFederal: [],
+      mapping: null,
+      suggestion: {
+        federalCategory: 'serious_complex_medical',
+        keyword: 'cancer',
+        confidence: 0.9,
+      },
+    },
   ],
   chapters,
 }
@@ -167,7 +195,7 @@ describe('/admin/categories', () => {
   it('shows each category’s mapping, and how many an admin has confirmed', async () => {
     fakeApi()
     const table = await open()
-    expect(screen.getByText(/3 categories: 1 confirmed, 1 guessed, 1 not mapped/)).toBeTruthy()
+    expect(screen.getByText(/5 categories: 1 confirmed, 2 guessed, 2 not mapped/)).toBeTruthy()
     expect(within(rowOf(table, 'SMI')).getByText(/Guessed from “smi”/)).toBeTruthy()
     expect(within(rowOf(table, 'SUD')).getByText(/Confirmed by admin@example.org/)).toBeTruthy()
     expect(within(rowOf(table, 'Miscellaneous')).getByText('Not mapped')).toBeTruthy()
@@ -224,10 +252,11 @@ describe('/admin/categories', () => {
     expect(saves).toEqual([])
   })
 
-  it('confirms every guess at once', async () => {
-    const { saves } = fakeApi()
+  it('confirms every guess that moves no published entry at once, as many as the summary says', async () => {
+    const { saves, previews } = fakeApi()
     await open()
-    await user.click(screen.getByRole('button', { name: 'Confirm all 1 guesses' }))
+    expect(screen.getByText(/2 guessed/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Confirm all 2 guesses' }))
     expect(saves).toEqual([
       {
         items: [
@@ -236,9 +265,44 @@ describe('/admin/categories', () => {
             stateSubcategory: '',
             federalCategory: 'disabling_mental_disorder',
           },
+          { stateCategory: 'Tier 2', stateSubcategory: '', federalCategory: 'state_specific' },
         ],
       },
     ])
+    expect(previews).toEqual([])
+  })
+
+  it('hides "Confirm all" when the summary counts no guesses', async () => {
+    fakeApi()
+    server.use(
+      http.get('/api/admin/states/LA/categories', () =>
+        HttpResponse.json({
+          ...data,
+          categories: data.categories.filter((c) => !['SMI', 'Tier 2'].includes(c.stateCategory)),
+        }),
+      ),
+    )
+    await open()
+    expect(screen.getByText(/3 categories: 1 confirmed, 0 guessed, 2 not mapped/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Confirm all/ })).toBeNull()
+  })
+
+  it('confirms a draft-only category at once, and previews a suggestion with published entries', async () => {
+    const { saves, previews } = fakeApi()
+    const table = await open()
+    await user.click(within(rowOf(table, 'Tier 2')).getByRole('button', { name: 'Confirm Tier 2' }))
+    expect(saves).toEqual([
+      {
+        items: [
+          { stateCategory: 'Tier 2', stateSubcategory: '', federalCategory: 'state_specific' },
+        ],
+      },
+    ])
+    await user.click(
+      within(rowOf(table, 'Cancer')).getByRole('button', { name: 'Preview change for Cancer' }),
+    )
+    await screen.findByRole('region', { name: 'Check the remap before saving' })
+    expect(previews).toHaveLength(1)
   })
 
   it('previews a chapter override change before saving it', async () => {
@@ -311,8 +375,8 @@ describe('/admin/categories', () => {
   it('selects every category of the state at once, and cancels without saving', async () => {
     const { remaps } = fakeApi()
     const table = await open()
-    await user.click(screen.getByRole('checkbox', { name: 'Select all 3 categories of Louisiana' }))
-    expect(screen.getByText('3 selected')).toBeTruthy()
+    await user.click(screen.getByRole('checkbox', { name: 'Select all 5 categories of Louisiana' }))
+    expect(screen.getByText('5 selected')).toBeTruthy()
     expect(
       within(table)
         .getAllByRole('checkbox')
@@ -329,7 +393,7 @@ describe('/admin/categories', () => {
     expect(screen.queryByRole('region', { name: 'Check the remap before saving' })).toBeNull()
     expect(remaps).toEqual([])
     // The selection stays, so the admin can change the choice and preview again.
-    expect(screen.getByText('3 selected')).toBeTruthy()
+    expect(screen.getByText('5 selected')).toBeTruthy()
   })
 
   it('previews again when the data changed since the preview, and saves the new token', async () => {

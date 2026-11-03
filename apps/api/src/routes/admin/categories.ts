@@ -291,9 +291,9 @@ export const categoriesRoute = new Hono<AppEnv>()
     )
   })
 
-  // Confirm stored mappings (auto → manual), up to 200 at once ("Confirm all guesses"). Only
-  // the federal category already stored is accepted, so no entry moves; any change of federal
-  // category goes through the preview and /remap (M7 step 3).
+  // Confirm mappings (manual), up to 200 at once ("Confirm all guesses"), only when no published
+  // entry moves: the stored federal category unchanged, or a category with no published entries
+  // (draft only). Any other change goes through the preview and /remap (M7 step 3): 409.
   .put('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
     const state = await findState(db, c)
@@ -311,11 +311,24 @@ export const categoriesRoute = new Hono<AppEnv>()
     const storedBy = new Map(
       stored.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory]),
     )
-    const changes = body.data.items.some(
-      (item) =>
-        storedBy.get(mappingKey(item.stateCategory, item.stateSubcategory)) !==
-        item.federalCategory,
+    // Categories with published entries; a new choice for any other moves no published entry.
+    const publishedKeys = new Set(
+      state.publishedVersionId === null
+        ? []
+        : (
+            await db
+              .selectDistinct({
+                category: entries.stateCategory,
+                subcategory: entries.stateSubcategory,
+              })
+              .from(entries)
+              .where(eq(entries.versionId, state.publishedVersionId))
+          ).map((r) => mappingKey(r.category, r.subcategory)),
     )
+    const changes = body.data.items.some((item) => {
+      const key = mappingKey(item.stateCategory, item.stateSubcategory)
+      return publishedKeys.has(key) && storedBy.get(key) !== item.federalCategory
+    })
     if (changes) {
       return c.json({ error: 'This changes a federal category. Preview the change first.' }, 409)
     }

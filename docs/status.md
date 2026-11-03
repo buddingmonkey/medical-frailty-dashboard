@@ -303,8 +303,8 @@ _Last updated: 2026-11-03 (M6 complete)_
   before → after, draft entries), then save (`POST …/categories/remap`, the preview's token;
   409 if anything changed). One batch: n mappings + audit + `content_updated_at` +
   `data_version`; nothing is recomputed. Logic in `packages/shared/src/remap.ts`. Every
-  change, one row's or one chapter's too, goes through the preview; only "Confirm" (stored
-  auto → manual) saves at once. `PUT …/chapters/:chapter` was removed.
+  change, one row's or one chapter's too, goes through the preview; only a "Confirm" that moves
+  no published entry (stored mapping unchanged, or a draft-only category) saves at once. `PUT …/chapters/:chapter` was removed.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
