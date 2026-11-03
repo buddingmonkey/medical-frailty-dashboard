@@ -1,14 +1,16 @@
 import {
   auditListResponseSchema,
   sha256Hex,
+  sourceDocumentSchema,
   sourceListResponseSchema,
   sourceUploadResponseSchema,
 } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb } from '../../db/client'
-import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
+import { appMeta, datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
 
@@ -240,6 +242,143 @@ describe('/api/admin/sources', () => {
     const missing = await call('/api/admin/sources/999/file', { token: await accessToken() })
     expect(missing.status).toBe(404)
   })
+})
+
+describe('PUT /api/admin/sources/:id', () => {
+  const details = {
+    title: 'Georgia Pathways frailty codes',
+    url: 'https://dch.georgia.gov/frailty.pdf',
+    publisherDate: '2026-07-01',
+  }
+
+  async function put(id: number | string, body: unknown, token?: string) {
+    return call(`/api/admin/sources/${String(id)}`, {
+      token: token ?? (await accessToken()),
+      method: 'PUT',
+      body,
+    })
+  }
+
+  async function dataVersion() {
+    const [meta] = await db.select().from(appMeta).where(eq(appMeta.key, 'data_version'))
+    return meta?.value ?? null
+  }
+
+  async function storedSource() {
+    const res = await upload(pdf, { url: '', publisherDate: '' })
+    return sourceUploadResponseSchema.parse(await res.json()).source
+  }
+
+  async function link(sourceId: number, status: 'draft' | 'published' | 'superseded') {
+    const [version] = await db
+      .insert(datasetVersions)
+      .values({ stateId: 'MT', versionNo: 1, status, createdBy: ADMIN })
+      .returning()
+    await db
+      .insert(versionSources)
+      .values({ versionId: version?.id ?? 0, sourceDocumentId: sourceId })
+  }
+
+  beforeEach(async () => {
+    await resetDb(env.DB)
+    const keys = await storedKeys()
+    if (keys.length > 0) await env.FILES.delete(keys)
+    await db.insert(states).values({ id: 'MT', slug: 'mt', name: 'Montana', fips: '30' })
+  })
+
+  it('refuses a request without a signed Access token, or from a non-admin', async () => {
+    const res = await call('/api/admin/sources/1', { method: 'PUT', body: details })
+    expect(res.status).toBe(401)
+    const outsider = await accessToken({ email: 'someone@example.org' })
+    expect((await put(1, details, outsider)).status).toBe(403)
+  })
+
+  it('refuses a write that is not JSON from this site (adminWriteGuard)', async () => {
+    const source = await storedSource()
+    const cross = await call(`/api/admin/sources/${String(source.id)}`, {
+      token: await accessToken(),
+      method: 'PUT',
+      body: details,
+      origin: 'https://evil.example',
+    })
+    expect(cross.status).toBe(403)
+    const form = await call(`/api/admin/sources/${String(source.id)}`, {
+      token: await accessToken(),
+      method: 'PUT',
+      rawBody: 'title=x',
+      contentType: 'application/x-www-form-urlencoded',
+    })
+    expect(form.status).toBe(415)
+  })
+
+  it('refuses a bad body: non-https or invalid URL, future date, empty title', async () => {
+    const source = await storedSource()
+    for (const change of [
+      { url: 'http://dch.georgia.gov/frailty.pdf' },
+      { url: 'not a url' },
+      { url: 'javascript:alert(1)' },
+      { publisherDate: '2999-01-01' },
+      { publisherDate: '07/01/2026' },
+      { title: '' },
+    ]) {
+      expect((await put(source.id, { ...details, ...change })).status).toBe(400)
+    }
+    const [row] = await db.select().from(sourceDocuments)
+    expect(row).toMatchObject({ url: null, publisherDate: null })
+  })
+
+  it('returns 404 for an unknown id', async () => {
+    expect((await put(999, details)).status).toBe(404)
+    expect((await put('abc', details)).status).toBe(404)
+  })
+
+  it('updates the details, never the file, and audits old and new values', async () => {
+    const source = await storedSource()
+    const [before] = await db.select().from(sourceDocuments)
+
+    const res = await put(source.id, details)
+
+    expect(res.status).toBe(200)
+    const updated = sourceDocumentSchema.parse(await res.json())
+    expect(updated).toMatchObject({ id: source.id, ...details })
+    const [after] = await db.select().from(sourceDocuments)
+    expect(after).toEqual({ ...before, ...details })
+
+    const audit = auditListResponseSchema.parse(
+      await (await call('/api/admin/audit', { token: await accessToken() })).json(),
+    )
+    expect(audit.items[0]).toMatchObject({
+      action: 'source.update',
+      target: `source:${String(source.id)}`,
+      details: {
+        stateId: 'MT',
+        before: { title: source.title, url: null, publisherDate: null },
+        after: details,
+      },
+    })
+    // A draft-only source is not on any public page: the cache stays.
+    expect(await dataVersion()).toBeNull()
+  })
+
+  it('clears the URL and date with null', async () => {
+    const source = await storedSource()
+    await put(source.id, details)
+    const res = await put(source.id, { ...details, url: null, publisherDate: null })
+    expect(res.status).toBe(200)
+    const [row] = await db.select().from(sourceDocuments)
+    expect(row).toMatchObject({ url: null, publisherDate: null })
+  })
+
+  it.each(['published', 'superseded'] as const)(
+    'bumps data_version when the source belongs to a %s version',
+    async (status) => {
+      const source = await storedSource()
+      await link(source.id, status)
+
+      expect((await put(source.id, details)).status).toBe(200)
+      expect(await dataVersion()).toBe('1')
+    },
+  )
 })
 
 it('never sends the R2 key to the browser', async () => {

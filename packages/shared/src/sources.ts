@@ -77,6 +77,30 @@ export const sourceUploadQuerySchema = z.object({
 
 export type SourceUploadQuery = z.infer<typeof sourceUploadQuerySchema>
 
+/** Today as `YYYY-MM-DD` in UTC, which is never behind a US state's local date. */
+const todayUtc = () => new Date().toISOString().slice(0, 10)
+
+/**
+ * Body of `PUT /api/admin/sources/:id`: the details shown on public pages, fixed after upload.
+ * The file, its hash and its storage key never change. Every field is required; null clears.
+ */
+export const sourceDetailsSchema = z.object({
+  title: z.string().trim().min(1, 'Enter a title.').max(200, 'Use at most 200 characters.'),
+  url: z
+    .url({ protocol: /^https$/, error: 'Enter a full https:// address.' })
+    .max(2000, 'Use at most 2,000 characters.')
+    .nullable(),
+  publisherDate: z.iso
+    .date({ error: 'Enter a date as YYYY-MM-DD.' })
+    .refine((d) => d <= todayUtc(), 'The date cannot be in the future.')
+    .nullable(),
+})
+
+export type SourceDetails = z.infer<typeof sourceDetailsSchema>
+
+/** The admin form's inputs for `SourceDetails`: blank means "none" (sent as null). */
+export type SourceDetailsDraft = Record<keyof SourceDetails, string>
+
 /** Query of `GET /api/admin/sources`: a state's sources, or the one with this hash. */
 export const sourceListQuerySchema = z.object({ stateId, sha256: sha256.optional() })
 

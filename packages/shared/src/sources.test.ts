@@ -5,6 +5,7 @@ import {
   MAX_SOURCE_BYTES,
   sha256Hex,
   sniffMatches,
+  sourceDetailsSchema,
   sourceListQuerySchema,
   sourceUploadQuerySchema,
 } from './sources'
@@ -110,4 +111,44 @@ describe('sourceListQuerySchema', () => {
 
 it('caps source files at 25 MB', () => {
   expect(MAX_SOURCE_BYTES).toBe(25 * 1024 * 1024)
+})
+
+describe('sourceDetailsSchema', () => {
+  const ok = {
+    title: 'Medically Frail List',
+    url: 'https://example.gov/a.pdf',
+    publisherDate: '2026-01-15',
+  }
+
+  it('takes a title, an https URL and a past date, or nulls', () => {
+    expect(sourceDetailsSchema.parse(ok)).toEqual(ok)
+    expect(sourceDetailsSchema.parse({ title: '  T  ', url: null, publisherDate: null })).toEqual({
+      title: 'T',
+      url: null,
+      publisherDate: null,
+    })
+  })
+
+  it('takes today, in UTC', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    expect(sourceDetailsSchema.safeParse({ ...ok, publisherDate: today }).success).toBe(true)
+  })
+
+  it.each([
+    ['an empty title', { title: '  ' }],
+    ['a long title', { title: 'x'.repeat(201) }],
+    ['an http URL', { url: 'http://example.gov/a.pdf' }],
+    ['a javascript URL', { url: 'javascript:alert(1)' }],
+    ['not a URL', { url: 'example.gov' }],
+    ['a long URL', { url: `https://example.gov/${'a'.repeat(2000)}` }],
+    ['a future date', { publisherDate: '2999-01-01' }],
+    ['not a date', { publisherDate: '01/15/2026' }],
+    ['an impossible date', { publisherDate: '2026-02-30' }],
+  ])('refuses %s', (_, change) => {
+    expect(sourceDetailsSchema.safeParse({ ...ok, ...change }).success).toBe(false)
+  })
+
+  it('needs every field', () => {
+    expect(sourceDetailsSchema.safeParse({ title: 'T' }).success).toBe(false)
+  })
 })
