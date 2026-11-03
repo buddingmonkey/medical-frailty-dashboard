@@ -102,15 +102,30 @@ test('maps a category and overrides a chapter', async ({ page }) => {
   await page.goto('/admin/categories')
   await page.getByLabel('State').selectOption('Montana')
   const table = page.getByRole('table', { name: 'Categories of Montana' })
+  // The database is kept between runs: the first run previews the change (M7 step 3), a later
+  // one finds it stored and confirms at once.
   await table.getByLabel('Federal category for (no category)').selectOption('state_specific')
-  await table.getByRole('button', { name: 'Confirm (no category)' }).click()
-  await expect(page.getByRole('status')).toContainText('Confirmed (no category)')
+  const preview = page.getByRole('region', { name: 'Check the remap before saving' })
+  const change = table.getByRole('button', { name: 'Preview change for (no category)' })
+  if (await change.isVisible()) {
+    await change.click()
+    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await expect(page.getByRole('status')).toContainText('Remapped 1 item in Montana.')
+  } else {
+    await table.getByRole('button', { name: 'Confirm (no category)' }).click()
+    await expect(page.getByRole('status')).toContainText('Confirmed (no category)')
+  }
   await expect(table.getByText(/Confirmed by e2e-admin@localhost/)).toBeVisible()
 
   const chapters = page.getByRole('table', { name: 'ICD-10-CM chapters' })
   await chapters.getByLabel('Override for chapter 5').selectOption('disabling_mental_disorder')
-  await chapters.getByRole('button', { name: 'Save chapter 5' }).click()
-  await expect(page.getByRole('status')).toContainText('chapter 5')
+  const chapterButton = chapters.getByRole('button', { name: 'Preview change for chapter 5' })
+  if (await chapterButton.isEnabled()) {
+    await chapterButton.click()
+    await expect(preview).toContainText('ICD-10-CM chapter 5')
+    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await expect(page.getByRole('status')).toContainText('Remapped 1 item in Montana.')
+  }
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])
 })

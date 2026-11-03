@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import {
+  type ChosenFederalCategory,
   type FederalCategory,
   federalCategories,
   federalCategoriesText,
   federalCategoryInfo,
+  type RemapChanges,
   stateCategoriesResponseSchema,
   type StateCategories,
   stateListResponseSchema,
 } from '@mfcd/shared'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, reactive, ref, useId, watch } from 'vue'
+import { computed, nextTick, reactive, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
+import RemapPreview from '../../components/admin/RemapPreview.vue'
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
 
@@ -19,7 +22,8 @@ import { getJson, sendJson } from '../../lib/api'
 // category gets a federal category, used for its entries placed in no unified category (M5
 // step 5b: placed entries follow the unified categories' federal parents). Publish stores the keyword table's guess as "auto"; an
 // admin confirms it here (launch needs every mapping confirmed). States that group codes only
-// by ICD-10-CM chapter (NE, GA) can override by chapter.
+// by ICD-10-CM chapter (NE, GA) can override by chapter. Bulk remap (M7 step 3): select rows,
+// choose one federal category (or chapter override), check the server's preview, then save.
 type Category = StateCategories['categories'][number]
 type Chapter = StateCategories['chapters'][number]
 
@@ -65,13 +69,22 @@ watch(
 )
 
 const categories = computed(() => query.data.value?.categories ?? [])
-const guesses = computed(() =>
-  categories.value.filter(
-    (c) =>
-      c.mapping?.method !== 'manual' &&
-      (c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped') !== 'unmapped',
-  ),
-)
+// A confirm saves at once when it moves no published entry (M7 step 3): a stored mapping
+// confirmed unchanged, or any choice for a category with no published entries (draft only).
+// Any other change goes through the preview. The API checks the same rule.
+const isConfirmOnly = (c: Category, choice: FederalCategory | '') =>
+  choice !== '' &&
+  choice !== 'unmapped' &&
+  (c.publishedEntries === 0 || c.mapping?.federalCategory === choice)
+/** The guess "Confirm all guesses" saves for a category, or null when it has none to confirm. */
+function guessOf(c: Category): ChosenFederalCategory | null {
+  if (c.mapping?.method === 'manual') return null
+  const guess = c.mapping?.federalCategory ?? c.suggestion?.federalCategory ?? 'unmapped'
+  return guess !== 'unmapped' && isConfirmOnly(c, guess) ? guess : null
+}
+// A suggestion for a category with published entries and no stored mapping counts as not
+// mapped (its entries are unmapped now); confirming it is a change, previewed per row.
+const guesses = computed(() => categories.value.filter((c) => guessOf(c) !== null))
 const summary = computed(() => {
   const confirmed = categories.value.filter((c) => c.mapping?.method === 'manual').length
   const guessed = guesses.value.length
@@ -100,9 +113,88 @@ function status(c: Category): string {
   return 'Not mapped'
 }
 
+// Bulk remap (M7 step 3): selected rows, the one choice for them, and the open preview.
+const selected = ref(new Set<string>())
+const selectedChapters = ref(new Set<number>())
+const bulkCategory = ref<ChosenFederalCategory | ''>('')
+const bulkChapter = ref<ChosenFederalCategory | 'clear' | ''>('')
+const remap = ref<{ changes: RemapChanges; from: 'categories' | 'chapters'; n: number } | null>(
+  null,
+)
+let remapCount = 0
+let opener: HTMLElement | null = null
+function openRemap(from: 'categories' | 'chapters', changes: RemapChanges) {
+  opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  remapCount += 1
+  remap.value = { from, n: remapCount, changes }
+}
+
+function toggled<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set)
+  if (next.has(value)) next.delete(value)
+  else next.add(value)
+  return next
+}
+const toggleCategory = (key: string) => (selected.value = toggled(selected.value, key))
+const toggleChapter = (chapter: number) =>
+  (selectedChapters.value = toggled(selectedChapters.value, chapter))
+const allSelected = computed(
+  () => categories.value.length > 0 && selected.value.size === categories.value.length,
+)
+function toggleAll() {
+  selected.value = allSelected.value ? new Set() : new Set(categories.value.map(keyOf))
+}
+const allChaptersSelected = computed(
+  () => chapters.value.length > 0 && selectedChapters.value.size === chapters.value.length,
+)
+function toggleAllChapters() {
+  selectedChapters.value = allChaptersSelected.value
+    ? new Set()
+    : new Set(chapters.value.map((ch) => ch.chapter))
+}
+
+function previewCategories() {
+  const to = bulkCategory.value
+  if (!to) return
+  const items = categories.value.filter((c) => selected.value.has(keyOf(c)))
+  openRemap('categories', {
+    categories: items.map((c) => ({
+      stateCategory: c.stateCategory,
+      stateSubcategory: c.stateSubcategory,
+      federalCategory: to,
+    })),
+    chapters: [],
+  })
+}
+function previewChapters() {
+  const to = bulkChapter.value
+  if (!to) return
+  openRemap('chapters', {
+    categories: [],
+    chapters: chapters.value
+      .filter((ch) => selectedChapters.value.has(ch.chapter))
+      .map((ch) => ({ chapter: ch.chapter, federalCategory: to === 'clear' ? null : to })),
+  })
+}
+async function closeRemap() {
+  remap.value = null
+  await nextTick()
+  opener?.focus()
+}
+async function remapSaved(message: string) {
+  if (remap.value?.from === 'chapters') selectedChapters.value = new Set()
+  else selected.value = new Set()
+  remap.value = null
+  saved.value = message
+  await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+}
+
 const saved = ref<string | null>(null)
 watch(stateId, () => {
   saved.value = null
+  selected.value = new Set()
+  selectedChapters.value = new Set()
+  remap.value = null
 })
 const ok = z.object({ ok: z.literal(true) })
 
@@ -119,28 +211,29 @@ const save = useMutation({
   },
 })
 
+/** One row's choice: a confirm saves at once; a change is previewed as a one-item remap. */
 function confirmOne(c: Category) {
   const choice = picked[keyOf(c)]
-  if (!choice) return
-  save.mutate([
-    {
-      stateCategory: c.stateCategory,
-      stateSubcategory: c.stateSubcategory,
-      federalCategory: choice,
-    },
-  ])
+  if (!choice || choice === 'unmapped') return
+  const item = {
+    stateCategory: c.stateCategory,
+    stateSubcategory: c.stateSubcategory,
+    federalCategory: choice,
+  }
+  if (isConfirmOnly(c, choice)) save.mutate([item])
+  else openRemap('categories', { categories: [item], chapters: [] })
 }
 
 function confirmGuesses() {
   save.mutate(
     guesses.value.slice(0, 200).flatMap((c) => {
-      const choice = c.mapping?.federalCategory ?? c.suggestion?.federalCategory
-      return choice && choice !== 'unmapped'
+      const federalCategory = guessOf(c)
+      return federalCategory
         ? [
             {
               stateCategory: c.stateCategory,
               stateSubcategory: c.stateSubcategory,
-              federalCategory: choice,
+              federalCategory,
             },
           ]
         : []
@@ -148,19 +241,16 @@ function confirmGuesses() {
   )
 }
 
-const saveChapter = useMutation({
-  mutationFn: (ch: Chapter) =>
-    sendJson(
-      'PUT',
-      `/api/admin/states/${stateId.value}/chapters/${String(ch.chapter)}`,
-      { federalCategory: chapterPicked[ch.chapter] === '' ? null : chapterPicked[ch.chapter] },
-      ok,
-    ),
-  onSuccess: async (_, ch) => {
-    saved.value = `Saved the override for chapter ${String(ch.chapter)}.`
-    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
-  },
-})
+const chapterChanged = (ch: Chapter) =>
+  (chapterPicked[ch.chapter] ?? '') !== (ch.override?.federalCategory ?? '')
+function previewChapter(ch: Chapter) {
+  const choice = chapterPicked[ch.chapter] ?? ''
+  if (choice === 'unmapped') return
+  openRemap('chapters', {
+    categories: [],
+    chapters: [{ chapter: ch.chapter, federalCategory: choice === '' ? null : choice }],
+  })
+}
 
 const n = (value: number) => value.toLocaleString('en-US')
 const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
@@ -193,8 +283,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
-    <p v-if="save.error.value || saveChapter.error.value" role="alert" class="text-danger">
-      Could not save: {{ (save.error.value ?? saveChapter.error.value)?.message }}
+    <p v-if="save.error.value" role="alert" class="text-danger">
+      Could not save: {{ save.error.value.message }}
     </p>
     <p v-if="query.error.value" role="alert" class="text-danger">
       Could not load the categories: {{ query.error.value.message }}
@@ -217,6 +307,43 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             Confirm all {{ guesses.length }} guesses
           </button>
         </div>
+        <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">
+          <legend class="px-1 font-medium">Remap several categories</legend>
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              :checked="allSelected"
+              :indeterminate="selected.size > 0 && !allSelected"
+              @change="toggleAll"
+            />
+            Select all {{ categories.length }} categories of {{ stateName }}
+          </label>
+          <span aria-live="polite">{{ selected.size }} selected</span>
+          <label :for="`${id}-bulk`" class="sr-only"
+            >Federal category for the selected categories</label
+          >
+          <select :id="`${id}-bulk`" v-model="bulkCategory" :class="selectClass">
+            <option value="" disabled>Choose a federal category</option>
+            <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
+          </select>
+          <button
+            type="button"
+            :class="smallButton"
+            :disabled="selected.size === 0 || !bulkCategory"
+            @click="previewCategories"
+          >
+            Preview remap
+          </button>
+        </fieldset>
+        <RemapPreview
+          v-if="remap && remap.from === 'categories'"
+          :key="remap.n"
+          :state-id="stateId"
+          :state-name="stateName"
+          :changes="remap.changes"
+          @saved="remapSaved"
+          @cancel="closeRemap"
+        />
         <div class="overflow-x-auto">
           <table class="w-full border-collapse text-left text-sm">
             <caption class="sr-only">
@@ -227,6 +354,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             </caption>
             <thead class="border-b border-border text-muted-foreground">
               <tr>
+                <th scope="col" class="py-2 pr-2 font-medium">
+                  <span class="sr-only">Select</span>
+                </th>
                 <th scope="col" class="py-2 pr-4 font-medium">State category</th>
                 <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
                 <th scope="col" class="py-2 pr-4 font-medium">Now</th>
@@ -239,6 +369,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                 :key="keyOf(c)"
                 class="border-b border-border align-top"
               >
+                <td class="py-2 pr-2">
+                  <input
+                    type="checkbox"
+                    :aria-label="`Select ${nameOf(c)}`"
+                    :checked="selected.has(keyOf(c))"
+                    @change="toggleCategory(keyOf(c))"
+                  />
+                </td>
                 <th scope="row" class="py-2 pr-4 font-medium">{{ nameOf(c) }}</th>
                 <td class="py-2 pr-4 text-right">
                   {{ n(c.publishedEntries) }}
@@ -267,10 +405,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                       type="button"
                       :class="smallButton"
                       :disabled="!picked[keyOf(c)] || save.isPending.value"
-                      :aria-label="`Confirm ${nameOf(c)}`"
+                      :aria-label="
+                        isConfirmOnly(c, picked[keyOf(c)] ?? '')
+                          ? `Confirm ${nameOf(c)}`
+                          : `Preview change for ${nameOf(c)}`
+                      "
                       @click="confirmOne(c)"
                     >
-                      Confirm
+                      {{ isConfirmOnly(c, picked[keyOf(c)] ?? '') ? 'Confirm' : 'Preview change' }}
                     </button>
                   </div>
                 </td>
@@ -288,6 +430,42 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           For states that group codes only by chapter (Nebraska, Georgia). An override wins over the
           category mapping for the ICD-10-CM codes in that chapter.
         </p>
+        <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">
+          <legend class="px-1 font-medium">Override several chapters</legend>
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              :checked="allChaptersSelected"
+              :indeterminate="selectedChapters.size > 0 && !allChaptersSelected"
+              @change="toggleAllChapters"
+            />
+            Select all {{ chapters.length }} chapters
+          </label>
+          <span aria-live="polite">{{ selectedChapters.size }} chapters selected</span>
+          <label :for="`${id}-bulk-ch`" class="sr-only">Override for the selected chapters</label>
+          <select :id="`${id}-bulk-ch`" v-model="bulkChapter" :class="selectClass">
+            <option value="" disabled>Choose an override</option>
+            <option value="clear">Use the category mapping</option>
+            <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
+          </select>
+          <button
+            type="button"
+            :class="smallButton"
+            :disabled="selectedChapters.size === 0 || !bulkChapter"
+            @click="previewChapters"
+          >
+            Preview chapter overrides
+          </button>
+        </fieldset>
+        <RemapPreview
+          v-if="remap && remap.from === 'chapters'"
+          :key="remap.n"
+          :state-id="stateId"
+          :state-name="stateName"
+          :changes="remap.changes"
+          @saved="remapSaved"
+          @cancel="closeRemap"
+        />
         <div class="overflow-x-auto">
           <table class="w-full border-collapse text-left text-sm">
             <caption class="sr-only">
@@ -295,6 +473,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             </caption>
             <thead class="border-b border-border text-muted-foreground">
               <tr>
+                <th scope="col" class="py-2 pr-2 font-medium">
+                  <span class="sr-only">Select</span>
+                </th>
                 <th scope="col" class="py-2 pr-4 font-medium">Chapter</th>
                 <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
                 <th scope="col" class="py-2 font-medium">Override</th>
@@ -302,6 +483,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             </thead>
             <tbody>
               <tr v-for="ch in chapters" :key="ch.chapter" class="border-b border-border align-top">
+                <td class="py-2 pr-2">
+                  <input
+                    type="checkbox"
+                    :aria-label="`Select chapter ${ch.chapter}`"
+                    :checked="selectedChapters.has(ch.chapter)"
+                    @change="toggleChapter(ch.chapter)"
+                  />
+                </td>
                 <th scope="row" class="py-2 pr-4 font-medium">{{ ch.chapter }}. {{ ch.title }}</th>
                 <td class="py-2 pr-4 text-right">{{ n(ch.publishedEntries + ch.draftEntries) }}</td>
                 <td class="py-2">
@@ -320,11 +509,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                     <button
                       type="button"
                       :class="smallButton"
-                      :disabled="saveChapter.isPending.value"
-                      :aria-label="`Save chapter ${ch.chapter}`"
-                      @click="saveChapter.mutate(ch)"
+                      :disabled="!chapterChanged(ch)"
+                      :aria-label="`Preview change for chapter ${ch.chapter}`"
+                      @click="previewChapter(ch)"
                     >
-                      Save
+                      Preview change
                     </button>
                   </div>
                 </td>
