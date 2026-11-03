@@ -78,7 +78,7 @@ describe('GET /api/public/compare', () => {
       tier: 'Tier 1',
       qualification: 'standalone',
       stateCategory: 'Substance use',
-      federalCategory: 'unmapped',
+      federalCategories: ['unmapped'],
     })
     expect(f200?.cells.map((c) => c.status)).toEqual(['exact', 'covered', 'no_list'])
     expect(f200).toMatchObject({

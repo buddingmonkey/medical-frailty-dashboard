@@ -8,7 +8,7 @@ import { env } from 'cloudflare:workers'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb } from '../../db/client'
-import { datasetVersions, states, versionSources } from '../../db/schema'
+import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
 
@@ -183,6 +183,42 @@ describe('/api/admin/sources', () => {
 
     const bad = await call('/api/admin/sources?stateId=montana', { token: await accessToken() })
     expect(bad.status).toBe(400)
+  })
+
+  it('lists more sources than D1 binds parameters (100), each with its versions', async () => {
+    // One insert per row: a multi-row insert would hit the same limit.
+    const [one, ...more] = Array.from({ length: 108 }, (_, i) =>
+      db
+        .insert(sourceDocuments)
+        .values({
+          stateId: 'MT',
+          title: `File ${String(i)}`,
+          fileType: 'pdf',
+          sha256: i.toString(16).padStart(64, '0'),
+          r2Key: `sources/MT/${String(i)}`,
+          byteSize: 1,
+          uploadedBy: ADMIN,
+        })
+        .returning(),
+    )
+    if (!one) throw new Error('no inserts')
+    const docs = (await db.batch([one, ...more])).flat()
+    const [version] = await db
+      .insert(datasetVersions)
+      .values({ stateId: 'MT', versionNo: 1, status: 'draft', createdBy: ADMIN })
+      .returning()
+    const first = docs[0]
+    const last = docs.at(-1)
+    if (!version || !first || !last) throw new Error('insert failed')
+    await db.insert(versionSources).values([
+      { versionId: version.id, sourceDocumentId: first.id },
+      { versionId: version.id, sourceDocumentId: last.id },
+    ])
+
+    const items = await list('stateId=MT')
+    expect(items).toHaveLength(108)
+    const withVersion = items.filter((s) => s.versions.length > 0).map((s) => s.title)
+    expect(withVersion).toEqual(['File 107', 'File 0'])
   })
 
   it('downloads the original file as an attachment, never inline', async () => {

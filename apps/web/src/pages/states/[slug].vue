@@ -3,13 +3,16 @@ import {
   type CodeSystem,
   codeSystemLabels,
   compareSearchParams,
+  FEDERAL_OVERLAP_NOTE,
   type FederalCategory,
   federalCategoryInfo,
+  federalCountsOverlap,
   formatCount,
   formatDay,
   pageTitles,
   type Qualification,
   qualificationLabels,
+  stateCategoriesIntro,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
@@ -169,6 +172,9 @@ function categoryName(category: string, subcategory: string) {
             </tbody>
           </table>
         </div>
+        <p v-if="federalCountsOverlap(published)" class="max-w-prose text-sm text-muted-foreground">
+          {{ FEDERAL_OVERLAP_NOTE }}
+        </p>
       </section>
 
       <section aria-labelledby="categories-heading" class="space-y-4">
@@ -176,8 +182,7 @@ function categoryName(category: string, subcategory: string) {
           Categories
         </h2>
         <p class="max-w-prose">
-          How each of {{ state.name }}’s own categories fits the federal categories in the law. A
-          mapping that is not yet confirmed is our best guess from the category’s name.
+          {{ stateCategoriesIntro(state.name) }}
         </p>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">

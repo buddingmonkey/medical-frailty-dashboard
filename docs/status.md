@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 5)_
+_Last updated: 2026-11-02 (M5 step 5b)_
 
 ## Where things stand
 
@@ -122,8 +122,8 @@ _Last updated: 2026-11-02 (M5 step 5)_
 - **M2 step 9 done** (branch `m2-step9-categories`): `/admin/categories` (confirm each
   category's federal category, or all guesses at once; ICD-10-CM chapter overrides for
   chapter-grouped states). Publish stores keyword guesses as `auto`. Migration
-  `0006_chapter_mappings`. `federalCategoryOf()` in shared is the one rule for admin and public
-  pages.
+  `0006_chapter_mappings`. Since M5 step 5b the one rule is `federalCategoriesOf()` (federal
+  parents of the entry's unified categories; this M2 mapping is the fallback).
 - **M2 step 10 done** (branch `m2-step10-ai-cleanup`): "Get help from an AI assistant" on
   `/admin/ingest` (prompt per 40-page part, paste the JSON back, validated and reviewed like any
   table) and the optional "Ask Claude" button (`/api/admin/ai-cleanup`, `@anthropic-ai/sdk`
@@ -201,6 +201,9 @@ _Last updated: 2026-11-02 (M5 step 5)_
   reference release does not rebuild placements yet.
 - **M5 step 5 done** (branch `m5-step5-overview`): the overview matrix at `/compare`
   (server-rendered, indexed); the M4 table moved to `/compare/codes`.
+- **M5 step 5b done** (branch `m5-step5b-followups`): federal categories through unified
+  categories (downloads renamed to `federal_categories`), draft retire, sources chunking, overview
+  order in the URL.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

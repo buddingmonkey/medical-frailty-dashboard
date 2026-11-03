@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   categoryMappingSaveSchema,
   chapterOverrideSaveSchema,
-  federalCategoryOf,
+  federalCategoriesOf,
+  federalCategoryList,
   mappingKey,
 } from './category-mapping'
 
@@ -14,34 +15,68 @@ const entry = (codeNorm: string, stateCategory = 'SMI', codeSystem = 'icd10cm' a
   stateSubcategory: '',
 })
 
-describe('federalCategoryOf', () => {
+describe('federalCategoriesOf', () => {
   const mappings = new Map([
     [mappingKey('SMI', ''), 'disabling_mental_disorder' as const],
     [mappingKey('', ''), 'serious_complex_medical' as const],
   ])
+  const none = new Map<number, never>()
 
-  it('uses the state category’s mapping', () => {
-    expect(federalCategoryOf(entry('F200'), mappings, new Map())).toBe('disabling_mental_disorder')
+  it('follows the federal parents of the unified categories the entry is placed in', () => {
+    expect(federalCategoriesOf(entry('F200', 'Other'), ['sud'], mappings, none)).toEqual(['sud'])
+    // The placement wins over the state category's mapping and a chapter override.
+    const chapters = new Map([[5, 'blind_or_disabled' as const]])
+    expect(federalCategoriesOf(entry('F200'), ['sud'], mappings, chapters)).toEqual(['sud'])
   })
 
-  it('lets an ICD-10-CM chapter override win (NE groups only by chapter)', () => {
-    const chapters = new Map([[5, 'disabling_mental_disorder' as const]])
-    expect(federalCategoryOf(entry('F200', ''), mappings, chapters)).toBe(
+  it('counts a code in two unified categories with different parents under both, once each', () => {
+    expect(
+      federalCategoriesOf(
+        entry('F200'),
+        ['serious_complex_medical', 'disabling_mental_disorder', 'serious_complex_medical'],
+        mappings,
+        none,
+      ),
+    ).toEqual(['disabling_mental_disorder', 'serious_complex_medical'])
+  })
+
+  it('falls back to the state category’s mapping when the entry is placed nowhere', () => {
+    expect(federalCategoriesOf(entry('F200'), [], mappings, none)).toEqual([
       'disabling_mental_disorder',
-    )
+    ])
+  })
+
+  it('lets an ICD-10-CM chapter override win in the fallback (NE groups only by chapter)', () => {
+    const chapters = new Map([[5, 'disabling_mental_disorder' as const]])
+    expect(federalCategoriesOf(entry('F200', ''), [], mappings, chapters)).toEqual([
+      'disabling_mental_disorder',
+    ])
     // Outside the chapter: the state default (the mapping of its blank category).
-    expect(federalCategoryOf(entry('C341', ''), mappings, chapters)).toBe('serious_complex_medical')
+    expect(federalCategoriesOf(entry('C341', ''), [], mappings, chapters)).toEqual([
+      'serious_complex_medical',
+    ])
   })
 
   it('never applies a chapter to a code that is not ICD-10-CM', () => {
     const chapters = new Map([[5, 'sud' as const]])
-    expect(federalCategoryOf(entry('F200', 'SMI', 'cpt' as never), mappings, chapters)).toBe(
-      'disabling_mental_disorder',
-    )
+    expect(
+      federalCategoriesOf(entry('F200', 'SMI', 'cpt' as never), [], mappings, chapters),
+    ).toEqual(['disabling_mental_disorder'])
   })
 
   it('is unmapped when nothing applies', () => {
-    expect(federalCategoryOf(entry('F200', 'Other'), mappings, new Map())).toBe('unmapped')
+    expect(federalCategoriesOf(entry('F200', 'Other'), [], mappings, none)).toEqual(['unmapped'])
+  })
+})
+
+describe('federalCategoryList', () => {
+  it('reads the comma-separated parents SQL returns, keeping known values only', () => {
+    expect(federalCategoryList(null)).toEqual([])
+    expect(federalCategoryList('')).toEqual([])
+    expect(federalCategoryList('sud,disabling_mental_disorder,nope')).toEqual([
+      'sud',
+      'disabling_mental_disorder',
+    ])
   })
 })
 

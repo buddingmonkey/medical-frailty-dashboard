@@ -1,5 +1,6 @@
 import {
   codeSystems,
+  FEDERAL_OVERLAP_NOTE,
   federalCategories,
   type PublicStateSummary,
   qualifications,
@@ -90,9 +91,25 @@ describe('home page', () => {
     expect(card.textContent).toContain('Unclassified6,000')
     expect(card.textContent).toContain('September 15, 2026')
     expect(card.textContent).toContain('not yet confirmed')
+    expect(card.textContent).not.toContain(FEDERAL_OVERLAP_NOTE)
     expect(
       within(card).getByRole('link', { name: 'See Georgia’s list' }).getAttribute('href'),
     ).toBe('/states/ga')
+  })
+
+  it('says when a code counts under more than one federal category', async () => {
+    const p = georgia.published
+    if (!p) throw new Error('fixture has no list')
+    const byFederalCategory = { ...p.byFederalCategory, serious_complex_medical: 5 }
+    serve([{ ...georgia, published: { ...p, byFederalCategory } }])
+    const user = userEvent.setup()
+    await renderRoute('/')
+    const map = await screen.findByRole('group', { name: 'Map of state frailty code lists' })
+    const ga = within(map).getByRole('link', { name: /^Georgia/ })
+    while (document.activeElement !== ga) await user.tab()
+    expect(screen.getByRole('region', { name: 'Georgia' }).textContent).toContain(
+      FEDERAL_OVERLAP_NOTE,
+    )
   })
 
   it('shows the same data as a table', async () => {

@@ -16,7 +16,7 @@ import {
   qualifications,
   qualificationSchema,
 } from './enums'
-import { federalCategoryInfo } from './categories'
+import { federalCategoriesText, federalCategoryInfo } from './categories'
 import { STATES_AND_DC, stateCategoryName } from './public'
 import { qualificationLabels } from './qualification'
 
@@ -134,7 +134,8 @@ const compareMatchSchema = z.object({
   qualificationBasis: qualificationBasisSchema,
   stateCategory: z.string(),
   stateSubcategory: z.string(),
-  federalCategory: federalCategorySchema,
+  /** Every federal category the entry counts under (docs/data-model.md), in federal order. */
+  federalCategories: z.array(federalCategorySchema).min(1),
 })
 export type CompareMatch = z.infer<typeof compareMatchSchema>
 
@@ -189,7 +190,7 @@ export type CompareResponse = z.infer<typeof compareResponseSchema>
 // ---------------------------------------------------------------------------------------------
 // Aligning the entries
 
-/** One published entry, with the federal category it counts under. */
+/** One published entry, with the federal categories it counts under (`federalCategoriesOf`). */
 export interface CompareEntry {
   stateId: string
   codeSystem: CodeSystem
@@ -200,7 +201,7 @@ export interface CompareEntry {
   descriptionPublished: string | null
   stateCategory: string
   stateSubcategory: string
-  federalCategory: FederalCategory
+  federalCategories: FederalCategory[]
   tier: string | null
   qualification: Qualification
   qualificationBasis: QualificationBasis
@@ -274,7 +275,7 @@ const toMatch = (e: CompareEntry): CompareMatch => ({
   qualificationBasis: e.qualificationBasis,
   stateCategory: e.stateCategory,
   stateSubcategory: e.stateSubcategory,
-  federalCategory: e.federalCategory,
+  federalCategories: e.federalCategories,
 })
 
 /** An entry with its pattern key, computed once. */
@@ -420,7 +421,7 @@ export function buildCompare(
     if (query.alone && e.qualification !== 'standalone') continue
     const inCategory =
       ownKey === null
-        ? e.federalCategory === query.category
+        ? e.federalCategories.some((f) => f === query.category)
         : e.stateId === query.ownState && mappingKey(e.stateCategory, e.stateSubcategory) === ownKey
     if (!inCategory) continue
     let seed = seeds.get(key)
@@ -506,7 +507,7 @@ export function compareQualificationText(match: CompareMatch): string {
 
 /**
  * Where the state files the entry, when that is not the category being compared: the state's
- * own category name, or the federal category's label when the state has no categories.
+ * own category name, or the federal categories' labels when the state has no categories.
  */
 export function compareFiledUnder(
   query: Pick<CompareQuery, 'category' | 'ownState' | 'ownCategory' | 'ownSubcategory'>,
@@ -514,7 +515,7 @@ export function compareFiledUnder(
   match: CompareMatch,
 ): string | null {
   if (query.category !== undefined) {
-    if (match.federalCategory === query.category) return null
+    if (match.federalCategories.includes(query.category)) return null
   } else if (
     stateId === query.ownState &&
     mappingKey(match.stateCategory, match.stateSubcategory) ===
@@ -523,7 +524,7 @@ export function compareFiledUnder(
     return null
   }
   return match.stateCategory === '' && match.stateSubcategory === ''
-    ? federalCategoryInfo[match.federalCategory].label
+    ? federalCategoriesText(match.federalCategories)
     : stateCategoryName(match.stateCategory, match.stateSubcategory)
 }
 

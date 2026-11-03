@@ -41,10 +41,12 @@ export const unifiedCategoryBodySchema = unifiedCategorySaveSchema.extend({
 
 export type UnifiedCategoryBody = z.infer<typeof unifiedCategoryBodySchema>
 
-/** Draft → published, published ⇄ retired. Never back to draft once published. */
+/**
+ * Draft → published or retired (a draft never published may be retired: project lead,
+ * 2026-11-02), published ⇄ retired. Never back to draft once out of draft.
+ */
 export function unifiedStatusChangeAllowed(from: UnifiedStatus, to: UnifiedStatus): boolean {
   if (from === to) return true
-  if (from === 'draft') return to === 'published'
   return to !== 'draft'
 }
 

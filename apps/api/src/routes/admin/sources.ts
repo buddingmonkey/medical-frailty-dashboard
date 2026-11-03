@@ -19,23 +19,29 @@ import type { AppEnv } from '../../types'
 
 type Row = typeof sourceDocuments.$inferSelect
 
+/** D1 binds at most 100 parameters per query (a state can have more source files). */
+const CHUNK = 100
+
 /** Rows plus the versions built from each, for the duplicate warning ("as version N"). */
 async function withVersions(db: Db, rows: Row[]): Promise<SourceDocument[]> {
-  const ids = rows.map((r) => r.id)
-  const links =
-    ids.length === 0
-      ? []
-      : await db
-          .select({
-            sourceId: versionSources.sourceDocumentId,
-            id: datasetVersions.id,
-            versionNo: datasetVersions.versionNo,
-            status: datasetVersions.status,
-          })
-          .from(versionSources)
-          .innerJoin(datasetVersions, eq(versionSources.versionId, datasetVersions.id))
-          .where(inArray(versionSources.sourceDocumentId, ids))
-          .orderBy(datasetVersions.versionNo)
+  const select = (ids: number[]) =>
+    db
+      .select({
+        sourceId: versionSources.sourceDocumentId,
+        id: datasetVersions.id,
+        versionNo: datasetVersions.versionNo,
+        status: datasetVersions.status,
+      })
+      .from(versionSources)
+      .innerJoin(datasetVersions, eq(versionSources.versionId, datasetVersions.id))
+      .where(inArray(versionSources.sourceDocumentId, ids))
+      .orderBy(datasetVersions.versionNo)
+  const chunks: number[][] = []
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    chunks.push(rows.slice(i, i + CHUNK).map((r) => r.id))
+  }
+  const [first, ...rest] = chunks.map(select)
+  const links = first ? (await db.batch([first, ...rest])).flat() : []
   // sourceDocumentSchema strips r2Key: the storage key never leaves the Worker.
   return rows.map((row) =>
     sourceDocumentSchema.parse({

@@ -1,4 +1,9 @@
-import { OVERVIEW_DESCRIPTION, pageTitles } from '@mfcd/shared'
+import {
+  FEDERAL_OVERLAP_NOTE,
+  OVERVIEW_DESCRIPTION,
+  pageTitles,
+  stateCategoriesIntro,
+} from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -6,6 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb } from '../db/client'
 import { sourceDocuments, states } from '../db/schema'
 import { call } from '../test/access-fixtures'
+import { send } from '../test/draft-fixtures'
 import { seedOverview } from '../test/overview-fixtures'
 import { seedPublicStates } from '../test/public-fixtures'
 
@@ -201,7 +207,7 @@ describe('GET / (server-rendered)', () => {
 })
 
 describe('downloads', () => {
-  it('CSV: every entry with its federal category and source citation', async () => {
+  it('CSV: every entry with its federal categories and source citation', async () => {
     const res = await get('/states/ga/codes.csv')
 
     expect(res.status).toBe(200)
@@ -212,7 +218,7 @@ describe('downloads', () => {
     const lines = (await res.text()).trimEnd().split('\r\n')
     expect(lines[0]).toBe(
       'state,code_system,code,code_normalized,match_kind,range_end,includes_children,' +
-        'description_published,state_category,state_subcategory,federal_category,tier,' +
+        'description_published,state_category,state_subcategory,federal_categories,tier,' +
         'qualification,qualification_basis,source_title,source_url,source_date,source_locator',
     )
     expect(lines).toHaveLength(5)
@@ -233,13 +239,13 @@ describe('downloads', () => {
       state: string
       version: number
       sources: { url: string | null }[]
-      entries: { code: string; federalCategory: string }[]
+      entries: { code: string; federalCategories: string[] }[]
     }>()
     expect(body.state).toBe('GA')
     expect(body.version).toBe(1)
     expect(body.sources[0]?.url).toBe('https://medicaid.georgia.gov/list.pdf')
     expect(body.entries).toHaveLength(4)
-    expect(body.entries.find((e) => e.code === 'F10')?.federalCategory).toBe('sud')
+    expect(body.entries.find((e) => e.code === 'F10')?.federalCategories).toEqual(['sud'])
   })
 
   it('answers 404 for a state with no list', async () => {
@@ -309,8 +315,8 @@ describe('GET /compare/codes.csv', () => {
     const lines = (await res.text()).trimEnd().split('\r\n')
     expect(lines[0]).toBe(
       'code_system,code,description,description_source,' +
-        'GA_status,GA_entry,GA_tier,GA_qualification,GA_qualification_basis,GA_state_category,GA_federal_category,' +
-        'NE_status,NE_entry,NE_tier,NE_qualification,NE_qualification_basis,NE_state_category,NE_federal_category',
+        'GA_status,GA_entry,GA_tier,GA_qualification,GA_qualification_basis,GA_state_category,GA_federal_categories,' +
+        'NE_status,NE_entry,NE_tier,NE_qualification,NE_qualification_basis,NE_state_category,NE_federal_categories',
     )
     expect(lines).toHaveLength(3)
     expect(lines[1]).toBe(
@@ -428,6 +434,43 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     expect(app).toContain('<h2>Reading this table</h2>')
     expect(app).toContain('whichever of the state’s own categories')
     expect(app).toContain('href="/compare/codes"')
+  })
+
+  it('renders the order a shared link asks for, and marks the sorted column', async () => {
+    const byName = appHtml(await (await get('/compare')).text())
+    expect(byName.indexOf('/states/ga"')).toBeLessThan(byName.indexOf('/states/mt"'))
+    expect(byName).not.toContain('aria-sort')
+
+    // Montana lists all 6 serious mental illness codes, Georgia 3: highest first.
+    const app = appHtml(await (await get('/compare?sort=serious-mental-illness')).text())
+    expect(app.indexOf('/states/mt"')).toBeLessThan(app.indexOf('/states/ga"'))
+    expect(app).toMatch(/<th scope="col" aria-sort="descending">\s*Serious mental illness\s*<\/th>/)
+    // States without a list stay last.
+    expect(app.indexOf('/states/ga"')).toBeLessThan(app.indexOf('/states/la"'))
+
+    const overall = appHtml(await (await get('/compare?order=overall&dir=asc')).text())
+    expect(overall).toContain('<th scope="col" rowspan="2" aria-sort="ascending">Overall</th>')
+  })
+
+  it('state page: says a code can count under more than one federal category', async () => {
+    const before = appHtml(await (await get('/states/ga')).text())
+    expect(before).toContain(stateCategoriesIntro('Georgia'))
+    expect(before).not.toContain(FEDERAL_OVERLAP_NOTE)
+    // F31.* also falls in a published category under another federal parent.
+    const res = await send('POST', '/api/admin/unified', {
+      label: 'Bipolar',
+      definition: 'Test category.',
+      includes: null,
+      excludes: null,
+      federalCategory: 'serious_complex_medical',
+      status: 'published',
+      sortOrder: 3,
+      ccsr: ['TST002'],
+    })
+    expect(res.status).toBe(201)
+    const after = appHtml(await (await get('/states/ga')).text())
+    expect(after).toContain(`<p>${FEDERAL_OVERLAP_NOTE}</p>`)
+    expect(after).toMatch(/<td>Serious or complex medical condition<\/td>\s*<td>1<\/td>/)
   })
 
   it('says so when there are no published categories yet', async () => {

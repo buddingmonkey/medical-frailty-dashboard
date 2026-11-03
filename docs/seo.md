@@ -51,7 +51,10 @@ JavaScript off. Old links (`/compare?states=…`, `/compare.csv?…`) answer 301
 **Built in M5 step 5** for `/compare`, the overview matrix: indexed, canonical `/compare`, in the
 sitemap; the HTML carries the whole matrix (every state, every published unified category, the
 same numbers and words as the Vue page from `packages/shared/src/overview.ts`) and the
-"Reading this table" notes. `e2e/overview.spec.ts` reads it with JavaScript off.
+"Reading this table" notes. `e2e/overview.spec.ts` reads it with JavaScript off. Since M5 step
+5b the order is in the URL (`?order=similar|overall`, `?sort=<category slug>`, `&dir=asc`;
+defaults left out), so a shared link keeps it; the HTML rows follow it and the sorted column
+carries `aria-sort`. The canonical stays the bare `/compare`.
 
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.

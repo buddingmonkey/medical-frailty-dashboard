@@ -234,6 +234,45 @@ describe('overview matrix', () => {
     })
   })
 
+  it('keeps the order in the URL, defaults left out, so a shared link keeps it', async () => {
+    const user = userEvent.setup()
+    const { router } = await renderRoute('/compare')
+    const table = await matrix()
+    const query = () => router.currentRoute.value.query
+
+    await user.click(within(table).getByRole('button', { name: 'Kidney failure' }))
+    await waitFor(() => {
+      expect(query()).toEqual({ sort: 'kidney-failure' })
+    })
+    await user.click(within(table).getByRole('button', { name: 'Kidney failure' }))
+    await waitFor(() => {
+      expect(query()).toEqual({ sort: 'kidney-failure', dir: 'asc' })
+    })
+    await user.selectOptions(screen.getByLabelText('Order states by'), 'similar')
+    await waitFor(() => {
+      expect(query()).toEqual({ order: 'similar' })
+    })
+    await user.selectOptions(screen.getByLabelText('Order states by'), 'name')
+    await waitFor(() => {
+      expect(query()).toEqual({})
+    })
+    expect(router.currentRoute.value.path).toBe('/compare')
+  })
+
+  it('opens a shared link in its order, without announcing it', async () => {
+    await renderRoute('/compare?sort=kidney-failure&dir=asc')
+    const table = await matrix()
+    expect(rowOrder(table)).toEqual(['Georgia', 'Montana', 'Nebraska', 'Alabama', 'Louisiana'])
+    expect(
+      within(table)
+        .getByRole('button', { name: 'Kidney failure' })
+        .closest('th')
+        ?.getAttribute('aria-sort'),
+    ).toBe('ascending')
+    expect(screen.getByLabelText<HTMLSelectElement>('Order states by').value).toBe('column')
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
+
   it('explains the shades, the marks and the numbers', async () => {
     await renderRoute('/compare')
     await matrix()

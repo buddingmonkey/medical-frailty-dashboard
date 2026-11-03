@@ -50,14 +50,38 @@ export const publicStateSummarySchema = z.object({
       updatedAt: z.string().nullable(),
       totalEntries: z.number().int().min(0),
       bySystem: countsOf(codeSystems),
+      /** An entry counts once under each of its federal categories: the sum can exceed the total. */
       byFederalCategory: countsOf(federalCategories),
       byQualification: countsOf(qualifications),
-      /** Every state category's federal category was confirmed by an admin. */
+      /**
+       * Every entry's federal category was confirmed by an admin: each placement in a unified
+       * category reviewed, or, for an entry placed nowhere, a manual mapping or chapter override.
+       */
       mappingsConfirmed: z.boolean(),
     })
     .nullable(),
 })
 export type PublicStateSummary = z.infer<typeof publicStateSummarySchema>
+
+/** The words above a state's category table, in the Vue page and the server-rendered HTML. */
+export const stateCategoriesIntro = (stateName: string): string =>
+  `How each of ${stateName}’s own categories fits the federal categories in the law. A code ` +
+  'counts under the federal category of each category we compare states by that it falls in; ' +
+  'a code in none of them follows a mapping of the state’s category. A mapping that is not yet ' +
+  'confirmed is our best guess and has not been reviewed by our team.'
+
+/** Under the federal counts when an entry counts under more than one federal category. */
+export const FEDERAL_OVERLAP_NOTE =
+  'A code can count under more than one federal category, so these numbers can add up to more ' +
+  'than the number of entries.'
+
+/** The federal counts add up to more than the entries (a code under two federal categories). */
+export function federalCountsOverlap(p: {
+  totalEntries: number
+  byFederalCategory: Record<string, number>
+}): boolean {
+  return Object.values(p.byFederalCategory).reduce((sum, n) => sum + n, 0) > p.totalEntries
+}
 
 /** Body of `GET /api/public/states`: the 50 states and DC, by name. */
 export const publicStatesResponseSchema = z.object({
@@ -66,12 +90,18 @@ export const publicStatesResponseSchema = z.object({
 })
 export type PublicStatesResponse = z.infer<typeof publicStatesResponseSchema>
 
-/** One of a state's own categories and the federal category its entries count under. */
+/**
+ * One of a state's own categories and a federal category its entries count under: one row per
+ * federal category, so a category whose codes sit under two federal categories has two rows.
+ */
 export const publicStateCategorySchema = z.object({
   stateCategory: z.string(),
   stateSubcategory: z.string(),
   federalCategory: federalCategorySchema,
-  /** An admin confirmed it (a manual mapping or a chapter override); else a keyword guess. */
+  /**
+   * An admin confirmed it: every placement reviewed, or, for entries placed nowhere, a manual
+   * mapping or a chapter override. Else a guess (CCSR group or keyword).
+   */
   confirmed: z.boolean(),
   entries: z.number().int().min(0),
 })

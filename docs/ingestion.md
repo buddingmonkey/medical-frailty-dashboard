@@ -225,9 +225,11 @@ per-state default category (set by the admin) applies, plus per-chapter override
 the published version and open drafts with their counts, the stored mapping or guess, and
 "Confirm" per row or "Confirm all guesses"; confirmed mappings are `manual`. The default for a
 state without categories is simply the mapping of its blank category ("(no category)").
-Chapter overrides live in `chapter_mappings`. The rule, in `federalCategoryOf()`
-(`packages/shared/src/category-mapping.ts`): a chapter override (ICD-10-CM entries only) wins,
-then the category mapping, else `unmapped`. Every change moves the published version's
+Chapter overrides live in `chapter_mappings`. The rule, in `federalCategoriesOf()`
+(`packages/shared/src/category-mapping.ts`): since M5 step 5b an entry placed in a published
+unified category takes those categories' federal parents; for one placed nowhere, a chapter
+override (ICD-10-CM entries only) wins, then the category mapping, else `unmapped`
+(`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
 
 ## AI cleanup

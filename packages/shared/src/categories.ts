@@ -63,6 +63,13 @@ export const federalCategoryInfo: Record<FederalCategory, FederalCategoryInfo> =
   },
 }
 
+/**
+ * The labels of the federal categories a code counts under, `; ` between them (a code in two
+ * unified categories with different federal parents counts under both).
+ */
+export const federalCategoriesText = (list: readonly FederalCategory[]): string =>
+  list.map((f) => federalCategoryInfo[f].label).join('; ')
+
 /** Lowercase, punctuation to spaces, single spaces: `SID-SDD-SPD` → `sid sdd spd`. */
 export function normalizeCategoryLabel(label: string): string {
   return label

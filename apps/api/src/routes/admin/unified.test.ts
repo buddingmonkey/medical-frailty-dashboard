@@ -9,7 +9,14 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb } from '../../db/client'
-import { appMeta, refCcsrCategories, states, unifiedCcsr, unifiedMappings } from '../../db/schema'
+import {
+  appMeta,
+  refCcsrCategories,
+  states,
+  unifiedCategories,
+  unifiedCcsr,
+  unifiedMappings,
+} from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
 
@@ -178,7 +185,6 @@ describe('/api/admin/unified', () => {
 
     expect((await to('draft', { sortOrder: 2 })).status).toBe(200)
     expect(await dataVersion()).toBeNull()
-    expect((await to('retired')).status).toBe(409)
     expect((await to('published')).status).toBe(200)
     expect(await dataVersion()).toBe('1')
     const back = await to('draft')
@@ -193,6 +199,20 @@ describe('/api/admin/unified', () => {
     expect((await to('published')).status).toBe(200)
     expect(await dataVersion()).toBe('4')
     expect((await audits()).map((a) => a.action)).toContain('unified.update')
+  })
+
+  it('retires a draft that was never published, without touching public pages', async () => {
+    const { id } = await create()
+    const path = `/api/admin/unified/${String(id)}`
+    const res = await send('PUT', path, { ...body, status: 'retired' })
+    expect(res.status).toBe(200)
+    const [row] = await db.select().from(unifiedCategories).where(eq(unifiedCategories.id, id))
+    expect(row?.status).toBe('retired')
+    // A draft was never public, so retiring it changes no public page.
+    expect(await dataVersion()).toBeNull()
+    expect((await send('PUT', path, { ...body, status: 'draft' })).status).toBe(409)
+    const last = (await audits()).find((a) => a.action === 'unified.update')
+    expect(last?.details).toMatchObject({ status: ['draft', 'retired'] })
   })
 
   it('answers 404 for an unknown id', async () => {

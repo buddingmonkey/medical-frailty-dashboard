@@ -2,7 +2,7 @@ import {
   codeSystemLabels,
   compareCellText,
   compareQuerySchema,
-  federalCategoryInfo,
+  federalCategoriesText,
   isCodeTableQuery,
   qualificationBasisLabels,
   qualificationLabels,
@@ -117,7 +117,7 @@ export const pagesRoute = new Hono<AppEnv>()
   })
   .get('/compare', pageCache, async (c) => {
     const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
-    return sendPage(c, overviewPage(data, origin(c)))
+    return sendPage(c, overviewPage(data, origin(c), c.req.query()))
   })
   .get('/compare.csv', async (c, next) => codeTableRedirect(c, '/compare/codes.csv') ?? next())
   .get('/compare/codes', pageCache, async (c) => {
@@ -151,7 +151,7 @@ export const pagesRoute = new Hono<AppEnv>()
       'qualification',
       'qualification_basis',
       'state_category',
-      'federal_category',
+      'federal_categories',
     ]
     const csv = toCsv([
       [
@@ -175,7 +175,7 @@ export const pagesRoute = new Hono<AppEnv>()
             m ? qualificationLabels[m.qualification] : null,
             m ? qualificationBasisLabels[m.qualificationBasis] : null,
             m ? m.stateCategory : null,
-            m ? federalCategoryInfo[m.federalCategory].label : null,
+            m ? federalCategoriesText(m.federalCategories) : null,
           ]
         }),
       ]),
@@ -224,7 +224,7 @@ export const pagesRoute = new Hono<AppEnv>()
         'description_published',
         'state_category',
         'state_subcategory',
-        'federal_category',
+        'federal_categories',
         'tier',
         'qualification',
         'qualification_basis',
@@ -244,7 +244,7 @@ export const pagesRoute = new Hono<AppEnv>()
         r.descriptionPublished,
         r.stateCategory,
         r.stateSubcategory,
-        federalCategoryInfo[r.federalCategory].label,
+        federalCategoriesText(r.federalCategories),
         r.tier,
         qualificationLabels[r.qualification],
         qualificationBasisLabels[r.qualificationBasis],
@@ -283,7 +283,7 @@ export const pagesRoute = new Hono<AppEnv>()
         descriptionPublished: r.descriptionPublished,
         stateCategory: r.stateCategory,
         stateSubcategory: r.stateSubcategory,
-        federalCategory: r.federalCategory,
+        federalCategories: r.federalCategories,
         tier: r.tier,
         qualification: r.qualification,
         qualificationBasis: r.qualificationBasis,

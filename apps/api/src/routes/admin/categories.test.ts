@@ -10,8 +10,10 @@ import {
   chapterMappings,
   datasetVersions,
   entries,
+  entryUnified,
   sourceDocuments,
   states,
+  unifiedCategories,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
@@ -110,6 +112,48 @@ describe('/api/admin/states/:stateId/categories', () => {
     })
     expect(list[1]?.mapping).toMatchObject({ federalCategory: 'sud', method: 'auto' })
     expect(list[2]?.suggestion?.federalCategory).toBe('state_specific')
+  })
+
+  it('says how many published entries follow their unified categories, and under what', async () => {
+    const category = (slug: string, federalCategory: 'sud' | 'serious_complex_medical') => ({
+      slug,
+      label: slug,
+      definition: 'Test.',
+      federalCategory,
+      status: 'published' as const,
+      createdBy: ADMIN,
+      updatedBy: ADMIN,
+    })
+    const [a, b, retired] = await db
+      .insert(unifiedCategories)
+      .values([
+        category('a', 'sud'),
+        category('b', 'serious_complex_medical'),
+        { ...category('c', 'sud'), status: 'retired' as const },
+      ])
+      .returning()
+    const smi = await db.select().from(entries).where(eq(entries.stateCategory, 'SMI'))
+    const [f200, f310] = smi.filter((e) => e.versionId === publishedId)
+    const sud = await db.select().from(entries).where(eq(entries.stateCategory, 'SUD'))
+    if (!a || !b || !retired || !f200 || !f310 || !sud[0]) throw new Error('seed failed')
+    const placed = (entryId: number, unifiedId: number) => ({
+      entryId,
+      unifiedId,
+      basis: 'by_code' as const,
+      reviewed: 0,
+    })
+    await db
+      .insert(entryUnified)
+      .values([placed(f200.id, a.id), placed(f310.id, a.id), placed(f310.id, b.id)])
+    // A retired category never counts (placements are removed on retire; this one was left).
+    await db.insert(entryUnified).values(placed(sud[0].id, retired.id))
+
+    const { categories: list } = await categories()
+    expect(list.map((c) => [c.stateCategory, c.placedEntries, c.placedFederal])).toEqual([
+      ['SMI', 2, ['sud', 'serious_complex_medical']],
+      ['SUD', 0, []],
+      ['Tier 2 - Frailty Indicators', 0, []],
+    ])
   })
 
   it('counts ICD-10-CM entries per chapter, for chapter overrides', async () => {

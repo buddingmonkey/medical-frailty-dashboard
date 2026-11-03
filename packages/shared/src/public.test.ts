@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { codeSystems } from './enums'
-import { publicStateSummarySchema, zeroCounts } from './public'
+import { codeSystems, federalCategories } from './enums'
+import { federalCountsOverlap, publicStateSummarySchema, zeroCounts } from './public'
 
 describe('public state summary', () => {
   it('zeroCounts has a zero for every value', () => {
@@ -31,5 +31,13 @@ describe('public state summary', () => {
       },
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('federalCountsOverlap', () => {
+  it('is true only when the federal counts add up to more than the entries', () => {
+    const counts = { ...zeroCounts(federalCategories), sud: 3, serious_complex_medical: 2 }
+    expect(federalCountsOverlap({ totalEntries: 5, byFederalCategory: counts })).toBe(false)
+    expect(federalCountsOverlap({ totalEntries: 4, byFederalCategory: counts })).toBe(true)
   })
 })

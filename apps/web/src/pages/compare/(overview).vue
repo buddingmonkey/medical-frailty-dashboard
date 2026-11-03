@@ -6,11 +6,13 @@ import {
   OVERVIEW_NO_LIST,
   type OverviewOrder,
   overviewOrderAnnouncement,
+  overviewOrderFromQuery,
+  overviewOrderQuery,
   overviewReadingNotes,
   pageTitles,
 } from '@mfcd/shared'
-import { computed, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
 import { usePageTitle } from '../../lib/page-title'
@@ -33,10 +35,18 @@ usePageTitle(() => pageTitles.overview)
 const overview = usePublicOverview()
 const data = computed(() => overview.data.value)
 
-const order = ref<OverviewOrder>({ by: 'name' })
+// The order lives in the URL (`?order=`, `?sort=&dir=`), so a shared link keeps it. A change
+// made here is announced; a link opened in an order is not.
+const route = useRoute()
+const router = useRouter()
+const categories = computed(() => data.value?.categories ?? [])
 const announcement = ref('')
-watch(order, (o) => {
-  announcement.value = overviewOrderAnnouncement(o, data.value?.categories ?? [])
+const order = computed<OverviewOrder>({
+  get: () => overviewOrderFromQuery(route.query, categories.value),
+  set: (o) => {
+    announcement.value = overviewOrderAnnouncement(o, categories.value)
+    void router.replace({ query: overviewOrderQuery(o, categories.value) })
+  },
 })
 
 /** The select shows the order; a column sort (from a header) shows as "A column". */

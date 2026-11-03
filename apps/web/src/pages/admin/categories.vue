@@ -2,6 +2,7 @@
 import {
   type FederalCategory,
   federalCategories,
+  federalCategoriesText,
   federalCategoryInfo,
   stateCategoriesResponseSchema,
   type StateCategories,
@@ -15,7 +16,8 @@ import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
 
 // Category mapping (roadmap M2 step 9; docs/ingestion.md, "Category auto-mapping"): each state
-// category gets a federal category. Publish stores the keyword table's guess as "auto"; an
+// category gets a federal category, used for its entries placed in no unified category (M5
+// step 5b: placed entries follow the unified categories' federal parents). Publish stores the keyword table's guess as "auto"; an
 // admin confirms it here (launch needs every mapping confirmed). States that group codes only
 // by ICD-10-CM chapter (NE, GA) can override by chapter.
 type Category = StateCategories['categories'][number]
@@ -170,8 +172,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Each state names its own categories. Map each one to a federal category from H.R.1. Guesses
-        come from a keyword table and count only after an admin confirms them.
+        Each state names its own categories. A code placed in a published unified category counts
+        under that category’s federal parent; map each state category to a federal category from
+        H.R.1 for the codes placed in none. Guesses come from a keyword table and count only after
+        an admin confirms them.
       </p>
     </div>
     <div class="max-w-xs">
@@ -240,6 +244,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                   {{ n(c.publishedEntries) }}
                   <span v-if="c.draftEntries > 0" class="block text-xs text-muted-foreground"
                     >{{ n(c.draftEntries) }} in drafts</span
+                  >
+                  <span v-if="c.placedEntries > 0" class="block text-xs text-muted-foreground"
+                    >{{ n(c.placedEntries) }} follow their unified categories:
+                    {{ federalCategoriesText(c.placedFederal) }}</span
                   >
                 </td>
                 <td class="py-2 pr-4">

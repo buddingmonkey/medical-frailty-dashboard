@@ -1,5 +1,6 @@
 import {
   codeSystems,
+  FEDERAL_OVERLAP_NOTE,
   federalCategories,
   type PublicStateDetail,
   qualifications,
@@ -93,6 +94,21 @@ function serve(slug: string, body: PublicStateDetail | null) {
 }
 
 describe('/states/:slug', () => {
+  it('says a code can count under more than one federal category when one does', async () => {
+    const p = georgia.state.published
+    if (!p) throw new Error('fixture has no list')
+    const byFederalCategory = { ...p.byFederalCategory, serious_complex_medical: 10 }
+    serve('ga', { ...georgia, state: { ...georgia.state, published: { ...p, byFederalCategory } } })
+
+    await renderRoute('/states/ga')
+
+    const counts = await screen.findByRole('table', { name: 'Entries by federal category' })
+    expect(
+      within(counts).getByRole('row', { name: 'Serious or complex medical condition 10' }),
+    ).toBeTruthy()
+    expect(screen.getByText(FEDERAL_OVERLAP_NOTE)).toBeTruthy()
+  })
+
   it('shows the summary, counts, categories, sources, versions and notes', async () => {
     serve('ga', georgia)
 
@@ -109,6 +125,9 @@ describe('/states/:slug', () => {
     expect(
       screen.getByRole('table', { name: 'Entries by whether a code qualifies alone' }).textContent,
     ).toContain('Needs another code47')
+
+    // Every entry counts under one federal category here, so no note.
+    expect(screen.queryByText(FEDERAL_OVERLAP_NOTE)).toBeNull()
 
     const cats = screen.getByRole('table', { name: 'Georgia’s categories' })
     const rows = within(cats).getAllByRole('row').slice(1)
