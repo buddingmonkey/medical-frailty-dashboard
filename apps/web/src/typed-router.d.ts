@@ -154,6 +154,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/compare/[categorySlug]': RouteRecordInfo<
+      '/compare/[categorySlug]',
+      '/compare/:categorySlug',
+      { categorySlug: ParamValue<true> },
+      { categorySlug: ParamValue<false> },
+      | never
+    >,
     '/compare/codes': RouteRecordInfo<
       '/compare/codes',
       '/compare/codes',
@@ -327,6 +334,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/compare/[categorySlug].vue': {
+      routes:
+        | '/compare/[categorySlug]'
+      views:
+        | never
+      pathParamNames:
+        | 'categorySlug'
     }
     'src/pages/compare/codes.vue': {
       routes:

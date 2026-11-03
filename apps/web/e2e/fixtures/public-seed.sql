@@ -61,6 +61,11 @@ VALUES
 
 INSERT INTO unified_ccsr (unified_id, ccsr_category) VALUES (9001, 'TST001');
 
+-- The drill-down (M5 step 6) names the CCSR group: a synthetic one, never AHRQ data.
+DELETE FROM ref_ccsr_categories WHERE ccsr_category = 'TST001';
+INSERT INTO ref_ccsr_categories (ccsr_category, description, body_system, release)
+VALUES ('TST001', 'Test schizophrenia group', 'Test', 'ccsr-dx-test');
+
 INSERT INTO unified_universe (unified_id, code_norm)
 VALUES (9001, 'F200'), (9001, 'F201'), (9001, 'F209');
 

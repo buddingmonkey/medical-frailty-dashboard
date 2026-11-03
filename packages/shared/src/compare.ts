@@ -486,7 +486,11 @@ export function buildCompare(
 // Wording, shared by the Vue page, the server-rendered HTML and the CSV
 
 /** The cell's first line: `Listed`, `Covered by F20.*`, `3 narrower codes listed`. */
-export function compareCellText(cell: CompareCell): string {
+export function compareCellText(
+  cell: Pick<CompareCell, 'status' | 'narrowerCount'> & {
+    match: Pick<CompareMatch, 'display'> | null
+  },
+): string {
   switch (cell.status) {
     case 'covered':
       return cell.match ? `Covered by ${cell.match.display}` : compareStatusLabels.covered
@@ -500,7 +504,9 @@ export function compareCellText(cell: CompareCell): string {
 }
 
 /** The state's rule for the entry: `Qualifies alone`, `Needs another code (inferred)`. */
-export function compareQualificationText(match: CompareMatch): string {
+export function compareQualificationText(
+  match: Pick<CompareMatch, 'qualification' | 'qualificationBasis'>,
+): string {
   const label = qualificationLabels[match.qualification]
   return match.qualificationBasis === 'inferred' ? `${label} (inferred)` : label
 }

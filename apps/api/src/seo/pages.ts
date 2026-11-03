@@ -9,6 +9,23 @@ import {
   compareSearchParams,
   compareSubject,
   coverageBandLabels,
+  CCSR_CITATION,
+  type DrillCell,
+  drillCodeTablePath,
+  drillCountText,
+  drillCsvPath,
+  type DrillDetailResponse,
+  drillFiledUnder,
+  drillGroupCountText,
+  type DrillQuery,
+  type DrillResponse,
+  type DrillRow,
+  drillRulesText,
+  drillSearchParams,
+  drillShowLabels,
+  drillShows,
+  drillStatusText,
+  drillUniverseNote,
   type FederalCategory,
   FEDERAL_OVERLAP_NOTE,
   federalCategoryInfo,
@@ -521,6 +538,286 @@ export function overviewPage(
         ${(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]).join('; ')}.
       </p>
       <p>To compare single codes, use the <a href="/compare/codes">code table</a>.</p>`,
+  }
+}
+
+/** A drill-down cell in words: status, tier, rule and the state's own category. */
+export function drillCellWords(cell: DrillCell): string {
+  const m = cell.match
+  const filed = m ? drillFiledUnder(m) : null
+  return [
+    compareCellText(cell),
+    m?.tier,
+    m ? compareQualificationText(m) : null,
+    filed ? `filed under ${filed}` : null,
+  ]
+    .filter((part) => part !== null && part !== undefined && part !== '')
+    .join('; ')
+}
+
+/** The row's description, with the state named when the text is the state's own. */
+const drillDescription = (r: Pick<DrillRow, 'description' | 'descriptionSource'>): string =>
+  r.description === null
+    ? ''
+    : r.descriptionSource && r.descriptionSource !== 'cms'
+      ? `${r.description} (${r.descriptionSource}’s text)`
+      : r.description
+
+/** A link to the same view with some options changed (`?…`, relative to the page). */
+function drillHref(query: DrillQuery, change: Partial<DrillQuery>, hash = ''): string {
+  const search = drillSearchParams({ ...query, ...change }).toString()
+  return `${search === '' ? '?' : `?${search}`}${hash}`
+}
+
+/** The details of one row: every state's cell; states without one as abbreviations. */
+function drillDetailHtml(detail: DrillDetailResponse): Html {
+  const { row } = detail
+  const shown = detail.states.filter((s) => s.hasList && s.cell.status !== 'not_listed')
+  const notListed = detail.states.filter((s) => s.hasList && s.cell.status === 'not_listed')
+  const noList = detail.states.filter((s) => !s.hasList)
+  const abbreviations = (label: string, list: typeof noList) =>
+    list.length === 0
+      ? null
+      : html`<p>${label} (${list.length}): ${list.map((s) => s.id).join(' ')}</p>`
+  return html`<section id="code-details" aria-labelledby="code-details-heading">
+    <h2 id="code-details-heading">${row.display}${row.description ? ` ${row.description}` : ''}</h2>
+    <p>Listed by ${drillCountText(row.count, detail.statesWithList)} with lists.</p>
+    ${
+      shown.length === 0
+        ? null
+        : html`<table>
+            <caption>
+              ${row.display}: each state’s rule
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">How the state lists it</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${shown.map(
+                (s) =>
+                  html`<tr>
+                    <th scope="row">${s.name}</th>
+                    <td>${drillCellWords(s.cell)}</td>
+                  </tr>`,
+              )}
+            </tbody>
+          </table>`
+    }
+    ${abbreviations('Not listed', notListed)} ${abbreviations('No list on this site', noList)}
+  </section>`
+}
+
+/**
+ * `/compare/<slug>` (roadmap M5 step 6): one published unified category's codes, ranked by how
+ * many states list them, every group expanded. The bare page is indexed; any query (filters,
+ * focus, details, page) is a view of it: `noindex`, canonical to the bare page.
+ */
+export function drillPage(
+  data: DrillResponse,
+  query: DrillQuery,
+  detail: DrillDetailResponse | null,
+  origin: string,
+  hasQuery: boolean,
+): PageParts {
+  const { category } = data
+  const path = `/compare/${category.slug}`
+  const focusState = data.states.find((s) => s.id === data.query.focus) ?? null
+  const applied: DrillQuery = { ...query, ...data.query, page: data.page }
+  const caption = `${category.label}: codes by how many states list them`
+  const total = data.states.length
+
+  const about = html`<p><a href="/compare">Overview of every state</a></p>
+    <h1>${category.label}</h1>
+    <p>Federal category: ${federalCategoryInfo[category.federalCategory].label}.</p>
+    <p>${category.definition}</p>
+    ${category.includes ? html`<p>Includes: ${category.includes}</p>` : null}
+    ${category.excludes ? html`<p>Excludes: ${category.excludes}</p>` : null}
+    ${
+      category.ccsr.length === 0
+        ? null
+        : html`<h2>CCSR groups</h2>
+            <ul>
+              ${category.ccsr.map((g) => html`<li>${g.id}: ${g.description}</li>`)}
+            </ul>
+            <p>Source: ${CCSR_CITATION}</p>`
+    }`
+
+  const form = html`<form method="get" action="${path}">
+    <p>
+      <label for="drill-focus">Focus state</label>
+      <select id="drill-focus" name="focus">
+        <option value="">None</option>
+        ${data.states.map((s) =>
+          s.id === data.query.focus
+            ? html`<option value="${s.id}" selected>${s.name}</option>`
+            : html`<option value="${s.id}">${s.name}</option>`,
+        )}
+      </select>
+    </p>
+    <fieldset>
+      <legend>Show</legend>
+      ${drillShows.map(
+        (v) =>
+          html`<label
+            ><input
+              type="radio"
+              name="show"
+              value="${v}"
+              ${new Html(v === data.query.show ? 'checked' : '')}
+            />
+            ${drillShowLabels[v]}</label
+          >`,
+      )}
+    </fieldset>
+    ${
+      data.systems.length > 1
+        ? html`<p>
+            <label for="drill-system">Code system</label>
+            <select id="drill-system" name="system">
+              <option value="">All</option>
+              ${data.systems.map((sys) =>
+                sys === data.query.system
+                  ? html`<option value="${sys}" selected>${codeSystemLabels[sys]}</option>`
+                  : html`<option value="${sys}">${codeSystemLabels[sys]}</option>`,
+              )}
+            </select>
+          </p>`
+        : null
+    }
+    <p>
+      <label
+        ><input
+          type="checkbox"
+          name="all"
+          value="1"
+          ${new Html(
+            [category.universeSize === 0 ? 'disabled' : '', data.query.all ? 'checked' : '']
+              .filter((a) => a !== '')
+              .join(' '),
+          )}
+        />
+        Include codes no state lists</label
+      >
+      ${drillUniverseNote(category.universeSize)}
+    </p>
+    <p><button type="submit">Apply</button></p>
+  </form>`
+
+  const links = html`<p>
+    <a href="${drillCsvPath(category.slug, applied)}">Download every row (CSV)</a>.
+    <a
+      href="${drillCodeTablePath(
+        category.federalCategory,
+        data.states.map((s) => s.id),
+      )}"
+      >Compare single codes in ${federalCategoryInfo[category.federalCategory].label}</a
+    >.
+  </p>`
+
+  const columns = focusState ? 5 : 4
+  const table =
+    data.groups.length === 0
+      ? html`<p>No codes match this filter.</p>`
+      : html`<table>
+          <caption>
+            ${caption}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Description</th>
+              <th scope="col">States listing it</th>
+              <th scope="col">Their rules</th>
+              ${focusState ? html`<th scope="col">${focusState.name}</th>` : null}
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          ${data.groups.map(
+            (g) =>
+              html`<tbody>
+                <tr>
+                  <th scope="rowgroup">${g.label}</th>
+                  <td>${g.description ?? ''}</td>
+                  <td>${drillGroupCountText(g.anyCount, total)}</td>
+                  <td colspan="${columns - 2}">
+                    ${g.rowCount} ${g.rowCount === 1 ? 'code' : 'codes'}
+                  </td>
+                </tr>
+                ${g.rows.map(
+                  (r) =>
+                    html`<tr>
+                      <th scope="row">${r.display}</th>
+                      <td>${drillDescription(r)}</td>
+                      <td>${drillCountText(r.count, total)}</td>
+                      <td>${drillRulesText(r.rules)}</td>
+                      ${r.focus ? html`<td>${drillCellWords(r.focus)}</td>` : null}
+                      <td>
+                        <a href="${drillHref(applied, { code: r.key }, '#code-details')}"
+                          >Details</a
+                        >
+                      </td>
+                    </tr>`,
+                )}
+              </tbody>`,
+          )}
+        </table>`
+
+  const pager =
+    data.pageCount > 1
+      ? html`<nav aria-label="Pages">
+          <p>
+            ${
+              data.page > 1
+                ? html`<a href="${drillHref(applied, { page: data.page - 1, code: null })}"
+                    >Previous page</a
+                  >`
+                : null
+            }
+            ${
+              data.page < data.pageCount
+                ? html`<a href="${drillHref(applied, { page: data.page + 1, code: null })}"
+                    >Next page</a
+                  >`
+                : null
+            }
+          </p>
+        </nav>`
+      : null
+
+  return {
+    status: 200,
+    title: pageTitles.drillDown(category.label),
+    description:
+      category.definition.length > 300
+        ? `${category.definition.slice(0, 297)}…`
+        : category.definition,
+    path,
+    canonical: `${origin}${path}`,
+    noindex: hasQuery,
+    jsonLd: [],
+    body: html`${about} ${form}
+      <p>${drillStatusText(data)}</p>
+      ${links} ${table} ${pager} ${detail ? drillDetailHtml(detail) : null}`,
+  }
+}
+
+export function categoryNotFoundPage(origin: string, path: string): PageParts {
+  return {
+    status: 404,
+    title: pageTitles.categoryNotFound,
+    description: 'There is no published category at this address.',
+    path,
+    canonical: `${origin}${path}`,
+    noindex: true,
+    jsonLd: [],
+    body: html`<h1>Category not found</h1>
+      <p>
+        There is no published category at this address.
+        <a href="/compare">See every category</a>
+      </p>`,
   }
 }
 

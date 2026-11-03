@@ -70,6 +70,7 @@ literacy, little or no coding.
 | 2026-11-02 | On preview, the AI drove the project lead's own signed-in browser to repeat the check, then measured what a load costs the database: 4.3 rows written per code. One day of this testing would have used the whole free daily allowance | Measure the cost of a real run before you depend on a free tier | `devlog/2026-11-02-m2-step11-seed-run.md` |
 | 2026-11-02 | The AI reworded one sentence, and the test still saw the old one, twice. The local server had kept a cached copy of the page, and the cache never noticed the server's own code had changed. The live site had the same gap: for five minutes after each update it could have served the old page | A cache needs to know about everything that shapes the page, code included; a stale-looking test is a clue, not bad luck | `devlog/2026-11-02-m3-step4-seo.md` |
 | 2026-11-02 | The AI broke a rule on purpose to prove a test could catch it, and nothing failed. The rule was dead code: the data it guarded against could never reach it. Deleting it made the code simpler, and breaking the real guard failed the test | When breaking something changes nothing, ask whether the thing does anything | `devlog/2026-11-02-m4-step1-compare-api.md` |
+| 2026-11-02 | A page passed every test on small fixtures, then took 3.4 seconds on the real cancer category. The database was scanning every code for every prefix length; reordering one join made it 0.04 s | Measure with the biggest real data before you call a page done | `devlog/2026-11-02-m5-step6-drilldown.md` |
 
 ## Numbers to collect
 
@@ -134,6 +135,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M5 step 4 (2026-11-02) | 17:40–17:59 | not measured | $0 | Placements and the overview API, computed in D1; Nebraska recompute ~0.1 s |
 | M5 step 5 (2026-11-02) | 18:03–18:25 | not measured | $0 | Overview matrix at /compare; screenshots with real data caught a wrong label |
 | M5 step 5b (2026-11-02) | 18:29–18:51 | not measured | $5/month (Workers Paid kept) | Federal categories now follow unified categories; one bug from a persisted test database fixed |
+| M5 step 6 (2026-11-02) | 18:55–19:30 | not measured | Workers Paid | Category drill-down; a 3.4 s query found with real data became 0.04 s |
 
 ## Assets to capture for slides
 

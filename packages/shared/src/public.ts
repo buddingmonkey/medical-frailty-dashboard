@@ -176,6 +176,8 @@ export const pageTitles = {
   notFound: `State not found | ${SITE_NAME}`,
   compare: `Compare states by category | ${SITE_NAME}`,
   overview: `Which states cover what | ${SITE_NAME}`,
+  drillDown: (label: string) => `${label} codes by state | ${SITE_NAME}`,
+  categoryNotFound: `Category not found | ${SITE_NAME}`,
   states: `All states | ${SITE_NAME}`,
 }
 

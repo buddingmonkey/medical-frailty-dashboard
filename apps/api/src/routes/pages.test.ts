@@ -480,3 +480,105 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     expect(app).not.toContain('<table')
   })
 })
+
+describe('GET /compare/:slug (server-rendered drill-down)', () => {
+  beforeEach(async () => {
+    await seedOverview()
+  })
+
+  it('bare page: title, description from the definition, canonical, indexed', async () => {
+    const res = await get('/compare/serious-mental-illness', { host: 'frailty.example.org' })
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain(`<title>${pageTitles.drillDown('Serious mental illness')}</title>`)
+    expect(html).toContain('<meta name="description" content="Test category."')
+    expect(html).toContain(
+      '<link rel="canonical" href="http://frailty.example.org/compare/serious-mental-illness" />',
+    )
+    expect(html).not.toContain('noindex')
+    expect(res.headers.get('cache-control')).toBe('public, max-age=0, must-revalidate')
+  })
+
+  it('renders the category, its CCSR citation and every group expanded as a table', async () => {
+    const app = appHtml(await (await get('/compare/serious-mental-illness')).text())
+    expect(app).toContain('<h1>Serious mental illness</h1>')
+    expect(app).toContain('Disabling mental disorder')
+    expect(app).toContain('TST001')
+    expect(app).toContain('Agency for Healthcare Research and Quality')
+    expect(app).toMatch(/<caption>\s*Serious mental illness: codes by how many states list them/)
+    // Group rows, then code rows with counts and rules in words.
+    expect(app).toMatch(
+      /<th scope="rowgroup"[^>]*>F20<\/th>\s*<td>Code F20<\/td>\s*<td>2 of 2 list any<\/td>/,
+    )
+    expect(app).toMatch(
+      /<th scope="row">F20\.0<\/th>\s*<td>Code F200<\/td>\s*<td>2 of 2 states<\/td>\s*<td>Qualifies alone 2/,
+    )
+    expect(app.indexOf('>F20<')).toBeLessThan(app.indexOf('>F31<'))
+    // Links: back to the overview, the code table for the federal parent, the CSV, details.
+    expect(app).toContain('href="/compare"')
+    expect(app).toContain(
+      'href="/compare/codes?states=GA%2CMT&amp;category=disabling_mental_disorder"',
+    )
+    expect(app).toContain('href="/compare/serious-mental-illness/codes.csv"')
+    expect(app).toContain('href="?code=icd10cm%7Cexact%7CF200#code-details"')
+    // Without a universe: the note says why codes no state lists cannot be shown.
+    const equipment = appHtml(await (await get('/compare/equipment')).text())
+    expect(equipment).toContain(
+      'No full code list for this category, so only codes some state lists are shown.',
+    )
+  })
+
+  it('a query applies filters, focus and details, and is not indexed', async () => {
+    const res = await get(
+      '/compare/serious-mental-illness?show=one&focus=GA&code=icd10cm%7Cexact%7CF200',
+      { host: 'frailty.example.org' },
+    )
+    const html = await res.text()
+    expect(html).toContain('<meta name="robots" content="noindex" />')
+    expect(html).toContain(
+      '<link rel="canonical" href="http://frailty.example.org/compare/serious-mental-illness" />',
+    )
+    const app = appHtml(html)
+    expect(app).not.toMatch(/<th scope="row">F20\.0<\/th>/)
+    expect(app).toMatch(/<th scope="row">F20\.0–F20\.9<\/th>[\s\S]*?1 narrower code listed/)
+    expect(app).toContain('<th scope="col">Georgia</th>')
+    // The details of F20.0.
+    expect(app).toContain('id="code-details"')
+    expect(app).toMatch(/Georgia<\/th>\s*<td>Listed/)
+    expect(app).toMatch(/Montana<\/th>\s*<td>Covered by F20\.0–F20\.9/)
+    expect(app).toMatch(/No list on this site \(2\): LA NE/)
+  })
+
+  it('answers 404 for a draft or unknown category', async () => {
+    for (const path of ['/compare/draft-psychoses', '/compare/nothing-here']) {
+      const res = await get(path)
+      expect(res.status).toBe(404)
+      expect(await res.text()).toContain('noindex')
+    }
+  })
+
+  it('CSV: every row of the view, a status column per state with a list', async () => {
+    const res = await get('/compare/serious-mental-illness/codes.csv?all=1')
+    expect(res.headers.get('content-type')).toBe('text/csv; charset=utf-8')
+    expect(res.headers.get('content-disposition')).toBe(
+      'attachment; filename="serious-mental-illness-codes-by-state.csv"',
+    )
+    const lines = (await res.text()).trimEnd().split('\r\n')
+    expect(lines[0]).toBe(
+      'code_system,code,description,description_source,group,states_listing,states_with_list,GA,MT',
+    )
+    expect(lines).toHaveLength(11)
+    expect(lines[1]).toBe('ICD-10-CM,F20.0,Code F200,CMS,F20,2,2,Listed,Covered by F20.0–F20.9')
+    expect(lines).toContain('ICD-10-CM,F20.0–F20.9,,,F20,1,2,1 narrower code listed,Listed')
+    const one = await get('/compare/serious-mental-illness/codes.csv?show=one')
+    expect((await one.text()).trimEnd().split('\r\n')).toHaveLength(3)
+    expect((await get('/compare/draft-psychoses/codes.csv')).status).toBe(404)
+  })
+
+  it('the sitemap lists every published category page', async () => {
+    const xml = await (await get('/sitemap.xml', { host: 'frailty.example.org' })).text()
+    expect(xml).toContain('<loc>http://frailty.example.org/compare/serious-mental-illness</loc>')
+    expect(xml).toContain('<loc>http://frailty.example.org/compare/equipment</loc>')
+    expect(xml).not.toContain('draft-psychoses')
+  })
+})
