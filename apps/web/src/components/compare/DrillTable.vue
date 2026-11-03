@@ -122,7 +122,10 @@ const percent = (n: number) => (total.value === 0 ? 0 : Math.round((n / total.va
               scope="row"
               class="sticky left-0 z-10 bg-background py-2 pr-3 pl-8 text-left font-mono font-semibold whitespace-nowrap"
             >
-              {{ r.display }}
+              <RouterLink v-if="r.codePath" :to="r.codePath" class="text-link">{{
+                r.display
+              }}</RouterLink
+              ><template v-else>{{ r.display }}</template>
             </th>
             <td class="px-3 py-2">
               <template v-if="r.description">

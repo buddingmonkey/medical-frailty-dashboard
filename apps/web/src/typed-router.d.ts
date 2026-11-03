@@ -147,6 +147,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/codes/[system]/[code]': RouteRecordInfo<
+      '/codes/[system]/[code]',
+      '/codes/:system/:code',
+      { code: ParamValue<true>, system: ParamValue<true> },
+      { code: ParamValue<false>, system: ParamValue<false> },
+      | never
+    >,
     '/compare/(overview)': RouteRecordInfo<
       '/compare/(overview)',
       '/compare',
@@ -354,6 +361,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/codes/[system]/[code].vue': {
+      routes:
+        | '/codes/[system]/[code]'
+      views:
+        | never
+      pathParamNames:
+        | 'code'
     }
     'src/pages/compare/(overview).vue': {
       routes:
