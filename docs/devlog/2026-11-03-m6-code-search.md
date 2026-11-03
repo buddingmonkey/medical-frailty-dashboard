@@ -176,3 +176,18 @@ Search for a code by number or words, and a page per code that shows every state
   still hear one region.
 - The new e2e spec hovers over very different states at 390 and 1280 px and checks that the
   map doesn't move by a pixel. The lead ran it without the fix, and all 4 cases failed.
+
+## M6 total (12:40)
+- 8 PRs (#69–#76) between 10:31 and 12:40 CST (≈ 2.2 h). 7 builder agents, with up to 3
+  at once, plus 2 reviewer agents (Fable for the text, Opus for the playbook) and a Sonnet
+  docs builder.
+- `check:full` on `main`: 639 unit, 30 refdata, 247 component, 395 API, 54 scripts, 64 e2e.
+- Money: $0 beyond the Workers Paid month; AI usage not measured.
+- **Hard stop** for the project lead's review; the questions are in `docs/status.md`
+  ("M6 is complete").
+
+## What a non-technical builder should take from this
+- Ask the AI to show that each test can fail. Four times today, a deliberate break proved
+  a test worked: the code page status, search stemming, the sitemap query plan and the map
+  bounce.
+- When the AI works in parallel, someone still runs every check once at the end.

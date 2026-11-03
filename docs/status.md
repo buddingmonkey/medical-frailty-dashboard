@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 review follow-ups)_
+_Last updated: 2026-11-03 (M6 complete)_
 
 ## Where things stand
 
@@ -274,6 +274,24 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   GitHub, Claude Code sign-in and Windows were not run.
 - **M6 step 2 done** (branch `m6-step2-search-page`): `/search` (SPA, `noindex` meta added by the page): one search box, code system and state filters, results as you type (250 ms pause, 2+ characters, one TanStack query key per search), the URL holds `q`, `states`, `system`; each result links to its code page, names the state whose text it shows and says "Listed by n of N states with a list on this site"; a polite live region announces the count. Search joins `siteNav`. Wording in `packages/shared/src/search-page.ts`.
 - **Fix: the home map no longer moves on hover** (branch `fix-map-hover-shift`, 2026-11-03): every state's card is stacked in one grid cell as an invisible, `aria-hidden`, `inert` sizer, so the card cell keeps one height and the map cannot shift or "bounce"; a placeholder (`MAP_CARD_PLACEHOLDER`) shows when no state is active. Spec: `e2e/home-map-shift.spec.ts`.
+- **M6 is complete** (PRs #69–#76, 2026-11-03, 10:31–12:40 CST). Hard stop for the project
+  lead's review. Built: the search API (all ICD-10-CM and HCPCS descriptions, porter
+  stemming, migration 0012), `/search`, code pages `/codes/<system>/<code>` (server-rendered,
+  `DefinedTerm`, indexed only when a state includes the code, a sitemap index), 8 draft
+  condition groups and like codes (0014), the plain-language pass (0013), contributor docs, and
+  the home map hover fix. **For the review:**
+  - Tag `v0.7.0` for production? It applies 0012–0014. 0012 builds a 107k-row search index
+    (2.1 s on preview).
+  - The 8 condition groups are drafts. Their CPT ranges are numbers only and unchecked;
+    check them before publishing.
+  - The 19 starter categories are still drafts on production. 0013 rewords any that are
+    unedited.
+  - Lawyers: should the badge say "Enough by itself (state's rule)" everywhere? Today the
+    column heading says "State's rule". The legal list has every new and reworded string.
+  - Cost to watch: one sitemap request reads ~44k D1 rows. There is no edge cache on
+    `workers.dev`.
+  - `entries_fts` (state text) has no stemming, unlike `ref_codes_fts`. Changing it means
+    rebuilding an applied table; later, if wanted.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

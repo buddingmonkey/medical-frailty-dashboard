@@ -74,6 +74,9 @@ literacy, little or no coding.
 | 2026-11-02 | The first test sample of 480 real codes looked fine until the pages were opened: almost every code was an infection from the start of the alphabet, and one state showed up in no category at all. Sampling across the whole code range, with codes the categories cover taken first, raised the placed codes from 118 to 368 | Look at what your test data actually shows, not just how much of it there is | `devlog/2026-11-02-preview-seed.md` |
 | 2026-11-02 | The project lead asked for a banner on the test site, "if we can inject it at build". The AI suggested adding it when each page is served instead: both sites run the same build, and a site whose setting is missing or wrong shows the banner rather than hiding it | Pick the default that fails safe: if the switch breaks, show the warning | `devlog/2026-11-02-env-banner.md` |
 | 2026-11-02 | A page passed every test on small fixtures, then took 3.4 seconds on the real cancer category. The database was scanning every code for every prefix length; reordering one join made it 0.04 s | Measure with the biggest real data before you call a page done | `devlog/2026-11-02-m5-step6-drilldown.md` |
+| 2026-11-03 | While two builders wrote code, the project lead asked two more AI agents to review the site's text, as a state Medicaid employee would read it, and the contributor guide, as someone who has never used a terminal would. The text review found that "covers" and "qualifies" read like eligibility decisions. Both reviews became steps of the same milestone | Ask a reviewer to read as one specific reader; "is this clear?" finds less than "could a Medicaid analyst misread this?" | `devlog/2026-11-03-m6-code-search.md` |
+| 2026-11-03 | The builder that reworded the site could not run the browser tests, because another builder was using their ports. At the merge, 11 failed. All 11 were old wording in the tests, not broken pages, and the browser's own page snapshot showed the new names | A green run that skipped a test layer is not green; the person who merges runs everything once | same |
+| 2026-11-03 | The project lead noticed the home map "bouncing" on hover. The cause was a chain: each state's summary had a different height, the page grew and shrank, the browser moved the scroll, and the mouse landed on another state. The new test fails without the fix, in all 4 cases | Describe what you see, even when it sounds odd; "bounces at the frame rate" pointed straight at a feedback loop | same |
 
 ## Numbers to collect
 
@@ -143,6 +146,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M5 step 8 (2026-11-02) | 20:18–20:35 | not measured | Workers Paid | Tile map on the home page |
 | Map off home (2026-11-03) | 07:09–07:25 | not measured | Workers Paid | The project lead saw the 51-state preview and moved the tile map to the Map tab; one builder, 6 min |
 | **M5 total** (2026-11-02) | **≈ 4.5 h** (15:59–20:40) | not measured | $5/month | 10 PRs (#47–#56); 1,023 Vitest + 52 e2e; three category levels, CCSR, five views; 8 builder agents |
+| **M6 total** (2026-11-03) | **≈ 2.2 h** (10:31–12:40) | not measured | Workers Paid | 8 PRs (#69–#76); 1,365 Vitest + 64 e2e; code search over 107k reference codes, code pages for crawlers, like codes, a plain-language pass, contributor docs, a map fix; 7 builders + 2 reviewer agents, up to 3 at once |
 
 ## Assets to capture for slides
 
