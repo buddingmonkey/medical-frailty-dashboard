@@ -36,8 +36,10 @@ import { health } from './routes/public/health'
 import { publicOverviewRoute } from './routes/public/overview'
 import { publicStates } from './routes/public/states'
 import { publicStatesCompareRoute } from './routes/public/states-compare'
+import { llmsTxt } from './routes/llms-txt'
 import { robots } from './routes/robots'
 import { securityTxt } from './routes/security-txt'
+import { analyticsBeacon } from './seo/analytics'
 import type { AppEnv } from './types'
 
 export interface AppDeps {
@@ -53,8 +55,11 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.use(securityHeaders)
   app.use(environmentBanner)
   app.use(siteGate(getJwks))
+  // Cloudflare Web Analytics on public HTML pages while CF_BEACON_TOKEN is set.
+  app.use(analyticsBeacon)
 
   app.route('/robots.txt', robots)
+  app.route('/llms.txt', llmsTxt)
   app.route('/.well-known/security.txt', securityTxt)
 
   // Before the cache, so cached answers count too. Admin and pages are not limited (rate-limit.ts).

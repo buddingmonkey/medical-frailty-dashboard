@@ -1,4 +1,5 @@
 import {
+  aboutPage,
   type AboutBlock,
   type AboutInline,
   type AboutLink,
@@ -7,7 +8,7 @@ import {
 } from '@mfcd/shared'
 
 import { type Html, html } from './html'
-import type { PageParts } from './pages'
+import { type PageParts, pageJsonLd } from './pages'
 
 // About/methodology, disclaimer, privacy and accessibility (roadmap M8 step 4) as plain HTML,
 // from the same data as the Vue `InfoPageView` (packages/shared/src/about.ts).
@@ -46,14 +47,21 @@ export function blocksHtml(blocks: readonly AboutBlock[]): Html[] {
 
 /** An info page: indexed, in the pages sitemap, canonical its bare path. */
 export function infoPageParts(page: InfoPage, origin: string): PageParts {
+  const canonical = `${origin}${page.path}`
   return {
     status: 200,
     title: page.title,
     description: page.description,
     path: page.path,
-    canonical: `${origin}${page.path}`,
+    canonical,
     noindex: false,
-    jsonLd: [],
+    jsonLd: [
+      pageJsonLd(page.path === aboutPage.path ? 'AboutPage' : 'WebPage', {
+        title: page.title,
+        description: page.description,
+        canonical,
+      }),
+    ],
     body: html`<h1>${page.heading}</h1>
       ${blocksHtml(page.intro)}
       ${

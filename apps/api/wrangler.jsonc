@@ -32,9 +32,13 @@
   // ACCESS_TEAM_DOMAIN and ACCESS_AUD are Worker secrets, not vars: CI uploads them with each
   // deploy from GitHub environment variables (docs/deployment.md). While unset, every gated
   // request gets a 401.
+  // CF_BEACON_TOKEN: the Cloudflare Web Analytics site token (public: it is in every page).
+  // Empty = analytics off. CI passes it with `--var` from the GitHub environment variable of the
+  // same name (docs/deployment.md, "Web Analytics"); local dev and tests leave it empty.
   "vars": {
     "ENVIRONMENT": "production",
     "SITE_MODE": "private",
+    "CF_BEACON_TOKEN": "",
   },
   // database_id values are placeholders for local dev and tests. CI writes the real id from the
   // GitHub environment variable D1_DATABASE_ID (scripts/d1-ids.ts); `pnpm cf` uses the ids in
@@ -78,6 +82,7 @@
       "vars": {
         "ENVIRONMENT": "preview",
         "SITE_MODE": "private",
+        "CF_BEACON_TOKEN": "",
       },
       "d1_databases": [
         {

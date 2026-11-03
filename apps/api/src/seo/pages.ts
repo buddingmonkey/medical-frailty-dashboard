@@ -192,6 +192,33 @@ function learnMoreHtml(link: { text: string; href: string }): Html {
 
 const HOME_DESCRIPTION = pageDescriptions.home
 
+/** This site as a schema.org `Organization`: the publisher and creator in JSON-LD. */
+export const siteOrganization = (origin: string) => ({
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: `${origin}/`,
+})
+
+/**
+ * A page's own JSON-LD (docs/seo.md, "Structured data"): its type, name (the title),
+ * description and canonical URL, part of this site.
+ */
+export function pageJsonLd(
+  type: 'WebPage' | 'CollectionPage' | 'AboutPage',
+  parts: Pick<PageParts, 'title' | 'description' | 'canonical'>,
+): Record<string, unknown> {
+  const origin = new URL(parts.canonical).origin
+  return {
+    '@context': 'https://schema.org',
+    '@type': type,
+    name: parts.title,
+    description: parts.description,
+    url: parts.canonical,
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: `${origin}/` },
+    publisher: siteOrganization(origin),
+  }
+}
+
 /** "Read the law" with its citation, as on the Vue pages. */
 function statuteLink(): Html {
   return html`<a href="${STATUTE_URL}" rel="noopener noreferrer external">${STATUTE_LINK_TEXT}</a>
@@ -364,7 +391,13 @@ export function mapPage(
     path,
     canonical: `${origin}${path}`,
     noindex: false,
-    jsonLd: [],
+    jsonLd: [
+      pageJsonLd('CollectionPage', {
+        title: pageTitles.map,
+        description: MAP_DESCRIPTION,
+        canonical: `${origin}${path}`,
+      }),
+    ],
     body: html`<h1>${TILE_MAP_HEADING}</h1>
       ${compareTabsHtml(path)}
       <p>${TILE_MAP_INTRO}</p>
@@ -386,7 +419,13 @@ export function categoriesPage(overview: PublicOverviewResponse, origin: string)
     path,
     canonical: `${origin}${path}`,
     noindex: false,
-    jsonLd: [],
+    jsonLd: [
+      pageJsonLd('CollectionPage', {
+        title: pageTitles.categories,
+        description: CATEGORIES_DESCRIPTION,
+        canonical: `${origin}${path}`,
+      }),
+    ],
     body: html`<h1>${CATEGORIES_HEADING}</h1>
       ${compareTabsHtml(path)}
       <p>${CATEGORIES_INTRO} ${learnMoreHtml(learnMore.categories)}</p>
@@ -433,6 +472,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
         name: SITE_NAME,
         url,
         description: HOME_DESCRIPTION,
+        publisher: siteOrganization(origin),
       },
     ],
     body: html`<h1>Compare medical frailty codes by state</h1>
@@ -841,7 +881,13 @@ export function overviewPage(
     path: '/compare',
     canonical: `${origin}/compare`,
     noindex: false,
-    jsonLd: [],
+    jsonLd: [
+      pageJsonLd('CollectionPage', {
+        title: pageTitles.overview,
+        description: OVERVIEW_DESCRIPTION,
+        canonical: `${origin}/compare`,
+      }),
+    ],
     body: html`${intro} ${table}
       <h2>Reading this table</h2>
       ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
@@ -1112,7 +1158,28 @@ export function drillPage(
     path,
     canonical: `${origin}${path}`,
     noindex: hasQuery,
-    jsonLd: [],
+    // A Dataset: the category's codes by state, downloadable as CSV. Google wants 50 or more
+    // characters of description, so the definition comes with the sentence on what a category is.
+    jsonLd: hasQuery
+      ? []
+      : [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Dataset',
+            name: caption,
+            description: `${category.definition} ${DRILL_ABOUT}`,
+            url: `${origin}${path}`,
+            creator: siteOrganization(origin),
+            isAccessibleForFree: true,
+            distribution: [
+              {
+                '@type': 'DataDownload',
+                encodingFormat: 'text/csv',
+                contentUrl: `${origin}${path}/codes.csv`,
+              },
+            ],
+          },
+        ],
     body: html`${about} ${form}
       <p>${drillStatusText(data)}</p>
       ${links} ${table} ${pager} ${legendHtml()} ${detail ? drillDetailHtml(detail) : null}`,
