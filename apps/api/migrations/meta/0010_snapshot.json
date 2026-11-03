@@ -1,0 +1,2016 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "9a80eade-3c0b-4725-a878-33aa693a2815",
+  "prevId": "9d87f6e5-13ca-4386-850d-55d12f099140",
+  "tables": {
+    "app_meta": {
+      "name": "app_meta",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "audit_log": {
+      "name": "audit_log",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "at": {
+          "name": "at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actor_email": {
+          "name": "actor_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "details_json": {
+          "name": "details_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "audit_log_at_idx": {
+          "name": "audit_log_at_idx",
+          "columns": ["at"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "category_mappings": {
+      "name": "category_mappings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_category": {
+          "name": "state_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_subcategory": {
+          "name": "state_subcategory",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "federal_category": {
+          "name": "federal_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mapped_by": {
+          "name": "mapped_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mapped_at": {
+          "name": "mapped_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "category_mappings_state_category_idx": {
+          "name": "category_mappings_state_category_idx",
+          "columns": ["state_id", "state_category", "state_subcategory"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "category_mappings_state_id_states_id_fk": {
+          "name": "category_mappings_state_id_states_id_fk",
+          "tableFrom": "category_mappings",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "category_mappings_federal_check": {
+          "name": "category_mappings_federal_check",
+          "value": "\"category_mappings\".\"federal_category\" IN ('blind_or_disabled', 'sud', 'disabling_mental_disorder', 'physical_idd_adl', 'serious_complex_medical', 'state_specific', 'unmapped')"
+        },
+        "category_mappings_method_check": {
+          "name": "category_mappings_method_check",
+          "value": "\"category_mappings\".\"method\" IN ('auto', 'manual')"
+        },
+        "category_mappings_confidence_check": {
+          "name": "category_mappings_confidence_check",
+          "value": "\"category_mappings\".\"confidence\" BETWEEN 0 AND 1"
+        }
+      }
+    },
+    "chapter_mappings": {
+      "name": "chapter_mappings",
+      "columns": {
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "chapter": {
+          "name": "chapter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "federal_category": {
+          "name": "federal_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mapped_by": {
+          "name": "mapped_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mapped_at": {
+          "name": "mapped_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "chapter_mappings_state_id_states_id_fk": {
+          "name": "chapter_mappings_state_id_states_id_fk",
+          "tableFrom": "chapter_mappings",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "chapter_mappings_state_id_chapter_pk": {
+          "columns": ["state_id", "chapter"],
+          "name": "chapter_mappings_state_id_chapter_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "chapter_mappings_chapter_check": {
+          "name": "chapter_mappings_chapter_check",
+          "value": "\"chapter_mappings\".\"chapter\" BETWEEN 1 AND 22"
+        },
+        "chapter_mappings_federal_check": {
+          "name": "chapter_mappings_federal_check",
+          "value": "\"chapter_mappings\".\"federal_category\" IN ('blind_or_disabled', 'sud', 'disabling_mental_disorder', 'physical_idd_adl', 'serious_complex_medical', 'state_specific', 'unmapped')"
+        }
+      }
+    },
+    "column_profiles": {
+      "name": "column_profiles",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "header_key": {
+          "name": "header_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "profile_json": {
+          "name": "profile_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "column_profiles_state_header_idx": {
+          "name": "column_profiles_state_header_idx",
+          "columns": ["state_id", "header_key"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "column_profiles_state_id_states_id_fk": {
+          "name": "column_profiles_state_id_states_id_fk",
+          "tableFrom": "column_profiles",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "condition_groups": {
+      "name": "condition_groups",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "condition_groups_slug_unique": {
+          "name": "condition_groups_slug_unique",
+          "columns": ["slug"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "condition_members": {
+      "name": "condition_members",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_system": {
+          "name": "code_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "match_kind": {
+          "name": "match_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_norm": {
+          "name": "code_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "range_end_norm": {
+          "name": "range_end_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "condition_members_group_idx": {
+          "name": "condition_members_group_idx",
+          "columns": ["group_id"],
+          "isUnique": false
+        },
+        "condition_members_code_idx": {
+          "name": "condition_members_code_idx",
+          "columns": ["code_system", "code_norm"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "condition_members_group_id_condition_groups_id_fk": {
+          "name": "condition_members_group_id_condition_groups_id_fk",
+          "tableFrom": "condition_members",
+          "tableTo": "condition_groups",
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "condition_members_code_system_check": {
+          "name": "condition_members_code_system_check",
+          "value": "\"condition_members\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')"
+        },
+        "condition_members_match_kind_check": {
+          "name": "condition_members_match_kind_check",
+          "value": "\"condition_members\".\"match_kind\" IN ('exact', 'prefix', 'range')"
+        },
+        "condition_members_range_end_check": {
+          "name": "condition_members_range_end_check",
+          "value": "(\"condition_members\".\"match_kind\" = 'range') = (\"condition_members\".\"range_end_norm\" IS NOT NULL)"
+        }
+      }
+    },
+    "dataset_versions": {
+      "name": "dataset_versions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "version_no": {
+          "name": "version_no",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'draft'"
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "state_published_date": {
+          "name": "state_published_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "content_updated_at": {
+          "name": "content_updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "published_by": {
+          "name": "published_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "check_report_json": {
+          "name": "check_report_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "row_count": {
+          "name": "row_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "dataset_versions_state_no_idx": {
+          "name": "dataset_versions_state_no_idx",
+          "columns": ["state_id", "version_no"],
+          "isUnique": true
+        },
+        "dataset_versions_one_published_idx": {
+          "name": "dataset_versions_one_published_idx",
+          "columns": ["state_id"],
+          "isUnique": true,
+          "where": "\"dataset_versions\".\"status\" = 'published'"
+        }
+      },
+      "foreignKeys": {
+        "dataset_versions_state_id_states_id_fk": {
+          "name": "dataset_versions_state_id_states_id_fk",
+          "tableFrom": "dataset_versions",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "dataset_versions_status_check": {
+          "name": "dataset_versions_status_check",
+          "value": "\"dataset_versions\".\"status\" IN ('draft', 'published', 'superseded', 'discarded')"
+        }
+      }
+    },
+    "draft_parts": {
+      "name": "draft_parts",
+      "columns": {
+        "version_id": {
+          "name": "version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_document_id": {
+          "name": "source_document_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "part": {
+          "name": "part",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expected_entries": {
+          "name": "expected_entries",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "invalid_row_count": {
+          "name": "invalid_row_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "named_state_ids_json": {
+          "name": "named_state_ids_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "draft_parts_version_id_dataset_versions_id_fk": {
+          "name": "draft_parts_version_id_dataset_versions_id_fk",
+          "tableFrom": "draft_parts",
+          "tableTo": "dataset_versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "draft_parts_source_document_id_source_documents_id_fk": {
+          "name": "draft_parts_source_document_id_source_documents_id_fk",
+          "tableFrom": "draft_parts",
+          "tableTo": "source_documents",
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "draft_parts_version_id_source_document_id_part_pk": {
+          "columns": ["version_id", "source_document_id", "part"],
+          "name": "draft_parts_version_id_source_document_id_part_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "entries": {
+      "name": "entries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_system": {
+          "name": "code_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "raw_code": {
+          "name": "raw_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_norm": {
+          "name": "code_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "match_kind": {
+          "name": "match_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'exact'"
+        },
+        "range_end_norm": {
+          "name": "range_end_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "includes_children": {
+          "name": "includes_children",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "description_published": {
+          "name": "description_published",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "state_category": {
+          "name": "state_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_subcategory": {
+          "name": "state_subcategory",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "tier": {
+          "name": "tier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attributes_json": {
+          "name": "attributes_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "qualification": {
+          "name": "qualification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unknown'"
+        },
+        "qualification_basis": {
+          "name": "qualification_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'published'"
+        },
+        "source_document_id": {
+          "name": "source_document_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_locator": {
+          "name": "source_locator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_part": {
+          "name": "source_part",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        }
+      },
+      "indexes": {
+        "entries_version_code_idx": {
+          "name": "entries_version_code_idx",
+          "columns": ["version_id", "code_norm"],
+          "isUnique": false
+        },
+        "entries_code_idx": {
+          "name": "entries_code_idx",
+          "columns": ["code_norm"],
+          "isUnique": false
+        },
+        "entries_version_category_idx": {
+          "name": "entries_version_category_idx",
+          "columns": ["version_id", "state_category", "state_subcategory"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "entries_version_id_dataset_versions_id_fk": {
+          "name": "entries_version_id_dataset_versions_id_fk",
+          "tableFrom": "entries",
+          "tableTo": "dataset_versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "entries_source_document_id_source_documents_id_fk": {
+          "name": "entries_source_document_id_source_documents_id_fk",
+          "tableFrom": "entries",
+          "tableTo": "source_documents",
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "entries_code_system_check": {
+          "name": "entries_code_system_check",
+          "value": "\"entries\".\"code_system\" IN ('icd10cm', 'icd10pcs', 'cpt', 'hcpcs', 'ndc', 'revenue', 'drug_class', 'other')"
+        },
+        "entries_match_kind_check": {
+          "name": "entries_match_kind_check",
+          "value": "\"entries\".\"match_kind\" IN ('exact', 'prefix', 'range')"
+        },
+        "entries_range_end_check": {
+          "name": "entries_range_end_check",
+          "value": "(\"entries\".\"match_kind\" = 'range') = (\"entries\".\"range_end_norm\" IS NOT NULL)"
+        },
+        "entries_includes_children_check": {
+          "name": "entries_includes_children_check",
+          "value": "\"entries\".\"includes_children\" IN (0, 1)"
+        },
+        "entries_qualification_check": {
+          "name": "entries_qualification_check",
+          "value": "\"entries\".\"qualification\" IN ('standalone', 'needs_support', 'supporting_only', 'unknown')"
+        },
+        "entries_qualification_basis_check": {
+          "name": "entries_qualification_basis_check",
+          "value": "\"entries\".\"qualification_basis\" IN ('published', 'inferred')"
+        }
+      }
+    },
+    "entry_unified": {
+      "name": "entry_unified",
+      "columns": {
+        "entry_id": {
+          "name": "entry_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "unified_id": {
+          "name": "unified_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "basis": {
+          "name": "basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reviewed": {
+          "name": "reviewed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entry_unified_entry_id_entries_id_fk": {
+          "name": "entry_unified_entry_id_entries_id_fk",
+          "tableFrom": "entry_unified",
+          "tableTo": "entries",
+          "columnsFrom": ["entry_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "entry_unified_unified_id_unified_categories_id_fk": {
+          "name": "entry_unified_unified_id_unified_categories_id_fk",
+          "tableFrom": "entry_unified",
+          "tableTo": "unified_categories",
+          "columnsFrom": ["unified_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "entry_unified_entry_id_unified_id_pk": {
+          "columns": ["entry_id", "unified_id"],
+          "name": "entry_unified_entry_id_unified_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "entry_unified_basis_check": {
+          "name": "entry_unified_basis_check",
+          "value": "\"entry_unified\".\"basis\" IN ('mapping', 'by_code')"
+        },
+        "entry_unified_reviewed_check": {
+          "name": "entry_unified_reviewed_check",
+          "value": "\"entry_unified\".\"reviewed\" IN (0, 1)"
+        }
+      }
+    },
+    "ref_ccsr": {
+      "name": "ref_ccsr",
+      "columns": {
+        "code_norm": {
+          "name": "code_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ccsr_category": {
+          "name": "ccsr_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "release": {
+          "name": "release",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "ref_ccsr_code_norm_ccsr_category_pk": {
+          "columns": ["code_norm", "ccsr_category"],
+          "name": "ref_ccsr_code_norm_ccsr_category_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ref_ccsr_is_default_check": {
+          "name": "ref_ccsr_is_default_check",
+          "value": "\"ref_ccsr\".\"is_default\" IN (0, 1)"
+        }
+      }
+    },
+    "ref_ccsr_categories": {
+      "name": "ref_ccsr_categories",
+      "columns": {
+        "ccsr_category": {
+          "name": "ccsr_category",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "body_system": {
+          "name": "body_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "release": {
+          "name": "release",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "ref_codes": {
+      "name": "ref_codes",
+      "columns": {
+        "code_system": {
+          "name": "code_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_norm": {
+          "name": "code_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_norm": {
+          "name": "parent_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "chapter": {
+          "name": "chapter",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "billable": {
+          "name": "billable",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "valid_to": {
+          "name": "valid_to",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "ref_codes_code_system_code_norm_valid_from_pk": {
+          "columns": ["code_system", "code_norm", "valid_from"],
+          "name": "ref_codes_code_system_code_norm_valid_from_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ref_codes_code_system_check": {
+          "name": "ref_codes_code_system_check",
+          "value": "\"ref_codes\".\"code_system\" IN ('icd10cm', 'hcpcs')"
+        },
+        "ref_codes_billable_check": {
+          "name": "ref_codes_billable_check",
+          "value": "\"ref_codes\".\"billable\" IN (0, 1)"
+        }
+      }
+    },
+    "source_documents": {
+      "name": "source_documents",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "publisher_date": {
+          "name": "publisher_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "retrieved_at": {
+          "name": "retrieved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "file_type": {
+          "name": "file_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "r2_key": {
+          "name": "r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "uploaded_by": {
+          "name": "uploaded_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "source_documents_r2_key_unique": {
+          "name": "source_documents_r2_key_unique",
+          "columns": ["r2_key"],
+          "isUnique": true
+        },
+        "source_documents_state_sha256_idx": {
+          "name": "source_documents_state_sha256_idx",
+          "columns": ["state_id", "sha256"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "source_documents_state_id_states_id_fk": {
+          "name": "source_documents_state_id_states_id_fk",
+          "tableFrom": "source_documents",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "state_similarity": {
+      "name": "state_similarity",
+      "columns": {
+        "state_a": {
+          "name": "state_a",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_b": {
+          "name": "state_b",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "shared": {
+          "name": "shared",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "only_a": {
+          "name": "only_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "only_b": {
+          "name": "only_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jaccard": {
+          "name": "jaccard",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "computed_at": {
+          "name": "computed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "state_similarity_state_a_states_id_fk": {
+          "name": "state_similarity_state_a_states_id_fk",
+          "tableFrom": "state_similarity",
+          "tableTo": "states",
+          "columnsFrom": ["state_a"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "state_similarity_state_b_states_id_fk": {
+          "name": "state_similarity_state_b_states_id_fk",
+          "tableFrom": "state_similarity",
+          "tableTo": "states",
+          "columnsFrom": ["state_b"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "state_similarity_state_a_state_b_pk": {
+          "columns": ["state_a", "state_b"],
+          "name": "state_similarity_state_a_state_b_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "state_similarity_order_check": {
+          "name": "state_similarity_order_check",
+          "value": "\"state_similarity\".\"state_a\" < \"state_similarity\".\"state_b\""
+        },
+        "state_similarity_counts_check": {
+          "name": "state_similarity_counts_check",
+          "value": "\"state_similarity\".\"shared\" >= 0 AND \"state_similarity\".\"only_a\" >= 0 AND \"state_similarity\".\"only_b\" >= 0 AND \"state_similarity\".\"jaccard\" >= 0 AND \"state_similarity\".\"jaccard\" <= 1"
+        }
+      }
+    },
+    "states": {
+      "name": "states",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fips": {
+          "name": "fips",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'none'"
+        },
+        "published_version_id": {
+          "name": "published_version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes_md": {
+          "name": "notes_md",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "states_slug_unique": {
+          "name": "states_slug_unique",
+          "columns": ["slug"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "states_published_version_id_dataset_versions_id_fk": {
+          "name": "states_published_version_id_dataset_versions_id_fk",
+          "tableFrom": "states",
+          "tableTo": "dataset_versions",
+          "columnsFrom": ["published_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "states_id_check": {
+          "name": "states_id_check",
+          "value": "length(\"states\".\"id\") = 2 AND \"states\".\"id\" = upper(\"states\".\"id\")"
+        },
+        "states_slug_check": {
+          "name": "states_slug_check",
+          "value": "\"states\".\"slug\" = lower(\"states\".\"id\")"
+        },
+        "states_status_check": {
+          "name": "states_status_check",
+          "value": "\"states\".\"status\" IN ('none', 'announced', 'published')"
+        }
+      }
+    },
+    "unified_categories": {
+      "name": "unified_categories",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "definition": {
+          "name": "definition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "includes": {
+          "name": "includes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "excludes": {
+          "name": "excludes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "federal_category": {
+          "name": "federal_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'draft'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "unified_categories_slug_idx": {
+          "name": "unified_categories_slug_idx",
+          "columns": ["slug"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "unified_categories_slug_check": {
+          "name": "unified_categories_slug_check",
+          "value": "\"unified_categories\".\"slug\" <> '' AND \"unified_categories\".\"slug\" NOT GLOB '*[^a-z0-9-]*'"
+        },
+        "unified_categories_federal_check": {
+          "name": "unified_categories_federal_check",
+          "value": "\"unified_categories\".\"federal_category\" IN ('blind_or_disabled', 'sud', 'disabling_mental_disorder', 'physical_idd_adl', 'serious_complex_medical', 'state_specific')"
+        },
+        "unified_categories_status_check": {
+          "name": "unified_categories_status_check",
+          "value": "\"unified_categories\".\"status\" IN ('draft', 'published', 'retired')"
+        },
+        "unified_categories_version_check": {
+          "name": "unified_categories_version_check",
+          "value": "\"unified_categories\".\"version\" >= 1"
+        }
+      }
+    },
+    "unified_ccsr": {
+      "name": "unified_ccsr",
+      "columns": {
+        "unified_id": {
+          "name": "unified_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ccsr_category": {
+          "name": "ccsr_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "unified_ccsr_unified_id_unified_categories_id_fk": {
+          "name": "unified_ccsr_unified_id_unified_categories_id_fk",
+          "tableFrom": "unified_ccsr",
+          "tableTo": "unified_categories",
+          "columnsFrom": ["unified_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "unified_ccsr_unified_id_ccsr_category_pk": {
+          "columns": ["unified_id", "ccsr_category"],
+          "name": "unified_ccsr_unified_id_ccsr_category_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "unified_mappings": {
+      "name": "unified_mappings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_category": {
+          "name": "state_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_subcategory": {
+          "name": "state_subcategory",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "unified_id": {
+          "name": "unified_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "relation": {
+          "name": "relation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "basis": {
+          "name": "basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "citation": {
+          "name": "citation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mapped_by": {
+          "name": "mapped_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mapped_at": {
+          "name": "mapped_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'proposed'"
+        },
+        "superseded_by": {
+          "name": "superseded_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "unified_mappings_state_category_idx": {
+          "name": "unified_mappings_state_category_idx",
+          "columns": ["state_id", "state_category", "state_subcategory", "status"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "unified_mappings_state_id_states_id_fk": {
+          "name": "unified_mappings_state_id_states_id_fk",
+          "tableFrom": "unified_mappings",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unified_mappings_unified_id_unified_categories_id_fk": {
+          "name": "unified_mappings_unified_id_unified_categories_id_fk",
+          "tableFrom": "unified_mappings",
+          "tableTo": "unified_categories",
+          "columnsFrom": ["unified_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "unified_mappings_superseded_by_unified_mappings_id_fk": {
+          "name": "unified_mappings_superseded_by_unified_mappings_id_fk",
+          "tableFrom": "unified_mappings",
+          "tableTo": "unified_mappings",
+          "columnsFrom": ["superseded_by"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "unified_mappings_relation_check": {
+          "name": "unified_mappings_relation_check",
+          "value": "\"unified_mappings\".\"relation\" IN ('exact', 'close', 'broad', 'narrow', 'related', 'by_code')"
+        },
+        "unified_mappings_basis_check": {
+          "name": "unified_mappings_basis_check",
+          "value": "\"unified_mappings\".\"basis\" IN ('state_text', 'admin_judgement', 'ccsr_agreement', 'inferred')"
+        },
+        "unified_mappings_confidence_check": {
+          "name": "unified_mappings_confidence_check",
+          "value": "\"unified_mappings\".\"confidence\" IN ('high', 'medium', 'low')"
+        },
+        "unified_mappings_status_check": {
+          "name": "unified_mappings_status_check",
+          "value": "\"unified_mappings\".\"status\" IN ('proposed', 'approved', 'superseded')"
+        },
+        "unified_mappings_by_code_check": {
+          "name": "unified_mappings_by_code_check",
+          "value": "(\"unified_mappings\".\"relation\" = 'by_code') = (\"unified_mappings\".\"unified_id\" IS NULL)"
+        },
+        "unified_mappings_reviewed_check": {
+          "name": "unified_mappings_reviewed_check",
+          "value": "\"unified_mappings\".\"status\" <> 'approved' OR (\"unified_mappings\".\"reviewed_by\" IS NOT NULL AND \"unified_mappings\".\"reviewed_at\" IS NOT NULL)"
+        }
+      }
+    },
+    "unified_universe": {
+      "name": "unified_universe",
+      "columns": {
+        "unified_id": {
+          "name": "unified_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code_norm": {
+          "name": "code_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "unified_universe_unified_id_unified_categories_id_fk": {
+          "name": "unified_universe_unified_id_unified_categories_id_fk",
+          "tableFrom": "unified_universe",
+          "tableTo": "unified_categories",
+          "columnsFrom": ["unified_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "unified_universe_unified_id_code_norm_pk": {
+          "columns": ["unified_id", "code_norm"],
+          "name": "unified_universe_unified_id_code_norm_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "version_sources": {
+      "name": "version_sources",
+      "columns": {
+        "version_id": {
+          "name": "version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_document_id": {
+          "name": "source_document_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "version_sources_version_id_dataset_versions_id_fk": {
+          "name": "version_sources_version_id_dataset_versions_id_fk",
+          "tableFrom": "version_sources",
+          "tableTo": "dataset_versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "version_sources_source_document_id_source_documents_id_fk": {
+          "name": "version_sources_source_document_id_source_documents_id_fk",
+          "tableFrom": "version_sources",
+          "tableTo": "source_documents",
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "version_sources_version_id_source_document_id_pk": {
+          "columns": ["version_id", "source_document_id"],
+          "name": "version_sources_version_id_source_document_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "watch_items": {
+      "name": "watch_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state_id": {
+          "name": "state_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "date_is_approximate": {
+          "name": "date_is_approximate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "why_md": {
+          "name": "why_md",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "links_json": {
+          "name": "links_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'open'"
+        },
+        "resolution_md": {
+          "name": "resolution_md",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "resolved_by": {
+          "name": "resolved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "repeat_days": {
+          "name": "repeat_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "watch_items_status_due_idx": {
+          "name": "watch_items_status_due_idx",
+          "columns": ["status", "due_date"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "watch_items_state_id_states_id_fk": {
+          "name": "watch_items_state_id_states_id_fk",
+          "tableFrom": "watch_items",
+          "tableTo": "states",
+          "columnsFrom": ["state_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "watch_items_kind_check": {
+          "name": "watch_items_kind_check",
+          "value": "\"watch_items\".\"kind\" IN ('court', 'federal', 'state_list', 'internal')"
+        },
+        "watch_items_status_check": {
+          "name": "watch_items_status_check",
+          "value": "\"watch_items\".\"status\" IN ('open', 'done', 'dismissed')"
+        },
+        "watch_items_approximate_check": {
+          "name": "watch_items_approximate_check",
+          "value": "\"watch_items\".\"date_is_approximate\" IN (0, 1)"
+        },
+        "watch_items_repeat_check": {
+          "name": "watch_items_repeat_check",
+          "value": "\"watch_items\".\"repeat_days\" > 0"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

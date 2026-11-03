@@ -4,10 +4,16 @@ import {
   compareQuerySchema,
   drillQueryFromRecord,
   federalCategoriesText,
+  drillFiledUnder,
   isCodeTableQuery,
+  parseStatesPair,
   qualificationBasisLabels,
   qualificationLabels,
   SITE_NAME,
+  STATES_COMPARE_MAX,
+  STATES_COMPARE_MIN,
+  statesComparePath,
+  statesCompareQueryFromRecord,
   toCsv,
 } from '@mfcd/shared'
 import { asc, eq } from 'drizzle-orm'
@@ -18,6 +24,7 @@ import { publicCompare } from '../db/public-compare'
 import { publicDrill, publicDrillCsv, publicDrillDetail } from '../db/public-drill'
 import { publicOverview } from '../db/public-overview'
 import { publicStateDetail, publishedEntriesForDownload } from '../db/public-state'
+import { publicStatesCompare, publicStatesCompareCsv } from '../db/public-states-compare'
 import { publicSummaries } from '../db/public-summary'
 import { unifiedCategories } from '../db/schema'
 import { cachePublic, publicCache } from '../middleware/public-cache'
@@ -32,6 +39,8 @@ import {
   type PageParts,
   renderInto,
   statePage,
+  statesComparePage,
+  statesCompareNotFoundPage,
   statesPage,
 } from '../seo/pages'
 import type { AppEnv } from '../types'
@@ -192,6 +201,83 @@ export const pagesRoute = new Hono<AppEnv>()
       'content-type': 'text/csv; charset=utf-8',
       'content-disposition': `attachment; filename="${name}"`,
     })
+  })
+  // Compare 2–4 states (roadmap M5 step 7). Before `/compare/:slug…`, which `states` would
+  // otherwise reach as a category slug (it is reserved).
+  .get('/compare/states', async (c) => {
+    // The pickers' GET form without JavaScript: `?states=ga&states=mt` → the comparison.
+    const picked = [
+      ...new Set(
+        c.req
+          .queries('states')
+          ?.map((s) => s.trim().toLowerCase())
+          .filter((s) => /^[a-z]{2}$/.test(s)) ?? [],
+      ),
+    ]
+    if (picked.length < STATES_COMPARE_MIN || picked.length > STATES_COMPARE_MAX) {
+      return sendPage(
+        c,
+        statesCompareNotFoundPage(origin(c), c.req.path, 'Choose 2 to 4 different states.'),
+      )
+    }
+    return c.redirect(statesComparePath(picked.map((s) => s.toUpperCase())), 302)
+  })
+  .get('/compare/states/:pair/codes.csv', publicCache, async (c) => {
+    const ids = parseStatesPair(c.req.param('pair'))
+    const data = ids ? await publicStatesCompareCsv(createDb(c.env.DB), ids) : null
+    if (!ids || !data) return c.json({ error: 'Not found' }, 404)
+    const perState = ['status', 'entry', 'tier', 'qualification', 'state_category']
+    const csv = toCsv([
+      [
+        'code_system',
+        'code',
+        'description',
+        'description_source',
+        'unified_categories',
+        'differs',
+        ...data.states.flatMap((s) => perState.map((col) => `${s.id}_${col}`)),
+      ],
+      ...data.rows.map((row) => [
+        codeSystemLabels[row.codeSystem],
+        row.display,
+        row.description,
+        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        row.groups,
+        row.differs ? 'yes' : 'no',
+        ...row.cells.flatMap((cell) => {
+          const m = cell.match
+          return [
+            compareCellText(cell),
+            m?.display ?? null,
+            m?.tier ?? null,
+            m ? qualificationLabels[m.qualification] : null,
+            m ? drillFiledUnder(m) : null,
+          ]
+        }),
+      ]),
+    ])
+    return c.body(csv, 200, {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': `attachment; filename="compare-${ids.join('-vs-').toLowerCase()}-medical-frailty-codes.csv"`,
+    })
+  })
+  .get('/compare/states/:pair', async (c, next) => {
+    // Before the cache: a redirect is not a page. `/compare/states/GA-vs-MT` → lowercase.
+    const pair = c.req.param('pair')
+    if (pair === pair.toLowerCase() || parseStatesPair(pair.toLowerCase()) === null) return next()
+    const url = new URL(c.req.url)
+    return c.redirect(`/compare/states/${pair.toLowerCase()}${url.search}`, 301)
+  })
+  .get('/compare/states/:pair', pageCache, async (c) => {
+    const ids = parseStatesPair(c.req.param('pair'))
+    const query = statesCompareQueryFromRecord(c.req.queries())
+    const data = ids
+      ? await publicStatesCompare(createDb(c.env.DB), ids, query, {
+          dataVersion: c.get('dataVersion') ?? 0,
+        })
+      : null
+    if (!data) return sendPage(c, statesCompareNotFoundPage(origin(c), c.req.path))
+    return sendPage(c, statesComparePage(data, query, origin(c), c.req.path))
   })
   .get('/compare/:slug/codes.csv', publicCache, async (c) => {
     const slug = c.req.param('slug')

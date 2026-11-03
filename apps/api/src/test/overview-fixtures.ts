@@ -3,6 +3,8 @@ import { env } from 'cloudflare:workers'
 import { expect } from 'vitest'
 
 import { createDb } from '../db/client'
+import { recomputePlacements } from '../db/placement'
+import { recomputeSimilarity } from '../db/similarity'
 import { refCcsr, refCcsrCategories, refCodes, states } from '../db/schema'
 import { send } from './draft-fixtures'
 import { icd, publishVersion } from './public-fixtures'
@@ -173,4 +175,30 @@ export async function seedOverview(): Promise<{ smi: number; equipment: number; 
   await approve('MT', 'SMI', smi)
   await approve('MT', 'DME', equipment)
   return { smi, equipment, kidney }
+}
+
+/**
+ * The comparison fixture (roadmap M5 step 7): the overview fixture plus a published NE list, so
+ * three states have one, with placements and pair similarity computed as publish does.
+ *
+ * NE: F20.0 (SMI by CCSR, needs another code), N18.6 (Kidney failure), Z99.2 (no CCSR group,
+ * so in no unified category).
+ */
+export async function seedStatesCompare() {
+  const ids = await seedOverview()
+  await db.insert(refCodes).values({
+    codeSystem: 'icd10cm',
+    codeNorm: 'Z992',
+    description: 'Code Z992',
+    billable: 1,
+    validFrom: '2026-10-01',
+  })
+  await publishVersion('NE', 'published', [
+    icd('F200', 'Conditions', { qualification: 'needs_support' }),
+    icd('N186', 'Conditions', { qualification: 'standalone' }),
+    icd('Z992', 'Conditions', { qualification: 'standalone' }),
+  ])
+  await recomputePlacements(db, 'all')
+  await recomputeSimilarity(db, 'all')
+  return ids
 }

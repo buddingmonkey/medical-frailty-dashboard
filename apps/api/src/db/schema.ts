@@ -419,6 +419,41 @@ export const unifiedUniverse = sqliteTable(
   (t) => [primaryKey({ columns: [t.unifiedId, t.codeNorm] })],
 )
 
+/**
+ * How alike two states' published lists are (roadmap M5 step 7; docs/data-model.md, "Pair
+ * similarity"): over each state's set of codes (every billable current ICD-10-CM code it lists
+ * or covers, plus its other entries by `comparePatternKey`). One row per pair of states with a
+ * list, `state_a < state_b`. Recomputed by src/db/similarity.ts after publish and rollback (that
+ * state's pairs); `computed_at` is when the row's numbers last changed. `WITHOUT ROWID` with no
+ * other index (one D1 write per row; at most 1,275 rows), added by hand in
+ * migrations/0010_state_similarity.sql and guarded by src/db/schema.test.ts.
+ */
+export const stateSimilarity = sqliteTable(
+  'state_similarity',
+  {
+    stateA: text('state_a')
+      .notNull()
+      .references(() => states.id),
+    stateB: text('state_b')
+      .notNull()
+      .references(() => states.id),
+    shared: integer('shared').notNull(),
+    onlyA: integer('only_a').notNull(),
+    onlyB: integer('only_b').notNull(),
+    /** shared / (shared + only_a + only_b); 0 when both sets are empty. */
+    jaccard: real('jaccard').notNull(),
+    computedAt: timestamp('computed_at'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.stateA, t.stateB] }),
+    check('state_similarity_order_check', sql`${t.stateA} < ${t.stateB}`),
+    check(
+      'state_similarity_counts_check',
+      sql`${t.shared} >= 0 AND ${t.onlyA} >= 0 AND ${t.onlyB} >= 0 AND ${t.jaccard} >= 0 AND ${t.jaccard} <= 1`,
+    ),
+  ],
+)
+
 // ---------------------------------------------------------------------------------------------
 // Reference data and like codes
 

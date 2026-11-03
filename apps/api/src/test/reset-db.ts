@@ -5,6 +5,7 @@ export async function resetDb(db: D1Database): Promise<void> {
   await db.batch(
     [
       'UPDATE states SET published_version_id = NULL',
+      'DELETE FROM state_similarity',
       'DELETE FROM entry_unified',
       'DELETE FROM unified_universe',
       'DELETE FROM entries',

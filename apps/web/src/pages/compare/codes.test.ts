@@ -85,6 +85,7 @@ const montana: PublicStateDetail = {
       entries: 9,
     },
   ],
+  similar: [],
 }
 
 const cell = (
