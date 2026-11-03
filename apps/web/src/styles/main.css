@@ -214,3 +214,14 @@
     var(--color-cover-none-line) 4px 5px
   );
 }
+
+/* The test-site banner the Worker adds to every HTML page outside production
+   (apps/api/src/middleware/environment-banner.ts). Gold with navy text: 9:1 in both themes. */
+.env-banner {
+  display: block;
+  padding: 0.375rem 1rem;
+  background: var(--color-highlight);
+  color: var(--color-on-highlight);
+  font-size: 0.875rem;
+  text-align: center;
+}
