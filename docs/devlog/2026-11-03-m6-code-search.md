@@ -87,3 +87,13 @@ Search for a code by number or words, and a page per code that shows every state
   it, and `INDEXED BY entries_code_idx` fixed it.
 - Numbers: 17 files, about 3.2k lines (2k of them drizzle's snapshot); 86 new tests.
   `check:full`: 562 unit, 363 API, 53 e2e.
+
+## Step 2: search page (11:11–11:22 builder)
+- `/search`: one search box, a code system filter, and checkboxes for states that have a list.
+  Results appear 250 ms after typing stops. Each query has its own cache key and an abort
+  signal, so a slow old answer never replaces a newer one (tested). The URL holds the search.
+  A polite live region announces only the count. Search joined the site menu.
+- `noindex` is set in the page only. A server-side `X-Robots-Tag` for `/search` goes with
+  step 5, which owns server rendering.
+- `check:full`: 55 e2e tests, including the new one (type, see results, open a code page,
+  axe in both themes).

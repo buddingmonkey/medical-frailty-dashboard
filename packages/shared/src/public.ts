@@ -285,6 +285,7 @@ export const siteNav = [
   { label: 'Home', path: '/', section: false },
   { label: 'States', path: '/states', section: true },
   { label: 'Compare', path: '/compare', section: true },
+  { label: 'Search', path: '/search', section: false },
 ] as const
 
 /** The nav entry a path belongs to, or null. */

@@ -412,6 +412,7 @@ describe('main navigation in the server-rendered HTML', () => {
         ['Home', '/'],
         ['States', '/states'],
         ['Compare', '/compare'],
+        ['Search', '/search'],
       ] as const) {
         const mark =
           label !== current ? '' : path === href ? ' aria-current="page"' : ' aria-current="true"'
