@@ -94,6 +94,31 @@ in the sitemap, like the comparisons: it holds no facts of its own, and `?state=
 state page's. `categories` and `map` are reserved unified slugs. Tested in
 `apps/api/src/routes/compare-tabs-pages.test.ts`.
 
+**Built in M6 step 5** for `/codes/<system>/<code>`, from the API's own loader (`publicCode`;
+one matcher). Title "F20.0 Paranoid schizophrenia: medical frailty status in 4 states | …"
+(CPT: "CPT 99213: …", never a name), description from the counts and the including states'
+names. Near the top a "Summary" region: "n of N states with a list on this site include F20.0."
+and one plain sentence per state with a list (`codeDetailSummary` in
+`packages/shared/src/code-detail.ts`, shown by the Vue page too), grouped "Included" then "Not
+included"; then "Last updated on this site <day>" (the newest published list, the same as
+`dateModified`). Then the same groups and tables as the Vue page, each entry with its source
+document, date and locator; CPT only with the state's own text. Like codes in their own section.
+`e2e/code-page.spec.ts` reads it with JavaScript off, and axe checks it in light and dark.
+
+- **Canonical and redirects:** the canonical is `codeUrlPath` (`/codes/icd-10-cm/F20.0`). Any
+  other spelling (`f200`, `F200`, `f20.0`, `ICD-10-CM`) answers **301** there, query kept; the
+  Vue page does the same with `router.replace`. A malformed or unknown code (not in `ref_codes`,
+  not listed or covered by any published state) answers the 404 page with `noindex`.
+- **Indexing rule** (decided in M6 step 5): a code page is indexed, and in the sitemap, only
+  when **at least one published state includes the code** (listed, or covered by a wildcard or
+  range). A code only CMS knows is a valid page but `noindex`; so is a code with only narrower
+  codes listed. That keeps about 100,000 thin pages out of the index.
+- **`X-Robots-Tag: noindex`** goes with every `noindex` page's HTML (the meta tag too), and
+  `/search` is now served by the Worker with both (heading and intro only; the search runs in the
+  browser).
+- Code tables in the HTML (single codes, drill-down, states side by side) link each single code
+  to its page.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 
@@ -115,7 +140,12 @@ end to the Worker.
   `isBasedOn` / `citation` (the state's source document URL), `dateModified`,
   `temporalCoverage`, `spatialCoverage` (the state), and `distribution` (CSV and JSON downloads).
 - Code page: `DefinedTerm` (code, name, `inDefinedTermSet` = the code system) plus the
-  per-state status as visible text.
+  per-state status as visible text. Built (M6 step 5): a `WebPage` (name, description, url,
+  publisher, `dateModified`) whose `mainEntity` is the `DefinedTerm`: `termCode`, `name` (the CMS
+  text; without one, the first listing state's own text with `disambiguatingDescription` "As
+  published by <state> (<document>)", else no name; never an AMA descriptor), `url`, and
+  `inDefinedTermSet` (`DefinedTermSet` with the code system's name and official URL,
+  `codeSystemSetUrls`; drug classes have none).
 - Site-wide: `WebSite` and `Organization` on the home page.
 - Validate with Google's Rich Results Test before launch (M8).
 - Built (M3 step 4): `Dataset` on state pages (no `license` yet: the legal team decides what
@@ -123,8 +153,9 @@ end to the Worker.
 
 ### 4. Facts that AI can quote correctly (M3–M6)
 
-- State the answer in plain sentences near the top, not only in a table: "Louisiana lists
-  F20.0. Code designation 0: qualifies alone (inferred)."
+- State the answer in plain sentences near the top, not only in a table: "Louisiana’s list
+  includes F20.0. State’s rule: Enough by itself (inferred by this site)." (code pages since
+  M6 step 5, in the M6 step 3b wording)
 - Every fact shows its source (state document, page) and the date the state published it.
   This is already a rule for CPT text (`docs/data-model.md`).
 - "Last updated" date on every page, matching `dateModified` in the JSON-LD and `lastmod`
@@ -149,6 +180,17 @@ accurately than scraped tables.
   (`/compare/<slug>`, `lastmod` the newer of the category's last edit and the newest state
   list) in M5 step 6, `/compare/categories` and `/compare/map` with the compare tabs (`lastmod`
   the newest state list). Code pages join it in M6.
+- **Built in M6 step 5:** `/sitemap.xml` is a **sitemap index**: `/sitemaps/pages.xml` (every
+  page above) and `/sitemaps/codes-<n>.xml`, at most 50,000 URLs each (`SITEMAP_MAX_URLS`; a
+  code URL is about 110 bytes, so a full file is about 5.5 MB, far under 50 MB). The code files
+  list every included code (the indexing rule above), by code system and code, `lastmod` the
+  newest published list. Covered codes are expanded from `ref_codes`, so a CPT range adds only
+  its two ends. Query: `src/db/public-code-sitemap.ts` (distinct wildcards and ranges, then
+  `CROSS JOIN` range scans of `ref_codes`'s primary key; local D1 chose a full scan otherwise,
+  24 s instead of 14 ms). Counts: 8,004 codes on the local seed, about 19,400 with the four
+  full lists; 50 states could pass 50,000, hence the index. Rows read per request (estimated;
+  local D1 does not report them): about 44,000 on the seed (published entries scanned three
+  times, 7,900 `ref_codes` rows); the index runs the same query once for its count.
 - At launch, add `Sitemap: https://<final-domain>/sitemap.xml` to the public `robots.txt`.
 
 ### 7. llms.txt (M8)

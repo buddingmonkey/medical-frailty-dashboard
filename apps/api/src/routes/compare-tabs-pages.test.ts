@@ -225,7 +225,7 @@ describe('GET /compare/states (server-rendered landing, noindex)', () => {
 
 describe('sitemap', () => {
   it('lists the Categories and Map pages, not the states landing', async () => {
-    const xml = await (await get('/sitemap.xml', 'frailty.example.org')).text()
+    const xml = await (await get('/sitemaps/pages.xml', 'frailty.example.org')).text()
     expect(xml).toContain('<loc>http://frailty.example.org/compare/categories</loc>')
     expect(xml).toContain('<loc>http://frailty.example.org/compare/map</loc>')
     expect(xml).not.toContain('/compare/states')
