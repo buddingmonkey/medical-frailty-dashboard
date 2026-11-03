@@ -151,7 +151,7 @@ X-Frame-Options: DENY
 - Public responses cached at the edge (see `docs/architecture.md`, "Caching").
 - Workers Rate Limiting bindings on the public API (`apps/api/src/middleware/rate-limit.ts`),
   keyed on the client IP (`CF-Connecting-IP`): `PUBLIC_RATE_LIMITER`, 120 requests per 60 s, on
-  `/api/public/*`, and the stricter `SEARCH_RATE_LIMITER`, 30 per 60 s, on
+  `/api/public/*`, and the stricter `SEARCH_RATE_LIMITER`, 60 per 60 s (search-as-you-type is debounced, and an office may share one IP), on
   `/api/public/codes/search` instead. Over the limit: `429 {"error":"Too many requests"}` with
   `Retry-After: 60`. The IP is never logged. Limits are counted per Cloudflare location and are
   approximate ([docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/));

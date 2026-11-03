@@ -63,7 +63,7 @@
     {
       "name": "SEARCH_RATE_LIMITER",
       "namespace_id": "1002",
-      "simple": { "limit": 30, "period": 60 },
+      "simple": { "limit": 60, "period": 60 },
     },
   ],
   // Weekly maintenance, Sunday 07:00 UTC: full dump to R2, backup pruning, draft cleanup
@@ -97,7 +97,7 @@
         {
           "name": "SEARCH_RATE_LIMITER",
           "namespace_id": "2002",
-          "simple": { "limit": 30, "period": 60 },
+          "simple": { "limit": 60, "period": 60 },
         },
       ],
       "triggers": { "crons": ["0 7 * * SUN"] },
