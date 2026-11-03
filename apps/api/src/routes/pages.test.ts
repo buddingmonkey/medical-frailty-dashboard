@@ -321,9 +321,9 @@ describe('downloads', () => {
   })
 })
 
-describe('GET /sitemap.xml', () => {
+describe('GET /sitemaps/pages.xml', () => {
   it('lists the home page and every state page with lastmod, on the request host', async () => {
-    const res = await get('/sitemap.xml', { host: 'frailty.example.org' })
+    const res = await get('/sitemaps/pages.xml', { host: 'frailty.example.org' })
 
     expect(res.headers.get('content-type')).toBe('application/xml; charset=utf-8')
     const xml = await res.text()
@@ -585,7 +585,7 @@ describe('GET /compare/:slug (server-rendered drill-down)', () => {
       /<th scope="rowgroup"[^>]*>F20<\/th>\s*<td>Code F20<\/td>\s*<td>2 of 2 include any<\/td>/,
     )
     expect(app).toMatch(
-      /<th scope="row">F20\.0<\/th>\s*<td>Code F200<\/td>\s*<td>2 of 2 states<\/td>\s*<td>Enough by itself: 2 states/,
+      /<th scope="row"><a href="\/codes\/icd-10-cm\/F20\.0">F20\.0<\/a><\/th>\s*<td>Code F200<\/td>\s*<td>2 of 2 states<\/td>\s*<td>Enough by itself: 2 states/,
     )
     expect(app.indexOf('>F20<')).toBeLessThan(app.indexOf('>F31<'))
     // Links: back to the overview, the code table for the federal parent, the CSV, details.
@@ -613,7 +613,7 @@ describe('GET /compare/:slug (server-rendered drill-down)', () => {
       '<link rel="canonical" href="http://frailty.example.org/compare/serious-mental-illness" />',
     )
     const app = appHtml(html)
-    expect(app).not.toMatch(/<th scope="row">F20\.0<\/th>/)
+    expect(app).not.toMatch(/<th scope="row">(<a [^>]*>)?F20\.0(<\/a>)?<\/th>/)
     expect(app).toMatch(/<th scope="row">F20\.0–F20\.9<\/th>[\s\S]*?1 narrower code listed/)
     expect(app).toContain('<th scope="col">Georgia</th>')
     // The details of F20.0.
@@ -650,7 +650,7 @@ describe('GET /compare/:slug (server-rendered drill-down)', () => {
   })
 
   it('the sitemap lists every published category page', async () => {
-    const xml = await (await get('/sitemap.xml', { host: 'frailty.example.org' })).text()
+    const xml = await (await get('/sitemaps/pages.xml', { host: 'frailty.example.org' })).text()
     expect(xml).toContain('<loc>http://frailty.example.org/compare/serious-mental-illness</loc>')
     expect(xml).toContain('<loc>http://frailty.example.org/compare/equipment</loc>')
     expect(xml).not.toContain('draft-psychoses')

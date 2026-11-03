@@ -72,6 +72,6 @@ test('downloads and the sitemap', async ({ request }) => {
   expect(lines).toHaveLength(4)
   expect(lines.find((l) => l.includes('F20.0'))).toContain('Disabling mental disorder')
 
-  const sitemap = await (await request.get('/sitemap.xml')).text()
+  const sitemap = await (await request.get('/sitemaps/pages.xml')).text()
   expect(sitemap).toContain('/states/mt</loc><lastmod>2026-11-02</lastmod>')
 })

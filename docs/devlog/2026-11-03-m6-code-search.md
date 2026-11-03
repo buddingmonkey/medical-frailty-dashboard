@@ -143,6 +143,29 @@ Search for a code by number or words, and a page per code that shows every state
   confirmed no drift.
 - Numbers: 60 new tests. `check:full`: 620+ unit, 378+ API, 55 e2e (all passed).
 
+## Step 5: server-rendered code pages (11:56–12:21 builder; lead review to 12:35)
+- `/codes/<system>/<code>` is rendered from the same loader as the API. It opens with a
+  Summary: one plain sentence per state with a list ("Louisiana's list includes F20.0. …"),
+  then the sources with dates, CPT text only as a state published it, like codes in their
+  own section, and "Last updated". JSON-LD: a `WebPage` whose `mainEntity` is a
+  `DefinedTerm` in a `DefinedTermSet` (ICD-10-CM and HCPCS point at CMS, where our files
+  come from).
+- Other spellings get a 301 to the canonical URL; unknown codes get a 404 with `noindex`. A
+  code page is indexed only when at least one published state includes the code, which
+  keeps ~100k CMS-only pages out of search engines. `/search` and every `noindex` page now
+  also send `X-Robots-Tag: noindex`.
+- The sitemap is now an index (`/sitemaps/pages.xml`, `/sitemaps/codes-<n>.xml`). The local
+  seed has 8,004 code URLs; the four full lists would have about 19,400. All 50 states could
+  pass the 50,000-URL limit for one file.
+
+### Corrections and surprises
+- The first sitemap query took 24 s locally, because the planner scanned all of `ref_codes`.
+  Forcing the join order with `CROSS JOIN` brought it to ~67 ms. The lead added a
+  query-plan test so the scan cannot come back, and checked that it fails without the
+  `CROSS JOIN`.
+- Cost to watch: one sitemap request reads ~44k rows (an estimate; local D1 doesn't report
+  rows read). `*.workers.dev` has no edge cache, so every crawler fetch reads them, until the
+  custom domain (M8).
 ## Fix: the home map bounced on hover (project lead's report, 12:00)
 - The project lead said highlighting states made the map "shift positions and sometimes
   'bounce' at the framerate of the tab". Cause: the state summary card under or beside the

@@ -51,7 +51,7 @@ export const keyOf = (e: string) => `${e}.code_system || '|' || CASE
     ELSE 'exact|' || ${e}.code_norm END`
 
 /** `entryCovers(range entry g, code c)`. */
-const rangeCovers = (g: string, c: string) => `(CASE WHEN ${g}.includes_children = 1
+export const rangeCovers = (g: string, c: string) => `(CASE WHEN ${g}.includes_children = 1
     THEN substr(${c}, 1, length(${g}.code_norm)) >= ${g}.code_norm
          AND substr(${c}, 1, length(${g}.range_end_norm)) <= ${g}.range_end_norm
     ELSE length(${c}) = length(${g}.code_norm) AND ${c} >= ${g}.code_norm

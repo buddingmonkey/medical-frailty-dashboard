@@ -3,8 +3,8 @@ import {
   CODE_DETAIL_NOT_FOUND,
   type CodeDetailResponse,
   type CodeDetailState,
+  codeDetailPageTitle,
   codeDetailStatusHelp,
-  codeDetailTitle,
 } from '@mfcd/shared'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { http, HttpResponse } from 'msw'
@@ -96,7 +96,7 @@ describe('/codes/:system/:code', () => {
     expect(h1.textContent).toContain('F20.0')
     expect(h1.textContent).toContain('Paranoid schizophrenia')
     await waitFor(() => {
-      expect(document.title).toBe(codeDetailTitle('F20.0'))
+      expect(document.title).toBe(codeDetailPageTitle(f200.code, f200.states))
     })
 
     const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
@@ -141,6 +141,38 @@ describe('/codes/:system/:code', () => {
         .getByRole('link', { name: 'Alabama' })
         .getAttribute('href'),
     ).toBe('/states/al')
+  })
+
+  it('answers in one plain sentence per state with a list, as the server HTML does', async () => {
+    serve('icd-10-cm/F20.0', f200)
+    await renderRoute('/codes/icd-10-cm/F20.0')
+
+    const summary = await screen.findByRole('region', { name: 'Summary' })
+    expect(summary.textContent).toContain('2 of 4 states with a list on this site include F20.0.')
+    const included = within(summary).getByRole('list', { name: 'Included' })
+    expect(
+      within(included)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual([
+      'Georgia’s list includes F20.0. State’s rule: Enough by itself (inferred by this site).',
+      'Montana’s list includes F20.0 through its entry F20.*. State’s rule: Enough by itself (inferred by this site).',
+    ])
+    const others = within(summary).getByRole('list', { name: 'Not included' })
+    expect(others.textContent).toContain(
+      'Nebraska’s list does not include F20.0 itself, but lists 2 more specific codes under it.',
+    )
+    expect(others.textContent).toContain('Texas’s list does not include F20.0.')
+    expect(summary.textContent).not.toContain('Alabama')
+  })
+
+  it('replaces another spelling of the code with its canonical address', async () => {
+    serve('icd-10-cm/f200', f200)
+    serve('icd-10-cm/F20.0', f200)
+    const { router } = await renderRoute('/codes/ICD-10-CM/f200')
+    await waitFor(() => {
+      expect(router.currentRoute.value.path).toBe('/codes/icd-10-cm/F20.0')
+    })
   })
 
   it('leaves the rule out when the site setting hides it', async () => {
