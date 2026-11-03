@@ -237,6 +237,7 @@ Admin (Access JWT required; all writes):
 | `PUT /api/admin/backup/mappings/:stateId` | Replace them with a backup's (every row must be this state's), in one batch with `data_version` + 1 and an audit row |
 | `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |
 | `GET /api/admin/watch?status=open\|closed`, `POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close. `PUT` body is `{action: 'edit', ...fields}` or `{action: 'close', status, resolutionMd}`; a closed item answers 409 |
+| `GET /api/admin/launch-readiness` | The launch data gate (roadmap M8 step 1): per published state, its categories with no current unified mapping (unmapped) or a proposed one (unconfirmed), the categories its public page shows as "Not yet reviewed" (from `publicSummaries`, the same loader), and federal `category_mappings` counts for information. `ready` and `gatePassed` (2 ready states) come from `stateIsReady` and `launchGate` in `packages/shared/src/launch-readiness.ts`. Page: `/admin/launch-readiness` |
 
 ## Caching
 
