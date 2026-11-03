@@ -52,3 +52,18 @@ Search for a code by number or words, and a page per code that shows every state
 - Should the SPA redirect non-canonical code URLs (`/codes/icd-10-cm/f200`)? Step 5 decides,
   with server rendering.
 - An entry "F20 with children" shows as "covered" on F20's page, as in M4.
+
+## Step 3c: contributor docs (10:45–11:05)
+- New `docs/getting-started.md`, which takes someone from the GitHub page to an open PR:
+  accounts, WSL 2 on Windows (required: the scripts call `ps`, `ss` and bash), each install
+  with a check that it worked, fork and clone, the local database, `pnpm dev`, the first
+  Claude Code session, and troubleshooting. `docs/playbook.md` was rewritten for a reader who
+  has never used a terminal and gained a glossary.
+- A Sonnet builder ran the setup in a fresh clone. `pnpm install` took 10 s,
+  `db:ref:local` 77 s (the docs said ~20 s; fixed) and `db:seed:local` 7 s. `pnpm dev`
+  served both `/` and `/admin/unified`. The GitHub sign-in, fork and Claude Code install
+  steps were not run, because they act on a real account.
+- 9 of the review's 11 contradictions between README, CONTRIBUTING and CLAUDE.md were fixed.
+- `.gitattributes` forces LF. The first version would have rewritten three CRLF fixtures that
+  the CMS/AHRQ parser tests depend on. The lead caught this when renormalizing, and those
+  fixtures are now `-text`.
