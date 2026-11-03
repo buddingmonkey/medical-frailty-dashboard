@@ -335,6 +335,7 @@ source_documents    id, state_id, title, url, publisher_date, retrieved_at,
 dataset_versions    id, state_id, version_no, status ('draft'|'published'|'superseded'|'discarded'),
                     label, effective_date, state_published_date (the state's date),
                     content_updated_at (our last-updated date), created_by, created_at,
+                    updated_at (last draft activity; NULL before 0015 → read created_at),
                     published_by, published_at, check_report_json, row_count
 
 version_sources     version_id, source_document_id          (many-to-many)
@@ -570,7 +571,21 @@ never edits published rows in place:
    R2 (`backups/<state>/<version>.json`).
 5. **Rollback** re-points `published_version_id` to any earlier version. Superseded versions
    are kept (they are small), so rollback needs no restore.
-6. Unpublished drafts older than 30 days are deleted by a scheduled job (not built yet).
+6. **Draft cleanup** (weekly maintenance, `apps/api/src/maintenance/maintenance.ts`; built in
+   M7 step 2). "Activity" is `coalesce(updated_at, created_at)`: `updated_at` (migration 0015,
+   backfilled from the audit log) moves when a source is added, rows are sent, the checks run
+   or the draft is discarded.
+   - An **open draft** with no activity for 30 days is deleted: its row, entries, parts and
+     `version_sources`. A source document it cited goes too (row, then R2 object) only when no
+     other version cites it (one `DELETE … WHERE NOT EXISTS` statement; audit `source.expire`).
+   - A **discarded** draft older than 30 days loses its entries and parts; its row (with
+     `row_count`) and `version_sources` stay as the record, so its sources stay.
+   - Published and superseded versions are never selected, and every delete repeats the
+     status check, so a draft published meanwhile is left alone.
+   - One audit row per draft (`draft.expire`: state, version number, entry count, `deleted` or
+     `emptied`). At most 20 drafts per run (about 8 queries each, so the whole run stays far
+     under D1's 1,000 queries per invocation on Workers Paid); the rest wait a week (`left` in
+     the result).
 
 Built in M2 step 8 (`apps/api/src/routes/admin/drafts.ts`, `states.ts`). Publish needs the
 checks token (the rows must be the ones checked) and every confirmation; duplicates (same

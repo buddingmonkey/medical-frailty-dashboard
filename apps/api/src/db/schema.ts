@@ -145,6 +145,12 @@ export const datasetVersions = sqliteTable(
     contentUpdatedAt: text('content_updated_at'),
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at'),
+    /**
+     * Last activity on a draft: a source added, rows sent, checks run, discarded. NULL on rows
+     * older than migration 0015 that it could not backfill; read `coalesce(updated_at,
+     * created_at)`. Draft cleanup (src/maintenance) expires drafts idle for 30 days.
+     */
+    updatedAt: text('updated_at'),
     publishedBy: text('published_by'),
     publishedAt: text('published_at'),
     checkReportJson: text('check_report_json'),

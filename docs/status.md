@@ -312,6 +312,16 @@ _Last updated: 2026-11-03 (M6 complete)_
   `.json` (format 1), the admin picks one state and version, and it becomes a new draft through
   the draft API (sources reused by SHA-256 or stored without the file; mappings only when
   ticked, after a diff). No schema change. The e2e test of restore path 2 passes (run twice, at the merge).
+- **M7 step 2 done** (branch `m7-step2-cron`): weekly maintenance. A Cron Trigger
+  (`0 7 * * SUN`, both Workers) and `POST /api/admin/maintenance` ("Run maintenance now" on
+  `/admin/restore`) run the same four parts, each in its own try/catch: weekly dump to
+  `backups/weekly/<date>.zip` (the download's zip plus R2 keys; buffered, 32 MB cap) → keep 12 →
+  keep 20 per-publish backups per state → draft cleanup (open drafts idle 30 days deleted with
+  sources nobody else cites; discarded ones emptied, row kept). Result in
+  `app_meta.last_maintenance`, shown on the page with the weekly dumps and their downloads.
+  Migration `0015_draft_updated_at` adds `dataset_versions.updated_at` (nullable, backfilled).
+  The dump costs 65–160 ms CPU on the seed: **it needs Workers Paid** (Free allows 10 ms per
+  Cron Trigger; `docs/deployment.md`, "Weekly maintenance").
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

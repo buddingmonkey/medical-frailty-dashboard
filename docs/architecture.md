@@ -228,6 +228,9 @@ Admin (Access JWT required; all writes):
 | `POST /api/admin/states/:stateId/rollback` | `{versionId}`: re-publish a superseded version of the same state, in one batch (404 for another state's version, 409 for one that was never published) |
 | `GET /api/admin/ai-cleanup` | `{enabled, model}`: whether the "Ask Claude" button shows |
 | `POST /api/admin/ai-cleanup` | `{stateId, fileName, part}`. 404 unless `ANTHROPIC_API_KEY` is set. The server builds the prompt (so the key only serves this task), calls Claude (`@anthropic-ai/sdk`, streaming, `fallbacks: "default"`), audits model and tokens (never the text), and returns the answer as text for the browser to validate. 30 calls an hour across all admins (counted in `audit_log`); a refusal or a cut-off answer is 422 |
+| `GET /api/admin/backup/weekly/:date` | One weekly dump (`backups/weekly/<date>.zip`, `:date` a real `YYYY-MM-DD`, else 404), streamed from R2 as an attachment; it holds the sources' R2 keys, unlike the live download; audit `backup.weekly.download` |
+| `GET /api/admin/maintenance` | `{last, weekly}`: `app_meta.last_maintenance` (each part's status, counts, error) and the weekly dumps in R2 (date, size), newest first |
+| `POST /api/admin/maintenance` | Runs the weekly maintenance now (the Cron Trigger's function: dump, prunes, draft cleanup) and returns the run; audit `maintenance.run` (docs/deployment.md, "Weekly maintenance") |
 | `GET /api/admin/backup` | The full backup: a zip with one JSON file (format 2), streamed table by table; audit `backup.download` (docs/deployment.md, "Backups and restore") |
 | `POST /api/admin/backup/sources` | Restore path 2: `{stateId, title, url, publisherDate, fileType, sha256, byteSize}`. The state's source with that SHA-256 (200, `reused: true`), or a new metadata-only row with no file (201) |
 | `GET /api/admin/backup/mappings?stateId=` | A state's category mappings, chapter overrides and column profiles, for the restore diff |

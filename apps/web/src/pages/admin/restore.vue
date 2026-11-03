@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BackupImport from '../../components/admin/BackupImport.vue'
+import MaintenancePanel from '../../components/admin/MaintenancePanel.vue'
 
 // Backups (docs/deployment.md, "Backups and restore"): the full download, and restore path 2.
 // The download is a plain link: the browser sends the Access cookie, and the Worker streams the
@@ -29,5 +30,6 @@ import BackupImport from '../../components/admin/BackupImport.vue'
       >
     </div>
     <BackupImport />
+    <MaintenancePanel />
   </section>
 </template>

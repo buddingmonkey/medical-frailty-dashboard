@@ -250,8 +250,8 @@ with a gold test-site banner (`apps/api/src/middleware/environment-banner.ts`).
 
 | Backup | How | Kept |
 | --- | --- | --- |
-| Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`, **format 1**: version row, sources (metadata, SHA-256, and since M7 step 1 file type and size), parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | 20 per state (pruning not built yet) |
-| Weekly full dump | Worker Cron Trigger (Sunday) → JSON of every table to R2 `backups/weekly/` | 12 weeks |
+| Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`, **format 1**: version row, sources (metadata, SHA-256, and since M7 step 1 file type and size), parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | Newest 20 per state, by version id: the weekly maintenance deletes older ones and writes one `backup.prune` audit row per run with the counts. Built in M7 step 2 |
+| Weekly full dump | Cron Trigger `0 7 * * SUN` (Sunday 07:00 UTC, both Workers; `triggers` in `wrangler.jsonc`) → `backups/weekly/<UTC date>.zip`: the same zip as the manual download (format 2, same writer) **plus each source's R2 key** (`storageKeys: true`), because it stays in R2 and restore path 3 needs the keys to find the source files. The zip is buffered in memory and put in one call (R2 needs a known length; a 32 MB cap, `WEEKLY_DUMP_MAX_BYTES`, fails the dump rather than the Worker). Listed on `/admin/restore`, with an admin-only download (`GET /api/admin/backup/weekly/:date`, audited `backup.weekly.download`). Built in M7 step 2 (`apps/api/src/maintenance/`) | Newest 12 (older ones deleted by the same run) |
 | Before each production deploy | CI records the D1 Time Travel bookmark (`wrangler d1 time-travel info`) in the deploy log, then migrates. Not `wrangler d1 export`: it refuses databases with virtual tables, and `entries_fts` is one (user, 2026-11-01) | 7 days (Time Travel window) |
 | Manual download | Admin → **Backup and restore** → "Download backup" → `GET /api/admin/backup` streams `frailty-backup-<env>-<UTC timestamp>.zip`: one deflated JSON file (**format 2**) with `format`, `writtenAt`, `environment`, `migration` (last applied), `dataVersion`, `notes`, every state-data table (`BACKUP_TABLES` in `packages/shared/src/backup.ts`) and `"complete": true` last. Written table by table, 500 rows per query (keyset on rowid), through a streaming zip (fflate); never whole in memory (`apps/api/src/db/backup-dump.ts`). Built in M7 step 1 | Your computer |
 | Point in time | D1 Time Travel (`wrangler d1 time-travel restore`) | 7 days free / 30 days paid |
@@ -273,8 +273,12 @@ Restore paths, from smallest to largest:
    version, formats 1 and 2 only. Audit: `backup.download`, `source.restore`,
    `draft.restore` (backup date, environment, version), `mappings.restore`.
 3. **Whole database bad:** `wrangler d1 time-travel restore frailty-prod --timestamp=<before>`,
-   (or `--bookmark=<from the deploy log>`), or rebuild a new D1 from the latest weekly JSON
-   dump. `wrangler d1 export` works only after dropping `entries_fts` and `ref_codes_fts`.
+   (or `--bookmark=<from the deploy log>`), or rebuild a new D1 from the latest weekly dump
+   (`/admin/restore` → Maintenance → Download, or `pnpm cf r2 object get
+   <bucket>/backups/weekly/<date>.zip`): apply the migrations to an empty D1, then insert each
+   table of the JSON in `BACKUP_TABLES` order. `source_documents.r2_key` is in the weekly dump,
+   so each row points at its file, which is still in R2. Reload the reference codes and press
+   Rebuild coverage. No script for this yet: write it during the pre-launch drill. `wrangler d1 export` works only after dropping `entries_fts` and `ref_codes_fts`.
    Afterwards, recreate both from 0001 and 0012, run
    `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')`, and run 0012's backfill `INSERT`.
 
@@ -282,13 +286,50 @@ Restore paths, from smallest to largest:
 `ref_ccsr`, `ref_ccsr_categories`: reload from the pinned files), derived tables
 (`entry_unified`, `unified_universe`, `state_similarity`: Rebuild coverage recreates them), and
 the FTS tables (`entries_fts`, `ref_codes_fts`). A test fails when a new table is in neither
-list. Source files are not in it, nor their R2 keys (the weekly dump may keep the keys).
+list. Source files are not in it. The manual download leaves out their R2 keys
+(`docs/security.md`); the weekly dump keeps them, and its download is admin-only like the rest.
 
 **Measured on the local 51-state seed** (2026-11-03, `wrangler dev`): 13,735 rows (12,153
 entries), 13,740 rows read in 44 queries, 5.4 MB of JSON, a 237 kB zip, about 0.3 s.
 
 Restore path 2 has an E2E test (`apps/web/e2e/admin-restore.admin.spec.ts`). Do a path 3
 drill on the preview database once before launch.
+
+### Weekly maintenance
+
+One function, `runMaintenance` (`apps/api/src/maintenance/maintenance.ts`), runs four parts in
+order, each in its own try/catch so one failure never skips the rest: weekly dump → prune
+weekly dumps (keep 12) → prune per-publish backups (keep 20 per state) → draft cleanup
+(`docs/data-model.md`, "Replacing a state's list", step 6). The result (time, trigger, each
+part's status, counts, timing and error message; never row data) goes to
+`app_meta.last_maintenance`, shown on `/admin/restore` → **Maintenance**. The cron runs it as
+`maintenance (cron)` in the audit log. **Run maintenance now** on the same page
+(`POST /api/admin/maintenance`, audited `maintenance.run`) runs it by hand as the admin, so it
+can be tried on preview on any day.
+
+Trigger the cron locally:
+
+```bash
+pnpm --filter @mfcd/web build
+pnpm cf dev --test-scheduled --port 8791 --var ENVIRONMENT:development
+curl "http://localhost:8791/__scheduled?cron=0+7+*+*+SUN"
+```
+
+**Measured on the local 51-state seed** (2026-11-03): the dump read 13,778 rows in 44 queries,
+wrote 5.4 MB of JSON as a 237 kB zip, in about 0.2 s wall time; the other three parts took
+under 5 ms. CPU (JSON and deflate, timed in Node on the same file): 65–160 ms.
+
+**CPU limits for Cron Triggers** (Cloudflare docs, Workers limits, read 2026-11-03): Workers
+Free **10 ms** per Cron Trigger; Workers Paid 30 s for intervals under an hour and **15 min**
+for an hour or more (weekly). So the weekly dump needs Workers Paid: on Free it would stop at
+10 ms and record nothing (the run is cut off before `last_maintenance` is written). The prunes
+and draft cleanup alone are a few ms of CPU. If the account moves to Free, drop the dump from
+the cron (keep the manual download) or move it to a Workflow.
+
+**Costs:** Cron Triggers are free (5 per account on Free, 250 on Paid; we use 2). Each week:
+~14k D1 rows read on the seed (scales with entries; under 0.3% of a Free day), one R2 write
+(the dump) plus a few list and delete calls, and ~250 kB to 1 MB more R2 storage, 12 weeks
+kept.
 
 ## Going live
 

@@ -49,6 +49,9 @@
     },
   ],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-prod-files" }],
+  // Weekly maintenance, Sunday 07:00 UTC: full dump to R2, backup pruning, draft cleanup
+  // (src/maintenance). Triggers are not inherited, so preview repeats it below.
+  "triggers": { "crons": ["0 7 * * SUN"] },
   // The deployed version's id: part of every public cache key, so a deploy never serves pages
   // or JSON cached by the previous code (src/middleware/public-cache.ts).
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
@@ -68,6 +71,7 @@
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "frailty-preview-files" }],
+      "triggers": { "crons": ["0 7 * * SUN"] },
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
     },
   },
