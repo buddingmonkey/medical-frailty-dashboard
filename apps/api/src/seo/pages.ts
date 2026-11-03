@@ -90,6 +90,7 @@ import {
   STATES_LANDING_OWN_LABEL,
   STATES_LANDING_PICK_HEADING,
   TILE_MAP_HEADING,
+  TILE_MAP_HOME_LINK,
   TILE_MAP_INTRO,
   TILE_MAP_NOT_REVIEWED_NOTE,
   tileMapCaption,
@@ -171,8 +172,8 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
 }
 
 /**
- * "One category across the country" (roadmap M5 step 8) for crawlers, on the home page and the
- * Map tab (`/compare/map`): the category in the URL (the first by default) as a plain table of
+ * "One category across the country" (roadmap M5 step 8) for crawlers, on the Map tab
+ * (`/compare/map`): the category in the URL (the first by default) as a plain table of
  * every state and DC by name, not the visual grid, and the picker as a GET form to `action`.
  * Nothing when no category is published.
  */
@@ -226,21 +227,9 @@ function tileMapTable(
     ${tiles.some((t) => t.notReviewed) ? html`<p>${TILE_MAP_NOT_REVIEWED_NOTE}</p>` : null}`
 }
 
-/** The home page's tile map section; nothing when no category is published. */
-function tileMapSection(
-  overview: PublicOverviewResponse,
-  query: Readonly<Record<string, string>>,
-): Html | null {
-  const table = tileMapTable(overview, query, '/')
-  if (!table) return null
-  return html`<h2>${TILE_MAP_HEADING}</h2>
-    <p>${TILE_MAP_INTRO}</p>
-    ${table}`
-}
-
 /**
- * `/compare/map`, the Map tab: the home page's tile map as a page of its own. Indexed, canonical
- * to the bare page, like the home page whose `?category=` it shares.
+ * `/compare/map`, the Map tab: the tile map (on the home page until 2026-11-03, when the project
+ * lead moved it here). Indexed, canonical to the bare page whatever its `?category=`.
  */
 export function mapPage(
   overview: PublicOverviewResponse,
@@ -301,12 +290,7 @@ export function categoriesPage(overview: PublicOverviewResponse, origin: string)
   }
 }
 
-export function homePage(
-  items: readonly PublicStateSummary[],
-  origin: string,
-  overview: PublicOverviewResponse | null = null,
-  query: Readonly<Record<string, string>> = {},
-): PageParts {
+export function homePage(items: readonly PublicStateSummary[], origin: string): PageParts {
   const withList = items.filter((s) => s.published !== null).length
   const url = `${origin}/`
   return {
@@ -333,7 +317,8 @@ export function homePage(
       </p>
       <h2>States</h2>
       <p>${withList} of ${STATES_AND_DC} states and DC have a list on this site.</p>
-      ${stateListTable(items)} ${overview ? tileMapSection(overview, query) : null}`,
+      ${stateListTable(items)}
+      <p><a href="/compare/map">${TILE_MAP_HOME_LINK}</a></p>`,
   }
 }
 

@@ -14,9 +14,9 @@ import CompareTabs from '../../components/compare/CompareTabs.vue'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicOverview } from '../../lib/public-overview'
 
-// The Map tab (project lead, 2026-11-02): the home page's tile map as a page of its own, one
-// category across the country. The category lives in the URL (`?category=<slug>`) as on the
-// home page; the Worker renders the same page as HTML.
+// The Map tab (project lead, 2026-11-02): the tile map, one category across the country. It was
+// on the home page too until 2026-11-03; old `/?category=` links redirect here. The category
+// lives in the URL (`?category=<slug>`); the Worker renders the same page as HTML.
 
 usePageTitle(pageTitles.map)
 

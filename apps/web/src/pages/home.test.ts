@@ -4,6 +4,8 @@ import {
   federalCategories,
   type PublicStateSummary,
   qualifications,
+  TILE_MAP_HEADING,
+  TILE_MAP_HOME_LINK,
   zeroCounts,
 } from '@mfcd/shared'
 import { screen, within } from '@testing-library/vue'
@@ -53,13 +55,7 @@ const alabama: PublicStateSummary = {
 }
 
 function serve(items: PublicStateSummary[]) {
-  server.use(
-    http.get('/api/public/states', () => HttpResponse.json({ dataVersion: 3, items })),
-    // No published category: the tile map (home-tiles.test.ts) stays out of these tests.
-    http.get('/api/public/overview', () =>
-      HttpResponse.json({ dataVersion: 3, categories: [], states: [] }),
-    ),
-  )
+  server.use(http.get('/api/public/states', () => HttpResponse.json({ dataVersion: 3, items })))
 }
 
 describe('home page', () => {
@@ -154,5 +150,40 @@ describe('home page', () => {
     await renderRoute('/')
 
     expect((await screen.findByRole('alert')).textContent).toContain('could not be loaded')
+  })
+})
+
+// The tile map moved to the Map tab (project lead, 2026-11-03; compare/map.test.ts). Home links
+// to it, and old `/?category=` links follow it there.
+describe('home page and the tile map', () => {
+  it('links to the Map tab and has no tile map of its own', async () => {
+    let overviewRequested = false
+    server.use(
+      http.get('/api/public/overview', () => {
+        overviewRequested = true
+        return HttpResponse.json({ dataVersion: 3, categories: [], states: [] })
+      }),
+    )
+    serve([georgia])
+    await renderRoute('/')
+
+    await screen.findByText('1 of 51 states and DC have a list on this site.')
+    const link = screen.getByRole('link', { name: TILE_MAP_HOME_LINK })
+    expect(link.getAttribute('href')).toBe('/compare/map')
+    expect(screen.queryByRole('heading', { name: TILE_MAP_HEADING })).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Category' })).toBeNull()
+    expect(overviewRequested).toBe(false)
+  })
+
+  it('sends an old /?category= link to the Map tab, keeping the query', async () => {
+    serve([georgia])
+    const { router } = await renderRoute('/?category=psychoses&x=1')
+    expect(router.currentRoute.value.fullPath).toBe('/compare/map?category=psychoses&x=1')
+  })
+
+  it('does not redirect a link without ?category=', async () => {
+    serve([georgia])
+    const { router } = await renderRoute('/?x=1')
+    expect(router.currentRoute.value.fullPath).toBe('/?x=1')
   })
 })

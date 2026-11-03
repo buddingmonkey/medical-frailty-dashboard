@@ -13,12 +13,16 @@ import {
 
 // The tile map (roadmap M5 step 8): one published unified category across the country, an
 // equal square per state in a US tile-grid layout, with the overview's numbers and shades
-// (`coverageBand`). The Vue home page and the Worker's server-rendered HTML both use these.
+// (`coverageBand`). The Map tab (`/compare/map`; on the home page until the project lead moved
+// it, 2026-11-03) and the Worker's server-rendered HTML both use these.
 
 export const TILE_MAP_COLUMNS = 11
 export const TILE_MAP_ROWS = 8
 
 export const TILE_MAP_HEADING = 'One category across the country'
+
+/** The home page's link to the Map tab, under its States section (Vue and server-rendered). */
+export const TILE_MAP_HOME_LINK = 'See one category across the country on the map'
 
 export interface TileMapPlace {
   /** Two-letter postal code (`states.id`). */
@@ -195,7 +199,7 @@ export const TILE_MAP_NOT_REVIEWED_NOTE =
   '* Not reviewed: some of the state’s codes in this category were placed by their CCSR group, ' +
   'and an admin has not yet reviewed how the state’s categories map to ours.'
 
-/** The section's introduction, in the Vue page and the server-rendered HTML. */
+/** The Map tab's introduction, in the Vue page and the server-rendered HTML. */
 export const TILE_MAP_INTRO =
   'Pick a category to see every state at once. Each number is the share of the category’s ' +
   'codes that the state lists; select a state to see its codes in the category.'
