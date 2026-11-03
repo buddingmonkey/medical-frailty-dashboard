@@ -51,3 +51,17 @@ describe('compare tabs', () => {
     expect(marks('/compared')).toEqual({})
   })
 })
+
+describe('compareTabMark on unusual paths', () => {
+  it('ignores trailing slashes', () => {
+    expect(compareTabMark('/compare', '/compare///')).toBe('page')
+    expect(compareTabMark('/compare/categories', '/compare/cancer/')).toBe('true')
+  })
+
+  it('answers quickly for a path of many slashes (no regex backtracking; CodeQL)', () => {
+    const path = `/compare${'/'.repeat(100_000)}x`
+    const started = performance.now()
+    expect(compareTabMark('/compare', path)).toBeNull()
+    expect(performance.now() - started).toBeLessThan(50)
+  })
+})

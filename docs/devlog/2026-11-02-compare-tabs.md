@@ -25,7 +25,10 @@ map lived only on the home page. Every view had been built, but you couldn't get
 4. Lead review: the Categories heading said "Categories we compare states by", the circular
    phrase the plain-language pass had just removed. It's now "Categories for comparing
    states", changed test first.
-5. `pnpm check:full`, run by the lead at the merge, passed: 52 e2e tests with axe.
+5. CodeQL caught `path.replace(/\/+$/, '')` in the tab code: a path of 100,000 slashes
+   followed by one more character took 6 s, from one request. A loop now strips the trailing
+   slashes. A test checks that the input runs in under 50 ms.
+6. `pnpm check:full`, run by the lead at the merge, passed: 52 e2e tests with axe.
 
 ## Open threads
 - `/compare/map?category=…` is indexed, with its canonical set to the bare page. Category-page

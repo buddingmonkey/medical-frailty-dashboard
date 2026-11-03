@@ -50,7 +50,10 @@ const tabPaths: readonly string[] = compareTabs.map((t) => t.path)
 
 /** The tab a page belongs to, and whether it is that tab's page or a deeper one. */
 function currentTab(path: string): { path: string; deeper: boolean } | null {
-  const p = path.length > 1 ? path.replace(/\/+$/, '') : path
+  // Trailing slashes off by a loop: `/\/+$/` backtracks for seconds on many inner slashes.
+  let end = path.length
+  while (end > 1 && path[end - 1] === '/') end -= 1
+  const p = path.slice(0, end)
   if (tabPaths.includes(p)) return { path: p, deeper: false }
   if (/^\/compare\/states\/[^/]+$/.test(p)) return { path: '/compare/states', deeper: true }
   // `/compare/<slug>`: a category page (the reserved slugs are the tabs above).
