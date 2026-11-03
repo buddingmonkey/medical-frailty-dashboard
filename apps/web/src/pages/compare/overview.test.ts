@@ -284,7 +284,7 @@ describe('overview matrix', () => {
         .map((li) => li.textContent.trim()),
     ).toEqual(['75% or more', '25–74%', '1–24%', 'None listed', 'No list on this site yet'])
     const notes = screen.getByRole('region', { name: 'Reading this table' })
-    expect(notes.textContent).toContain('whichever of the state’s own categories')
+    expect(notes.textContent).toContain('no matter which of the state’s own categories')
     expect(notes.textContent).toContain('Not reviewed (*)')
     expect(screen.getByRole('link', { name: /compare single codes/i }).getAttribute('href')).toBe(
       '/compare/codes',

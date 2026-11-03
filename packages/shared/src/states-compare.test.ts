@@ -12,6 +12,8 @@ import {
   statesCompareSearchParams,
   statesCompareSummaryText,
   statesCompareTitle,
+  STATES_COMPARE_INTRO,
+  STATES_COMPARE_SUMMARY_NOTE,
 } from './states-compare'
 import { pageTitles } from './public'
 import { isReservedUnifiedSlug } from './unified'
@@ -162,5 +164,15 @@ describe('words', () => {
     )
     expect(statesCompareAllLabel(2)).toBe('Both')
     expect(statesCompareAllLabel(3)).toBe('All 3')
+  })
+})
+
+describe('state comparison wording', () => {
+  it('names which categories group the codes, and says what one code is', () => {
+    expect(STATES_COMPARE_INTRO).toContain('grouped by the same categories as the overview.')
+    expect(STATES_COMPARE_SUMMARY_NOTE).toBe(
+      'Each code here is one entry from the chosen lists: a single code, a wildcard or a range. ' +
+        'A state counts a code when it lists it or covers it with a broader entry.',
+    )
   })
 })

@@ -81,7 +81,7 @@ const byCategory = computed(() => {
           {{ FEDERAL_OVERLAP_NOTE }}
         </p>
         <p v-if="!state.published.mappingsConfirmed" class="mt-2 text-sm text-muted-foreground">
-          How this state’s categories fit the federal ones is not yet confirmed by our team.
+          Our team has not yet confirmed how this state’s categories fit the federal ones.
         </p>
       </div>
     </template>
