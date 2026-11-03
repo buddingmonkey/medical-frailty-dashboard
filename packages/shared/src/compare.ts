@@ -35,7 +35,7 @@ const stateId = z
   .pipe(z.string().regex(/^[A-Z]{2}$/))
 const label = z.string().trim().max(200)
 
-/** The compare page's URL query (`/compare?…`, `/api/public/compare?…`), read from strings. */
+/** The code table's URL query (`/compare/codes?…`, `/api/public/compare?…`), read from strings. */
 export const compareQuerySchema = z
   .object({
     /** Comma-separated postal codes, in column order. */
@@ -75,6 +75,26 @@ export const compareQuerySchema = z
     message: `At most ${String(STATES_AND_DC)} states`,
   })
 export type CompareQuery = z.output<typeof compareQuerySchema>
+
+/** Every parameter of the code table's query (`/compare/codes?…`). */
+export const compareQueryKeys = [
+  'states',
+  'category',
+  'ownState',
+  'ownCategory',
+  'ownSubcategory',
+  'system',
+  'alone',
+  'page',
+] as const
+
+/**
+ * The URL asks for the code table: `/compare` with any of its parameters is an old link from
+ * before M5 step 5, when the table lived at `/compare`; it redirects to `/compare/codes`.
+ */
+export function isCodeTableQuery(params: URLSearchParams): boolean {
+  return compareQueryKeys.some((key) => params.has(key))
+}
 
 /** The query as URL search params, defaults left out, so a link is short and stable. */
 export function compareSearchParams(q: CompareQuery): URLSearchParams {

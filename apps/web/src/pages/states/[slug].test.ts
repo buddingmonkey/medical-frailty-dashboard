@@ -118,14 +118,16 @@ describe('/states/:slug', () => {
     expect(rows[1]?.textContent).toContain('(no category)')
     expect(rows[1]?.textContent).toContain('Unclassified')
     expect(rows[1]?.textContent).toContain('Not yet confirmed')
-    // Each category opens the compare page on it, with this state as the first column.
+    // Each category opens the code table on it, with this state as the first column.
     const first = rows[0]
     if (!first) throw new Error('no category rows')
     expect(
       within(first)
         .getByRole('link', { name: 'Compare Mental health › Psychosis with other states' })
         .getAttribute('href'),
-    ).toBe('/compare?states=GA&ownState=GA&ownCategory=Mental+health&ownSubcategory=Psychosis')
+    ).toBe(
+      '/compare/codes?states=GA&ownState=GA&ownCategory=Mental+health&ownSubcategory=Psychosis',
+    )
 
     const a = screen.getByRole('link', { name: 'Attachment A' })
     expect(a.getAttribute('href')).toBe('https://medicaid.georgia.gov/a.pdf')

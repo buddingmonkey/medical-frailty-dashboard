@@ -42,10 +42,16 @@ and `&`. `/states/GA` answers 301 to `/states/ga`; an unknown state answers 404 
 `noindex`. Code pages follow in M6. `e2e/no-js.spec.ts` reads a state page with JavaScript
 off.
 
-**Built in M4 step 2** for `/compare?…`: always `noindex`, canonical to the bare `/compare`;
-the HTML carries the table for the selection in the URL (one page of 100 rows) and a link to
-`/compare.csv?…` (every row). Without a selection it explains the page; a bad link says so.
-`e2e/compare.spec.ts` reads it with JavaScript off.
+**Built in M4 step 2** for the code table, at `/compare/codes?…` since M5 step 5: always
+`noindex`, canonical to the bare `/compare/codes`; the HTML carries the table for the selection
+in the URL (one page of 100 rows) and a link to `/compare/codes.csv?…` (every row). Without a
+selection it explains the page; a bad link says so. `e2e/compare.spec.ts` reads it with
+JavaScript off. Old links (`/compare?states=…`, `/compare.csv?…`) answer 301 with the same query.
+
+**Built in M5 step 5** for `/compare`, the overview matrix: indexed, canonical `/compare`, in the
+sitemap; the HTML carries the whole matrix (every state, every published unified category, the
+same numbers and words as the Vue page from `packages/shared/src/overview.ts`) and the
+"Reading this table" notes. `e2e/overview.spec.ts` reads it with JavaScript off.
 
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
@@ -53,7 +59,8 @@ end to the Worker.
 ### 2. One page per thing, with stable readable URLs (M1 data model, M3–M6)
 
 - `/states/<st>` (e.g. `/states/ga`), `/codes/<system>/<code>` (e.g.
-  `/codes/icd-10-cm/F20.0`), `/compare?...` (shareable, but `noindex` for combinations;
+  `/codes/icd-10-cm/F20.0`), `/compare` (the overview, indexed), `/compare/codes?...`
+  (shareable, but `noindex` for combinations;
   each state and code page is the canonical home of its facts).
 - Each page gets its own `<title>` and meta description built from its data, e.g.
   "F20.0 Paranoid schizophrenia: medical frailty status in 4 states".

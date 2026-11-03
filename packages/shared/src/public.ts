@@ -145,6 +145,7 @@ export const pageTitles = {
   state: (name: string) => `${name} medical frailty codes | ${SITE_NAME}`,
   notFound: `State not found | ${SITE_NAME}`,
   compare: `Compare states by category | ${SITE_NAME}`,
+  overview: `Which states cover what | ${SITE_NAME}`,
   states: `All states | ${SITE_NAME}`,
 }
 

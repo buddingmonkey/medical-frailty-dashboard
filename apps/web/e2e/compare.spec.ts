@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 
 import { collectErrors, seriousA11yViolations } from './helpers'
 
-// Compare by category (roadmap M4 step 2). Montana's three entries come from
-// e2e/fixtures/public-seed.sql; no other state has a list in the e2e database.
+// The code table (roadmap M4 step 2; at /compare/codes since M5 step 5). Montana's three
+// entries come from e2e/fixtures/public-seed.sql; no other state has a list in the e2e database.
 
 test('pick a category and states, read the table, share the link', async ({ page }) => {
   const errors = collectErrors(page)
@@ -12,6 +12,7 @@ test('pick a category and states, read the table, share the link', async ({ page
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Compare' })
     .click()
+  await page.getByRole('link', { name: 'Compare single codes in one category' }).click()
 
   await expect(
     page.getByRole('heading', { level: 1, name: 'Compare states by category' }),
@@ -24,7 +25,7 @@ test('pick a category and states, read the table, share the link', async ({ page
     .getByRole('checkbox', { name: 'Montana' })
     .check()
 
-  await expect(page).toHaveURL(/\/compare\?states=MT&category=disabling_mental_disorder$/)
+  await expect(page).toHaveURL(/\/compare\/codes\?states=MT&category=disabling_mental_disorder$/)
   const table = page.getByRole('table', { name: 'Disabling mental disorder: codes by state' })
   const row = table.getByRole('row', { name: /F20\.0/ })
   await expect(row).toContainText('Paranoid schizophrenia')
@@ -49,14 +50,25 @@ test("a state's category opens the compare page on it", async ({ page }) => {
   await page.goto('/states/mt')
   await page.getByRole('link', { name: 'Compare SMI with other states' }).click()
 
-  await expect(page).toHaveURL(/\/compare\?states=MT&ownState=MT&ownCategory=SMI$/)
+  await expect(page).toHaveURL(/\/compare\/codes\?states=MT&ownState=MT&ownCategory=SMI$/)
   await expect(page.getByRole('table', { name: 'Montana: SMI: codes by state' })).toContainText(
     'F20.0',
   )
 })
 
+test('an old /compare link redirects to the code table', async ({ page, request }) => {
+  const res = await request.get('/compare?states=MT&category=sud', { maxRedirects: 0 })
+  expect(res.status()).toBe(301)
+  expect(res.headers()['location']).toBe('/compare/codes?states=MT&category=sud')
+  await page.goto('/compare?states=MT&category=sud')
+  await expect(page).toHaveURL(/\/compare\/codes\?states=MT&category=sud$/)
+  await expect(
+    page.getByRole('table', { name: 'Substance use disorder: codes by state' }),
+  ).toContainText('F10.20')
+})
+
 test('the CSV has every row', async ({ request }) => {
-  const res = await request.get('/compare.csv?states=MT,AL&category=sud')
+  const res = await request.get('/compare/codes.csv?states=MT,AL&category=sud')
   expect(res.status()).toBe(200)
   const lines = (await res.text()).trimEnd().split('\r\n')
   expect(lines).toHaveLength(2)
@@ -68,11 +80,11 @@ test.describe('with JavaScript off', () => {
   test.use({ javaScriptEnabled: false })
 
   test('the table is in the HTML, and the page is not indexed', async ({ page }) => {
-    await page.goto('/compare?states=MT,AL&category=sud')
+    await page.goto('/compare/codes?states=MT,AL&category=sud')
 
     await expect(page).toHaveTitle('Compare states by category | Medical Frailty Coding Dashboard')
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/compare$/)
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/compare\/codes$/)
     const table = page.getByRole('table', { name: 'Substance use disorder: codes by state' })
     await expect(table.getByRole('row', { name: /F10\.20/ })).toContainText(
       'Listed; Tier 1 - DPHHS Approved Condition; Qualifies alone',

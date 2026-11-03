@@ -19,11 +19,20 @@ import {
 // public pages use to place an entry. Pure: the caller passes the mappings, the categories
 // with their CCSR groups, and the entry's CCSR groups.
 
+/**
+ * Slugs a unified category may not take, because the site uses them under `/compare/` (the
+ * category drill-down lives at `/compare/<slug>`): `codes` is the M4 code table (M5 step 5).
+ */
+export const reservedUnifiedSlugs: readonly string[] = ['codes']
+
+export const isReservedUnifiedSlug = (slug: string): boolean => reservedUnifiedSlugs.includes(slug)
+
 /** URL slug (`/compare/<slug>`): lowercase words of letters and digits, joined by hyphens. */
 export const unifiedSlugSchema = z
   .string()
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .refine((slug) => !isReservedUnifiedSlug(slug), { message: 'This slug is reserved' })
 
 /** An AHRQ CCSR category, e.g. `MBD001`. */
 export const ccsrCategorySchema = z.string().regex(/^[A-Z]{3}\d{3}$/)

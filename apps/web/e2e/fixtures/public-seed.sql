@@ -2,6 +2,10 @@
 -- Worker starts). Montana, three entries in the shape of its real list (docs/sources.md); the
 -- source is DPHHS's real URL. Safe to run again: it removes its own rows first. Fixed ids 9001.
 UPDATE states SET published_version_id = NULL, status = 'none' WHERE id = 'MT';
+DELETE FROM entry_unified WHERE unified_id IN (9001, 9002);
+DELETE FROM unified_universe WHERE unified_id IN (9001, 9002);
+DELETE FROM unified_ccsr WHERE unified_id IN (9001, 9002);
+DELETE FROM unified_categories WHERE id IN (9001, 9002);
 DELETE FROM entries WHERE version_id = 9001;
 DELETE FROM version_sources WHERE version_id = 9001;
 DELETE FROM dataset_versions WHERE id = 9001;
@@ -41,6 +45,29 @@ INSERT INTO category_mappings (state_id, state_category, federal_category, metho
 VALUES
   ('MT', 'SMI', 'disabling_mental_disorder', 'manual', 'e2e@localhost'),
   ('MT', 'SUD', 'sud', 'manual', 'e2e@localhost');
+
+-- Two published unified categories for the overview matrix (M5 step 5), with placements and a
+-- universe written directly (the admin routes compute them; here they are fixed). CCSR ids are
+-- made up (TST…), never AHRQ data. "Test psychoses" has a 3-code universe: Montana's F20.0
+-- covers 1 of 3 (33%), reviewed. "Test alcohol use" has no CCSR group (share over every
+-- state's entries): Montana's F10.20 is 1 of 1 (100%), not reviewed. Overall 67%.
+INSERT INTO unified_categories
+  (id, slug, label, definition, federal_category, status, sort_order, created_by, updated_by)
+VALUES
+  (9001, 'test-psychoses', 'Test psychoses', 'Synthetic category for the e2e tests.',
+   'disabling_mental_disorder', 'published', 1, 'e2e@localhost', 'e2e@localhost'),
+  (9002, 'test-alcohol-use', 'Test alcohol use', 'Synthetic category for the e2e tests.',
+   'sud', 'published', 1, 'e2e@localhost', 'e2e@localhost');
+
+INSERT INTO unified_ccsr (unified_id, ccsr_category) VALUES (9001, 'TST001');
+
+INSERT INTO unified_universe (unified_id, code_norm)
+VALUES (9001, 'F200'), (9001, 'F201'), (9001, 'F209');
+
+INSERT INTO entry_unified (entry_id, unified_id, basis, reviewed)
+SELECT id, 9001, 'mapping', 1 FROM entries WHERE version_id = 9001 AND code_norm = 'F200';
+INSERT INTO entry_unified (entry_id, unified_id, basis, reviewed)
+SELECT id, 9002, 'by_code', 0 FROM entries WHERE version_id = 9001 AND code_norm = 'F1020';
 
 -- A new data_version each run, so pages cached by an earlier run (miniflare keeps its cache in
 -- the persist folder) are never served.

@@ -12,8 +12,8 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { server } from '../test/msw-server'
-import { renderRoute } from '../test/render-route'
+import { server } from '../../test/msw-server'
+import { renderRoute } from '../../test/render-route'
 
 // Compare page (roadmap M4 step 2): pick a category and states, read the aligned table.
 
@@ -184,7 +184,7 @@ beforeEach(() => {
 
 describe('compare page', () => {
   it('asks for a category and states before showing a table', async () => {
-    await renderRoute('/compare')
+    await renderRoute('/compare/codes')
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Compare states by category' }),
@@ -195,7 +195,7 @@ describe('compare page', () => {
   })
 
   it('offers only states that have a list', async () => {
-    await renderRoute('/compare')
+    await renderRoute('/compare/codes')
 
     const states = await screen.findByRole('group', { name: 'States' })
     await within(states).findByRole('checkbox', { name: 'Georgia' })
@@ -206,7 +206,7 @@ describe('compare page', () => {
 
   it('puts every choice in the URL, so the link can be shared', async () => {
     const user = userEvent.setup()
-    const { router } = await renderRoute('/compare')
+    const { router } = await renderRoute('/compare/codes')
 
     await user.selectOptions(await screen.findByLabelText('Federal category'), 'sud')
     await user.click(await screen.findByRole('checkbox', { name: 'Montana' }))
@@ -216,7 +216,7 @@ describe('compare page', () => {
 
     await waitFor(() => {
       expect(router.currentRoute.value.fullPath).toBe(
-        '/compare?states=MT,GA&category=sud&system=icd10cm&alone=1',
+        '/compare/codes?states=MT,GA&category=sud&system=icd10cm&alone=1',
       )
     })
     await screen.findByRole('table')
@@ -224,7 +224,7 @@ describe('compare page', () => {
   })
 
   it('shows each state as a column and each code as a row, with the state’s own rule', async () => {
-    await renderRoute('/compare?states=GA,MT&category=sud')
+    await renderRoute('/compare/codes?states=GA,MT&category=sud')
 
     const table = await screen.findByRole('table')
     const headers = within(table)
@@ -256,12 +256,12 @@ describe('compare page', () => {
 
   it('pages through the rows and offers every row as CSV', async () => {
     const user = userEvent.setup()
-    const { router } = await renderRoute('/compare?states=GA,MT&category=sud')
+    const { router } = await renderRoute('/compare/codes?states=GA,MT&category=sud')
 
     expect(await screen.findByText('230 codes, page 1 of 3')).toBeTruthy()
     expect(
       screen.getByRole('link', { name: /download all 230 rows \(csv\)/i }).getAttribute('href'),
-    ).toBe('/compare.csv?states=GA%2CMT&category=sud')
+    ).toBe('/compare/codes.csv?states=GA%2CMT&category=sud')
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Previous page' }).disabled).toBe(
       true,
     )
@@ -274,7 +274,7 @@ describe('compare page', () => {
 
   it("compares one state's own category", async () => {
     const user = userEvent.setup()
-    const { router } = await renderRoute('/compare')
+    const { router } = await renderRoute('/compare/codes')
 
     await user.click(await screen.findByRole('radio', { name: /a state’s own category/i }))
     await user.selectOptions(screen.getByLabelText('State'), 'MT')
@@ -292,8 +292,20 @@ describe('compare page', () => {
 
     await waitFor(() => {
       expect(router.currentRoute.value.fullPath).toBe(
-        '/compare?states=MT,GA&ownState=MT&ownCategory=Cancer&ownSubcategory=Solid',
+        '/compare/codes?states=MT,GA&ownState=MT&ownCategory=Cancer&ownSubcategory=Solid',
       )
+    })
+  })
+
+  it('links back to the overview, and old /compare links land here', async () => {
+    await renderRoute('/compare/codes')
+    expect(
+      (await screen.findByRole('link', { name: 'Overview of every state' })).getAttribute('href'),
+    ).toBe('/compare')
+
+    const { router } = await renderRoute('/compare?states=GA,MT&category=sud')
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/compare/codes?states=GA,MT&category=sud')
     })
   })
 
@@ -303,7 +315,7 @@ describe('compare page', () => {
         HttpResponse.json({ error: 'Unknown state: ZZ' }, { status: 400 }),
       ),
     )
-    await renderRoute('/compare?states=ZZ&category=sud')
+    await renderRoute('/compare/codes?states=ZZ&category=sud')
 
     expect((await screen.findByRole('alert')).textContent).toContain('Unknown state: ZZ')
   })
