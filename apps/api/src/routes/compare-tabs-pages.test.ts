@@ -163,12 +163,6 @@ describe('GET /compare/map (server-rendered, indexed)', () => {
     const kidney = appHtml(await (await get('/compare/map?category=kidney-failure')).text())
     expect(kidney).toContain('<option value="kidney-failure" selected>Kidney failure</option>')
   })
-
-  it('the home page keeps its tile map, with its own form', async () => {
-    const app = appHtml(await (await get('/')).text())
-    expect(app).toContain('<h2>One category across the country</h2>')
-    expect(app).toContain('<form method="get" action="/">')
-  })
 })
 
 describe('GET /compare/states (server-rendered landing, noindex)', () => {

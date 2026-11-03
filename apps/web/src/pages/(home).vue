@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import {
-  pageTitles,
-  STATES_AND_DC,
-  TILE_MAP_HEADING,
-  TILE_MAP_INTRO,
-  tileMapCategory,
-  tileMapQuery,
-} from '@mfcd/shared'
+import { pageTitles, STATES_AND_DC, TILE_MAP_HOME_LINK } from '@mfcd/shared'
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 
-import CategoryTileMap from '../components/home/CategoryTileMap.vue'
 import StateMap from '../components/home/StateMap.vue'
 import StateSummaryCard from '../components/home/StateSummaryCard.vue'
 import StateTable from '../components/home/StateTable.vue'
 import { usePageTitle } from '../lib/page-title'
-import { usePublicOverview } from '../lib/public-overview'
 import { usePublicStates } from '../lib/public-states'
+
+// The tile map lived here until the project lead moved it to the Map tab (2026-11-03). Old
+// shared links (`/?category=<slug>`) follow it there; the Worker answers them with a 301.
+defineOptions({
+  beforeRouteEnter(to) {
+    if (!('category' in to.query)) return true
+    return { path: '/compare/map', query: to.query, replace: true }
+  },
+})
 
 usePageTitle(pageTitles.home)
 const { data, isPending, isError } = usePublicStates()
@@ -40,22 +39,6 @@ const activeState = computed(
     states.value.find((s) => s.published !== null) ??
     null,
 )
-
-// One category across the country (roadmap M5 step 8): the overview's data (cached on
-// data_version), one category at a time; the category lives in the URL (`?category=<slug>`).
-const overview = usePublicOverview()
-const route = useRoute()
-const router = useRouter()
-const tileCategory = computed<string>({
-  get: () => tileMapCategory(overview.data.value?.categories ?? [], route.query)?.slug ?? '',
-  set: (slug) => {
-    const query = { ...route.query }
-    delete query['category']
-    void router.replace({
-      query: { ...query, ...tileMapQuery(overview.data.value?.categories ?? [], slug) },
-    })
-  },
-})
 
 const legend = [
   { key: 'published', label: 'List on this site' },
@@ -157,20 +140,10 @@ const legend = [
         </div>
         <StateTable v-else :states="states" />
       </template>
-    </section>
 
-    <section
-      v-if="overview.data.value && overview.data.value.categories.length > 0"
-      aria-labelledby="tiles-heading"
-      class="space-y-4"
-    >
-      <div class="max-w-prose space-y-1">
-        <h2 id="tiles-heading" class="font-display text-2xl font-medium text-heading">
-          {{ TILE_MAP_HEADING }}
-        </h2>
-        <p class="text-muted-foreground">{{ TILE_MAP_INTRO }}</p>
-      </div>
-      <CategoryTileMap v-model:category="tileCategory" :data="overview.data.value" />
+      <p>
+        <RouterLink to="/compare/map" class="text-link">{{ TILE_MAP_HOME_LINK }}</RouterLink>
+      </p>
     </section>
   </div>
 </template>

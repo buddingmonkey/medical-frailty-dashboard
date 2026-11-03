@@ -4,11 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { server } from '../test/msw-server'
-import { renderRoute } from '../test/render-route'
+import { server } from '../../test/msw-server'
+import { renderRoute } from '../../test/render-route'
 
-// The tile map on the home page (roadmap M5 step 8): one unified category across the country,
-// a tile per state, the overview's numbers and shades, a picker in the URL, a table beneath.
+// The tile map on the Map tab (roadmap M5 step 8; moved off the home page, project lead,
+// 2026-11-03): one unified category across the country, a tile per state, the overview's numbers
+// and shades, a picker in the URL, a table beneath.
 
 function cell(unifiedId: number, entries: number, share: number, reviewed = true): OverviewCell {
   return {
@@ -73,13 +74,10 @@ beforeEach(() => {
 const ALCOHOL_MAP = 'Alcohol use: each state’s share of the codes any state lists'
 const PSYCHOSES_MAP = 'Psychoses: share of the category’s codes that each state lists'
 
-describe('tile map on the home page', () => {
+describe('the tile map', () => {
   it('shows the first category: a tile per state, numbers, links and full names', async () => {
-    await renderRoute('/')
+    await renderRoute('/compare/map')
 
-    expect(
-      await screen.findByRole('heading', { level: 2, name: 'One category across the country' }),
-    ).toBeTruthy()
     const map = await screen.findByRole('group', { name: ALCOHOL_MAP })
     const tiles = within(map).getAllByRole('listitem')
     expect(tiles).toHaveLength(51)
@@ -115,14 +113,14 @@ describe('tile map on the home page', () => {
 
   it('the picker changes the map and the URL; the URL picks the category', async () => {
     const user = userEvent.setup()
-    const { router } = await renderRoute('/')
+    const { router } = await renderRoute('/compare/map')
     const picker = await screen.findByRole('combobox', { name: 'Category' })
     expect((picker as HTMLSelectElement).value).toBe('alcohol-use')
 
     await user.selectOptions(picker, 'psychoses')
 
     await waitFor(() => {
-      expect(router.currentRoute.value.fullPath).toBe('/?category=psychoses')
+      expect(router.currentRoute.value.fullPath).toBe('/compare/map?category=psychoses')
     })
     const map = await screen.findByRole('group', { name: PSYCHOSES_MAP })
     expect(
@@ -133,17 +131,17 @@ describe('tile map on the home page', () => {
 
     await user.selectOptions(picker, 'alcohol-use')
     await waitFor(() => {
-      expect(router.currentRoute.value.fullPath).toBe('/')
+      expect(router.currentRoute.value.fullPath).toBe('/compare/map')
     })
   })
 
   it('opens on the category a shared link names', async () => {
-    await renderRoute('/?category=psychoses')
+    await renderRoute('/compare/map?category=psychoses')
     expect(await screen.findByRole('group', { name: PSYCHOSES_MAP })).toBeTruthy()
   })
 
   it('holds the same data in a table under “Show as a table”', async () => {
-    await renderRoute('/')
+    await renderRoute('/compare/map')
     await screen.findByRole('group', { name: ALCOHOL_MAP })
 
     const table = screen.getByRole('table', { name: ALCOHOL_MAP })
@@ -165,26 +163,9 @@ describe('tile map on the home page', () => {
       '/compare/alcohol-use?focus=MT',
     )
   })
-
-  it('is left out when no category is published', async () => {
-    let served = false
-    server.use(
-      http.get('/api/public/overview', () => {
-        served = true
-        return HttpResponse.json({ ...overview, categories: [], states: [] })
-      }),
-    )
-    await renderRoute('/')
-    await screen.findByRole('heading', { level: 2, name: 'States' })
-    await waitFor(() => {
-      expect(served).toBe(true)
-    })
-    await screen.findByText('0 of 51 states and DC have a list on this site.')
-    expect(screen.queryByRole('heading', { name: 'One category across the country' })).toBeNull()
-  })
 })
 
-describe('tile map on its own page, the Map tab', () => {
+describe('the Map tab page', () => {
   it('shows the same map under its own heading, with the compare tabs', async () => {
     await renderRoute('/compare/map')
     expect(
@@ -198,16 +179,6 @@ describe('tile map on its own page, the Map tab', () => {
     const map = await screen.findByRole('group', { name: ALCOHOL_MAP })
     expect(within(map).getAllByRole('listitem')).toHaveLength(51)
     expect(document.title).toMatch(/^One category across the country \| /)
-  })
-
-  it('keeps the category in its own URL', async () => {
-    const user = userEvent.setup()
-    const { router } = await renderRoute('/compare/map')
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Category' }), 'psychoses')
-    await waitFor(() => {
-      expect(router.currentRoute.value.fullPath).toBe('/compare/map?category=psychoses')
-    })
-    expect(await screen.findByRole('group', { name: PSYCHOSES_MAP })).toBeTruthy()
   })
 
   it('says so when no category is published', async () => {

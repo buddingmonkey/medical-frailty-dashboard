@@ -113,6 +113,16 @@ function codeTableRedirect(c: Context<AppEnv>, to: string) {
   return c.redirect(`${to}${url.search}`, 301)
 }
 
+/**
+ * `/?category=<slug>` is a link from before 2026-11-03, when the tile map was on the home page:
+ * 301 to the Map tab with the same query. Null when the query has no `category`.
+ */
+function tileMapRedirect(c: Context<AppEnv>) {
+  const url = new URL(c.req.url)
+  if (!url.searchParams.has('category')) return null
+  return c.redirect(`/compare/map${url.search}`, 301)
+}
+
 /** The compare query in the URL: null when there is none, else the parsed query or an error. */
 function compareQueryOf(c: Context<AppEnv>) {
   const raw = c.req.query()
@@ -121,14 +131,13 @@ function compareQueryOf(c: Context<AppEnv>) {
 }
 
 export const pagesRoute = new Hono<AppEnv>()
+  .get('/', async (c, next) => {
+    // Before the cache: a redirect is not a page.
+    return tileMapRedirect(c) ?? next()
+  })
   .get('/', pageCache, async (c) => {
-    const db = createDb(c.env.DB)
-    // The tile map reads the overview (SQL aggregates); the page is cached on data_version.
-    const [{ items }, overview] = await Promise.all([
-      publicSummaries(db),
-      publicOverview(db, c.get('dataVersion') ?? 0),
-    ])
-    return sendPage(c, homePage(items, origin(c), overview, c.req.query()))
+    const { items } = await publicSummaries(createDb(c.env.DB))
+    return sendPage(c, homePage(items, origin(c)))
   })
   .get('/states', pageCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))

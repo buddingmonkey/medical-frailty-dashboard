@@ -3,6 +3,8 @@ import {
   OVERVIEW_DESCRIPTION,
   pageTitles,
   stateCategoriesIntro,
+  TILE_MAP_HEADING,
+  TILE_MAP_HOME_LINK,
 } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
@@ -203,17 +205,33 @@ describe('GET / (server-rendered)', () => {
       '@type': 'WebSite',
       url: 'http://frailty.example.org/',
     })
-    // No published category yet: no tile map section.
-    expect(app).not.toContain('One category across the country')
   })
 
-  it('renders the tile map’s category as a table, with a picker that works without JavaScript', async () => {
+  // The tile map moved to the Map tab (project lead, 2026-11-03); Home links to it.
+  it('links to the Map tab and has no tile map, even with published categories', async () => {
     await seedOverview()
     const app = appHtml(await (await get('/')).text())
+    expect(app).toContain(`<p><a href="/compare/map">${TILE_MAP_HOME_LINK}</a></p>`)
+    expect(app).not.toContain(TILE_MAP_HEADING)
+    expect(app).not.toContain('<form')
+  })
 
-    expect(app).toContain('<h2>One category across the country</h2>')
+  it('sends an old /?category= link to the Map tab with a 301, keeping the query', async () => {
+    const res = await get('/?category=kidney-failure&x=1')
+    expect(res.status).toBe(301)
+    expect(res.headers.get('location')).toBe('/compare/map?category=kidney-failure&x=1')
+
+    expect((await get('/?x=1')).status).toBe(200)
+  })
+})
+
+describe('GET /compare/map (server-rendered tile map)', () => {
+  it('renders the tile map’s category as a table, with a picker that works without JavaScript', async () => {
+    await seedOverview()
+    const app = appHtml(await (await get('/compare/map')).text())
+
     // The picker: a GET form, categories under their federal parent, the default selected.
-    expect(app).toContain('<form method="get" action="/">')
+    expect(app).toContain('<form method="get" action="/compare/map">')
     expect(app).toMatch(
       /<optgroup label="Disabling mental disorder">\s*<option value="serious-mental-illness" selected>Serious mental illness<\/option>/,
     )
@@ -241,7 +259,7 @@ describe('GET / (server-rendered)', () => {
     )
 
     // A shared link's category; Georgia lists no kidney code.
-    const kidney = appHtml(await (await get('/?category=kidney-failure')).text())
+    const kidney = appHtml(await (await get('/compare/map?category=kidney-failure')).text())
     expect(kidney).toContain('<option value="kidney-failure" selected>Kidney failure</option>')
     expect(kidney).toContain('<a href="/compare/kidney-failure?focus=GA">None listed</a>')
   })
