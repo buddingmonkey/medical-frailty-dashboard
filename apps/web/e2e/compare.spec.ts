@@ -12,7 +12,10 @@ test('pick a category and states, read the table, share the link', async ({ page
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Compare' })
     .click()
-  await page.getByRole('link', { name: 'Compare single codes in one category' }).click()
+  await page
+    .getByRole('navigation', { name: 'Compare views' })
+    .getByRole('link', { name: 'Single codes' })
+    .click()
 
   await expect(
     page.getByRole('heading', { level: 1, name: 'Compare states by category' }),

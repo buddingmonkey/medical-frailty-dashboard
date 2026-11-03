@@ -451,7 +451,9 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     expect(app.indexOf('Serious mental illness')).toBeLessThan(app.indexOf('Equipment'))
     expect(app.indexOf('Equipment')).toBeLessThan(app.indexOf('Kidney failure'))
     // A category without a full code list is marked.
-    expect(app).toMatch(/<th scope="col">\s*Equipment †\s*<\/th>/)
+    expect(app).toMatch(
+      /<th scope="col">\s*<a href="\/compare\/equipment">Equipment †<\/a>\s*<\/th>/,
+    )
 
     // Georgia: 3 of 6 SMI codes, placed by CCSR without review; all equipment; no kidney code.
     const georgia = app.slice(
@@ -485,7 +487,9 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     // Montana lists all 6 serious mental illness codes, Georgia 3: highest first.
     const app = appHtml(await (await get('/compare?sort=serious-mental-illness')).text())
     expect(app.indexOf('/states/mt"')).toBeLessThan(app.indexOf('/states/ga"'))
-    expect(app).toMatch(/<th scope="col" aria-sort="descending">\s*Serious mental illness\s*<\/th>/)
+    expect(app).toMatch(
+      /<th scope="col" aria-sort="descending">\s*<a href="\/compare\/serious-mental-illness">Serious mental illness<\/a>\s*<\/th>/,
+    )
     // States without a list stay last.
     expect(app.indexOf('/states/ga"')).toBeLessThan(app.indexOf('/states/la"'))
 

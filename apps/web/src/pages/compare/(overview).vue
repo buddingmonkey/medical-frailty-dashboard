@@ -9,8 +9,9 @@ import {
   pageTitles,
 } from '@mfcd/shared'
 import { computed, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
+import CompareTabs from '../../components/compare/CompareTabs.vue'
 import CoverageLegend from '../../components/compare/CoverageLegend.vue'
 import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
 import { usePageTitle } from '../../lib/page-title'
@@ -61,9 +62,10 @@ const caption = 'Share of each category’s codes that each state lists'
 
 <template>
   <article class="space-y-6">
-    <header class="max-w-prose space-y-3">
+    <header class="space-y-3">
       <h1 class="font-display text-4xl font-medium text-heading">Which states cover what</h1>
-      <p>
+      <CompareTabs />
+      <p class="max-w-prose">
         Each row is a state; each column is a category, grouped under its federal category in the
         law. A number is the share of the category’s codes that the state lists. Select a number to
         see the category’s codes with that state in focus.
@@ -110,9 +112,5 @@ const caption = 'Share of each category’s codes that each state lists'
         <p v-for="note in overviewReadingNotes" :key="note">{{ note }}</p>
       </section>
     </template>
-
-    <p>
-      <RouterLink to="/compare/codes">Compare single codes in one category</RouterLink>
-    </p>
   </article>
 </template>

@@ -20,7 +20,9 @@ import { RouterLink } from 'vue-router'
 // The overview matrix (roadmap M5 step 5): a row per state, a column per published unified
 // category under its federal parent, and an overall column. Every cell carries its number as
 // text (WCAG 1.4.1); the headers are real `th`s with scopes (WCAG 1.3.1). Each column header is
-// a sort button; the page owns the order and announces it.
+// a sort button; the page owns the order and announces it. A category's header is two controls
+// (project lead, 2026-11-02): its label links to the category page, and a separate button,
+// named "Sort by <label>", sorts by it; both are in the tab order (WCAG 2.1.1, 4.1.2).
 
 const props = defineProps<{ data: PublicOverviewResponse; caption: string }>()
 const order = defineModel<OverviewOrder>('order', { required: true })
@@ -116,20 +118,24 @@ const shade: Record<CoverageBand, string> = {
             :aria-sort="ariaSort(c.id)"
             class="max-w-28 min-w-20 border-b border-border bg-surface px-1 py-1.5 text-left align-bottom font-semibold leading-tight"
           >
-            <button
-              type="button"
-              class="inline-flex items-end gap-1 text-left"
-              @click="sortBy(c.id)"
-            >
-              <span
+            <span class="inline-flex items-end gap-1">
+              <RouterLink :to="`/compare/${c.slug}`" class="text-left"
                 >{{ c.label
                 }}<template v-if="c.coverageBasis === 'union'"
                   >&nbsp;†<span class="sr-only">
                     (share of the codes any state lists)</span
                   ></template
-                ></span
-              ><span aria-hidden="true" class="w-3 shrink-0 text-xs">{{ arrow(c.id) }}</span>
-            </button>
+                ></RouterLink
+              >
+              <button
+                type="button"
+                class="inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-xs text-muted-foreground hover:bg-background hover:text-heading"
+                @click="sortBy(c.id)"
+              >
+                <span class="sr-only">Sort by {{ c.label }}</span
+                ><span aria-hidden="true">{{ arrow(c.id) || '↕' }}</span>
+              </button>
+            </span>
           </th>
         </tr>
       </thead>

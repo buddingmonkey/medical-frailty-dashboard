@@ -52,6 +52,7 @@ const overview: PublicOverviewResponse = {
       id: 1,
       slug: 'serious-mental-illness',
       label: 'Serious mental illness',
+      definition: '',
       federalCategory: 'disabling_mental_disorder',
       sortOrder: 1,
       coverageBasis: 'universe',
@@ -61,6 +62,7 @@ const overview: PublicOverviewResponse = {
       id: 2,
       slug: 'equipment',
       label: 'Equipment',
+      definition: '',
       federalCategory: 'physical_idd_adl',
       sortOrder: 1,
       coverageBasis: 'union',
@@ -70,6 +72,7 @@ const overview: PublicOverviewResponse = {
       id: 3,
       slug: 'kidney-failure',
       label: 'Kidney failure',
+      definition: '',
       federalCategory: 'serious_complex_medical',
       sortOrder: 1,
       coverageBasis: 'universe',
@@ -121,15 +124,19 @@ describe('overview matrix', () => {
       ['Serious or complex medical condition', '1'],
       ['Overall', null],
     ])
+    // Each header links to its category page and has its own sort button.
     expect(
       within(names)
-        .getAllByRole('button')
-        .map((b) => b.textContent.replace(/\s+/g, ' ').trim()),
+        .getAllByRole('link')
+        .map((l) => [l.textContent.replace(/\s+/g, ' ').trim(), l.getAttribute('href')]),
     ).toEqual([
-      'Serious mental illness',
-      'Equipment † (share of the codes any state lists)',
-      'Kidney failure',
+      ['Serious mental illness', '/compare/serious-mental-illness'],
+      ['Equipment † (share of the codes any state lists)', '/compare/equipment'],
+      ['Kidney failure', '/compare/kidney-failure'],
     ])
+    for (const label of ['Serious mental illness', 'Equipment', 'Kidney failure']) {
+      expect(within(names).getByRole('button', { name: `Sort by ${label}` })).toBeTruthy()
+    }
     // The scrolling region can be reached by keyboard and has a name.
     expect(screen.getByRole('region', { name: /which states cover what, table/i }).tabIndex).toBe(0)
   })
@@ -178,7 +185,7 @@ describe('overview matrix', () => {
     await renderRoute('/compare')
     const table = await matrix()
     const status = screen.getByRole('status')
-    const kidney = within(table).getByRole('button', { name: 'Kidney failure' })
+    const kidney = within(table).getByRole('button', { name: 'Sort by Kidney failure' })
     const header = kidney.closest('th')
 
     expect(header?.hasAttribute('aria-sort')).toBe(false)
@@ -226,7 +233,7 @@ describe('overview matrix', () => {
     // A column sort shows in the select too.
     await user.click(
       within(table).getByRole('button', {
-        name: /^Equipment\s†/,
+        name: 'Sort by Equipment',
       }),
     )
     await waitFor(() => {
@@ -240,11 +247,11 @@ describe('overview matrix', () => {
     const table = await matrix()
     const query = () => router.currentRoute.value.query
 
-    await user.click(within(table).getByRole('button', { name: 'Kidney failure' }))
+    await user.click(within(table).getByRole('button', { name: 'Sort by Kidney failure' }))
     await waitFor(() => {
       expect(query()).toEqual({ sort: 'kidney-failure' })
     })
-    await user.click(within(table).getByRole('button', { name: 'Kidney failure' }))
+    await user.click(within(table).getByRole('button', { name: 'Sort by Kidney failure' }))
     await waitFor(() => {
       expect(query()).toEqual({ sort: 'kidney-failure', dir: 'asc' })
     })
@@ -265,7 +272,7 @@ describe('overview matrix', () => {
     expect(rowOrder(table)).toEqual(['Georgia', 'Montana', 'Nebraska', 'Alabama', 'Louisiana'])
     expect(
       within(table)
-        .getByRole('button', { name: 'Kidney failure' })
+        .getByRole('button', { name: 'Sort by Kidney failure' })
         .closest('th')
         ?.getAttribute('aria-sort'),
     ).toBe('ascending')
@@ -286,9 +293,8 @@ describe('overview matrix', () => {
     const notes = screen.getByRole('region', { name: 'Reading this table' })
     expect(notes.textContent).toContain('no matter which of the state’s own categories')
     expect(notes.textContent).toContain('Not reviewed (*)')
-    expect(screen.getByRole('link', { name: /compare single codes/i }).getAttribute('href')).toBe(
-      '/compare/codes',
-    )
+    // The Single codes tab replaces the old link to the code table.
+    expect(screen.queryByRole('link', { name: /compare single codes/i })).toBeNull()
   })
 
   it('says so when no category is published yet', async () => {

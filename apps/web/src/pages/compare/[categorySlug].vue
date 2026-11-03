@@ -17,6 +17,7 @@ import {
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import CompareTabs from '../../components/compare/CompareTabs.vue'
 import DrillDetails from '../../components/compare/DrillDetails.vue'
 import DrillTable from '../../components/compare/DrillTable.vue'
 import { ApiError } from '../../lib/api'
@@ -100,36 +101,42 @@ const codeTablePath = computed(() => {
 
 <template>
   <article class="space-y-6">
-    <p><RouterLink to="/compare">Overview of every state</RouterLink></p>
-
     <template v-if="notFound">
       <h1 class="font-display text-4xl font-medium text-heading">Category not found</h1>
+      <CompareTabs />
       <p>
         There is no published category at this address.
-        <RouterLink to="/compare">See every category</RouterLink>
+        <RouterLink to="/compare/categories">See every category</RouterLink>
       </p>
     </template>
 
-    <p v-else-if="drill.error.value" role="alert" class="text-danger">
-      The category could not be loaded. Please try again later.
-    </p>
+    <template v-else-if="drill.error.value">
+      <CompareTabs />
+      <p role="alert" class="text-danger">
+        The category could not be loaded. Please try again later.
+      </p>
+    </template>
 
-    <p v-else-if="!data || !category" class="text-muted-foreground">Loading…</p>
+    <template v-else-if="!data || !category">
+      <CompareTabs />
+      <p class="text-muted-foreground">Loading…</p>
+    </template>
 
     <template v-else>
-      <header class="max-w-prose space-y-3">
+      <header class="space-y-3">
         <h1 class="font-display text-4xl font-medium text-heading">{{ category.label }}</h1>
-        <p class="text-sm text-muted-foreground">
+        <CompareTabs />
+        <p class="max-w-prose text-sm text-muted-foreground">
           Federal category: {{ federalCategoryInfo[category.federalCategory].label }}
         </p>
-        <p>{{ category.definition }}</p>
-        <p v-if="category.includes">
+        <p class="max-w-prose">{{ category.definition }}</p>
+        <p v-if="category.includes" class="max-w-prose">
           <span class="font-semibold">Includes:</span> {{ category.includes }}
         </p>
-        <p v-if="category.excludes">
+        <p v-if="category.excludes" class="max-w-prose">
           <span class="font-semibold">Excludes:</span> {{ category.excludes }}
         </p>
-        <details v-if="category.ccsr.length > 0" class="text-sm">
+        <details v-if="category.ccsr.length > 0" class="max-w-prose text-sm">
           <summary class="cursor-pointer font-semibold">
             CCSR groups ({{ category.ccsr.length }})
           </summary>

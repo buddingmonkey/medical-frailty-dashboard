@@ -80,13 +80,29 @@ differences, and the CSV. Capitals redirect (301) to lowercase; an unknown state
 repeated state answers a 404 page with `noindex`. The state pages' "States with the most similar
 lists" is a GET form too. `e2e/states-compare.spec.ts` reads both with JavaScript off.
 
+**Built with the compare tabs** (2026-11-02): every `/compare` page carries the same tab row
+under its `<h1>` as the Vue pages (`<nav aria-label="Compare views">`, from `compareTabs` in
+`packages/shared/src/compare-tabs.ts`; `aria-current="page"` on the page itself, `"true"` on
+the parent of a category page or a comparison). Two new pages are **indexed and in the
+sitemap**: `/compare/categories` (every published unified category under its federal
+category, each linking to its page, with its definition) and `/compare/map` (the home page's
+tile map as a table with a GET form for the category; `?category=` keeps the canonical bare,
+as on the home page). `/compare/states` without `?states=` is the "States side by side"
+landing: a GET form for "Your state" (`?state=ga` adds that state's most similar states, the
+state page's section) and the comparison's pickers as a GET form. It is **`noindex`** and not
+in the sitemap, like the comparisons: it holds no facts of its own, and `?state=` repeats the
+state page's. `categories` and `map` are reserved unified slugs. Tested in
+`apps/api/src/routes/compare-tabs-pages.test.ts`.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 
 ### 2. One page per thing, with stable readable URLs (M1 data model, M3–M6)
 
 - `/states/<st>` (e.g. `/states/ga`), `/codes/<system>/<code>` (e.g.
-  `/codes/icd-10-cm/F20.0`), `/compare` (the overview, indexed), `/compare/codes?...`
+  `/codes/icd-10-cm/F20.0`), `/compare` (the overview, indexed), `/compare/categories` and
+  `/compare/map` (indexed), `/compare/<slug>` (a category, indexed bare),
+  `/compare/states` and `/compare/states/<st>-vs-<st>` (`noindex`), `/compare/codes?...`
   (shareable, but `noindex` for combinations;
   each state and code page is the canonical home of its facts).
 - Each page gets its own `<title>` and meta description built from its data, e.g.
@@ -131,7 +147,8 @@ accurately than scraped tables.
 - Built in M3 step 4 for the home page and the 51 state pages; URLs use the request's own
   origin. `/compare` joined in M5 step 5, every published category drill-down
   (`/compare/<slug>`, `lastmod` the newer of the category's last edit and the newest state
-  list) in M5 step 6. Code pages join it in M6.
+  list) in M5 step 6, `/compare/categories` and `/compare/map` with the compare tabs (`lastmod`
+  the newest state list). Code pages join it in M6.
 - At launch, add `Sitemap: https://<final-domain>/sitemap.xml` to the public `robots.txt`.
 
 ### 7. llms.txt (M8)

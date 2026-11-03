@@ -97,6 +97,7 @@ export async function publicOverview(db: Db, dataVersion: number): Promise<Publi
           id: unifiedCategories.id,
           slug: unifiedCategories.slug,
           label: unifiedCategories.label,
+          definition: unifiedCategories.definition,
           federalCategory: unifiedCategories.federalCategory,
           sortOrder: unifiedCategories.sortOrder,
         })

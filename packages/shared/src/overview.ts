@@ -27,6 +27,8 @@ export const overviewCategorySchema = z.object({
   id: z.number().int().positive(),
   slug: unifiedSlugSchema,
   label: z.string().min(1),
+  /** What the category holds, as the admin wrote it (the Categories tab shows it). */
+  definition: z.string(),
   /** The federal parent the overview groups by. */
   federalCategory: z.enum(federalCategories).exclude(['unmapped']),
   sortOrder: z.number().int().min(0),

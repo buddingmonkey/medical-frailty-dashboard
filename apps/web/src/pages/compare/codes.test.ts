@@ -298,10 +298,12 @@ describe('compare page', () => {
     })
   })
 
-  it('links back to the overview, and old /compare links land here', async () => {
+  it('links back to the overview in the tabs, and old /compare links land here', async () => {
     await renderRoute('/compare/codes')
     expect(
-      (await screen.findByRole('link', { name: 'Overview of every state' })).getAttribute('href'),
+      within(screen.getByRole('navigation', { name: 'Compare views' }))
+        .getByRole('link', { name: 'Overview' })
+        .getAttribute('href'),
     ).toBe('/compare')
 
     const { router } = await renderRoute('/compare?states=GA,MT&category=sud')
