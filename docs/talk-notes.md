@@ -138,6 +138,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M5 step 6 (2026-11-02) | 18:55–19:30 | not measured | Workers Paid | Category drill-down; a 3.4 s query found with real data became 0.04 s |
 | M5 step 7 (2026-11-02) | 19:33–20:15 | not measured | Workers Paid | State-vs-state comparison and similarity; review caught 'only differences' hiding nothing |
 | M5 step 8 (2026-11-02) | 20:18–20:35 | not measured | Workers Paid | Tile map on the home page |
+| **M5 total** (2026-11-02) | **≈ 4.5 h** (15:59–20:40) | not measured | $5/month | 10 PRs (#47–#56); 1,023 Vitest + 52 e2e; three category levels, CCSR, five views; 8 builder agents |
 
 ## Assets to capture for slides
 

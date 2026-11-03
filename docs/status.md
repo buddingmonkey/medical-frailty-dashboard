@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 8)_
+_Last updated: 2026-11-02 (end of M5)_
 
 ## Where things stand
 
@@ -210,6 +210,8 @@ _Last updated: 2026-11-02 (M5 step 8)_
   similar states on state pages, `state_similarity` (migration 0010). A rule a state doesn't
   state counts as no disagreement (to confirm at the M5 review).
 - **M5 step 8 done** (branch `m5-step8-tilemap`): the tile map on the home page.
+- **M5 is complete** (PRs #47–#56, 2026-11-02). Hard stop for the project lead's review; see
+  the M5 milestone devlog for the questions (starter categories, two rules, a dark shade, release).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
