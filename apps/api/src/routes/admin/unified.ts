@@ -246,6 +246,11 @@ export const unifiedRoute = new Hono<AppEnv>()
         .set({ ...fields, slug, version, updatedBy: actor, updatedAt: new Date().toISOString() })
         .where(eq(unifiedCategories.id, id)),
       ...(ccsrChanged ? replaceCcsr(db, { id }, ccsr) : []),
+      // A status change also rebuilds the full code list (only the difference is written), so a
+      // category seeded without one (migration 0011) gets it when it is published.
+      ...(!ccsrChanged && current.status !== fields.status
+        ? universeStatements(db, idOf({ id }))
+        : []),
       ...(isPublic ? [bumpDataVersion(db)] : []),
       auditInsert(db, {
         actorEmail: actor,
