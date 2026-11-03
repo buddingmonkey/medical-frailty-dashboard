@@ -305,6 +305,13 @@ _Last updated: 2026-11-03 (M6 complete)_
   `data_version`; nothing is recomputed. Logic in `packages/shared/src/remap.ts`. Every
   change, one row's or one chapter's too, goes through the preview; only a "Confirm" that moves
   no published entry (stored mapping unchanged, or a draft-only category) saves at once. `PUT …/chapters/:chapter` was removed.
+- **M7 step 1 done** (branch `m7-step1-backup`): `/admin/restore` ("Backup and restore").
+  **Download:** `GET /api/admin/backup` streams a zip with one JSON file (format 2: every
+  state-data table, page by page, no reference, derived or FTS tables, no R2 keys); seed: 5.4 MB
+  JSON, 237 kB zip, ~0.3 s. **Restore path 2:** the browser reads a full `.zip` or a per-publish
+  `.json` (format 1), the admin picks one state and version, and it becomes a new draft through
+  the draft API (sources reused by SHA-256 or stored without the file; mappings only when
+  ticked, after a diff). No schema change. The e2e test of restore path 2 passes (run twice, at the merge).
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

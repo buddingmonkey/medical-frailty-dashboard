@@ -59,6 +59,7 @@ declare module 'vue-router/auto-routes' {
       | '/admin/guide'
       | '/admin/ingest'
       | '/admin/mappings'
+      | '/admin/restore'
       | '/admin/sources'
       | '/admin/unified'
       | '/admin/versions'
@@ -123,6 +124,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/mappings': RouteRecordInfo<
       '/admin/mappings',
       '/admin/mappings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/restore': RouteRecordInfo<
+      '/admin/restore',
+      '/admin/restore',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -273,6 +281,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin/guide'
         | '/admin/ingest'
         | '/admin/mappings'
+        | '/admin/restore'
         | '/admin/sources'
         | '/admin/unified'
         | '/admin/versions'
@@ -349,6 +358,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/mappings.vue': {
       routes:
         | '/admin/mappings'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/restore.vue': {
+      routes:
+        | '/admin/restore'
       views:
         | never
       pathParamNames:

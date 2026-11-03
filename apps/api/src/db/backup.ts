@@ -6,7 +6,9 @@ import { datasetVersions, draftParts, entries, sourceDocuments, versionSources }
 /**
  * Writes one version (row, sources, parts, entries) to R2 as JSON before a publish replaces it
  * (docs/data-model.md, "Replacing a state's list"). Returns the key. Rollback does not need it:
- * superseded versions stay in D1. It is for restoring a state whose history was lost.
+ * superseded versions stay in D1. It is for restoring a state whose history was lost: the
+ * admin's /admin/restore page reads this format (1) and the full download (2) alike
+ * (packages/shared/src/backup.ts).
  */
 export async function backupVersion(
   db: Db,
@@ -18,10 +20,14 @@ export async function backupVersion(
   const sources = await db
     .select({
       id: sourceDocuments.id,
+      stateId: sourceDocuments.stateId,
       title: sourceDocuments.title,
       url: sourceDocuments.url,
       publisherDate: sourceDocuments.publisherDate,
       sha256: sourceDocuments.sha256,
+      // Added in M7 step 1 (format 1 still): restore path 2 recreates a source from these.
+      fileType: sourceDocuments.fileType,
+      byteSize: sourceDocuments.byteSize,
     })
     .from(versionSources)
     .innerJoin(sourceDocuments, eq(versionSources.sourceDocumentId, sourceDocuments.id))

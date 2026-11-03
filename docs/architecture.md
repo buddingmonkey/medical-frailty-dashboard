@@ -205,7 +205,7 @@ Admin (Access JWT required; all writes):
 | `PUT /api/admin/column-profiles` | Save it: `{stateId, header, profile}`; the server computes the key; one role per column |
 | `POST /api/admin/ref-codes/lookup` | Body `{codes}`: up to 1,000 normalized codes. Returns the ones in `ref_codes` with their system (ICD-10-CM or HCPCS) and billable flag. A read sent as POST (the list does not fit in a URL); D1 is asked 100 codes per query |
 | `GET /api/admin/drafts?stateId=` | A state's open drafts, newest first |
-| `POST /api/admin/drafts` | Start a draft version for a state (`{stateId}`); the version number is set in the same statement, so two at once cannot clash |
+| `POST /api/admin/drafts` | Start a draft version for a state (`{stateId, label?, fromBackup?}`); the version number is set in the same statement, so two at once cannot clash. With `fromBackup` (restore path 2) the audit row is `draft.restore` with the backup's date, environment and version |
 | `GET /api/admin/drafts/:id` | The version, with one item per part sent (file, table, entries stored of expected, invalid rows, states named) |
 | `PUT /api/admin/drafts/:id/sources/:sourceId` | Add one part (table or sheet) of a stored source: `{part, expectedEntries, invalidRowCount, namedStateIds}`. Sending a part again deletes only its entries. The source must belong to the draft's state; only a `draft` changes (409 otherwise) |
 | `POST /api/admin/drafts/:id/rows` | `{sourceDocumentId, part, entries}`, ≤ 500 entries. Each entry is re-parsed (`validateDraftEntry`); a mismatch answers 400 with its `index`, and nothing is stored. More entries than announced: 400 |
@@ -228,7 +228,10 @@ Admin (Access JWT required; all writes):
 | `POST /api/admin/states/:stateId/rollback` | `{versionId}`: re-publish a superseded version of the same state, in one batch (404 for another state's version, 409 for one that was never published) |
 | `GET /api/admin/ai-cleanup` | `{enabled, model}`: whether the "Ask Claude" button shows |
 | `POST /api/admin/ai-cleanup` | `{stateId, fileName, part}`. 404 unless `ANTHROPIC_API_KEY` is set. The server builds the prompt (so the key only serves this task), calls Claude (`@anthropic-ai/sdk`, streaming, `fallbacks: "default"`), audits model and tokens (never the text), and returns the answer as text for the browser to validate. 30 calls an hour across all admins (counted in `audit_log`); a refusal or a cut-off answer is 422 |
-| `GET /api/admin/backup` | Stream a full JSON backup to the admin's computer |
+| `GET /api/admin/backup` | The full backup: a zip with one JSON file (format 2), streamed table by table; audit `backup.download` (docs/deployment.md, "Backups and restore") |
+| `POST /api/admin/backup/sources` | Restore path 2: `{stateId, title, url, publisherDate, fileType, sha256, byteSize}`. The state's source with that SHA-256 (200, `reused: true`), or a new metadata-only row with no file (201) |
+| `GET /api/admin/backup/mappings?stateId=` | A state's category mappings, chapter overrides and column profiles, for the restore diff |
+| `PUT /api/admin/backup/mappings/:stateId` | Replace them with a backup's (every row must be this state's), in one batch with `data_version` + 1 and an audit row |
 | `GET /api/admin/audit?limit=&before=` | Audit log, newest first; `before` is the last id of the previous page (cursor), `limit` 1–200 (default 50) |
 | `GET /api/admin/watch?status=open\|closed`, `POST /api/admin/watch`, `PUT /api/admin/watch/:id` | Watch dates: list, add, edit, close. `PUT` body is `{action: 'edit', ...fields}` or `{action: 'close', status, resolutionMd}`; a closed item answers 409 |
 

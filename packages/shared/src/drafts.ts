@@ -71,10 +71,21 @@ export const draftListQuerySchema = z.object({ stateId })
 /** `draft_parts.named_state_ids_json`; anything unreadable counts as no names. */
 export const namedStateIdsSchema = z.array(z.string()).catch([])
 
+/** `fromBackup` of `POST /api/admin/drafts`: the backup a restored draft comes from (audit). */
+export const draftFromBackupSchema = z.object({
+  writtenAt: z.string().max(40),
+  environment: z.string().max(40).nullable(),
+  versionNo: z.number().int().positive(),
+  format: z.union([z.literal(1), z.literal(2)]),
+})
+export type DraftFromBackup = z.infer<typeof draftFromBackupSchema>
+
 /** Body of `POST /api/admin/drafts`. */
 export const draftCreateSchema = z.object({
   stateId,
   label: z.string().trim().max(200).default(''),
+  /** Set by restore path 2 (/admin/restore); the audit row then says which backup. */
+  fromBackup: draftFromBackupSchema.optional(),
 })
 
 /** A table or sheet of a source file ("Pages 2–294", "Sheet1"). */

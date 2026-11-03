@@ -31,6 +31,7 @@ const sections = [
   { to: '/admin/ingest', label: 'Read and map' },
   { to: '/admin/drafts', label: 'Drafts' },
   { to: '/admin/versions', label: 'Versions' },
+  { to: '/admin/restore', label: 'Backup and restore' },
   { to: '/admin/categories', label: 'Categories' },
   { to: '/admin/unified', label: 'Unified categories' },
   { to: '/admin/mappings', label: 'Mappings' },
