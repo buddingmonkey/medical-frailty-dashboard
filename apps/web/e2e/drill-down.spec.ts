@@ -6,7 +6,7 @@ import { collectErrors, seriousA11yViolations } from './helpers'
 // Nebraska have a list; "Test psychoses" has a 3-code universe (F20.0, F20.1, F20.9), Montana
 // lists F20.0, Nebraska none of them; "Test alcohol use" has no CCSR group, so no full code list.
 
-const caption = /Test psychoses: codes by how many states list them/
+const caption = /Test psychoses: codes by how many states include them/
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`from an overview cell to the drill-down, details and axe (${scheme})`, async ({ page }) => {
@@ -14,7 +14,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/compare')
     await page
-      .getByRole('link', { name: 'Montana, Test psychoses: 33% of the category’s codes' })
+      .getByRole('link', { name: 'Montana, Test psychoses: 33% of the category’s diagnosis codes' })
       .click()
 
     await expect(page).toHaveURL(/\/compare\/test-psychoses\?focus=MT$/)

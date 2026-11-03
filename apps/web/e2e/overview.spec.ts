@@ -23,7 +23,7 @@ for (const scheme of ['light', 'dark'] as const) {
     ).toHaveAttribute('href', '/compare/test-alcohol-use?focus=MT')
     await expect(
       montana.getByRole('link', {
-        name: 'Montana, Test psychoses: 33% of the category’s codes',
+        name: 'Montana, Test psychoses: 33% of the category’s diagnosis codes',
       }),
     ).toHaveAttribute('href', '/compare/test-psychoses?focus=MT')
     await expect(montana.getByRole('cell').last()).toHaveText('67%')

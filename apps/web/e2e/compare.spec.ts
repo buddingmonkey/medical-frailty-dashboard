@@ -49,7 +49,7 @@ test('pick a category and states, read the table, share the link', async ({ page
 
 test("a state's category opens the compare page on it", async ({ page }) => {
   await page.goto('/states/mt')
-  await page.getByRole('link', { name: 'Compare SMI with other states' }).click()
+  await page.getByRole('link', { name: 'Compare these codes (SMI) with other states' }).click()
 
   await expect(page).toHaveURL(/\/compare\/codes\?states=MT&ownState=MT&ownCategory=SMI$/)
   await expect(page.getByRole('table', { name: 'Montana: SMI: codes by state' })).toContainText(
@@ -122,7 +122,7 @@ test('the tile map: picker changes the map and the URL, tiles link to the drill-
   await expect(page).toHaveURL(/\/compare\/map\?category=test-psychoses$/)
   const psychoses = page.getByRole('group', { name: PSYCHOSES })
   const mt = psychoses.getByRole('link', {
-    name: 'Montana, Test psychoses: 33% of the category’s codes',
+    name: 'Montana, Test psychoses: 33% of the category’s diagnosis codes',
   })
   await expect(mt).toHaveAttribute('href', '/compare/test-psychoses?focus=MT')
   await mt.click()

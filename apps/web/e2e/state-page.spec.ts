@@ -14,7 +14,7 @@ test('a state on the map opens its page', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/states\/al$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Alabama' })).toBeVisible()
-  await expect(page.getByText('Alabama has not published a list')).toBeVisible()
+  await expect(page.getByText('This site knows of no published medical frailty code list for Alabama.')).toBeVisible()
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])
 })
