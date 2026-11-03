@@ -76,7 +76,7 @@ async function importToDraft(page: Page, file: { name: string; mimeType: string;
   await page.goto('/admin/restore')
   await page.getByLabel('Backup file').setInputFiles(file)
   await expect(page.getByRole('region', { name: /What is in/ })).toBeVisible()
-  await page.getByLabel('State').selectOption(STATE_ID)
+  await page.getByLabel('State', { exact: true }).selectOption(STATE_ID)
   await page.getByRole('button', { name: /Create draft from v\d+/ }).click()
   await expect(page.getByText(/Draft v\d+ holds \d+ restored entries/)).toBeVisible()
   await page.getByRole('link', { name: /Open draft v\d+/ }).click()
@@ -98,9 +98,13 @@ async function publish(page: Page) {
 }
 
 async function expectPublicEntries(page: Page, run: string) {
+  // The state page shows counts, not codes; its public JSON download holds every entry.
+  const res = await page.request.get(`/states/${STATE_ID.toLowerCase()}/codes.json`)
+  expect(res.ok()).toBe(true)
+  const body = await res.text()
+  expect(body).toContain(`F20.0 restored in e2e run ${run}`)
+  expect(body).toContain(`N18.6 restored in e2e run ${run}`)
   await page.goto(`/states/${STATE_ID.toLowerCase()}`)
-  await expect(page.getByText(`F20.0 restored in e2e run ${run}`)).toBeVisible()
-  await expect(page.getByText(`N18.6 restored in e2e run ${run}`)).toBeVisible()
   // The citation renders from the metadata-only source.
   await expect(page.getByText(`Kansas list (e2e ${run})`).first()).toBeVisible()
 }
@@ -153,7 +157,7 @@ for (const scheme of ['light', 'dark'] as const) {
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(versionBackup(String(Date.now())))),
     })
-    await page.getByLabel('State').selectOption(STATE_ID)
+    await page.getByLabel('State', { exact: true }).selectOption(STATE_ID)
     await expect(page.getByRole('button', { name: /Create draft from v\d+/ })).toBeVisible()
     expect(await seriousA11yViolations(page)).toEqual([])
   })
