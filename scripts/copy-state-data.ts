@@ -115,10 +115,10 @@ export function insertSql(
 ): string {
   const columns = Object.keys(row).filter((c) => !omit.includes(c))
   const values = columns.map((c) => {
-    if (!/^[a-z_]+$/.test(c)) throw new Error(`Unexpected column name: ${c}`)
+    if (!/^[a-z][a-z0-9_]*$/.test(c)) throw new Error(`Unexpected column name: ${c}`)
     const v = row[c]
     if (v === null || typeof v === 'string') return sqlString(v)
-    if (typeof v === 'number' && Number.isInteger(v)) return String(v)
+    if (typeof v === 'number' && Number.isFinite(v)) return String(v)
     throw new Error(`Unexpected value in ${table}.${c}`)
   })
   return `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${values.join(', ')});`

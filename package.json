@@ -22,6 +22,9 @@
     "db:generate": "pnpm --filter @mfcd/api db:generate",
     "db:migrate:local": "pnpm --filter @mfcd/api db:migrate:local",
     "db:ref:local": "pnpm --filter @mfcd/reference-data build && pnpm --filter @mfcd/reference-data load --local",
+    "db:seed:make": "node scripts/make-seed.ts",
+    "db:seed:local": "node scripts/seed.ts --env local",
+    "db:seed:preview": "node scripts/seed.ts --env preview",
     "db:drift": "node scripts/db-drift.ts",
     "deploy:preview": "pnpm --filter @mfcd/web build && node scripts/cf.ts deploy --env preview"
   },

@@ -4,7 +4,9 @@
     "types": ["node"],
     "allowJs": true,
     "checkJs": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    // Scripts run directly on Node (type stripping), which needs `./x.ts` in imports.
+    "allowImportingTsExtensions": true
   },
   "include": ["*.js", "*.ts", "scripts/**/*.ts"]
 }

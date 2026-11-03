@@ -5,8 +5,8 @@ A public site that compares the code lists US states use to mark Medicaid member
 front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
 All data is public state policy. There is no patient data, and there never will be.
 
-> **Status: M2 done (ingestion admin); M3 next.** Every command below works except
-> `db:seed:local` and the seeded `e2e`, which are not built yet. `docs/status.md` says what exists.
+> **Status: M5 done; preview holds seed data, production the real lists.** Every command below
+> works. `docs/status.md` says what exists.
 
 ## Commands
 
@@ -20,7 +20,8 @@ pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it
 pnpm db:migrate:local # apply D1 migrations to the local database
 pnpm db:ref:local     # load the CMS reference codes (ICD-10-CM, HCPCS) into local D1, ~20 s
-pnpm db:seed:local    # load the fixture states (GA, LA, MT, NE) into local D1
+pnpm db:seed:local    # replace local state data with the seed (120 real entries per state), then Rebuild coverage
+pnpm db:seed:preview  # the same on preview (never production; it holds the real lists)
 pnpm format           # prettier --write
 pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare Access)
 pnpm cf <args>        # wrangler with this repo's own token (apps/api/.env.cloudflare); refuses prod deploys

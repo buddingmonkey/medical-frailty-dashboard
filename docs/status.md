@@ -222,6 +222,10 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
 - **Preview data, step 2 done** (branch `coverage-rebuild`): **Rebuild coverage** on Admin →
   Unified categories (`POST /api/admin/coverage/rebuild`) rebuilds full code lists, placements and
   similarity from the base rows. For seed data loaded as SQL and for a new CCSR or ICD-10-CM release.
+- **Preview data, step 3 done** (branch `preview-seed`): `pnpm db:seed:make` writes
+  `apps/api/seed/seed.sql` (120 real entries per state, starter categories published, identities
+  scrubbed). `pnpm db:seed:local` and `pnpm db:seed:preview` replace that database's state data;
+  then press Rebuild coverage. Never production.
 - **Preview data, step 4 done** (branch `env-banner`): every HTML page of a Worker whose
   `ENVIRONMENT` is not exactly `production` opens with a gold "Preview site: test data" banner
   (`src/middleware/environment-banner.ts`). It is added at run time, so both Workers run the same build.
