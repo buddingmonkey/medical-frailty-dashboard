@@ -280,8 +280,12 @@ _Last updated: 2026-11-03 (M6 complete)_
   `DefinedTerm`, indexed only when a state includes the code, a sitemap index), 8 draft
   condition groups and like codes (0014), the plain-language pass (0013), contributor docs, and
   the home map hover fix. **For the review:**
-  - Tag `v0.7.0` for production? It applies 0012–0014. 0012 builds a 107k-row search index
-    (2.1 s on preview).
+  - **`v0.7.0` is live** (the project lead tagged and approved it; CI run 41698090729,
+    2026-11-03). 0012–0014 applied on production, and the search index took 0.9 s. Bookmark
+    before the migrations: `00000012-00000000-00005118-b846c9731914f1f1a56dc2eefef1c849`.
+    Checked on production: search, a code page (title, plain sentences, JSON-LD, 301 from
+    `f200`), a CMS-only code page that is `noindex`, the sitemap index, `X-Robots-Tag` on
+    `/search`, the footer, and the home map holding still on hover.
   - The 8 condition groups are drafts. Their CPT ranges are numbers only and unchecked;
     check them before publishing.
   - The 19 starter categories are still drafts on production. 0013 rewords any that are

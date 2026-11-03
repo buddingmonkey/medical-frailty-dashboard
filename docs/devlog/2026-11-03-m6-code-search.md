@@ -191,3 +191,13 @@ Search for a code by number or words, and a page per code that shows every state
   a test worked: the code page status, search stemming, the sitemap query plan and the map
   bounce.
 - When the AI works in parallel, someone still runs every check once at the end.
+
+## Release (13:05)
+- The project lead tagged `v0.7.0` and approved production (run 41698090729). Migrations
+  0012–0014 applied; the search index took 0.9 s on production (2.1 s on preview).
+- Checked in the project lead's Chrome:
+  - Search for "schizophrenia" returns 12 codes, with F20.0 listed by 4 states.
+  - The F20.0 page has the right title, plain sentences, JSON-LD and a 301 from `f200`.
+  - A CMS-only code (A00.0) is `noindex`; the sitemap is an index; `/search` sends
+    `X-Robots-Tag`; the footer is there.
+  - The home map stayed at the same position while hovering over five states.
