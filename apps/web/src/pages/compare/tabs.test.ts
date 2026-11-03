@@ -70,7 +70,7 @@ describe('compare tabs', () => {
     await user.tab()
     expect(document.activeElement?.textContent.trim()).toBe('Categories')
     await user.keyboard('{Enter}')
-    await screen.findByRole('heading', { level: 1, name: 'Categories we compare states by' })
+    await screen.findByRole('heading', { level: 1, name: 'Categories for comparing states' })
     expect(router.currentRoute.value.path).toBe('/compare/categories')
     expect(marks()).toEqual([['Categories', 'page']])
   })

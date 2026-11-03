@@ -131,7 +131,7 @@ describe('GET /compare/categories (server-rendered, indexed)', () => {
 
   it('lists every published category under its federal category, with its definition', async () => {
     const app = appHtml(await (await get('/compare/categories')).text())
-    expect(app).toContain('<h1>Categories we compare states by</h1>')
+    expect(app).toContain('<h1>Categories for comparing states</h1>')
     expect(app).toContain(CATEGORIES_INTRO)
     const flat = app.replace(/\s+/g, ' ')
     expect(flat).toContain(

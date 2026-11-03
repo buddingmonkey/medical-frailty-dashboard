@@ -19,7 +19,7 @@ export const COMPARE_TABS_LABEL = 'Compare views'
 // The words of the tab pages that are new with the tabs, for the Vue pages and the Worker's
 // HTML. On the legal review list (docs/status.md).
 
-export const CATEGORIES_HEADING = 'Categories we compare states by'
+export const CATEGORIES_HEADING = 'Categories for comparing states'
 
 export const CATEGORIES_INTRO =
   'Each category groups related diagnosis and service codes, under its federal category in the ' +
