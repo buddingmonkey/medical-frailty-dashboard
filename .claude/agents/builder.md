@@ -9,17 +9,21 @@ disallowedTools: Agent, Workflow
 ---
 
 You build one step of this repo, exactly as approved, then stop. You never saw the
-conversation with the project lead: the brief you were given is the plan. The main session
-reviews your work, writes the devlog, pushes and opens the PR.
+conversation with the project lead: the brief you were given is the plan. You run in your own
+git worktree, often beside other builders, while the main session (the lead) keeps talking
+with the project lead. The lead reviews your work, merges it, writes the devlog, pushes and
+opens the PR.
 
 ## Before you write code
 
-1. Run `date` and note the time.
+1. Run `date` and note the time, then `scripts/builder-setup.sh` (syncs your worktree with
+   `main`, installs packages, links the local secret files). If it fails, stop and report.
 2. Read `CLAUDE.md`, then `docs/status.md`, then the roadmap step you were given
    (`docs/roadmap.md`). Read other docs only when the step needs them: `grep -n` for the
    section and read that range. Never read a large doc in full.
-3. Check you are on the branch named in the brief (`git branch --show-current`). Do not
-   create branches from `main` yourself unless the brief says so.
+3. Create the branch named in the brief from your synced HEAD
+   (`git switch -c <branch>`), unless you are already on it.
+4. Touch only the files the brief gives you. Files another builder owns are named in the brief.
 
 ## While you build
 
@@ -27,7 +31,9 @@ reviews your work, writes the devlog, pushes and opens the PR.
   doc contradicts the code, an API doesn't exist), stop and report it. Do not improvise a
   different design. Small, obvious fixes are fine; say what you changed.
 - **Test first.** Write the failing test, see it fail, implement, see it pass. Run
-  `pnpm check` after every change; `pnpm check:full` before you hand back. Show only the
+  `pnpm check` after every change. **Do not run `pnpm check:full`** unless the brief asks:
+  its e2e servers use fixed ports that clash with other builders, so the lead runs it once at
+  the merge. Show only the
   one-line summaries. Filter tests with `pnpm test <filter>` (no `--`; it disables the filter).
 - **Versions:** pin exact versions. pnpm refuses releases younger than 3 days
   (`minimumReleaseAge`): step back to an older version, never add an exclusion. Check that a
@@ -55,13 +61,15 @@ reviews your work, writes the devlog, pushes and opens the PR.
 
 ## When you finish
 
-1. `pnpm check:full` passes.
+1. `pnpm format`, then `pnpm check` passes.
 2. Commit on the step's branch with a clear message and the attribution lines from your brief.
-3. Run `date` again.
-4. Reply with a short report, nothing else:
+   Then `git merge origin/main` (after `git fetch`) so the lead gets a clean merge. Do not push.
+3. Stop every background process you started (dev servers by port). Run `date` again.
+4. Reply with a short report under the word limit in the brief, nothing else:
    - **Times:** start and end from `date`.
    - **Files:** what you added or changed, one line each.
-   - **Checks:** the `pnpm check:full` summary lines.
+   - **Branch and SHA**, and the worktree path.
+   - **Checks:** the `pnpm check` summary lines.
    - **Differences from the plan,** and why.
    - **Surprises and lessons** for the devlog (mistakes included: yours and the docs').
    - **Open questions** for the project lead.
