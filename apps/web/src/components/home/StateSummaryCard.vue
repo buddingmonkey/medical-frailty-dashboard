@@ -9,6 +9,8 @@ import {
   type PublicStateSummary,
   formatCount,
   formatDay,
+  MAPPINGS_NOT_REVIEWED_NOTE,
+  SOURCE_DATE_HEADING,
   stateStatusLabels,
 } from '@mfcd/shared'
 import { computed, useId } from 'vue'
@@ -56,7 +58,7 @@ const byCategory = computed(() => {
         entries
       </p>
       <p v-if="state.published.sourceDate" class="text-sm">
-        State list dated {{ formatDay(state.published.sourceDate) }}
+        {{ SOURCE_DATE_HEADING }}: {{ formatDay(state.published.sourceDate) }}
       </p>
 
       <div>
@@ -81,7 +83,7 @@ const byCategory = computed(() => {
           {{ FEDERAL_OVERLAP_NOTE }}
         </p>
         <p v-if="!state.published.mappingsConfirmed" class="mt-2 text-sm text-muted-foreground">
-          Our team has not yet confirmed how this state’s categories fit the federal ones.
+          {{ MAPPINGS_NOT_REVIEWED_NOTE }}
         </p>
       </div>
     </template>

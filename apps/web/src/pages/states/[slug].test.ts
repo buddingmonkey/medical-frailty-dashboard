@@ -162,8 +162,10 @@ describe('/states/:slug', () => {
     const counts = screen.getByRole('table', { name: 'Entries by code system' })
     expect(within(counts).getByRole('row', { name: 'ICD-10-CM 6,000' })).toBeTruthy()
     expect(
-      screen.getByRole('table', { name: 'Entries by whether a code qualifies alone' }).textContent,
-    ).toContain('Needs another code47')
+      screen.getByRole('table', {
+        name: 'Entries by the state’s rule on whether a code is enough by itself',
+      }).textContent,
+    ).toContain('Needs another code or documentation47')
 
     // Every entry counts under one federal category here, so no note.
     expect(screen.queryByText(FEDERAL_OVERLAP_NOTE)).toBeNull()
@@ -172,16 +174,18 @@ describe('/states/:slug', () => {
     const rows = within(cats).getAllByRole('row').slice(1)
     expect(rows[0]?.textContent).toContain('Mental health › Psychosis')
     expect(rows[0]?.textContent).toContain('Disabling mental disorder')
-    expect(rows[0]?.textContent).toContain('Confirmed')
+    expect(rows[0]?.textContent).toContain('Reviewed')
     expect(rows[1]?.textContent).toContain('(no category)')
-    expect(rows[1]?.textContent).toContain('Unclassified')
-    expect(rows[1]?.textContent).toContain('Not yet confirmed')
+    expect(rows[1]?.textContent).toContain('Not yet classified')
+    expect(rows[1]?.textContent).toContain('Not yet reviewed (automatic suggestion)')
     // Each category opens the code table on it, with this state as the first column.
     const first = rows[0]
     if (!first) throw new Error('no category rows')
     expect(
       within(first)
-        .getByRole('link', { name: 'Compare Mental health › Psychosis with other states' })
+        .getByRole('link', {
+          name: 'Compare these codes (Mental health › Psychosis) with other states',
+        })
         .getAttribute('href'),
     ).toBe(
       '/compare/codes?states=GA&ownState=GA&ownCategory=Mental+health&ownSubcategory=Psychosis',
@@ -230,7 +234,7 @@ describe('/states/:slug', () => {
     await renderRoute('/states/mt')
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Montana' })).toBeTruthy()
-    expect(screen.getByText(/Montana has announced a list/)).toBeTruthy()
+    expect(screen.getByText(/Montana has announced a medical frailty code list/)).toBeTruthy()
     expect(screen.queryByRole('table')).toBeNull()
   })
 

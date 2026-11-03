@@ -71,8 +71,9 @@ beforeEach(() => {
   )
 })
 
-const ALCOHOL_MAP = 'Alcohol use: each state’s share of the codes any state lists'
-const PSYCHOSES_MAP = 'Psychoses: share of the category’s codes that each state lists'
+const ALCOHOL_MAP = 'Alcohol use: each state’s share of the entries any state lists'
+const PSYCHOSES_MAP =
+  'Psychoses: share of the category’s diagnosis codes that each state’s list includes'
 
 describe('the tile map', () => {
   it('shows the first category: a tile per state, numbers, links and full names', async () => {
@@ -89,14 +90,14 @@ describe('the tile map', () => {
     ])
 
     const mt = within(map).getByRole('link', {
-      name: 'Montana, Alcohol use: 100% of the codes any state lists, not reviewed',
+      name: 'Montana, Alcohol use: 100% of the entries any state lists, not yet reviewed',
     })
     expect(mt.getAttribute('href')).toBe('/compare/alcohol-use?focus=MT')
     expect(mt.textContent).toBe('100%*')
     expect(mt.closest('li')?.textContent).toContain('MT')
 
     const ne = within(map).getByRole('link', { name: 'Nebraska, Alcohol use: 0%, none listed' })
-    expect(ne.textContent).toBe('none')
+    expect(ne.textContent).toBe('None')
     expect(ne.closest('li')?.className).toContain('hatch-none')
 
     // Only states with a list are links; the rest say so in words.
@@ -125,7 +126,7 @@ describe('the tile map', () => {
     const map = await screen.findByRole('group', { name: PSYCHOSES_MAP })
     expect(
       within(map)
-        .getByRole('link', { name: 'Montana, Psychoses: 33% of the category’s codes' })
+        .getByRole('link', { name: 'Montana, Psychoses: 33% of the category’s diagnosis codes' })
         .getAttribute('href'),
     ).toBe('/compare/psychoses?focus=MT')
 
@@ -156,7 +157,7 @@ describe('the tile map', () => {
         ?.querySelector('td')
         ?.textContent.replace(/\s+/g, ' ')
         .trim()
-    expect(text('Montana')).toBe('100% (not reviewed)')
+    expect(text('Montana')).toBe('100% (not yet reviewed)')
     expect(text('Nebraska')).toBe('None listed')
     expect(text('Alabama')).toBe('No list on this site yet')
     expect(within(table).getByRole('link', { name: '100%' }).getAttribute('href')).toBe(
@@ -169,7 +170,7 @@ describe('the Map tab page', () => {
   it('shows the same map under its own heading, with the compare tabs', async () => {
     await renderRoute('/compare/map')
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'One category across the country' }),
+      await screen.findByRole('heading', { level: 1, name: 'One category, every state' }),
     ).toBeTruthy()
     expect(
       within(screen.getByRole('navigation', { name: 'Compare views' }))
@@ -178,7 +179,7 @@ describe('the Map tab page', () => {
     ).toBe('page')
     const map = await screen.findByRole('group', { name: ALCOHOL_MAP })
     expect(within(map).getAllByRole('listitem')).toHaveLength(51)
-    expect(document.title).toMatch(/^One category across the country \| /)
+    expect(document.title).toMatch(/^One category, every state \| /)
   })
 
   it('says so when no category is published', async () => {

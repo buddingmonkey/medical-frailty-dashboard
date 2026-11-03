@@ -30,8 +30,8 @@ describe('all states page', () => {
     await renderRoute('/states')
 
     expect(await screen.findByRole('heading', { level: 1, name: 'All states' })).toBeTruthy()
-    expect(await screen.findByText(/0 of 51 states and DC have a list/)).toBeTruthy()
-    const table = screen.getByRole('table', { name: 'State frailty code lists' })
+    expect(await screen.findByText(/0 of the 50 states and DC have a list/)).toBeTruthy()
+    const table = screen.getByRole('table', { name: 'State medical frailty code lists' })
     expect(within(table).getByRole('link', { name: 'Montana' }).getAttribute('href')).toBe(
       '/states/mt',
     )

@@ -51,7 +51,7 @@ VALUES
 
 -- Nebraska (synthetic, M5 step 7): F10.20 under another rule than Montana's, Z99.11 under
 -- another rule, and J44.9 that Montana does not list. No placements: the comparison puts
--- J44.9 and Z99.11 in "Not in a unified category", F10.20 under Montana's "Test alcohol use".
+-- J44.9 and Z99.11 in "Not in any comparison category", F10.20 under Montana's "Test alcohol use".
 INSERT INTO source_documents
   (id, state_id, title, url, publisher_date, file_type, sha256, r2_key, byte_size, uploaded_by)
 VALUES

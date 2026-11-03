@@ -95,17 +95,17 @@ describe('coverage numbers and shades', () => {
     const universe = category(1, { label: 'Serious mental illness' })
     const union = category(2, { label: 'Equipment', coverageBasis: 'union' })
     expect(overviewCellLabel('Georgia', universe, cell(1, 0.5, { reviewed: false }))).toBe(
-      'Georgia, Serious mental illness: 50% of the category’s codes, not reviewed',
+      'Georgia, Serious mental illness: 50% of the category’s diagnosis codes, not yet reviewed',
     )
     expect(overviewCellLabel('Montana', union, cell(2, 1))).toBe(
-      'Montana, Equipment: 100% of the codes any state lists',
+      'Montana, Equipment: 100% of the entries any state lists',
     )
     expect(overviewCellLabel('Montana', universe, cell(1, 0))).toBe(
       'Montana, Serious mental illness: 0%, none listed',
     )
     // Entries that cover none of the category's codes (HCPCS, say) are not "none listed".
     expect(overviewCellLabel('Louisiana', universe, cell(1, 0, { entries: 3 }))).toBe(
-      'Louisiana, Serious mental illness: 0% of the category’s codes, not reviewed',
+      'Louisiana, Serious mental illness: 0% of the category’s diagnosis codes, not yet reviewed',
     )
   })
 
@@ -224,13 +224,13 @@ describe('ordering the states', () => {
       overviewOrderAnnouncement({ by: 'category', unifiedId: 2, dir: 'desc' }, categories),
     ).toBe('Sorted by Kidney, highest first.')
     expect(overviewOrderAnnouncement({ by: 'overall', dir: 'asc' }, categories)).toBe(
-      'Sorted by overall coverage, lowest first.',
+      'Sorted by the average across categories, lowest first.',
     )
     expect(overviewOrderAnnouncement({ by: 'name' }, categories)).toBe(
       'States in order of name, states with a list first.',
     )
     expect(overviewOrderAnnouncement({ by: 'similar' }, categories)).toBe(
-      'States with similar coverage placed next to each other.',
+      'States with similar numbers placed next to each other.',
     )
   })
 })

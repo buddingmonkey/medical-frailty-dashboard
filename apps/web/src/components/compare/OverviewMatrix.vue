@@ -11,7 +11,10 @@ import {
   type OverviewOrder,
   overviewOverall,
   orderOverviewStates,
+  OVERVIEW_HEADING,
   OVERVIEW_NO_LIST,
+  OVERVIEW_OVERALL_HEADING,
+  OVERVIEW_UNION_MARK,
   type PublicOverviewResponse,
 } from '@mfcd/shared'
 import { computed } from 'vue'
@@ -68,7 +71,7 @@ const shade: Record<CoverageBand, string> = {
   <div
     class="max-h-[75vh] overflow-auto rounded-lg border border-border"
     role="region"
-    aria-label="Which states cover what, table"
+    :aria-label="`${OVERVIEW_HEADING}, table`"
     tabindex="0"
   >
     <table class="min-w-full border-separate border-spacing-0 text-sm">
@@ -106,7 +109,8 @@ const shade: Record<CoverageBand, string> = {
               class="inline-flex items-end gap-1 font-semibold"
               @click="sortBy('overall')"
             >
-              Overall<span aria-hidden="true" class="w-3 text-xs">{{ arrow('overall') }}</span>
+              {{ OVERVIEW_OVERALL_HEADING
+              }}<span aria-hidden="true" class="w-3 text-xs">{{ arrow('overall') }}</span>
             </button>
           </th>
         </tr>
@@ -122,9 +126,7 @@ const shade: Record<CoverageBand, string> = {
               <RouterLink :to="`/compare/${c.slug}`" class="text-left"
                 >{{ c.label
                 }}<template v-if="c.coverageBasis === 'union'"
-                  >&nbsp;†<span class="sr-only">
-                    (share of the codes any state lists)</span
-                  ></template
+                  >&nbsp;†<span class="sr-only">{{ ` ${OVERVIEW_UNION_MARK}` }}</span></template
                 ></RouterLink
               >
               <button

@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { compareCellText, type DrillCell, drillFiledUnder } from '@mfcd/shared'
+import {
+  compareCellText,
+  type DrillCell,
+  drillFiledUnder,
+  STATE_CATEGORY_PREFIX,
+} from '@mfcd/shared'
 import { computed } from 'vue'
 
 import QualificationBadge from './QualificationBadge.vue'
@@ -20,7 +25,7 @@ const filedUnder = computed(() => (props.cell.match ? drillFiledUnder(props.cell
     <span v-if="cell.match.tier" class="block text-xs">{{ cell.match.tier }}</span>
     <QualificationBadge :match="cell.match" class="mt-0.5" />
     <span v-if="filedUnder" class="block text-xs text-muted-foreground"
-      >Filed under {{ filedUnder }}</span
+      >{{ STATE_CATEGORY_PREFIX }} {{ filedUnder }}</span
     >
   </template>
 </template>

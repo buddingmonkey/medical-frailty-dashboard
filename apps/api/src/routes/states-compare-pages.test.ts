@@ -69,17 +69,17 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
   it('renders the summary and only the differences as a real table, in column order', async () => {
     const app = appHtml(await (await get('/compare/states/ga-vs-mt')).text())
     expect(app).toContain('<h1>Georgia vs Montana</h1>')
-    expect(app).toMatch(/<dt>Only Georgia<\/dt>\s*<dd>1<\/dd>/)
-    expect(app).toMatch(/<dt>Only Montana<\/dt>\s*<dd>2<\/dd>/)
-    expect(app).toMatch(/<dt>Both<\/dt>\s*<dd>4<\/dd>/)
-    expect(app).toMatch(/<dt>Similarity<\/dt>\s*<dd>0\.44<\/dd>/)
+    expect(app).toMatch(/<dt>Only Georgia includes<\/dt>\s*<dd>1<\/dd>/)
+    expect(app).toMatch(/<dt>Only Montana includes<\/dt>\s*<dd>2<\/dd>/)
+    expect(app).toMatch(/<dt>Both include<\/dt>\s*<dd>4<\/dd>/)
+    expect(app).toMatch(/<dt>Similarity \(0–1\)<\/dt>\s*<dd>0\.44<\/dd>/)
     expect(app).toMatch(/<caption>\s*Codes where Georgia and Montana differ\s*<\/caption>/)
     expect(app).toMatch(/<th scope="col">Georgia<\/th>\s*<th scope="col">Montana<\/th>/)
     expect(app).toMatch(
       /<th scope="rowgroup" colspan="2"><a href="\/compare\/serious-mental-illness">Serious mental illness<\/a>[^<]*<\/th>\s*<td>3 codes<\/td>\s*<td>5 codes<\/td>/,
     )
     expect(app).toMatch(
-      /<th scope="row">F31\.\*<\/th>\s*<td>Code F31<\/td>\s*<td>Listed; Needs another code[^<]*<\/td>\s*<td>Covered by F31\.\*–F32\.\*; Qualifies alone/,
+      /<th scope="row">F31\.\*<\/th>\s*<td>Code F31<\/td>\s*<td>Listed; Needs another code[^<]*<\/td>\s*<td>Covered by F31\.\*–F32\.\*; Enough by itself/,
     )
     expect(app).not.toMatch(/<th scope="row">F20\.0<\/th>/)
     // Links: show every code, the CSV, the pickers' form.
@@ -100,9 +100,11 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
   it('three states put codes in no unified category last', async () => {
     const app = appHtml(await (await get('/compare/states/ga-vs-mt-vs-ne')).text())
     expect(app).toContain('<h1>Georgia vs Montana vs Nebraska</h1>')
-    expect(app).toMatch(/<dt>All 3<\/dt>\s*<dd>1<\/dd>/)
-    expect(app).not.toContain('<dt>Similarity</dt>')
-    expect(app.indexOf('Kidney failure')).toBeLessThan(app.indexOf('Not in a unified category'))
+    expect(app).toMatch(/<dt>All 3 include<\/dt>\s*<dd>1<\/dd>/)
+    expect(app).not.toContain('<dt>Similarity (0–1)</dt>')
+    expect(app.indexOf('Kidney failure')).toBeLessThan(
+      app.indexOf('Not in any comparison category'),
+    )
     expect(app).toMatch(/<th scope="row">Z99\.2<\/th>/)
   })
 
@@ -158,10 +160,10 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
     )
     expect(lines).toHaveLength(8)
     expect(lines).toContain(
-      'ICD-10-CM,F31.*,Code F31,CMS,Serious mental illness,yes,Listed,F31.*,,Needs another code,Behavioral Health,Covered by F31.*–F32.*,F31.*–F32.*,,Qualifies alone,SMI',
+      'ICD-10-CM,F31.*,Code F31,CMS,Serious mental illness,yes,Listed,F31.*,,Needs another code or documentation,Behavioral Health,Covered by F31.*–F32.*,F31.*–F32.*,,Enough by itself,SMI',
     )
     expect(lines).toContain(
-      'ICD-10-CM,F20.0,Code F200,CMS,Serious mental illness,no,Listed,F20.0,,Qualifies alone,Behavioral Health,Covered by F20.0–F20.9,F20.0–F20.9,,Qualifies alone,SMI',
+      'ICD-10-CM,F20.0,Code F200,CMS,Serious mental illness,no,Listed,F20.0,,Enough by itself,Behavioral Health,Covered by F20.0–F20.9,F20.0–F20.9,,Enough by itself,SMI',
     )
     expect((await get('/compare/states/ga-vs-zz/codes.csv')).status).toBe(404)
     expect((await get('/compare/states/ga-vs-la/codes.csv')).status).toBe(404)

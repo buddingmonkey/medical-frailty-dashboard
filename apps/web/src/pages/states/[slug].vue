@@ -1,17 +1,28 @@
 <script setup lang="ts">
 import {
+  ADDED_HEADING,
   type CodeSystem,
   codeSystemLabels,
+  COMPARE_THESE_CODES,
   compareSearchParams,
+  ENTRY_DEFINITION,
   FEDERAL_OVERLAP_NOTE,
   type FederalCategory,
   federalCategoryInfo,
   federalCountsOverlap,
   formatCount,
   formatDay,
+  NO_SOURCE_DATE,
+  noListText,
   pageTitles,
   type Qualification,
   qualificationLabels,
+  REVIEW_STATUS_HEADING,
+  reviewStatusText,
+  RULE_HEADING,
+  SOURCE_DATE_HEADING,
+  sourceDetailsText,
+  STATE_COUNT_CAPTIONS,
   stateCategoriesIntro,
 } from '@mfcd/shared'
 import { computed } from 'vue'
@@ -25,7 +36,7 @@ import { usePublicState } from '../../lib/public-states'
 
 // One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
 // the federal ones, the states with the most similar lists (M5 step 7), the source documents,
-// version history and our notes.
+// version history and the site's notes.
 
 const route = useRoute('/states/[slug]')
 const slug = computed(() => route.params.slug.toLowerCase())
@@ -49,18 +60,18 @@ const countTables = computed(() => {
   if (!p) return []
   return [
     {
-      caption: 'Entries by code system',
+      caption: STATE_COUNT_CAPTIONS.system,
       heading: 'Code system',
       rows: nonZero(p.bySystem, (k: CodeSystem) => codeSystemLabels[k]),
     },
     {
-      caption: 'Entries by federal category',
+      caption: STATE_COUNT_CAPTIONS.federal,
       heading: 'Federal category',
       rows: nonZero(p.byFederalCategory, (k: FederalCategory) => federalCategoryInfo[k].label),
     },
     {
-      caption: 'Entries by whether a code qualifies alone',
-      heading: 'Qualification',
+      caption: STATE_COUNT_CAPTIONS.rule,
+      heading: RULE_HEADING,
       rows: nonZero(p.byQualification, (k: Qualification) => qualificationLabels[k]),
     },
   ]
@@ -105,12 +116,7 @@ function categoryName(category: string, subcategory: string) {
     </header>
 
     <section v-if="!published" class="max-w-prose">
-      <p v-if="state.status === 'announced'" class="text-lg">
-        {{ state.name }} has announced a list of medical frailty codes. It is not on this site yet.
-      </p>
-      <p v-else class="text-lg">
-        {{ state.name }} has not published a list of medical frailty codes that we know of.
-      </p>
+      <p class="text-lg">{{ noListText(state.name, state.status === 'announced') }}</p>
     </section>
 
     <template v-else>
@@ -118,19 +124,19 @@ function categoryName(category: string, subcategory: string) {
         <h2 id="summary-heading" class="sr-only">Summary</h2>
         <dl class="grid gap-4 sm:grid-cols-3">
           <div class="rounded-lg border border-border bg-surface p-4">
-            <dt class="text-sm text-muted-foreground">Entries on the list</dt>
+            <dt class="text-sm text-muted-foreground">Entries in the state’s list</dt>
             <dd class="text-2xl font-semibold tabular-nums">
               {{ formatCount(published.totalEntries) }}
             </dd>
           </div>
           <div class="rounded-lg border border-border bg-surface p-4">
-            <dt class="text-sm text-muted-foreground">State list dated</dt>
+            <dt class="text-sm text-muted-foreground">{{ SOURCE_DATE_HEADING }}</dt>
             <dd class="text-lg font-semibold">
-              {{ published.sourceDate ? formatDay(published.sourceDate) : 'Not stated' }}
+              {{ published.sourceDate ? formatDay(published.sourceDate) : NO_SOURCE_DATE }}
             </dd>
           </div>
           <div class="rounded-lg border border-border bg-surface p-4">
-            <dt class="text-sm text-muted-foreground">On this site</dt>
+            <dt class="text-sm text-muted-foreground">{{ ADDED_HEADING }}</dt>
             <dd class="text-lg font-semibold">
               Version {{ published.versionNo
               }}<template v-if="published.updatedAt"
@@ -139,10 +145,7 @@ function categoryName(category: string, subcategory: string) {
             </dd>
           </div>
         </dl>
-        <p class="max-w-prose text-sm text-muted-foreground">
-          An entry is one line of the state’s list: a single code, or a group of codes written with
-          a wildcard or a range.
-        </p>
+        <p class="max-w-prose text-sm text-muted-foreground">{{ ENTRY_DEFINITION }}</p>
       </section>
 
       <section aria-labelledby="counts-heading" class="space-y-4">
@@ -198,7 +201,7 @@ function categoryName(category: string, subcategory: string) {
                 <th scope="col" class="py-2 pr-4">State category</th>
                 <th scope="col" class="py-2 pr-4">Federal category</th>
                 <th scope="col" class="py-2 pr-4 text-right">Entries</th>
-                <th scope="col" class="py-2 pr-4">Mapping</th>
+                <th scope="col" class="py-2 pr-4">{{ REVIEW_STATUS_HEADING }}</th>
                 <th scope="col" class="py-2"><span class="sr-only">Compare</span></th>
               </tr>
             </thead>
@@ -213,13 +216,13 @@ function categoryName(category: string, subcategory: string) {
                 </th>
                 <td class="py-2 pr-4">{{ federalCategoryInfo[c.federalCategory].label }}</td>
                 <td class="py-2 pr-4 text-right tabular-nums">{{ formatCount(c.entries) }}</td>
-                <td class="py-2 pr-4">{{ c.confirmed ? 'Confirmed' : 'Not yet confirmed' }}</td>
+                <td class="py-2 pr-4">{{ reviewStatusText(c.confirmed) }}</td>
                 <td class="py-2">
                   <RouterLink
                     :to="compareLink(c.stateCategory, c.stateSubcategory)"
                     class="text-link"
-                    :aria-label="`Compare ${categoryName(c.stateCategory, c.stateSubcategory)} with other states`"
-                    >Compare</RouterLink
+                    :aria-label="`${COMPARE_THESE_CODES} (${categoryName(c.stateCategory, c.stateSubcategory)}) with other states`"
+                    >{{ COMPARE_THESE_CODES }}</RouterLink
                   >
                 </td>
               </tr>
@@ -243,11 +246,7 @@ function categoryName(category: string, subcategory: string) {
               >{{ s.title }}</a
             >
             <span v-else>{{ s.title }} (link not known)</span>
-            <span class="text-muted-foreground">
-              · {{ s.fileType.toUpperCase() }}
-              <template v-if="s.publisherDate">· dated {{ formatDay(s.publisherDate) }}</template>
-              · retrieved {{ formatDay(s.retrievedAt) }}
-            </span>
+            <span class="text-muted-foreground"> · {{ sourceDetailsText(s) }}</span>
           </li>
         </ul>
       </section>
@@ -286,7 +285,7 @@ function categoryName(category: string, subcategory: string) {
               <tr>
                 <th scope="col" class="py-2 pr-4">Version</th>
                 <th scope="col" class="py-2 pr-4">Status</th>
-                <th scope="col" class="py-2 pr-4">Published here</th>
+                <th scope="col" class="py-2 pr-4">{{ ADDED_HEADING }}</th>
                 <th scope="col" class="py-2 text-right">Entries</th>
               </tr>
             </thead>

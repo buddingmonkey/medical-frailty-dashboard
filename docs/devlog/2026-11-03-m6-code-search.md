@@ -97,3 +97,27 @@ Search for a code by number or words, and a page per code that shows every state
   step 5, which owns server rendering.
 - `check:full`: 55 e2e tests, including the new one (type, see results, open a code page,
   axe in both themes).
+
+## Step 3b: plain-language pass (10:53–11:25 builder; lead merge to 11:45)
+- The text review's findings were applied to every public page: 52 of 58 in full, 3 in part
+  and 3 on purpose not at all; the reasons are in the branch's status bullet.
+  - "Cover" and "qualifies" now describe what a list includes, never a member's eligibility.
+    "Qualifies alone" is now "Enough by itself", under the heading "State's rule".
+  - Numbers say what they count; for example, the overview share counts diagnosis codes
+    only.
+  - A footer disclaimer was added. One name is used for each idea.
+  - The new code page says "Included" and "Not included".
+- Migration 0013 rewords the 19 starter categories. A field changes only while it still
+  holds 0011's exact text, so the project lead's edits on production are kept (tested).
+- Every reworded legal-list item stays on the list, with the new wording and
+  "(reworded 2026-11-03)". The "learn more" places that wait for the About/methodology page
+  (M8 step 4) are listed in `docs/status.md`.
+
+### Corrections and surprises
+- The builder updated the e2e tests' strings but could not run them (builders skip
+  `check:full`). At the merge, 11 failed, all because of old strings, not broken pages. The
+  lead read the real names from Playwright's page snapshots and fixed the 6 files.
+- Merging step 2 and 3b clashed on the one-line legal list row. The lead kept both.
+- Migration 0013 had no drizzle journal entry. The lead added it, with a copy of 0012's
+  snapshot, and `db:generate` confirmed no drift.
+- Numbers: 70 files, +1,600/−596. `check:full`: 583 unit, 238 component, 365 API, 55 e2e.

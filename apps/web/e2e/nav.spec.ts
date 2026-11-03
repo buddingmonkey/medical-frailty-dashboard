@@ -16,14 +16,14 @@ test('the nav bar reaches every page and marks the current one', async ({ page }
   await expect(nav.getByRole('link', { name: 'States' })).toHaveAttribute('aria-current', 'page')
 
   await page
-    .getByRole('table', { name: 'State frailty code lists' })
+    .getByRole('table', { name: 'State medical frailty code lists' })
     .getByRole('link', { name: 'Montana' })
     .click()
   await expect(nav.getByRole('link', { name: 'States' })).toHaveAttribute('aria-current', 'true')
 
   await nav.getByRole('link', { name: 'Compare' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Which states cover what' }),
+    page.getByRole('heading', { level: 1, name: 'How much of each category each state lists' }),
   ).toBeVisible()
   await nav.getByRole('link', { name: 'Home' }).click()
   await expect(page).toHaveURL(/\/$/)

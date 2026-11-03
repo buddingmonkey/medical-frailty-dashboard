@@ -131,11 +131,11 @@ describe('GET /compare/categories (server-rendered, indexed)', () => {
 
   it('lists every published category under its federal category, with its definition', async () => {
     const app = appHtml(await (await get('/compare/categories')).text())
-    expect(app).toContain('<h1>Categories for comparing states</h1>')
+    expect(app).toContain('<h1>Comparison categories</h1>')
     expect(app).toContain(CATEGORIES_INTRO)
     const flat = app.replace(/\s+/g, ' ')
     expect(flat).toContain(
-      '<h2>Disabling mental disorder</h2> <ul> <li> <a href="/compare/serious-mental-illness">Serious mental illness</a> <p>Test category.</p> </li> </ul>',
+      '<h2>Disabling mental disorder</h2> <p>Clause (cc) of the law: “an individual with a disabling mental disorder”</p> <ul> <li> <a href="/compare/serious-mental-illness">Serious mental illness</a> <p>Test category.</p> </li> </ul>',
     )
     expect(flat).toContain('<a href="/compare/equipment">Equipment</a>')
     expect(flat).toContain('<a href="/compare/kidney-failure">Kidney failure</a>')
@@ -153,11 +153,11 @@ describe('GET /compare/map (server-rendered, indexed)', () => {
     expect(html).toContain('<link rel="canonical" href="http://frailty.example.org/compare/map" />')
     expect(html).not.toContain('noindex')
     const app = appHtml(html)
-    expect(app).toContain('<h1>One category across the country</h1>')
+    expect(app).toContain('<h1>One category, every state</h1>')
     expect(app).toContain(TILE_MAP_INTRO)
     expect(app).toContain('<form method="get" action="/compare/map">')
     expect(app).toMatch(
-      /<caption>\s*Serious mental illness: share of the category’s codes that each state lists\s*<\/caption>/,
+      /<caption>\s*Serious mental illness: share of the category’s diagnosis codes that each state’s list includes\s*<\/caption>/,
     )
 
     const kidney = appHtml(await (await get('/compare/map?category=kidney-failure')).text())

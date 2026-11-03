@@ -19,7 +19,7 @@ import {
 export const TILE_MAP_COLUMNS = 11
 export const TILE_MAP_ROWS = 8
 
-export const TILE_MAP_HEADING = 'One category across the country'
+export const TILE_MAP_HEADING = 'One category, every state'
 
 /** The home page's link to the Map tab, under its States section (Vue and server-rendered). */
 export const TILE_MAP_HOME_LINK = 'See one category across the country on the map'
@@ -99,7 +99,7 @@ export const usTileLayout: readonly TileMapPlace[] = [
 /** A tile's short text for a state without a list (the table says `OVERVIEW_NO_LIST`). */
 export const TILE_MAP_NO_LIST = 'No list'
 /** A tile's text for a state with a list but no entry in the category. */
-export const TILE_MAP_NONE = 'none'
+export const TILE_MAP_NONE = 'None'
 
 /** The overview's four bands, plus the shade of a state without a list. */
 export type TileMapShade = CoverageBand | 'nolist'
@@ -191,15 +191,18 @@ export function tileMapTiles(
 /** The map's and the table's name: what the number is a share of. */
 export const tileMapCaption = (category: OverviewCategory): string =>
   category.coverageBasis === 'universe'
-    ? `${category.label}: share of the category’s codes that each state lists`
-    : `${category.label}: each state’s share of the codes any state lists`
+    ? `${category.label}: share of the category’s diagnosis codes that each state’s list includes`
+    : `${category.label}: each state’s share of the entries any state lists`
 
 /** Under the map when a tile carries the * mark. */
 export const TILE_MAP_NOT_REVIEWED_NOTE =
-  '* Not reviewed: some of the state’s codes in this category were placed by their CCSR group, ' +
-  'and an admin has not yet reviewed how the state’s categories map to ours.'
+  '* Not yet reviewed: some of the state’s entries were put in this category automatically (by ' +
+  'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
+  'own categories. The number may change after review.'
 
 /** The Map tab's introduction, in the Vue page and the server-rendered HTML. */
 export const TILE_MAP_INTRO =
-  'Pick a category to see every state at once. Each number is the share of the category’s ' +
-  'codes that the state lists; select a state to see its codes in the category.'
+  'Pick a comparison category to see every state at once. Each number is the share of the ' +
+  'category’s billable ICD-10-CM diagnosis codes that the state’s list includes (for a category ' +
+  'with no reference list of diagnosis codes, the share of the entries any state lists there); ' +
+  'select a state to see its codes in the category.'

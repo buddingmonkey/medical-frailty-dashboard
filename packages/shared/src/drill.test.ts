@@ -165,7 +165,7 @@ describe('wording', () => {
   it('counts states', () => {
     expect(drillCountText(37, 44)).toBe('37 of 44 states')
     expect(drillCountText(1, 1)).toBe('1 of 1 state')
-    expect(drillGroupCountText(3, 4)).toBe('3 of 4 list any')
+    expect(drillGroupCountText(3, 4)).toBe('3 of 4 include any')
   })
 
   it('summarises the states’ rules, inferred ones said so', () => {
@@ -174,8 +174,8 @@ describe('wording', () => {
         { qualification: 'standalone', count: 3, inferred: 1 },
         { qualification: 'unknown', count: 1, inferred: 0 },
       ]),
-    ).toBe('Qualifies alone 3 (1 inferred); State doesn’t say 1')
-    expect(drillRulesText([])).toBe('No state lists it')
+    ).toBe('Enough by itself: 3 states (1 inferred); State doesn’t say: 1 state')
+    expect(drillRulesText([])).toBe('No state includes it')
   })
 
   it('names the state’s own category, if it has one', () => {
@@ -188,10 +188,10 @@ describe('wording', () => {
 
   it('says why codes no state lists can or cannot be shown', () => {
     expect(drillUniverseNote(158)).toBe(
-      'Full code list: the 158 billable ICD-10-CM codes in the category’s CCSR groups.',
+      'This category’s reference list has 158 billable ICD-10-CM codes (from its CCSR groups); turn this on to see the ones no state includes.',
     )
     expect(drillUniverseNote(0)).toBe(
-      'No full code list for this category, so only codes some state lists are shown.',
+      'This category has no reference list, so only codes some state includes are shown.',
     )
   })
 })

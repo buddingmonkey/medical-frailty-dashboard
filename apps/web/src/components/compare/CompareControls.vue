@@ -2,6 +2,7 @@
 import {
   codeSystemLabels,
   codeSystems,
+  COMPARE_ALONE_LABEL,
   federalCategories,
   federalCategoryInfo,
   type PublicStateSummary,
@@ -17,6 +18,14 @@ import { usePublicState } from '../../lib/public-states'
 
 const selection = defineModel<CompareSelection>({ required: true })
 const props = defineProps<{ states: readonly PublicStateSummary[] }>()
+
+/** The five categories in the law first, then the two that are not (M6 step 3b). */
+const statutoryCategories = federalCategories.filter(
+  (c) => federalCategoryInfo[c].statuteClause !== null,
+)
+const otherCategories = federalCategories.filter(
+  (c) => federalCategoryInfo[c].statuteClause === null,
+)
 
 /** Only states with a list can be compared. */
 const withList = computed(() => props.states.filter((s) => s.published !== null))
@@ -85,7 +94,7 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
             :checked="selection.mode === 'federal'"
             @change="update({ mode: 'federal' })"
           />
-          A federal category in the law
+          A federal category
         </label>
         <label class="flex items-center gap-2">
           <input
@@ -110,9 +119,16 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
           @change="update({ category: valueOf($event) as CompareSelection['category'] })"
         >
           <option value="">Choose a category</option>
-          <option v-for="c in federalCategories" :key="c" :value="c">
-            {{ federalCategoryInfo[c].label }}
-          </option>
+          <optgroup label="In the law">
+            <option v-for="c in statutoryCategories" :key="c" :value="c">
+              {{ federalCategoryInfo[c].label }}
+            </option>
+          </optgroup>
+          <optgroup label="Not in the law">
+            <option v-for="c in otherCategories" :key="c" :value="c">
+              {{ federalCategoryInfo[c].label }}
+            </option>
+          </optgroup>
         </select>
       </div>
 
@@ -162,7 +178,7 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
 
     <fieldset class="space-y-2">
       <legend class="font-semibold">
-        States<span v-if="selection.mode === 'own'" class="font-normal"> to compare with</span>
+        {{ selection.mode === 'own' ? 'States to compare with' : 'States to compare' }}
       </legend>
       <p v-if="withList.length === 0" class="text-sm text-muted-foreground">
         No state has a list on this site yet.
@@ -184,7 +200,7 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
         :checked="selection.alone"
         @change="update({ alone: checkedOf($event) })"
       />
-      Only codes that qualify alone in at least one state
+      {{ COMPARE_ALONE_LABEL }}
     </label>
   </form>
 </template>

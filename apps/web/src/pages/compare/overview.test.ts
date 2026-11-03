@@ -94,7 +94,7 @@ beforeEach(() => {
 
 async function matrix() {
   return screen.findByRole('table', {
-    name: 'Share of each category’s codes that each state lists',
+    name: 'Share of each category’s diagnosis codes that each state’s list includes',
   })
 }
 
@@ -108,7 +108,10 @@ describe('overview matrix', () => {
     await renderRoute('/compare')
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Which states cover what' }),
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'How much of each category each state lists',
+      }),
     ).toBeTruthy()
     const table = await matrix()
     const [federal, names] = within(table).getAllByRole('row')
@@ -122,7 +125,7 @@ describe('overview matrix', () => {
       ['Disabling mental disorder', '1'],
       ['Physical, intellectual or developmental disability', '1'],
       ['Serious or complex medical condition', '1'],
-      ['Overall', null],
+      ['Overall (average)', null],
     ])
     // Each header links to its category page and has its own sort button.
     expect(
@@ -131,14 +134,17 @@ describe('overview matrix', () => {
         .map((l) => [l.textContent.replace(/\s+/g, ' ').trim(), l.getAttribute('href')]),
     ).toEqual([
       ['Serious mental illness', '/compare/serious-mental-illness'],
-      ['Equipment † (share of the codes any state lists)', '/compare/equipment'],
+      ['Equipment † (share of the entries any state lists)', '/compare/equipment'],
       ['Kidney failure', '/compare/kidney-failure'],
     ])
     for (const label of ['Serious mental illness', 'Equipment', 'Kidney failure']) {
       expect(within(names).getByRole('button', { name: `Sort by ${label}` })).toBeTruthy()
     }
     // The scrolling region can be reached by keyboard and has a name.
-    expect(screen.getByRole('region', { name: /which states cover what, table/i }).tabIndex).toBe(0)
+    expect(
+      screen.getByRole('region', { name: /how much of each category each state lists, table/i })
+        .tabIndex,
+    ).toBe(0)
   })
 
   it('shows every number as text and links each cell to its drill-down', async () => {
@@ -150,14 +156,14 @@ describe('overview matrix', () => {
       '/states/ga',
     )
     const smi = within(georgia).getByRole('link', {
-      name: 'Georgia, Serious mental illness: 50% of the category’s codes, not reviewed',
+      name: 'Georgia, Serious mental illness: 50% of the category’s diagnosis codes, not yet reviewed',
     })
     expect(smi.getAttribute('href')).toBe('/compare/serious-mental-illness?focus=GA')
     expect(smi.textContent).toContain('50%')
     expect(smi.textContent).toContain('*')
     expect(
       within(georgia)
-        .getByRole('link', { name: 'Georgia, Equipment: 100% of the codes any state lists' })
+        .getByRole('link', { name: 'Georgia, Equipment: 100% of the entries any state lists' })
         .textContent.trim(),
     ).toBe('100%')
     const none = within(georgia).getByRole('link', {
@@ -201,11 +207,11 @@ describe('overview matrix', () => {
     expect(rowOrder(table)).toEqual(['Georgia', 'Montana', 'Nebraska', 'Alabama', 'Louisiana'])
     expect(status.textContent).toBe('Sorted by Kidney failure, lowest first.')
 
-    await user.click(within(table).getByRole('button', { name: 'Overall' }))
+    await user.click(within(table).getByRole('button', { name: 'Overall (average)' }))
     expect(header?.hasAttribute('aria-sort')).toBe(false)
     expect(
       within(table)
-        .getByRole('button', { name: 'Overall' })
+        .getByRole('button', { name: 'Overall (average)' })
         .closest('th')
         ?.getAttribute('aria-sort'),
     ).toBe('descending')
@@ -221,7 +227,7 @@ describe('overview matrix', () => {
     await user.selectOptions(order, 'similar')
     expect(rowOrder(table)).toEqual(['Montana', 'Georgia', 'Nebraska', 'Alabama', 'Louisiana'])
     expect(screen.getByRole('status').textContent).toBe(
-      'States with similar coverage placed next to each other.',
+      'States with similar numbers placed next to each other.',
     )
 
     await user.selectOptions(order, 'overall')
@@ -292,7 +298,7 @@ describe('overview matrix', () => {
     ).toEqual(['75% or more', '25–74%', '1–24%', 'None listed', 'No list on this site yet'])
     const notes = screen.getByRole('region', { name: 'Reading this table' })
     expect(notes.textContent).toContain('no matter which of the state’s own categories')
-    expect(notes.textContent).toContain('Not reviewed (*)')
+    expect(notes.textContent).toContain('* Not yet reviewed:')
     // The Single codes tab replaces the old link to the code table.
     expect(screen.queryByRole('link', { name: /compare single codes/i })).toBeNull()
   })

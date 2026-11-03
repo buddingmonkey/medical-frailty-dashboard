@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import {
   CCSR_CITATION,
+  CCSR_LINK_TEXT,
+  CCSR_URL,
   codeSystemLabels,
+  downloadTableText,
+  DRILL_ABOUT,
+  DRILL_COUNT_NOTE,
+  DRILL_DETAILS_PLACEHOLDER,
+  DRILL_UNIVERSE_LABEL,
+  drillCaption,
+  drillCcsrHeading,
   drillCodeTablePath,
   drillCsvPath,
   type DrillQuery,
@@ -11,6 +20,7 @@ import {
   drillShows,
   drillStatusText,
   drillUniverseNote,
+  federalCategoryClauseText,
   federalCategoryInfo,
   pageTitles,
 } from '@mfcd/shared'
@@ -20,12 +30,13 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import CompareTabs from '../../components/compare/CompareTabs.vue'
 import DrillDetails from '../../components/compare/DrillDetails.vue'
 import DrillTable from '../../components/compare/DrillTable.vue'
+import StatusLegend from '../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../lib/api'
 import { usePageTitle } from '../../lib/page-title'
 import { useDrill, useDrillDetail } from '../../lib/public-drill'
 
-// The category drill-down (roadmap M5 step 6): one unified category's codes, grouped and ranked
-// by how many states list them. The URL holds every choice (show, system, all, focus, page,
+// The category drill-down (roadmap M5 step 6): one comparison (unified) category's codes,
+// grouped and ranked by how many states include them. The URL holds every choice (show, system, all, focus, page,
 // code), so a link opens the same view; the Worker renders the same page as HTML.
 
 const route = useRoute('/compare/[categorySlug]')
@@ -84,9 +95,7 @@ const includeAll = computed({
   },
 })
 
-const caption = computed(() =>
-  category.value ? `${category.value.label}: codes by how many states list them` : '',
-)
+const caption = computed(() => (category.value ? drillCaption(category.value.label) : ''))
 const codeTablePath = computed(() => {
   const d = data.value
   if (!d) return '/compare/codes'
@@ -127,7 +136,16 @@ const codeTablePath = computed(() => {
         <h1 class="font-display text-4xl font-medium text-heading">{{ category.label }}</h1>
         <CompareTabs />
         <p class="max-w-prose text-sm text-muted-foreground">
-          Federal category: {{ federalCategoryInfo[category.federalCategory].label }}
+          {{ DRILL_ABOUT }}
+          <RouterLink to="/compare/categories" class="text-link"
+            >See every comparison category</RouterLink
+          >
+        </p>
+        <p class="max-w-prose text-sm text-muted-foreground">
+          Federal category: {{ federalCategoryInfo[category.federalCategory].label
+          }}<template v-if="federalCategoryClauseText(category.federalCategory)"
+            >. {{ federalCategoryClauseText(category.federalCategory) }}</template
+          >
         </p>
         <p class="max-w-prose">{{ category.definition }}</p>
         <p v-if="category.includes" class="max-w-prose">
@@ -138,14 +156,19 @@ const codeTablePath = computed(() => {
         </p>
         <details v-if="category.ccsr.length > 0" class="max-w-prose text-sm">
           <summary class="cursor-pointer font-semibold">
-            CCSR groups ({{ category.ccsr.length }})
+            {{ drillCcsrHeading(category.ccsr.length) }}
           </summary>
           <ul class="mt-2 list-disc space-y-0.5 pl-5">
             <li v-for="g in category.ccsr" :key="g.id">
               <span class="font-mono">{{ g.id }}</span> {{ g.description }}
             </li>
           </ul>
-          <p class="mt-2 text-muted-foreground">Source: {{ CCSR_CITATION }}</p>
+          <p class="mt-2 text-muted-foreground">
+            Source: {{ CCSR_CITATION }}
+            <a :href="CCSR_URL" rel="noopener noreferrer external" class="text-link">{{
+              CCSR_LINK_TEXT
+            }}</a>
+          </p>
         </details>
       </header>
 
@@ -206,7 +229,7 @@ const codeTablePath = computed(() => {
               :disabled="category.universeSize === 0"
               aria-describedby="drill-universe-note"
             />
-            Include codes no state lists
+            {{ DRILL_UNIVERSE_LABEL }}
           </label>
           <p id="drill-universe-note" class="text-xs text-muted-foreground">
             {{ drillUniverseNote(category.universeSize) }}
@@ -217,7 +240,9 @@ const codeTablePath = computed(() => {
       <div class="flex flex-wrap items-center justify-between gap-4">
         <p role="status" class="text-sm">{{ drillStatusText(data) }}</p>
         <p class="flex flex-wrap gap-x-4 text-sm">
-          <a :href="drillCsvPath(category.slug, query)" download>Download every row (CSV)</a>
+          <a :href="drillCsvPath(category.slug, query)" download>{{
+            downloadTableText(data.totalRows)
+          }}</a>
           <RouterLink :to="codeTablePath"
             >Compare single codes in
             {{ federalCategoryInfo[category.federalCategory].label }}</RouterLink
@@ -231,7 +256,10 @@ const codeTablePath = computed(() => {
       >
         <div class="min-w-0 space-y-4">
           <p v-if="data.groups.length === 0">No codes match this filter.</p>
-          <DrillTable v-else v-model:code="code" :data="data" :caption="caption" />
+          <template v-else>
+            <p class="max-w-prose text-sm text-muted-foreground">{{ DRILL_COUNT_NOTE }}</p>
+            <DrillTable v-model:code="code" :data="data" :caption="caption" />
+          </template>
           <nav v-if="data.pageCount > 1" aria-label="Pages" class="flex items-center gap-3">
             <button
               type="button"
@@ -250,6 +278,7 @@ const codeTablePath = computed(() => {
               Next page
             </button>
           </nav>
+          <StatusLegend />
         </div>
         <aside aria-label="Code details" class="xl:sticky xl:top-4 xl:self-start">
           <DrillDetails
@@ -262,7 +291,7 @@ const codeTablePath = computed(() => {
             The details could not be loaded.
           </p>
           <p v-else class="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            Choose “Details” on a code to see which states list it, how, and under which rule.
+            {{ DRILL_DETAILS_PLACEHOLDER }}
           </p>
         </aside>
       </div>
