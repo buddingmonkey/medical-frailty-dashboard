@@ -50,6 +50,8 @@ jobs:
       - run: pnpm --filter @mfcd/reference-data build
 
       - name: Load
+        # `shell: bash` adds pipefail, so a failed load fails the step despite the tee.
+        shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

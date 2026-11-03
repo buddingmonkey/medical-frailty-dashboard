@@ -1,0 +1,58 @@
+# Copies the state lists loaded on preview into production (scripts/copy-state-data.ts), once,
+# before preview is reset to seed data (docs/deployment.md, "Preview data"). Refuses to run when
+# production already has any state data. Run by hand from the Actions tab; it waits for the
+# `production` environment's required reviewer, like a production deploy.
+name: Copy state data
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "copy preview to production"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  copy:
+    name: copy preview → production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      # Never alongside a deploy or reference load of production (it may be migrating).
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - name: Confirm
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          [ "$CONFIRM" = "copy preview to production" ] || { echo "::error::Type the confirmation exactly"; exit 1; }
+          [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::Run from main"; exit 1; }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The script prints counts, state codes and the D1 bookmark only: never rows, wrangler's
+      # output or the export's signed download link.
+      - name: Copy
+        # `shell: bash` adds pipefail, so a failed copy fails the step despite the tee.
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/copy-state-data.ts --to production | tee -a "$GITHUB_STEP_SUMMARY"
