@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# CMS and AHRQ ship these files with CRLF line endings; the parser tests depend on that.
+packages/reference-data/fixtures/** -text

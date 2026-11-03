@@ -3,9 +3,10 @@
 Compare the medical codes each US state uses to decide who is **"medically frail"** and so
 exempt from the new Medicaid work requirements.
 
-> **Status: early development.** The scaffolding (web app, API, tests, CI) is in place; the
-> data features come next. Start with [`docs/status.md`](docs/status.md) and
-> [`docs/roadmap.md`](docs/roadmap.md). The site will stay private until it is ready.
+> **Status: in development, not yet public.** The map, compare, state and code pages and the
+> admin tools work; the real lists are loaded on the private production site, which stays
+> behind a pre-launch gate until the launch checks pass. Start with
+> [`docs/status.md`](docs/status.md) and [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Why this exists
 
@@ -30,7 +31,7 @@ own documents.
 - Health care providers and provider associations
 - Health care advocates and legal aid organizations
 
-## Planned features
+## Features
 
 - **US map:** every state's status, number of codes, code types and list date at a glance.
 - **Compare by category:** pick a category (for example, substance use disorder) and any
@@ -61,12 +62,14 @@ This project is being built by a small team with the help of an AI coding assist
 things wrong, so other organizations can learn from it:
 
 - [`docs/devlog/`](docs/devlog/README.md): session-by-session development log
-- [`docs/playbook.md`](docs/playbook.md): a guide for less-technical builders
+- [`docs/getting-started.md`](docs/getting-started.md): first-time setup for people who have never used a terminal (GitHub, Windows WSL, Claude Code, the site on your computer)
+- [`docs/playbook.md`](docs/playbook.md): how to make a change and send it as a pull request, for less-technical builders
 
 ## Documentation
 
 | Doc | What it covers |
 | --- | --- |
+| [getting started](docs/getting-started.md) | First-time setup, for non-technical contributors |
 | [status](docs/status.md) | Where things stand, decisions, open questions, dates to watch |
 | [roadmap](docs/roadmap.md) | Milestones and the launch gate |
 | [design wiki](docs/MedicalFrailtyCode-design-wiki.md) | Product goals and features |
@@ -80,15 +83,23 @@ things wrong, so other organizations can learn from it:
 
 ## Getting started (developers)
 
-You need Node 26 and pnpm 12.
+**New to terminals, Git or Claude Code?** Start with
+[`docs/getting-started.md`](docs/getting-started.md), then [`docs/playbook.md`](docs/playbook.md).
+Windows needs WSL: the project's scripts need Linux.
+
+Already comfortable? You need Node 26 (`.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`).
 
 ```bash
 pnpm install
-pnpm --filter @mfcd/web exec playwright install chromium   # once, for the browser tests
+pnpm db:migrate:local && pnpm db:ref:local && pnpm db:seed:local   # local database, ~1.5 min
 pnpm dev          # the whole site on http://localhost:8787
-pnpm check        # format, lint, types, unit, component and API tests
-pnpm check:full   # plus the build and browser tests (run before a pull request)
+pnpm check        # format, lint, types, unit, component and API tests, plus db-drift, refdata and scripts
+pnpm --filter @mfcd/web exec playwright install --with-deps chromium   # once, for pnpm check:full
+pnpm check:full   # plus the build and browser tests (CI runs it on every pull request)
 ```
+
+After `pnpm dev` starts, open Admin, Unified categories (`/admin/unified`) and press
+**Rebuild coverage** once, so Compare and the Map fill in.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and rules, and
 [`SECURITY.md`](SECURITY.md) to report a vulnerability.
