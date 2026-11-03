@@ -159,6 +159,13 @@ the public pages say who reviewed it and when.
 5. Code detail pages server-rendered with `DefinedTerm` JSON-LD, a plain-sentence answer per
    state, and a sitemap entry for every listed code (`docs/seo.md`).
 
+Added by the project lead during M6 (2026-11-03): **3b** a plain-language pass on all public
+text for a state Medicaid reader (from a reviewer agent's 58 findings; the legal list keeps
+every reworded item), and **3c** contributor docs (`docs/getting-started.md`, a rewritten
+playbook), checked by running the setup in a fresh clone. Search indexes every ICD-10-CM and
+HCPCS description, not only listed codes (project lead). **Built 2026-11-03** (PRs #69–#76; see
+`docs/devlog/2026-11-03-m6-code-search.md`).
+
 ## M7 Admin completion
 
 1. Manual backup download and backup import (restore path 2).

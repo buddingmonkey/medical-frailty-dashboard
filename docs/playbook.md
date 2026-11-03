@@ -252,6 +252,12 @@ The public site changes only when the project lead approves a release.
   and logo are licensed, so ask which ones you may use (`docs/devlog/2026-11-01-m0-step2-web.md`).
 - **Look at the real page, not only the tests.** Twice a screenshot caught what every test
   passed: an invisible keyboard focus outline, and a table stretched out of shape.
+- **Describe what you see, even when it sounds odd.** "The map bounces at the frame rate"
+  pointed straight at a feedback loop: the summary box changed size, the page scrolled, and
+  the mouse landed on another state (`docs/devlog/2026-11-03-m6-code-search.md`).
+- **Ask a reviewer to read as one specific person.** "Could a state Medicaid analyst misread
+  this?" found that "covers" and "qualifies" sounded like eligibility decisions. "Is this
+  clear?" would not have (same devlog).
 
 ## 7. Common tasks
 
