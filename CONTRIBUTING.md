@@ -12,13 +12,20 @@ to the state's document. **Never include patient or member information.**
 
 ### Setup
 
-You need Node 26 (see `.nvmrc`) and pnpm 12 (`npm i -g pnpm@12`).
+New to this? Follow [`docs/getting-started.md`](docs/getting-started.md) first. On Windows,
+use WSL: the scripts need Linux. Outside contributors fork the repo and open a pull request
+from the fork; `main` is protected.
+
+You need Node 26 (see `.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`).
 
 ```bash
 pnpm install
-pnpm --filter @mfcd/web exec playwright install chromium   # once, for the browser tests
-pnpm dev                                                    # http://localhost:8787
+pnpm db:migrate:local && pnpm db:ref:local && pnpm db:seed:local   # local database
+pnpm dev                                                            # http://localhost:8787
 ```
+
+After `pnpm dev` starts, open Admin, Unified categories (`/admin/unified`) and press
+**Rebuild coverage** once, so Compare and the Map fill in.
 
 `pnpm dev` runs the site behind its pre-launch gate, signed in as a local admin
 (`dev@localhost`). Copy `apps/api/.dev.vars.example` to `apps/api/.dev.vars` only if you need
@@ -28,8 +35,9 @@ local secrets.
 
 1. Branch from `main`.
 2. **Write the failing test first**, then the code (`docs/testing.md`).
-3. Run `pnpm check` after every change. Run `pnpm check:full` (adds the build and browser
-   tests) before opening a pull request.
+3. Run `pnpm check` after every change. `pnpm check:full` adds the build and browser tests;
+   CI runs it on every pull request. To run it yourself, install the test browser once:
+   `pnpm --filter @mfcd/web exec playwright install --with-deps chromium`.
 4. Open a pull request. CI must pass (`check`, `audit`, `gitleaks`, CodeQL) before it can be
    merged; nobody can push to `main` directly.
 
@@ -51,7 +59,8 @@ These are also in [`CLAUDE.md`](CLAUDE.md), which AI assistants read:
 
 ### Where to start
 
-[`docs/status.md`](docs/status.md) says where things stand; [`docs/roadmap.md`](docs/roadmap.md)
+[`docs/getting-started.md`](docs/getting-started.md) and [`docs/playbook.md`](docs/playbook.md)
+are the guides for newcomers. [`docs/status.md`](docs/status.md) says where things stand; [`docs/roadmap.md`](docs/roadmap.md)
 lists the next steps.
 
 By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).

@@ -245,6 +245,10 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   labels link to their category. `categories` and `map` are reserved slugs.
 - **51-state seed** on preview (PR #66): 4 real states (300 entries each), 40 synthetic lists,
   4 announced, 3 none.
+- **M6 step 3c done** (branch `m6-step3c-contributor-docs`): new `docs/getting-started.md`
+  (non-technical setup, WSL, fork, local site; run from a fresh clone) and a rewritten
+  `docs/playbook.md`; README, CONTRIBUTING and `.gitattributes` (LF) aligned. Steps with
+  GitHub, Claude Code sign-in and Windows were not run.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
