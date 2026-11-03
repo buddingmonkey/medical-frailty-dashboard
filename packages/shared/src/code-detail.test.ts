@@ -4,8 +4,14 @@ import {
   CODE_DETAIL_CONFIRMED,
   codeDetailDescriptionNote,
   codeDetailGroups,
+  codeDetailIndexed,
+  codeDetailMetaDescription,
+  codeDetailPageTitle,
+  type CodeDetailResponse,
   codeDetailResponseSchema,
+  codeDetailStateSentence,
   codeDetailStatusHelp,
+  codeDetailSummary,
   codeDetailTitle,
   type CodeDetailState,
   parseShowQualification,
@@ -127,5 +133,119 @@ describe('codeDetailResponseSchema', () => {
       ],
     }
     expect(codeDetailResponseSchema.parse(body)).toEqual(body)
+  })
+})
+
+// ---------------------------------------------------------------------------------------------
+// The server-rendered code page (roadmap M6 step 5): one plain sentence per state with a list.
+
+const entry = (
+  over: Partial<CodeDetailState['entries'][number]> = {},
+): CodeDetailState['entries'][number] => ({
+  rawCode: 'F20.0',
+  display: 'F20.0',
+  matchKind: 'exact',
+  description: null,
+  stateCategory: 'SMI',
+  stateSubcategory: '',
+  tier: null,
+  qualification: 'standalone',
+  qualificationBasis: 'inferred',
+  source: { title: 'List', url: null, publisherDate: null, locator: null },
+  ...over,
+})
+
+const code = (over: Partial<CodeDetailResponse['code']> = {}): CodeDetailResponse['code'] => ({
+  codeSystem: 'icd10cm',
+  codeNorm: 'F200',
+  display: 'F20.0',
+  path: '/codes/icd-10-cm/F20.0',
+  description: 'Paranoid schizophrenia',
+  ...over,
+})
+
+describe('codeDetailStateSentence', () => {
+  it('says the state includes the code, with its rule and whether this site inferred it', () => {
+    const la = { ...state('LA', 'exact'), name: 'Louisiana', entries: [entry()] }
+    expect(codeDetailStateSentence(la, 'F20.0')).toBe(
+      'Louisiana’s list includes F20.0. State’s rule: Enough by itself (inferred by this site).',
+    )
+    const stated = { ...la, entries: [entry({ qualificationBasis: 'published' })] }
+    expect(codeDetailStateSentence(stated, 'F20.0')).toBe(
+      'Louisiana’s list includes F20.0. State’s rule: Enough by itself.',
+    )
+  })
+
+  it('names the broader entry that covers the code', () => {
+    const mt = {
+      ...state('MT', 'covered'),
+      name: 'Montana',
+      entries: [entry({ display: 'F20.0–F20.9', qualification: 'needs_support' })],
+    }
+    expect(codeDetailStateSentence(mt, 'F20.0')).toBe(
+      'Montana’s list includes F20.0 through its entry F20.0–F20.9. State’s rule: Needs another code or documentation (inferred by this site).',
+    )
+  })
+
+  it('leaves the rule out when the setting hides it', () => {
+    const ga = {
+      ...state('GA', 'exact'),
+      name: 'Georgia',
+      entries: [entry({ qualification: null, qualificationBasis: null })],
+    }
+    expect(codeDetailStateSentence(ga, 'F20.0')).toBe('Georgia’s list includes F20.0.')
+  })
+
+  it('says when the list does not include it, and when it lists narrower codes', () => {
+    expect(
+      codeDetailStateSentence({ ...state('GA', 'not_listed'), name: 'Georgia' }, 'F20.0'),
+    ).toBe('Georgia’s list does not include F20.0.')
+    expect(codeDetailStateSentence({ ...state('GA', 'narrower'), name: 'Georgia' }, 'F20')).toBe(
+      'Georgia’s list does not include F20 itself, but lists 2 more specific codes under it.',
+    )
+    expect(codeDetailStateSentence(state('AL', 'no_list'), 'F20.0')).toBeNull()
+  })
+})
+
+describe('codeDetailSummary', () => {
+  const states = [
+    state('AL', 'no_list'),
+    { ...state('GA', 'not_listed'), name: 'Georgia' },
+    { ...state('LA', 'exact'), name: 'Louisiana', entries: [entry()] },
+    { ...state('MT', 'covered'), name: 'Montana', entries: [entry({ display: 'F20.*' })] },
+  ]
+
+  it('counts the states, then groups the sentences as the page does', () => {
+    const summary = codeDetailSummary(code(), states)
+    expect(summary.count).toBe('2 of 3 states with a list on this site include F20.0.')
+    expect(summary.parts.map((p) => [p.heading, p.sentences.length])).toEqual([
+      ['Included', 2],
+      ['Not included', 1],
+    ])
+    expect(summary.parts[0]?.sentences[1]).toMatch(/^Montana’s list includes F20\.0 through/)
+  })
+
+  it('indexes a page only when a state includes the code', () => {
+    expect(codeDetailIndexed(states)).toBe(true)
+    expect(codeDetailIndexed([state('AL', 'no_list'), state('GA', 'narrower')])).toBe(false)
+  })
+
+  it('titles and describes the page from the data', () => {
+    expect(codeDetailPageTitle(code(), states)).toBe(
+      'F20.0 Paranoid schizophrenia: medical frailty status in 3 states | Medical Frailty Coding Dashboard',
+    )
+    // CPT: never a name from CMS (there is none) or the AMA.
+    const cpt = code({ codeSystem: 'cpt', display: '99213', description: null })
+    expect(codeDetailPageTitle(cpt, [state('GA', 'exact')])).toBe(
+      'CPT 99213: medical frailty status in 1 state | Medical Frailty Coding Dashboard',
+    )
+    expect(codeDetailPageTitle(code(), [state('AL', 'no_list')])).toBe(
+      codeDetailTitle('F20.0 Paranoid schizophrenia'),
+    )
+    expect(codeDetailMetaDescription(code(), states)).toBe(
+      'F20.0 (Paranoid schizophrenia): 2 of 3 states with a list on this site include it in ' +
+        'their medical frailty code lists (Louisiana and Montana). Each state’s entry, rule and ' +
+        'source document.',
+    )
   })
 })

@@ -1,5 +1,6 @@
 import {
   codeSystemLabels,
+  codeUrlPath,
   COMPARE_INVALID_LINK,
   compareUnknownStatesText,
   compareCellText,
@@ -8,7 +9,10 @@ import {
   federalCategoriesText,
   drillFiledUnder,
   isCodeTableQuery,
+  parseCodeUrl,
   parseStatesPair,
+  SITEMAP_MAX_URLS,
+  sitemapCodeFiles,
   qualificationBasisLabels,
   qualificationLabels,
   SITE_NAME,
@@ -22,6 +26,8 @@ import { asc, eq } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
+import { publicCode } from '../db/public-code'
+import { includedCodeCount, includedCodePage, listsUpdatedAt } from '../db/public-code-sitemap'
 import { publicCompare } from '../db/public-compare'
 import { publicDrill, publicDrillCsv, publicDrillDetail } from '../db/public-drill'
 import { publicOverview } from '../db/public-overview'
@@ -48,6 +54,7 @@ import {
   statesLandingPage,
   statesPage,
 } from '../seo/pages'
+import { codeNotFoundPage, codePage, searchPage } from '../seo/code-page'
 import type { AppEnv } from '../types'
 
 // Public pages rendered on the server (roadmap M3 step 4; docs/seo.md), the state downloads and
@@ -81,8 +88,38 @@ const pageCache = cachePublic({
 })
 
 async function sendPage(c: Context<AppEnv>, parts: PageParts) {
+  // The header too, for crawlers that read headers before markup (M6 step 5). While the site
+  // is private, the site gate replaces it with `noindex, nofollow` on every response.
+  if (parts.noindex) c.header('X-Robots-Tag', 'noindex')
   return c.html(await renderInto(await indexHtml(c), parts), parts.status)
 }
+
+const safeDecode = (path: string) => {
+  try {
+    return decodeURIComponent(path)
+  } catch {
+    return path
+  }
+}
+
+/**
+ * `/codes/icd-10-cm/f200`, `/codes/ICD-10-CM/F20.0` → 301 to `/codes/icd-10-cm/F20.0`
+ * (`codeUrlPath`). Null when the path is already canonical or names no code.
+ */
+function codeRedirect(c: Context<AppEnv>) {
+  const parsed = parseCodeUrl(c.req.param('system')?.toLowerCase() ?? '', c.req.param('code') ?? '')
+  if (!parsed) return null
+  const url = new URL(c.req.url)
+  if (safeDecode(url.pathname) === safeDecode(parsed.canonicalPath)) return null
+  return c.redirect(parsed.canonicalPath + url.search, 301)
+}
+
+const xmlHead = '<?xml version="1.0" encoding="UTF-8"?>'
+const sitemapNs = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
+const xmlResponse = (c: Context<AppEnv>, lines: string[]) =>
+  c.body([...lines, ''].join('\n'), 200, { 'content-type': 'application/xml; charset=utf-8' })
+const sitemapUrl = (loc: string, lastmod?: string | null) =>
+  `<url><loc>${xmlEscape(loc)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
 
 const origin = (c: Context<AppEnv>) => new URL(c.req.url).origin
 
@@ -144,6 +181,24 @@ export const pagesRoute = new Hono<AppEnv>()
   .get('/states', pageCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))
     return sendPage(c, statesPage(items, origin(c)))
+  })
+  // Search runs in the browser; the server sends its heading and `noindex` (M6 step 5).
+  .get('/search', pageCache, async (c) => sendPage(c, searchPage(origin(c))))
+  // One code's page (roadmap M6 step 5), from the API's loader: there is one matcher.
+  .get('/codes/:system/:code', async (c, next) => {
+    // Before the cache: a redirect is not a page.
+    return codeRedirect(c) ?? next()
+  })
+  .get('/codes/:system/:code', pageCache, async (c) => {
+    const db = createDb(c.env.DB)
+    const [detail, updatedAt] = await Promise.all([
+      publicCode(db, c.req.param('system'), c.req.param('code'), c.get('dataVersion') ?? 0),
+      listsUpdatedAt(db),
+    ])
+    return sendPage(
+      c,
+      detail ? codePage(detail, origin(c), updatedAt) : codeNotFoundPage(origin(c), c.req.path),
+    )
   })
   .get('/compare', async (c, next) => {
     // Before the cache: a redirect is not a page.
@@ -368,7 +423,49 @@ export const pagesRoute = new Hono<AppEnv>()
     const hasQuery = new URL(c.req.url).search !== ''
     return sendPage(c, drillPage(data, query, detail, origin(c), hasQuery))
   })
+  // The sitemap (docs/seo.md, "Sitemap"): an index of the pages' file and the code pages' files,
+  // at most SITEMAP_MAX_URLS each.
   .get('/sitemap.xml', publicCache, async (c) => {
+    const db = createDb(c.env.DB)
+    const [count, updatedAt] = await Promise.all([includedCodeCount(db), listsUpdatedAt(db)])
+    const base = origin(c)
+    const lastmod = updatedAt ? `<lastmod>${updatedAt.slice(0, 10)}</lastmod>` : ''
+    const file = (name: string) =>
+      `<sitemap><loc>${xmlEscape(`${base}/sitemaps/${name}`)}</loc>${lastmod}</sitemap>`
+    return xmlResponse(c, [
+      xmlHead,
+      `<sitemapindex ${sitemapNs}>`,
+      file('pages.xml'),
+      ...Array.from({ length: sitemapCodeFiles(count) }, (_, i) =>
+        file(`codes-${String(i + 1)}.xml`),
+      ),
+      '</sitemapindex>',
+    ])
+  })
+  .get('/sitemaps/:file', publicCache, async (c, next) => {
+    const name = c.req.param('file')
+    if (name !== 'pages.xml') {
+      // `codes-<n>.xml`: the n-th SITEMAP_MAX_URLS included codes.
+      const n = /^codes-([1-9]\d{0,3})\.xml$/.exec(name)?.[1]
+      if (n === undefined) return next()
+      const db = createDb(c.env.DB)
+      const [codes, updatedAt] = await Promise.all([
+        includedCodePage(db, (Number(n) - 1) * SITEMAP_MAX_URLS, SITEMAP_MAX_URLS),
+        listsUpdatedAt(db),
+      ])
+      if (codes.length === 0) return c.text('Not found', 404)
+      const base = origin(c)
+      const day = updatedAt?.slice(0, 10)
+      return xmlResponse(c, [
+        xmlHead,
+        `<urlset ${sitemapNs}>`,
+        ...codes.flatMap((r) => {
+          const path = codeUrlPath(r.sys, r.norm)
+          return path ? [sitemapUrl(`${base}${path}`, day)] : []
+        }),
+        '</urlset>',
+      ])
+    }
     const db = createDb(c.env.DB)
     const [{ items }, categories] = await Promise.all([
       publicSummaries(db),
@@ -383,11 +480,10 @@ export const pagesRoute = new Hono<AppEnv>()
       s.published?.updatedAt ? [s.published.updatedAt.slice(0, 10)] : [],
     )
     const newest = days.sort().at(-1)
-    const url = (loc: string, lastmod?: string | null) =>
-      `<url><loc>${xmlEscape(loc)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
+    const url = sitemapUrl
     const body = [
-      '<?xml version="1.0" encoding="UTF-8"?>',
-      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      xmlHead,
+      `<urlset ${sitemapNs}>`,
       url(`${base}/`, newest),
       url(`${base}/states`, newest),
       url(`${base}/compare`, newest),

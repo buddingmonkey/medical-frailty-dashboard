@@ -81,7 +81,7 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
     expect(app).toMatch(
       /<th scope="row">F31\.\*<\/th>\s*<td>Code F31<\/td>\s*<td>Listed; Needs another code[^<]*<\/td>\s*<td>Covered by F31\.\*–F32\.\*; Enough by itself/,
     )
-    expect(app).not.toMatch(/<th scope="row">F20\.0<\/th>/)
+    expect(app).not.toMatch(/<th scope="row">(<a [^>]*>)?F20\.0(<\/a>)?<\/th>/)
     // Links: show every code, the CSV, the pickers' form.
     expect(app).toContain('href="?diff=0"')
     expect(app).toContain('href="/compare/states/ga-vs-mt/codes.csv"')
@@ -92,7 +92,7 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
   it('diff=0 shows every code and marks the ones that differ', async () => {
     const app = appHtml(await (await get('/compare/states/ga-vs-mt?diff=0')).text())
     expect(app).toMatch(/<caption>\s*Every code of Georgia and Montana/)
-    expect(app).toMatch(/<th scope="row">F20\.0<\/th>/)
+    expect(app).toMatch(/<th scope="row"><a href="\/codes\/icd-10-cm\/F20\.0">F20\.0<\/a><\/th>/)
     expect(app).toMatch(/<th scope="row">F31\.\* \(differs\)<\/th>/)
     expect(app).toContain('href="?"')
   })
@@ -105,7 +105,7 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
     expect(app.indexOf('Kidney failure')).toBeLessThan(
       app.indexOf('Not in any comparison category'),
     )
-    expect(app).toMatch(/<th scope="row">Z99\.2<\/th>/)
+    expect(app).toMatch(/<th scope="row"><a href="\/codes\/icd-10-cm\/Z99\.2">Z99\.2<\/a><\/th>/)
   })
 
   it('says when a state has no list', async () => {
@@ -170,7 +170,7 @@ describe('GET /compare/states/:pair (server-rendered)', () => {
   })
 
   it('is not in the sitemap', async () => {
-    const xml = await (await get('/sitemap.xml')).text()
+    const xml = await (await get('/sitemaps/pages.xml')).text()
     expect(xml).not.toContain('/compare/states')
   })
 })

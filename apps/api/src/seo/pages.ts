@@ -204,6 +204,11 @@ function describedText(
     : r.description
 }
 
+/** A code in a table, linked to its page when it has one (single codes; M6 step 5). */
+function codeLink(r: { display: string; codePath: string | null }): Html {
+  return r.codePath ? html`<a href="${r.codePath}">${r.display}</a>` : html`${r.display}`
+}
+
 export const downloadName = (slug: string, versionNo: number, ext: 'csv' | 'json') =>
   `${slug}-medical-frailty-codes-v${String(versionNo)}.${ext}`
 
@@ -665,7 +670,7 @@ export function comparePage(
               ${result.rows.map(
                 (row) =>
                   html`<tr>
-                    <th scope="row">${row.display}</th>
+                    <th scope="row">${codeLink(row)}</th>
                     <td>${describedText(row, stateName)}</td>
                     ${row.cells.map((cell, i) => {
                       const stateId = result.states[i]?.id ?? ''
@@ -1017,7 +1022,7 @@ export function drillPage(
                   ${g.rows.map(
                     (r) =>
                       html`<tr>
-                        <th scope="row">${r.display}</th>
+                        <th scope="row">${codeLink(r)}</th>
                         <td>${describedText(r, stateName)}</td>
                         <td>${drillCountText(r.count, total)}</td>
                         <td>${drillRulesText(r.rules)}</td>
@@ -1189,7 +1194,7 @@ export function statesComparePage(
       : html`${g.label} (${differ})`
   }
   const rowHeading = (r: StatesCompareResponse['groups'][number]['rows'][number]) =>
-    `${r.display}${!data.query.diff && r.differs ? ` (${STATES_COMPARE_DIFFERS.toLowerCase()})` : ''}`
+    html`${codeLink(r)}${!data.query.diff && r.differs ? ` (${STATES_COMPARE_DIFFERS.toLowerCase()})` : ''}`
 
   const table =
     data.groups.length === 0

@@ -8,13 +8,14 @@ import {
   CODE_DETAIL_NO_DESCRIPTION,
   codeDetailColumns,
   codeDetailNarrowerText,
-  codeDetailTitle,
+  codeDetailPageTitle,
+  codeDetailSummary,
   codeSystemLabels,
   formatDay,
   stateCategoryName,
 } from '@mfcd/shared'
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import LikeCodes from '../../../components/codes/LikeCodes.vue'
 import QualificationBadge from '../../../components/compare/QualificationBadge.vue'
@@ -26,18 +27,30 @@ import { usePageTitle } from '../../../lib/page-title'
 // grouped by status, included first. Wording lives in packages/shared/src/code-detail.ts.
 
 const route = useRoute('/codes/[system]/[code]')
+const router = useRouter()
 const { data, error, isPending } = useCodeDetail(
-  () => route.params.system,
+  () => route.params.system.toLowerCase(),
   () => route.params.code,
 )
+
+// Another spelling (`f200`, `ICD-10-CM`): the canonical address, as the Worker's 301 does.
+watch(data, (d) => {
+  if (d && decodeURIComponent(route.path) !== decodeURIComponent(d.code.path)) {
+    void router.replace({ path: d.code.path, query: route.query, hash: route.hash })
+  }
+})
 
 const notFound = computed(() => error.value instanceof ApiError && error.value.status === 404)
 usePageTitle(() =>
   notFound.value
     ? CODE_DETAIL_NOT_FOUND.title
     : data.value
-      ? codeDetailTitle(data.value.code.display)
+      ? codeDetailPageTitle(data.value.code, data.value.states)
       : null,
+)
+/** One plain sentence per state with a list (the server HTML shows the same). */
+const summary = computed(() =>
+  data.value ? codeDetailSummary(data.value.code, data.value.states) : null,
 )
 
 const groups = computed(() => (data.value ? codeDetailGroups(data.value.states) : []))
@@ -79,6 +92,18 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
         {{ codeDetailDescriptionNote(data.code.codeSystem, data.code.description !== null) }}
       </p>
     </header>
+
+    <section v-if="summary" aria-label="Summary" class="max-w-prose space-y-2">
+      <p class="font-semibold">{{ summary.count }}</p>
+      <ul
+        v-for="p in summary.parts"
+        :key="p.id"
+        :aria-label="p.heading"
+        class="list-disc space-y-1 pl-5"
+      >
+        <li v-for="(s, i) in p.sentences" :key="i">{{ s }}</li>
+      </ul>
+    </section>
 
     <section
       v-for="part in parts"
