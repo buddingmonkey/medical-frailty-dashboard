@@ -71,6 +71,13 @@
       "when": 1793663120262,
       "tag": "0009_entry_unified",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793670173616,
+      "tag": "0010_state_similarity",
+      "breakpoints": true
     }
   ]
 }

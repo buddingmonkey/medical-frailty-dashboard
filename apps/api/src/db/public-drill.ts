@@ -39,11 +39,11 @@ import { refCcsrCategories, states, unifiedCategories, unifiedCcsr } from './sch
 // SQL pieces. `e` stands for any alias of `entries` (or a row with its columns).
 
 /** The row kind of an entry: a code, a wildcard (prefix or code with children), or a range. */
-const kindOf = (e: string) => `CASE WHEN ${e}.match_kind = 'range' THEN 'range'
+export const kindOf = (e: string) => `CASE WHEN ${e}.match_kind = 'range' THEN 'range'
     WHEN ${e}.match_kind = 'prefix' OR ${e}.includes_children = 1 THEN 'prefix' ELSE 'exact' END`
 
 /** `comparePatternKey` of an entry: F10 with children = F10*. */
-const keyOf = (e: string) => `${e}.code_system || '|' || CASE
+export const keyOf = (e: string) => `${e}.code_system || '|' || CASE
     WHEN ${e}.match_kind = 'range'
       THEN 'range|' || ${e}.code_norm || '|' || ${e}.range_end_norm || '|'
            || CASE WHEN ${e}.includes_children = 1 THEN '*' ELSE '' END
@@ -73,7 +73,7 @@ const rowContains = (r: string, c: string) => `(CASE ${r}.kind
  * Entries of version `vid` inside row `r`, other than the row itself: a range scan of
  * `entries_version_code_idx`.
  */
-const narrowerCount = (r: string, vid: string) =>
+export const narrowerCount = (r: string, vid: string) =>
   sql.raw(`(SELECT count(*) FROM entries n
     WHERE n.version_id = ${vid} AND n.code_system = ${r}.sys
       AND n.code_norm >= ${r}.norm AND n.code_norm < ${r}.last_norm || '~'
@@ -84,14 +84,14 @@ const narrowerCount = (r: string, vid: string) =>
 const qualificationRank = sql.raw(`CASE e.qualification WHEN 'standalone' THEN 0
   WHEN 'needs_support' THEN 1 WHEN 'supporting_only' THEN 2 ELSE 3 END`)
 
-const systemRank = sql.raw(
+export const systemRank = sql.raw(
   `CASE sys ${codeSystems.map((s, i) => `WHEN '${s}' THEN ${String(i)}`).join(' ')} END`,
 )
 
 /**
  * The CTEs every drill-down query shares, over the rows `rows0` gives (columns sys, kind, norm,
  * end_norm, wild):
- * - `pub`: the states with a list and their published version.
+ * - `pub`: the states with a list and their published version (or only some of them: `pub0`).
  * - `drows`: each row with `last_norm` (its last code), `rk` (its key) and `gk` (its group).
  * - `wilds`, `ranges`: the published wildcards and ranges, read once.
  * - `cand`: (row, state) pairs where one of the state's entries lists the row (`how` 0) or
@@ -101,10 +101,13 @@ const systemRank = sql.raw(
  * - `best`: per row and state, the entry M4 would show: listed before covered, then the rule
  *   that qualifies most on its own (SQLite takes `entry_id` from the row with the minimum).
  */
-function shared(rows0: SQL): SQL {
+export function shared(rows0: SQL, pub0?: SQL): SQL {
+  const pub =
+    pub0 ??
+    sql`SELECT id AS state_id, published_version_id AS vid FROM states
+          WHERE published_version_id IS NOT NULL`
   return sql`WITH RECURSIVE
-  pub AS (SELECT id AS state_id, published_version_id AS vid FROM states
-          WHERE published_version_id IS NOT NULL),
+  pub AS (${pub}),
   lens(k) AS (SELECT 1 UNION ALL SELECT k + 1 FROM lens WHERE k < 40),
   rows0 AS (${rows0}),
   drows AS MATERIALIZED (
@@ -217,7 +220,7 @@ function pagingCtes(query: DrillQuery, system: CodeSystem | null, pageRows: numb
 // ---------------------------------------------------------------------------------------------
 // Shaping rows
 
-interface CountedRow {
+export interface CountedRow {
   rk: string
   sys: CodeSystem
   kind: MatchKind
@@ -236,13 +239,13 @@ interface CountedRow {
   i_unknown: number
 }
 
-interface DescribedRow extends CountedRow {
+export interface DescribedRow extends CountedRow {
   cms: string | null
   state_desc: string | null
 }
 
 /** The row as a pattern, as `displayEntryCode` and `comparePatternKey` take it. */
-const patternOf = (
+export const patternOf = (
   r: Pick<CountedRow, 'sys' | 'kind' | 'norm' | 'end_norm' | 'wild'>,
 ): DrillPattern => ({
   codeSystem: r.sys,
@@ -255,7 +258,7 @@ const patternOf = (
 const SEPARATOR = '\u001f'
 
 /** The row's description: CMS text, else the first state's own published text, named. */
-const describedSql = sql`
+export const describedSql = sql`
   CASE WHEN v.kind <> 'range' THEN (SELECT rc.description FROM ref_codes rc
     WHERE rc.code_system = v.sys AND rc.code_norm = v.norm ORDER BY rc.valid_from DESC LIMIT 1)
   END AS cms,
@@ -265,7 +268,7 @@ const describedSql = sql`
       AND trim(coalesce(e.description_published, '')) <> ''
     ORDER BY p.state_id LIMIT 1) AS state_desc`
 
-function toRow(r: DescribedRow): Omit<DrillRow, 'focus'> {
+export function toRow(r: DescribedRow): Omit<DrillRow, 'focus'> {
   const pattern = patternOf(r)
   const [stateId, ...text] = (r.state_desc ?? '').split(SEPARATOR)
   const fromState = r.state_desc !== null && stateId !== undefined
@@ -295,14 +298,14 @@ function toRow(r: DescribedRow): Omit<DrillRow, 'focus'> {
 }
 
 /** Columns of a matched entry `m`, prefixed, for `toCell`. */
-const matchColumns = (m: string, prefix: string) =>
+export const matchColumns = (m: string, prefix: string) =>
   sql.raw(`${m}.code_system AS ${prefix}_sys, ${m}.code_norm AS ${prefix}_norm,
     ${m}.match_kind AS ${prefix}_kind, ${m}.range_end_norm AS ${prefix}_end,
     ${m}.includes_children AS ${prefix}_children, ${m}.tier AS ${prefix}_tier,
     ${m}.qualification AS ${prefix}_q, ${m}.qualification_basis AS ${prefix}_basis,
     ${m}.state_category AS ${prefix}_cat, ${m}.state_subcategory AS ${prefix}_sub`)
 
-interface MatchColumns {
+export interface MatchColumns {
   m_score: number | null
   m_sys: CodeSystem | null
   m_norm: string | null
@@ -317,7 +320,7 @@ interface MatchColumns {
   m_narrower: number | null
 }
 
-function toCell(m: MatchColumns): DrillCell {
+export function toCell(m: MatchColumns): DrillCell {
   if (m.m_score !== null && m.m_sys !== null && m.m_norm !== null && m.m_kind !== null) {
     return {
       status: m.m_score >= 10 ? 'covered' : 'exact',

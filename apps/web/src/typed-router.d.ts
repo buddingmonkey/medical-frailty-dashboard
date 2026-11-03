@@ -168,6 +168,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/compare/states/[pair]': RouteRecordInfo<
+      '/compare/states/[pair]',
+      '/compare/states/:pair',
+      { pair: ParamValue<true> },
+      { pair: ParamValue<false> },
+      | never
+    >,
     '/states/': RouteRecordInfo<
       '/states/',
       '/states',
@@ -350,6 +357,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/compare/states/[pair].vue': {
+      routes:
+        | '/compare/states/[pair]'
+      views:
+        | never
+      pathParamNames:
+        | 'pair'
     }
     'src/pages/states/index.vue': {
       routes:

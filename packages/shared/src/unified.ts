@@ -21,9 +21,10 @@ import {
 
 /**
  * Slugs a unified category may not take, because the site uses them under `/compare/` (the
- * category drill-down lives at `/compare/<slug>`): `codes` is the M4 code table (M5 step 5).
+ * category drill-down lives at `/compare/<slug>`): `codes` is the M4 code table (M5 step 5),
+ * `states` the state comparison (`/compare/states/ga-vs-la`, M5 step 7).
  */
-export const reservedUnifiedSlugs: readonly string[] = ['codes']
+export const reservedUnifiedSlugs: readonly string[] = ['codes', 'states']
 
 export const isReservedUnifiedSlug = (slug: string): boolean => reservedUnifiedSlugs.includes(slug)
 

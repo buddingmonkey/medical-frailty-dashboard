@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test'
 
 import { collectErrors, seriousA11yViolations } from './helpers'
 
-// The category drill-down (roadmap M5 step 6). e2e/fixtures/public-seed.sql: Montana is the one
-// state with a list; "Test psychoses" has a 3-code universe (F20.0, F20.1, F20.9), Montana lists
-// F20.0; "Test alcohol use" has no CCSR group, so no full code list.
+// The category drill-down (roadmap M5 step 6). e2e/fixtures/public-seed.sql: Montana and
+// Nebraska have a list; "Test psychoses" has a 3-code universe (F20.0, F20.1, F20.9), Montana
+// lists F20.0, Nebraska none of them; "Test alcohol use" has no CCSR group, so no full code list.
 
 const caption = /Test psychoses: codes by how many states list them/
 
@@ -31,12 +31,12 @@ for (const scheme of ['light', 'dark'] as const) {
     await group.click()
     await expect(group).toHaveAttribute('aria-expanded', 'true')
     const row = table.getByRole('row', { name: /^F20\.0/ })
-    await expect(row).toContainText('1 of 1 state')
+    await expect(row).toContainText('1 of 2 states')
     await expect(row).toContainText('Listed')
 
     await row.getByRole('button', { name: 'Details for F20.0' }).click()
     const panel = page.getByRole('region', { name: /F20\.0/ })
-    await expect(panel).toContainText('Listed by 1 of 1 state with lists.')
+    await expect(panel).toContainText('Listed by 1 of 2 states with lists.')
     await expect(panel).toContainText('Montana')
     await expect(panel.getByRole('heading')).toBeFocused()
     expect(new URL(page.url()).searchParams.get('code')).toBe('icd10cm|exact|F200')
@@ -58,7 +58,7 @@ test('include codes no state lists; filters; no full list elsewhere', async ({ p
     .getByRole('button', { name: 'Gaps (under half)' })
     .click()
   await expect(page).toHaveURL(/show=gaps/)
-  await expect(table.getByRole('row', { name: /^F20\.1/ })).toContainText('0 of 1 state')
+  await expect(table.getByRole('row', { name: /^F20\.1/ })).toContainText('0 of 2 states')
   await expect(table.getByRole('row', { name: /^F20\.0 / })).toHaveCount(0)
 
   await page.goto('/compare/test-alcohol-use')
@@ -87,7 +87,7 @@ test.describe('with JavaScript off', () => {
     )
     await expect(page.getByText('Test schizophrenia group', { exact: false })).toBeVisible()
     const table = page.getByRole('table', { name: caption })
-    await expect(table.getByRole('row', { name: /^F20\.0/ })).toContainText('1 of 1 state')
+    await expect(table.getByRole('row', { name: /^F20\.0/ })).toContainText('1 of 2 states')
 
     await table
       .getByRole('row', { name: /^F20\.0/ })
@@ -99,6 +99,6 @@ test.describe('with JavaScript off', () => {
     await page.getByLabel('Include codes no state lists').check()
     await page.getByRole('button', { name: 'Apply' }).click()
     await expect(page).toHaveURL(/all=1/)
-    await expect(table.getByRole('row', { name: /^F20\.9/ })).toContainText('0 of 1 state')
+    await expect(table.getByRole('row', { name: /^F20\.9/ })).toContainText('0 of 2 states')
   })
 })

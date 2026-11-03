@@ -10,6 +10,7 @@ import { auditInsert } from '../../db/audit'
 import { createDb } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements } from '../../db/placement'
+import { recomputeSimilarity } from '../../db/similarity'
 import { datasetVersions, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
 
@@ -103,5 +104,7 @@ export const adminStates = new Hono<AppEnv>()
       }),
     ])
     await recomputePlacements(db, { stateIds: [stateId] })
+    // Then how alike its list is to every other state's (roadmap M5 step 7).
+    await recomputeSimilarity(db, { stateIds: [stateId] })
     return c.json({ ok: true })
   })

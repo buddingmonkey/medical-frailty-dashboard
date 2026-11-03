@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { collectErrors, seriousA11yViolations } from './helpers'
 
 // The overview matrix at /compare (roadmap M5 step 5). e2e/fixtures/public-seed.sql gives
-// Montana a list and two published unified categories: "Test alcohol use" (substance use
+// Montana and Nebraska a list (Nebraska's in neither category) and two published unified categories: "Test alcohol use" (substance use
 // disorder; 100%, not reviewed) and "Test psychoses" (disabling mental disorder; 33%).
 
 const caption = 'Share of each category’s codes that each state lists'
@@ -49,13 +49,14 @@ test('sort a column by keyboard; the order is announced', async ({ page }) => {
   )
   await expect(page.getByRole('status')).toHaveText('Sorted by Test psychoses, highest first.')
   await expect(button).toBeFocused()
+  // Montana lists one of the category's codes, Nebraska none.
+  await expect(table.getByRole('rowheader').first()).toHaveText('Montana')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('columnheader', { name: 'Test psychoses' })).toHaveAttribute(
     'aria-sort',
     'ascending',
   )
-  // Montana is the only state with a list, so it stays first either way.
-  await expect(table.getByRole('rowheader').first()).toHaveText('Montana')
+  await expect(table.getByRole('rowheader').first()).toHaveText('Nebraska')
 })
 
 test.describe('with JavaScript off', () => {

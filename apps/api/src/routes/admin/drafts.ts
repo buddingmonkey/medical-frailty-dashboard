@@ -28,6 +28,7 @@ import { auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
 import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements } from '../../db/placement'
+import { recomputeSimilarity } from '../../db/similarity'
 import { createDb, type Db } from '../../db/client'
 import {
   categoryMappings,
@@ -553,6 +554,8 @@ export const draftsRoute = new Hono<AppEnv>()
     ])
     // Right after the batch: where the new list counts among the unified categories.
     await recomputePlacements(db, { stateIds: [stateId] })
+    // Then how alike its list is to every other state's (roadmap M5 step 7).
+    await recomputeSimilarity(db, { stateIds: [stateId] })
     return c.json(publishResponseSchema.parse({ ok: true, backupKey }))
   })
 

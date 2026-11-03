@@ -93,8 +93,9 @@ unified_mappings     id, state_id, state_category, state_subcategory,
                      status ('proposed'|'approved'|'superseded'), superseded_by → unified_mappings
 ```
 
-- The slug `codes` is reserved (`reservedUnifiedSlugs` in `packages/shared/src/unified.ts`):
-  `/compare/codes` is the code table (M5 step 5). The schema refuses it; the API says why.
+- The slugs `codes` and `states` are reserved (`reservedUnifiedSlugs` in
+  `packages/shared/src/unified.ts`): `/compare/codes` is the code table (M5 step 5),
+  `/compare/states/…` the state comparison (M5 step 7). The schema refuses them; the API says why.
 - Relations follow SKOS: `exact` (the same set), `close` (nearly), `broad` (the unified category is
   broader than the state's), `narrow` (narrower), `related`. `by_code` means "this state category
   is not a meaningful group (GA and NE have none): place each code by its CCSR group".
@@ -235,6 +236,64 @@ helpers in `packages/shared/src/drill.ts`):
   published entry and took 3 s for cancer), the few ranges checked directly, exact keys by
   index. The Worker shapes one page only.
 
+### Pair similarity (M5 step 7)
+
+How alike two states' published lists are, for "States with the most similar lists" on each
+state page and the two-state comparison (`apps/api/src/db/similarity.ts`).
+
+```
+state_similarity  state_a → states, state_b → states (state_a < state_b), shared, only_a, only_b,
+                  jaccard (REAL, 0–1), computed_at (when the row's numbers last changed)
+                  PK (state_a, state_b); WITHOUT ROWID, no other index; at most 1,275 rows
+```
+
+- **A state's set of codes**: every **billable** ICD-10-CM code of the current release
+  (`ref_codes`, `valid_to` NULL) that one of its published ICD-10-CM entries lists or covers by
+  `entryCovers` (an exact code itself, with its children when `includes_children = 1`; a prefix
+  every code under it; a wildcard range every code whose leading characters fall between its
+  ends; another range the codes of the same length between its ends), plus its entries in
+  other code systems, each counted once by `comparePatternKey`. A header code listed without
+  its children, or a code missing from `ref_codes` (deleted, invalid), adds nothing.
+- **Similarity** = Jaccard index = shared / (shared + only_a + only_b); 0 when both sets are empty.
+- **Recomputed** right after a publish or rollback (that state's pairs, after
+  `recomputePlacements`); mapping approvals and category changes never change it (they do not
+  change what a state lists). Only changed rows are written, with a `data_version` bump when any
+  are. Migration `0010_state_similarity` fills every pair from the lists already published (the
+  same statement, checked by `src/db/similarity.test.ts`). A new ICD-10-CM release does not
+  recompute it yet (with the update tooling, like placements).
+- **In SQL**: each published entry finds its codes by a primary-key range scan of `ref_codes`
+  (entries read first, MATERIALIZED, then CROSS JOIN, so SQLite never scans `ref_codes` per
+  entry of every version); `sets` (state, code) is materialized once and the target state's
+  codes are joined to it on code. Locally, Nebraska (8,182 entries) against the other three
+  seed states: about 50 ms, 3 rows written, ~293k rows read; 51 states (simulated by pointing
+  every state at one of the four lists): 0.5 s per state, 2.7 s for every pair.
+
+### Compare states (M5 step 7)
+
+`/compare/states/<st>-vs-<st>[-vs-<st>…]` compares 2–4 states, in column order
+(`apps/api/src/db/public-states-compare.ts`, helpers in `packages/shared/src/states-compare.ts`):
+
+- **Rows**: every distinct entry of the chosen states' published lists (`comparePatternKey`).
+  Each chosen state's cell is the drill-down's (listed, covered by a broader entry, narrower codes
+  listed, not listed), by "Matching across states", among the chosen states only.
+- **Differs** (`statesCompareDiffers`): the chosen states disagree on listed-or-covered (narrower
+  codes do not count as listed), or all of them list or cover it but the entries their cells
+  show have different rules (qualification). "Show only differences" (default; `diff=0` turns
+  it off) keeps those rows.
+- **Groups**: a row is in every **published** unified category one of its own entries is placed
+  in (`entry_unified`), so a code can show in two groups; rows placed nowhere go in a last group,
+  "Not in a unified category". Groups in the overview's order (federal parent, sort order, label).
+  A group header gives, per state, the group's rows it lists or covers (whatever the filter),
+  and how many of them differ.
+- **Summary** (over every row, each once): per state the rows only it lists or covers among the
+  chosen states; the rows all of them list or cover; for exactly two states their stored pair
+  similarity. These counts are rows (entries), not the expanded codes of the similarity.
+- **Pages**: each group's rows (code order) in parts of 250; a page holds the parts that start
+  within its first 250 rows, so a group is split only when it is longer than a page (marked
+  "continued").
+- A chosen state without a list: nothing is compared, the page says so. An unknown state, one,
+  five or a repeated state: 404.
+
 ## Tables (D1 / SQLite)
 
 ```
@@ -275,6 +334,7 @@ ref_ccsr            code_norm (ICD-10-CM code or prefix), ccsr_category, is_defa
                     PK (code_norm, ccsr_category); WITHOUT ROWID, no extra index; stored by prefix
                     ("CCSR reference data" above)
 entry_unified       entry_id, unified_id, basis, reviewed      (placements; "Coverage summary")
+state_similarity    state_a < state_b, shared, only_a, only_b, jaccard, computed_at  ("Pair similarity")
 unified_universe    unified_id, code_norm                       (universes; "Coverage summary")
 
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)

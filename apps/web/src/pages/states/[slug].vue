@@ -18,12 +18,14 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import MarkdownView from '../../components/MarkdownView.vue'
+import SimilarStates from '../../components/states/SimilarStates.vue'
 import { ApiError } from '../../lib/api'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicState } from '../../lib/public-states'
 
 // One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
-// the federal ones, the source documents, version history and our notes.
+// the federal ones, the states with the most similar lists (M5 step 7), the source documents,
+// version history and our notes.
 
 const route = useRoute('/states/[slug]')
 const slug = computed(() => route.params.slug.toLowerCase())
@@ -225,6 +227,8 @@ function categoryName(category: string, subcategory: string) {
           </table>
         </div>
       </section>
+
+      <SimilarStates :state="state" :similar="data.similar" />
 
       <section aria-labelledby="sources-heading" class="space-y-4">
         <h2 id="sources-heading" class="font-display text-2xl font-medium text-heading">Sources</h2>

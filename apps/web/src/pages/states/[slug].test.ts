@@ -6,7 +6,8 @@ import {
   qualifications,
   zeroCounts,
 } from '@mfcd/shared'
-import { screen, within } from '@testing-library/vue'
+import { screen, waitFor, within } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
@@ -81,6 +82,44 @@ const georgia: PublicStateDetail = {
       federalCategory: 'unmapped',
       confirmed: false,
       entries: 6000,
+    },
+  ],
+  similar: [
+    {
+      id: 'NE',
+      slug: 'ne',
+      name: 'Nebraska',
+      jaccard: 0.6054,
+      shared: 5874,
+      onlyThis: 1558,
+      onlyOther: 2271,
+    },
+    {
+      id: 'LA',
+      slug: 'la',
+      name: 'Louisiana',
+      jaccard: 0.2194,
+      shared: 3032,
+      onlyThis: 4400,
+      onlyOther: 6387,
+    },
+    {
+      id: 'MT',
+      slug: 'mt',
+      name: 'Montana',
+      jaccard: 0.091,
+      shared: 705,
+      onlyThis: 6727,
+      onlyOther: 314,
+    },
+    {
+      id: 'TX',
+      slug: 'tx',
+      name: 'Texas',
+      jaccard: 0.05,
+      shared: 5,
+      onlyThis: 6000,
+      onlyOther: 90,
     },
   ],
 }
@@ -185,6 +224,7 @@ describe('/states/:slug', () => {
       sources: [],
       versions: [],
       categories: [],
+      similar: [],
     })
 
     await renderRoute('/states/mt')
@@ -203,5 +243,53 @@ describe('/states/:slug', () => {
     expect(screen.getByRole('link', { name: 'See all states' }).getAttribute('href')).toBe(
       '/states',
     )
+  })
+
+  it('lists the states with the most similar lists, to compare with up to three', async () => {
+    serve('ga', georgia)
+    const user = userEvent.setup()
+    const { router } = await renderRoute('/states/ga')
+
+    const section = await screen.findByRole('region', {
+      name: 'States with the most similar lists',
+    })
+    const list = within(section).getByRole('list')
+    const items = within(list).getAllByRole('listitem')
+    expect(items.map((li) => li.textContent.replace(/\s+/g, ' ').trim())).toEqual([
+      expect.stringMatching(/^Nebraska.*Similarity 0\.61/),
+      expect.stringMatching(/^Louisiana.*Similarity 0\.22/),
+      expect.stringMatching(/^Montana.*Similarity 0\.09/),
+      expect.stringMatching(/^Texas.*Similarity 0\.05/),
+    ])
+    // One-click pairs.
+    expect(
+      within(section).getByRole('link', { name: 'Compare with Nebraska' }).getAttribute('href'),
+    ).toBe('/compare/states/ga-vs-ne')
+
+    const button = within(section).getByRole('button', { name: 'Compare Georgia with 0 states' })
+    expect(button.hasAttribute('disabled')).toBe(true)
+    await user.click(within(section).getByRole('checkbox', { name: 'Montana' }))
+    await user.click(within(section).getByRole('checkbox', { name: 'Nebraska' }))
+    await user.click(within(section).getByRole('checkbox', { name: 'Louisiana' }))
+    // Three chosen: the fourth waits.
+    expect(within(section).getByRole('checkbox', { name: 'Texas' }).hasAttribute('disabled')).toBe(
+      true,
+    )
+    const go = within(section).getByRole('button', { name: 'Compare Georgia with 3 states' })
+    expect(go.hasAttribute('disabled')).toBe(false)
+    await user.click(go)
+    // The state first, then the others in list order.
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/compare/states/ga-vs-ne-vs-la-vs-mt')
+    })
+  })
+
+  it('says so when no similarity is known yet', async () => {
+    serve('ga', { ...georgia, similar: [] })
+    await renderRoute('/states/ga')
+    const section = await screen.findByRole('region', {
+      name: 'States with the most similar lists',
+    })
+    expect(section.textContent).toContain('No other state has a list to compare with yet.')
   })
 })

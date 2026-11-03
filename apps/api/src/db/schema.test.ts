@@ -28,6 +28,7 @@ const TABLES = [
   'ref_ccsr',
   'entry_unified',
   'unified_universe',
+  'state_similarity',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -424,6 +425,38 @@ describe('unified categories (docs/data-model.md, "Unified categories (M5)")', (
     await db.prepare(sql).bind(cat?.id, 'F200').run()
     await expect(db.prepare(sql).bind(cat?.id, 'F200').run()).rejects.toThrow(
       /UNIQUE constraint failed/,
+    )
+  })
+
+  it('stores pair similarity once per pair, one D1 write per row (WITHOUT ROWID, no extra index)', async () => {
+    await resetDb(db)
+    await seedState('GA')
+    await seedState('MT')
+    const table = await db
+      .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'state_similarity'`)
+      .first<{ sql: string }>()
+    expect(table?.sql).toMatch(/WITHOUT ROWID\s*$/)
+    const { results } = await db
+      .prepare(
+        `SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'state_similarity'`,
+      )
+      .all<{ name: string }>()
+    expect(results).toEqual([])
+    const sql = `INSERT INTO state_similarity (state_a, state_b, shared, only_a, only_b, jaccard)
+      VALUES (?, ?, ?, ?, ?, ?)`
+    await db.prepare(sql).bind('GA', 'MT', 1, 1, 0, 0.5).run()
+    // Each pair once, in order; counts and the index in range; both states must exist.
+    await expect(db.prepare(sql).bind('MT', 'GA', 1, 1, 0, 0.5).run()).rejects.toThrow(
+      /CHECK constraint failed: state_similarity_order_check/,
+    )
+    await expect(db.prepare(sql).bind('GA', 'GA', 1, 1, 0, 0.5).run()).rejects.toThrow(
+      /CHECK constraint failed/,
+    )
+    await expect(db.prepare(sql).bind('GA', 'NE', 1, 1, 0, 1.5).run()).rejects.toThrow(
+      /CHECK constraint failed: state_similarity_counts_check/,
+    )
+    await expect(db.prepare(sql).bind('GA', 'ZZ', 1, 1, 0, 0.5).run()).rejects.toThrow(
+      /FOREIGN KEY constraint failed/,
     )
   })
 })

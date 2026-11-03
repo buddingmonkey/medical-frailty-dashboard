@@ -68,6 +68,18 @@ details below the table, and links to the CSV (`/compare/<slug>/codes.csv`) and 
 table of the federal parent. A draft, retired or unknown slug answers a 404 page with
 `noindex`. `e2e/drill-down.spec.ts` reads it with JavaScript off.
 
+**Built in M5 step 7** for `/compare/states/<st>-vs-<st>[…]`, the comparison of 2–4 states:
+title "<A> vs <B> medical frailty codes | …", **always `noindex`** (2-state pages too: 51 × 50 / 2
+= 1,275 pairs alone would be thin, near-duplicate pages, and every fact on them is already on the
+state pages, which carry each state's most similar states and their similarity as text), and not
+in the sitemap. The canonical is the states in **alphabetical order** with no query
+(`/compare/states/ga-vs-mt` for `mt-vs-ga`), since the order only changes the columns. The HTML
+carries the summary, a GET form for the pickers (`/compare/states?states=…` redirects to the
+comparison), one page of groups as a real table, a link to show every code or only the
+differences, and the CSV. Capitals redirect (301) to lowercase; an unknown state, one, five or a
+repeated state answers a 404 page with `noindex`. The state pages' "States with the most similar
+lists" is a GET form too. `e2e/states-compare.spec.ts` reads both with JavaScript off.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 

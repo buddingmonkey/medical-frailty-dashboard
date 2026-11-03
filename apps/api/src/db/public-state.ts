@@ -5,8 +5,10 @@ import {
   mappingKey,
   type PublicStateDetail,
   publicStateDetailResponseSchema,
+  SIMILAR_STATES_SHOWN,
+  type SimilarState,
 } from '@mfcd/shared'
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { unifiedParentsSql } from './federal'
@@ -43,7 +45,7 @@ export async function publicStateDetail(
     .where(eq(states.slug, slug))
   if (!state) return null
 
-  const [summaries, sources, versions] = await Promise.all([
+  const [summaries, sources, versions, similar] = await Promise.all([
     publicSummaries(db, state.id),
     state.publishedVersionId === null
       ? Promise.resolve([])
@@ -75,6 +77,7 @@ export async function publicStateDetail(
         ),
       )
       .orderBy(desc(datasetVersions.versionNo)),
+    state.publishedVersionId === null ? Promise.resolve([]) : similarStates(db, state.id),
   ])
 
   return publicStateDetailResponseSchema.parse({
@@ -84,7 +87,25 @@ export async function publicStateDetail(
     sources: sources.map((s) => ({ ...s, url: safeUrl(s.url) })),
     versions,
     categories: summaries.categories.get(state.id) ?? [],
+    similar,
   })
+}
+
+/**
+ * The states whose lists are most like this state's (roadmap M5 step 7), read from
+ * `state_similarity` (src/db/similarity.ts): most similar first, then by name. Only states that
+ * still have a list (a pair row outlives nothing, but this keeps the page honest if it did).
+ */
+async function similarStates(db: Db, stateId: string): Promise<SimilarState[]> {
+  return db.all<SimilarState>(sql`
+    SELECT o.id, o.slug, o.name, p.jaccard, p.shared,
+      CASE WHEN p.state_a = ${stateId} THEN p.only_a ELSE p.only_b END AS onlyThis,
+      CASE WHEN p.state_a = ${stateId} THEN p.only_b ELSE p.only_a END AS onlyOther
+    FROM state_similarity p
+    JOIN states o ON o.id = CASE WHEN p.state_a = ${stateId} THEN p.state_b ELSE p.state_a END
+    WHERE (p.state_a = ${stateId} OR p.state_b = ${stateId}) AND o.published_version_id IS NOT NULL
+    ORDER BY p.jaccard DESC, o.name
+    LIMIT ${SIMILAR_STATES_SHOWN}`)
 }
 
 /** Every entry of a state's published list, with its federal categories and source, by code. */

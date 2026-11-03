@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { collectErrors, seriousA11yViolations } from './helpers'
 
 // The code table (roadmap M4 step 2; at /compare/codes since M5 step 5). Montana's three
-// entries come from e2e/fixtures/public-seed.sql; no other state has a list in the e2e database.
+// entries come from e2e/fixtures/public-seed.sql (Nebraska also has a list since M5 step 7).
 
 test('pick a category and states, read the table, share the link', async ({ page }) => {
   const errors = collectErrors(page)

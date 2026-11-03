@@ -55,6 +55,27 @@ import {
   stateCategoriesIntro,
   stateStatusLabels,
   STATES_AND_DC,
+  SIMILAR_PICK_MAX,
+  type SimilarState,
+  SIMILARITY_NOTE,
+  similarityText,
+  STATES_COMPARE_INTRO,
+  STATES_COMPARE_MAX,
+  STATES_COMPARE_MIN,
+  STATES_COMPARE_SUMMARY_NOTE,
+  statesCompareAllLabel,
+  statesCompareCaption,
+  statesCompareCsvPath,
+  statesCompareGroupCountText,
+  statesCompareNames,
+  statesCompareNoListText,
+  statesCompareOnlyLabel,
+  statesComparePath,
+  type StatesCompareQuery,
+  type StatesCompareResponse,
+  statesCompareSearchParams,
+  statesCompareSummaryText,
+  statesCompareTitle,
 } from '@mfcd/shared'
 
 import { Html, html, jsonLdScript } from './html'
@@ -294,6 +315,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
             )}
           </tbody>
         </table>
+        ${similarSection(state, detail.similar)}
         <h2>Sources</h2>
         <ul>
           ${detail.sources.map(
@@ -350,6 +372,41 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
       <h1>${state.name}</h1>
       ${sentences.map((s) => html`<p>${s}</p>`)} ${listed} ${notes}`,
   }
+}
+
+/**
+ * "States with the most similar lists" (roadmap M5 step 7): each with its similarity and a link
+ * to the pair, and a GET form that works without JavaScript (`/compare/states?states=…`
+ * redirects to the comparison).
+ */
+function similarSection(
+  state: { id: string; slug: string; name: string },
+  similar: readonly SimilarState[],
+): Html {
+  return html`<h2>States with the most similar lists</h2>
+    <p>${SIMILARITY_NOTE}</p>
+    ${
+      similar.length === 0
+        ? html`<p>No other state has a list to compare with yet.</p>`
+        : html`<form method="get" action="/compare/states">
+            <input type="hidden" name="states" value="${state.slug}" />
+            <ul>
+              ${similar.map(
+                (s) =>
+                  html`<li>
+                    <input type="checkbox" name="states" value="${s.slug}" id="similar-${s.slug}" />
+                    <label for="similar-${s.slug}">${s.name}</label>
+                    Similarity ${similarityText(s.jaccard)} ·
+                    <a href="${statesComparePath([state.id, s.id])}">Compare with ${s.name}</a>
+                  </li>`,
+              )}
+            </ul>
+            <p>
+              <button type="submit">Compare ${state.name} with the chosen states</button>
+              Choose up to ${SIMILAR_PICK_MAX}.
+            </p>
+          </form>`
+    }`
 }
 
 const COMPARE_DESCRIPTION =
@@ -801,6 +858,207 @@ export function drillPage(
     body: html`${about} ${form}
       <p>${drillStatusText(data)}</p>
       ${links} ${table} ${pager} ${detail ? drillDetailHtml(detail) : null}`,
+  }
+}
+
+/** The comparison's pickers as a GET form (`/compare/states?states=…` redirects). */
+function statesPickerForm(data: StatesCompareResponse): Html {
+  const labels = ['First state', 'Second state', 'Third state', 'Fourth state']
+  return html`<form method="get" action="/compare/states">
+    <fieldset>
+      <legend>States to compare</legend>
+      ${labels.slice(0, STATES_COMPARE_MAX).map((label, i) => {
+        const current = data.states[i]?.slug
+        return html`<p>
+          <label for="states-picker-${i}">${label}</label>
+          <select id="states-picker-${i}" name="states">
+            <option value="">${i < STATES_COMPARE_MIN ? 'Choose a state' : 'None'}</option>
+            ${data.choices.map((c) =>
+              c.slug === current
+                ? html`<option value="${c.slug}" selected>${c.name}</option>`
+                : html`<option value="${c.slug}">${c.name}</option>`,
+            )}
+          </select>
+        </p>`
+      })}
+    </fieldset>
+    <p><button type="submit">Compare</button></p>
+  </form>`
+}
+
+/**
+ * `/compare/states/<st>-vs-<st>…` (roadmap M5 step 7): the summary and the codes where the
+ * states differ, every group expanded. Never indexed (1,275 pairs alone would be thin,
+ * near-duplicate pages; the state pages carry the similarity in text); canonical to the states
+ * in alphabetical order, since the order only changes the columns.
+ */
+export function statesComparePage(
+  data: StatesCompareResponse,
+  query: StatesCompareQuery,
+  origin: string,
+  path: string,
+): PageParts {
+  const names = data.states.map((s) => s.name)
+  const sorted = [...data.states.map((s) => s.id)].sort()
+  const applied: StatesCompareQuery = { ...query, diff: data.query.diff, page: data.page }
+  const href = (change: Partial<StatesCompareQuery>) =>
+    `?${statesCompareSearchParams({ ...applied, page: 1, ...change }).toString()}`
+  const noList = data.states.filter((s) => !s.hasList)
+  const summary = data.summary
+  const description = summary
+    ? `Where ${names.join(' and ')}’s medical frailty code lists differ: ${data.states
+        .map((s, i) => `${String(summary.only[i] ?? 0)} codes only ${s.name} lists`)
+        .join(
+          ', ',
+        )}, ${String(summary.all)} listed by ${data.states.length === 2 ? 'both' : 'all'}.`
+    : statesCompareNoListText(noList.map((s) => s.name))
+
+  const head = html`<p><a href="/compare">Overview of every state</a></p>
+    <h1>${statesCompareNames(names)}</h1>
+    <p>${STATES_COMPARE_INTRO}</p>
+    ${statesPickerForm(data)}`
+
+  if (!summary) {
+    return {
+      status: 200,
+      title: statesCompareTitle(names),
+      description,
+      path,
+      canonical: `${origin}${statesComparePath(sorted)}`,
+      noindex: true,
+      jsonLd: [],
+      body: html`${head}
+        <p>
+          ${description}
+          ${noList.map((s) => html`<a href="/states/${s.slug}">${s.name}’s page</a>. `)}
+        </p>`,
+    }
+  }
+
+  const summaryHtml = html`<h2>Summary</h2>
+    <dl>
+      ${data.states.map(
+        (s, i) =>
+          html`<dt>${statesCompareOnlyLabel(s.name)}</dt>
+            <dd>${formatCount(summary.only[i] ?? 0)}</dd>`,
+      )}
+      <dt>${statesCompareAllLabel(data.states.length)}</dt>
+      <dd>${formatCount(summary.all)}</dd>
+      ${
+        summary.similarity
+          ? html`<dt>Similarity</dt>
+              <dd>${similarityText(summary.similarity.jaccard)}</dd>`
+          : null
+      }
+    </dl>
+    <p>${STATES_COMPARE_SUMMARY_NOTE} ${summary.similarity ? SIMILARITY_NOTE : ''}</p>`
+
+  const links = html`<p>
+    ${
+      data.query.diff
+        ? html`<a href="${href({ diff: false })}">Show every code</a>`
+        : html`<a href="${href({ diff: true })}">Show only differences</a>`
+    }.
+    <a href="${statesCompareCsvPath(data.states.map((s) => s.id))}">Download every code (CSV)</a>.
+  </p>`
+
+  const groupHeading = (g: StatesCompareResponse['groups'][number]) => {
+    const differ = `${String(g.differing)} of ${String(g.allRows)} ${g.allRows === 1 ? 'code differs' : 'codes differ'}${g.continued ? ', continued' : ''}`
+    return g.slug
+      ? html`<a href="/compare/${g.slug}">${g.label}</a> (${differ})`
+      : html`${g.label} (${differ})`
+  }
+  const rowHeading = (r: StatesCompareResponse['groups'][number]['rows'][number]) =>
+    `${r.display}${!data.query.diff && r.differs ? ' (differs)' : ''}`
+
+  const table =
+    data.groups.length === 0
+      ? html`<p>These lists do not differ.</p>`
+      : html`<table>
+          <caption>
+            ${statesCompareCaption(names, data.query.diff)}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Description</th>
+              ${data.states.map((s) => html`<th scope="col">${s.name}</th>`)}
+            </tr>
+          </thead>
+          ${data.groups.map(
+            (g) =>
+              html`<tbody>
+                <tr>
+                  <th scope="rowgroup" colspan="2">${groupHeading(g)}</th>
+                  ${g.counts.map((n) => html`<td>${statesCompareGroupCountText(n)}</td>`)}
+                </tr>
+                ${g.rows.map(
+                  (r) =>
+                    html`<tr>
+                      <th scope="row">${rowHeading(r)}</th>
+                      <td>${drillDescription(r)}</td>
+                      ${r.cells.map((cell) => html`<td>${drillCellWords(cell)}</td>`)}
+                    </tr>`,
+                )}
+              </tbody>`,
+          )}
+        </table>`
+
+  const pager =
+    data.pageCount > 1
+      ? html`<nav aria-label="Pages">
+          <p>
+            ${data.page > 1 ? html`<a href="${href({ page: data.page - 1 })}">Previous page</a>` : null}
+            ${
+              data.page < data.pageCount
+                ? html`<a href="${href({ page: data.page + 1 })}">Next page</a>`
+                : null
+            }
+          </p>
+        </nav>`
+      : null
+
+  return {
+    status: 200,
+    title: statesCompareTitle(names),
+    description,
+    path,
+    canonical: `${origin}${statesComparePath(sorted)}`,
+    noindex: true,
+    jsonLd: [],
+    body: html`${head} ${summaryHtml} ${links}
+      <p>
+        ${statesCompareSummaryText({
+          totalRows: data.totalRows,
+          totalGroups: data.totalGroups,
+          page: data.page,
+          pageCount: data.pageCount,
+          diff: data.query.diff,
+        })}
+      </p>
+      ${table} ${pager}`,
+  }
+}
+
+export function statesCompareNotFoundPage(
+  origin: string,
+  path: string,
+  reason = 'There is no comparison at this address.',
+): PageParts {
+  return {
+    status: 404,
+    title: pageTitles.statesCompareNotFound,
+    description: 'A comparison names 2 to 4 states with a list.',
+    path,
+    canonical: `${origin}${path}`,
+    noindex: true,
+    jsonLd: [],
+    body: html`<h1>Comparison not found</h1>
+      <p>
+        ${reason} A comparison names 2 to 4 states with a list, like
+        <a href="/compare/states/ga-vs-ne">/compare/states/ga-vs-ne</a>.
+        <a href="/states">See all states</a>
+      </p>`,
   }
 }
 

@@ -107,6 +107,23 @@ export const publicStateCategorySchema = z.object({
 })
 export type PublicStateCategory = z.infer<typeof publicStateCategorySchema>
 
+/** A state whose list is like this one's (roadmap M5 step 7; `state_similarity`). */
+export const similarStateSchema = z.object({
+  id: z.string().regex(/^[A-Z]{2}$/),
+  slug: z.string().regex(/^[a-z]{2}$/),
+  name: z.string(),
+  /** Jaccard index, 0–1, over both states' codes (docs/data-model.md, "Pair similarity"). */
+  jaccard: z.number().min(0).max(1),
+  shared: z.number().int().min(0),
+  /** Codes only this page's state lists or covers, and only the other state. */
+  onlyThis: z.number().int().min(0),
+  onlyOther: z.number().int().min(0),
+})
+export type SimilarState = z.infer<typeof similarStateSchema>
+
+/** How many similar states a state page lists. */
+export const SIMILAR_STATES_SHOWN = 10
+
 /** Body of `GET /api/public/states/:slug`. */
 export const publicStateDetailResponseSchema = z.object({
   dataVersion: z.number().int().min(0),
@@ -135,6 +152,8 @@ export const publicStateDetailResponseSchema = z.object({
     }),
   ),
   categories: z.array(publicStateCategorySchema),
+  /** The states with the most similar lists, most similar first; empty without a list. */
+  similar: z.array(similarStateSchema).max(SIMILAR_STATES_SHOWN),
 })
 export type PublicStateDetail = z.infer<typeof publicStateDetailResponseSchema>
 
@@ -178,6 +197,8 @@ export const pageTitles = {
   overview: `Which states cover what | ${SITE_NAME}`,
   drillDown: (label: string) => `${label} codes by state | ${SITE_NAME}`,
   categoryNotFound: `Category not found | ${SITE_NAME}`,
+  statesCompare: (names: string) => `${names} medical frailty codes | ${SITE_NAME}`,
+  statesCompareNotFound: `Comparison not found | ${SITE_NAME}`,
   states: `All states | ${SITE_NAME}`,
 }
 
