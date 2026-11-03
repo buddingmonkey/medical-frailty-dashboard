@@ -229,6 +229,16 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
 - **Preview data, step 4 done** (branch `env-banner`): every HTML page of a Worker whose
   `ENVIRONMENT` is not exactly `production` opens with a gold "Preview site: test data" banner
   (`src/middleware/environment-banner.ts`). It is added at run time, so both Workers run the same build.
+- **Preview data done** (2026-11-02, 23:08 CST):
+  - **Production has the real lists.** The project lead approved Copy state data, run
+    41579169608. Production matches preview on row counts, checksums and the four published
+    states, and its five R2 files pass SHA-256. Bookmark before the copy:
+    `00000009-00000000-00005118-c5f815f77b9a6cbc5768eed2dfbc9729`.
+  - **Preview has the seed.** It holds 480 entries and all 19 categories are published.
+    Bookmark before the seed: `00000046-00000000-00005118-ab565850df3a1d1238999baf26ba4ddb`.
+  - **Next, for the project lead:** press Rebuild coverage on preview.
+  - **On production,** the 19 starter categories are still drafts. Edit them and publish them
+    there.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

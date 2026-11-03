@@ -32,3 +32,9 @@ Start 22:44 CST, end 22:55 CST (`date`).
 ## Open threads
 - On preview: run `pnpm db:seed:preview` after the production copy is checked, then press
   Rebuild coverage. That button needs the project lead, since preview admin is behind Access.
+
+## Outcome (23:08 CST)
+The project lead approved the copy, and production matched preview: counts, checksums, states,
+and the SHA-256 of all five R2 files. `pnpm db:seed:preview` then replaced preview's lists
+with the seed, which holds 480 entries and 19 published categories. Both D1 bookmarks are in
+`docs/status.md`.
