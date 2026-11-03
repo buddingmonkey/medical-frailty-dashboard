@@ -72,6 +72,7 @@ declare module 'vue-router/auto-routes' {
       | '/admin/drafts/[versionId]'
       | '/admin/guide'
       | '/admin/ingest'
+      | '/admin/launch-readiness'
       | '/admin/mappings'
       | '/admin/restore'
       | '/admin/sources'
@@ -131,6 +132,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/ingest': RouteRecordInfo<
       '/admin/ingest',
       '/admin/ingest',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/launch-readiness': RouteRecordInfo<
+      '/admin/launch-readiness',
+      '/admin/launch-readiness',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -324,6 +332,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin/drafts/[versionId]'
         | '/admin/guide'
         | '/admin/ingest'
+        | '/admin/launch-readiness'
         | '/admin/mappings'
         | '/admin/restore'
         | '/admin/sources'
@@ -394,6 +403,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/ingest.vue': {
       routes:
         | '/admin/ingest'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/launch-readiness.vue': {
+      routes:
+        | '/admin/launch-readiness'
       views:
         | never
       pathParamNames:
