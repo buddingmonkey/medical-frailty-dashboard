@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   ccsrCategoryListResponseSchema,
+  coverageRebuildResponseSchema,
   federalCategories,
   federalCategoryInfo,
   type UnifiedCategoryBody,
@@ -65,6 +66,22 @@ const save = useMutation({
     editing.value = null
     await queryClient.invalidateQueries({ queryKey: ['admin', 'unified'] })
   },
+})
+
+// Rebuild coverage (docs/deployment.md, "Preview data"): after seed data, or a new CCSR or
+// ICD-10-CM release. Each step writes only what changed.
+const rebuild = useMutation({
+  mutationFn: () =>
+    sendJson('POST', '/api/admin/coverage/rebuild', {}, coverageRebuildResponseSchema),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'unified'] })
+  },
+})
+const n = (value: number) => value.toLocaleString('en-US')
+const rebuilt = computed(() => {
+  const r = rebuild.data.value
+  if (!r) return null
+  return `Rebuilt ${n(r.categories)} categories: ${n(r.universeCodes)} codes in their full lists, ${n(r.placements)} placements, ${n(r.similarPairs)} state pairs (${(r.ms / 1000).toFixed(1)} s).`
 })
 
 const groupCount = (u: UnifiedListItem) =>
@@ -164,5 +181,28 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         </tbody>
       </table>
     </div>
+
+    <section aria-labelledby="rebuild-heading" class="space-y-2 border-t border-border pt-6">
+      <h3 id="rebuild-heading" class="font-display text-lg font-medium text-heading">
+        Rebuild coverage
+      </h3>
+      <p class="max-w-prose text-muted-foreground">
+        Rebuilds every category’s full code list, where each state’s codes count, and how alike the
+        states are. Saving categories and mappings already does this. Use it after loading seed data
+        or a new CCSR or ICD-10-CM release. It changes only what is out of date.
+      </p>
+      <button
+        type="button"
+        :class="smallButton"
+        :disabled="rebuild.isPending.value"
+        @click="rebuild.mutate()"
+      >
+        {{ rebuild.isPending.value ? 'Rebuilding…' : 'Rebuild coverage' }}
+      </button>
+      <p v-if="rebuilt" role="status">{{ rebuilt }}</p>
+      <p v-if="rebuild.error.value" role="alert" class="text-danger">
+        Could not rebuild: {{ rebuild.error.value.message }}
+      </p>
+    </section>
   </section>
 </template>

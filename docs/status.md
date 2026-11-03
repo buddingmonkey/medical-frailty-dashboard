@@ -219,6 +219,9 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   them there. Preview becomes a test site with seed data and a banner. **Step 1 done** (branch
   `prod-state-copy`): the **Copy state data** workflow copies preview's four states to an empty
   production, after the production approval. Steps 2–4 are next: rebuild coverage, seed, banner.
+- **Preview data, step 2 done** (branch `coverage-rebuild`): **Rebuild coverage** on Admin →
+  Unified categories (`POST /api/admin/coverage/rebuild`) rebuilds full code lists, placements and
+  similarity from the base rows. For seed data loaded as SQL and for a new CCSR or ICD-10-CM release.
 - **Preview data, step 4 done** (branch `env-banner`): every HTML page of a Worker whose
   `ENVIRONMENT` is not exactly `production` opens with a gold "Preview site: test data" banner
   (`src/middleware/environment-banner.ts`). It is added at run time, so both Workers run the same build.

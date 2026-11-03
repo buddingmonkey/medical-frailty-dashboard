@@ -12,6 +12,7 @@ import { siteGate } from './middleware/site-gate'
 import { aiCleanupRoute } from './routes/admin/ai-cleanup'
 import { audit } from './routes/admin/audit'
 import { categoriesRoute } from './routes/admin/categories'
+import { coverageRoute } from './routes/admin/coverage'
 import { columnProfilesRoute } from './routes/admin/column-profiles'
 import { draftsRoute } from './routes/admin/drafts'
 import { refCodesRoute } from './routes/admin/ref-codes'
@@ -75,6 +76,7 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.route('/api/admin/states', unifiedMappingsRoute)
   app.route('/api/admin/unified', unifiedRoute)
   app.route('/api/admin/ccsr-categories', ccsrCategoriesRoute)
+  app.route('/api/admin/coverage', coverageRoute)
   app.route('/api/admin/sources', sources)
   app.route('/api/admin/column-profiles', columnProfilesRoute)
   app.route('/api/admin/ref-codes', refCodesRoute)
