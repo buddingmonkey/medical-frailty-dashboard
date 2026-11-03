@@ -75,7 +75,7 @@ describe('statesCompareQueryFromRecord', () => {
 })
 
 describe('statesCompareDiffers', () => {
-  const listed = (qualification: 'standalone' | 'needs_support') => ({
+  const listed = (qualification: 'standalone' | 'needs_support' | 'unknown') => ({
     status: 'exact' as const,
     match: { qualification },
   })
@@ -85,6 +85,14 @@ describe('statesCompareDiffers', () => {
   })
   const none = { status: 'not_listed' as const, match: null }
   const narrower = { status: 'narrower' as const, match: null }
+
+  it("does not count a rule the state doesn't state as a disagreement", () => {
+    expect(statesCompareDiffers([listed('standalone'), listed('unknown')])).toBe(false)
+    expect(statesCompareDiffers([listed('unknown'), listed('unknown')])).toBe(false)
+    expect(
+      statesCompareDiffers([listed('standalone'), listed('needs_support'), listed('unknown')]),
+    ).toBe(true)
+  })
 
   it('differs when the states disagree on listed-or-covered', () => {
     expect(statesCompareDiffers([listed('standalone'), none])).toBe(true)

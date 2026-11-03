@@ -136,6 +136,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M5 step 5 (2026-11-02) | 18:03–18:25 | not measured | $0 | Overview matrix at /compare; screenshots with real data caught a wrong label |
 | M5 step 5b (2026-11-02) | 18:29–18:51 | not measured | $5/month (Workers Paid kept) | Federal categories now follow unified categories; one bug from a persisted test database fixed |
 | M5 step 6 (2026-11-02) | 18:55–19:30 | not measured | Workers Paid | Category drill-down; a 3.4 s query found with real data became 0.04 s |
+| M5 step 7 (2026-11-02) | 19:33–20:15 | not measured | Workers Paid | State-vs-state comparison and similarity; review caught 'only differences' hiding nothing |
 
 ## Assets to capture for slides
 

@@ -69,7 +69,8 @@ const compareCtes = sql`,
     SELECT r.rk, r.sys, r.kind, r.norm, r.end_norm, r.wild, r.last_norm,
       count(b.state_id) AS n, count(DISTINCT e.qualification) AS nq,
       CASE WHEN count(b.state_id) < (SELECT count(*) FROM pub)
-             OR count(DISTINCT e.qualification) > 1 THEN 1 ELSE 0 END AS differs,
+             OR count(DISTINCT CASE WHEN e.qualification <> 'unknown' THEN e.qualification END) > 1
+           THEN 1 ELSE 0 END AS differs,
       CASE r.kind WHEN 'exact' THEN 0 WHEN 'prefix' THEN 1 ELSE 2 END AS krank
     FROM drows r LEFT JOIN best b ON b.rk = r.rk LEFT JOIN entries e ON e.id = b.entry_id
     GROUP BY r.rk),

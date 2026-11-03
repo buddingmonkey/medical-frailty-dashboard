@@ -103,7 +103,9 @@ export function statesCompareDiffers(
 ): boolean {
   const listed = cells.filter((c) => c.status === 'exact' || c.status === 'covered')
   if (listed.length !== cells.length) return listed.length > 0
-  return new Set(listed.map((c) => c.match?.qualification)).size > 1
+  // A rule the state does not state is no disagreement (project lead to confirm at the M5 review).
+  const known = listed.map((c) => c.match?.qualification).filter((q) => q !== 'unknown')
+  return new Set(known).size > 1
 }
 
 // ---------------------------------------------------------------------------------------------

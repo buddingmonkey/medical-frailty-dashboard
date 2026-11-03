@@ -73,7 +73,7 @@ describe('GET /api/public/states-compare', () => {
       only: [1, 2],
       all: 4,
       rows: 7,
-      differing: 5,
+      differing: 4,
       similarity: { jaccard: 4 / 9, shared: 4, onlyFirst: 1, onlySecond: 4 },
     })
     // The column order is the URL's; the pair is stored once.
@@ -92,15 +92,14 @@ describe('GET /api/public/states-compare', () => {
     expect(body.query).toEqual({ diff: true })
     expect(outline(body)).toEqual([
       [
-        'Serious mental illness 3/5 4/5',
+        'Serious mental illness 3/5 3/5',
         'F20.0–F20.9: narrower 1 | exact standalone',
         'F31.*: exact needs_support | covered standalone',
         'F31.*–F32.*: narrower 2 | exact standalone',
-        'F32: exact unknown | covered standalone',
       ],
       ['Equipment 2/1 1/2', 'E0602: exact unknown | not_listed'],
     ])
-    expect(body).toMatchObject({ totalRows: 5, totalGroups: 2, page: 1, pageCount: 1 })
+    expect(body).toMatchObject({ totalRows: 4, totalGroups: 2, page: 1, pageCount: 1 })
     const f31 = body.groups[0]?.rows[1]
     expect(f31).toMatchObject({
       key: 'icd10cm|prefix|F31',
@@ -123,7 +122,7 @@ describe('GET /api/public/states-compare', () => {
         'F20.0–F20.9: narrower 1 | exact standalone',
         'F31.*: exact needs_support | covered standalone',
         'F31.*–F32.*: narrower 2 | exact standalone',
-        'F32: exact unknown | covered standalone',
+        'F32: exact unknown | covered standalone (same)',
       ],
       [
         'Equipment 2/1 2/2',
@@ -174,19 +173,15 @@ describe('GET /api/public/states-compare', () => {
         pageRows: 2,
       })
     const first = await page(1)
-    expect(first).toMatchObject({ page: 1, pageCount: 3, totalRows: 5, totalGroups: 2 })
-    expect(first && outline(first).map((g) => g[0])).toEqual(['Serious mental illness 3/5 4/5'])
+    expect(first).toMatchObject({ page: 1, pageCount: 2, totalRows: 4, totalGroups: 2 })
+    expect(first && outline(first).map((g) => g[0])).toEqual(['Serious mental illness 3/5 3/5'])
     const second = await page(2)
     expect(second && outline(second)).toEqual([
-      [
-        'Serious mental illness 3/5 4/5 (continued)',
-        'F31.*–F32.*: narrower 2 | exact standalone',
-        'F32: exact unknown | covered standalone',
-      ],
+      ['Serious mental illness 3/5 3/5 (continued)', 'F31.*–F32.*: narrower 2 | exact standalone'],
+      ['Equipment 2/1 1/2', 'E0602: exact unknown | not_listed'],
     ])
-    expect((await page(3))?.groups.map((g) => g.label)).toEqual(['Equipment'])
     // Past the end: the last page.
-    expect((await page(9))?.page).toBe(3)
+    expect((await page(9))?.page).toBe(2)
   })
 
   it('a state without a list: the states, the pickers, nothing compared', async () => {
