@@ -52,3 +52,38 @@ Search for a code by number or words, and a page per code that shows every state
 - Should the SPA redirect non-canonical code URLs (`/codes/icd-10-cm/f200`)? Step 5 decides,
   with server rendering.
 - An entry "F20 with children" shows as "covered" on F20's page, as in M4.
+
+## Step 3c: contributor docs (10:45–11:05)
+- New `docs/getting-started.md`, which takes someone from the GitHub page to an open PR:
+  accounts, WSL 2 on Windows (required: the scripts call `ps`, `ss` and bash), each install
+  with a check that it worked, fork and clone, the local database, `pnpm dev`, the first
+  Claude Code session, and troubleshooting. `docs/playbook.md` was rewritten for a reader who
+  has never used a terminal and gained a glossary.
+- A Sonnet builder ran the setup in a fresh clone. `pnpm install` took 10 s,
+  `db:ref:local` 77 s (the docs said ~20 s; fixed) and `db:seed:local` 7 s. `pnpm dev`
+  served both `/` and `/admin/unified`. The GitHub sign-in, fork and Claude Code install
+  steps were not run, because they act on a real account.
+- 9 of the review's 11 contradictions between README, CONTRIBUTING and CLAUDE.md were fixed.
+- `.gitattributes` forces LF. The first version would have rewritten three CRLF fixtures that
+  the CMS/AHRQ parser tests depend on. The lead caught this when renormalizing, and those
+  fixtures are now `-text`.
+
+## Step 1: search endpoint (10:34–11:02 builder; lead review to 11:15)
+- `GET /api/public/codes/search?q=&states=&system=&limit=`. A code number (`F20`, `f20.0`,
+  `J1234`) prefix-matches through the normal indexes, with the exact code first. Words go to
+  FTS5 over both state entries and the new `ref_codes_fts` (migration 0012: ICD-10-CM and
+  HCPCS descriptions, never CPT). Every token is quoted, and the last one is a prefix for
+  type-ahead. Two D1 round trips; lists are bound with `json_each`, far below 100 parameters.
+- Measured locally: the backfill of 107,173 rows took ~2 s and added ~219k FTS rows; the
+  database grew from 17 to 43 MB. A search for "disorder*" returned 2,157 matches in 4 ms.
+- The lead added porter stemming to `ref_codes_fts` before the migration ran anywhere, so
+  "disorders" finds "disorder", and added a test that fails without it. `entries_fts` (0001)
+  is unchanged: changing it means rebuilding an applied table.
+
+### Corrections and surprises
+- Ranking: bm25 scores from two indexes are not comparable; F20.9 ranked above F20. Fix: when
+  a code has CMS text, the CMS score wins.
+- `ORDER BY e.id` made SQLite read every row of `entries`. A test on the query plan caught
+  it, and `INDEXED BY entries_code_idx` fixed it.
+- Numbers: 17 files, about 3.2k lines (2k of them drizzle's snapshot); 86 new tests.
+  `check:full`: 562 unit, 363 API, 53 e2e.

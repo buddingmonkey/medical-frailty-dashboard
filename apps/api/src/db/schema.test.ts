@@ -29,6 +29,7 @@ const TABLES = [
   'entry_unified',
   'unified_universe',
   'state_similarity',
+  'ref_codes_fts',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -493,5 +494,99 @@ describe('entries_fts', () => {
   it('passes the FTS integrity check', async () => {
     await insertEntry(ids.versionId, ids.docId)
     await db.prepare(`INSERT INTO entries_fts(entries_fts) VALUES ('integrity-check')`).run()
+  })
+})
+
+// migrations/0012_ref_codes_fts.sql: the CMS descriptions for code search (roadmap M6 step 1).
+describe('ref_codes_fts', () => {
+  beforeEach(async () => {
+    await resetDb(db)
+  })
+
+  function insertRef(
+    codeNorm: string,
+    description: string,
+    validFrom = '2026-10-01',
+    system = 'icd10cm',
+  ) {
+    return db
+      .prepare(
+        `INSERT OR IGNORE INTO ref_codes (code_system, code_norm, description, valid_from)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .bind(system, codeNorm, description, validFrom)
+      .run()
+  }
+
+  async function refMatches(query: string): Promise<string[]> {
+    const { results } = await db
+      .prepare(
+        `SELECT code_system || ':' || code_norm || ':' || valid_from AS k FROM ref_codes_fts
+         WHERE ref_codes_fts MATCH ? ORDER BY k`,
+      )
+      .bind(query)
+      .all<{ k: string }>()
+    return results.map((r) => r.k)
+  }
+
+  async function ftsRows(): Promise<number | undefined> {
+    const row = await db.prepare(`SELECT count(*) AS n FROM ref_codes_fts`).first<{ n: number }>()
+    return row?.n
+  }
+
+  it('indexes reference descriptions as rows arrive, once per row', async () => {
+    await insertRef('F200', 'Paranoid schizophrenia')
+    await insertRef('J1234', 'Injection, test drug, 1 mg', '2026-10-01', 'hcpcs')
+    // INSERT OR IGNORE of a row already there (a resumed reference load) adds nothing.
+    await insertRef('F200', 'Paranoid schizophrenia')
+    expect(await refMatches('description : paranoid')).toEqual(['icd10cm:F200:2026-10-01'])
+    expect(await refMatches('description : "schiz"*')).toEqual(['icd10cm:F200:2026-10-01'])
+    expect(await refMatches('description : injection')).toEqual(['hcpcs:J1234:2026-10-01'])
+    expect(await ftsRows()).toBe(2)
+  })
+
+  it("follows updates and deletes of one row, leaving the code's other releases", async () => {
+    await insertRef('F200', 'Paranoid schizophrenia')
+    await insertRef('F200', 'Paranoid schizophrenia, old text', '2025-10-01')
+    await db
+      .prepare(
+        `UPDATE ref_codes SET description = 'Catatonic schizophrenia'
+         WHERE code_norm = 'F200' AND valid_from = '2026-10-01'`,
+      )
+      .run()
+    expect(await refMatches('description : catatonic')).toEqual(['icd10cm:F200:2026-10-01'])
+    expect(await refMatches('description : paranoid')).toEqual(['icd10cm:F200:2025-10-01'])
+
+    // valid_to is not indexed: changing it leaves the index alone.
+    await db.prepare(`UPDATE ref_codes SET valid_to = '2027-09-30' WHERE code_norm = 'F200'`).run()
+    expect(await refMatches('description : schizophrenia')).toHaveLength(2)
+
+    await db
+      .prepare(`DELETE FROM ref_codes WHERE code_norm = 'F200' AND valid_from = '2025-10-01'`)
+      .run()
+    expect(await refMatches('description : schizophrenia')).toEqual(['icd10cm:F200:2026-10-01'])
+    await db.prepare(`DELETE FROM ref_codes`).run()
+    expect(await refMatches('description : schizophrenia')).toEqual([])
+    expect(await ftsRows()).toBe(0)
+  })
+
+  it('finds the row to delete through the index, not a scan', async () => {
+    const { results } = await db
+      .prepare(
+        `EXPLAIN QUERY PLAN SELECT rowid FROM ref_codes_fts WHERE rowid IN
+           (SELECT rowid FROM ref_codes_fts WHERE code_norm MATCH '"F200"')
+           AND code_norm = 'F200'`,
+      )
+      .all<{ detail: string }>()
+    const plan = results.map((r) => r.detail).join('\n')
+    expect(plan).toMatch(/VIRTUAL TABLE INDEX 0:M/)
+    expect(plan).not.toMatch(/VIRTUAL TABLE INDEX 0:$/m)
+  })
+
+  it('passes the FTS integrity check', async () => {
+    await insertRef('F200', 'Paranoid schizophrenia')
+    await db.prepare(`DELETE FROM ref_codes`).run()
+    await insertRef('F25', 'Schizoaffective disorders')
+    await db.prepare(`INSERT INTO ref_codes_fts(ref_codes_fts) VALUES ('integrity-check')`).run()
   })
 })

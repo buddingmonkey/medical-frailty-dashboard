@@ -53,7 +53,7 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   table-driven tests from the real files. New code system `drug_class` (LA pharmacy).
 - **M1 step 3 done** (branch `m1-step3-reference-data`): `packages/reference-data` builds
   `ref_codes` from pinned CMS files (ICD-10-CM FY2027: 98,403 codes; HCPCS October 2026: 8,770)
-  into 22 resumable SQL chunks. `pnpm db:ref:local` loads them locally in ~20 s. Remote loads
+  into 22 resumable SQL chunks. `pnpm db:ref:local` loads them locally in ~20 s (77 s on a fresh clone, 2026-11-03). Remote loads
   take two days per database on the free tier (with M1 step 6).
 - **M1 step 4 done** (branch `m1-step4-categories`): `packages/shared/src/categories.ts` with the
   five statutory categories (wording verified against the enrolled law), our two, and the
@@ -243,6 +243,7 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   Categories (`/compare/categories`, new), Map (`/compare/map`, new; the only place for the tile map since 2026-11-03, when the project lead moved it off home; old `/?category=` links get a 301 there), States side
   by side (`/compare/states`, new, with "States like mine") and Single codes. Matrix column
   labels link to their category. `categories` and `map` are reserved slugs.
+- **M6 step 1 done** (branch `m6-step1-search`): `GET /api/public/codes/search` (code prefix or words; state and system filters; `listedBy`), `ref_codes_fts` over the CMS text (migration 0012, backfilled in the migration), query schema in `packages/shared/src/search.ts`.
 - **M6 step 3 done** (branch `m6-step3-code-detail`): `/codes/<system>/<code>` (SPA) and `GET /api/public/codes/:system/:code`: every state grouped by status, "Confirmed" (listed, covered) first, each group with one sentence of help; listed states show the entry as published, the state's text, category, tier, rule and source. Matching reuses the drill-down SQL. The API reads `app_meta.show_qualification` (first route to do so). Drill-down codes link to their page.
 - **M6 step 3b done** (branch `m6-step3b-plain-language`): plain-language pass on every public
   page, for a state Medicaid reader. Public names (glossary in `docs/data-model.md`): a state's
@@ -265,6 +266,10 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
     a state page with no list ("report a list"); the court ruling note.
 - **51-state seed** on preview (PR #66): 4 real states (300 entries each), 40 synthetic lists,
   4 announced, 3 none.
+- **M6 step 3c done** (branch `m6-step3c-contributor-docs`): new `docs/getting-started.md`
+  (non-technical setup, WSL, fork, local site; run from a fresh clone) and a rewritten
+  `docs/playbook.md`; README, CONTRIBUTING and `.gitattributes` (LF) aligned. Steps with
+  GitHub, Claude Code sign-in and Windows were not run.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
