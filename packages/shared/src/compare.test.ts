@@ -387,9 +387,9 @@ describe('compare wording', () => {
     expect(compareCellText({ status: 'no_list', match: null, narrowerCount: 0 })).toBe(
       'No list on this site',
     )
-    expect(compareQualificationText(match)).toBe('Needs another code (inferred)')
+    expect(compareQualificationText(match)).toBe('Needs another code or documentation (inferred)')
     expect(compareQualificationText({ ...match, qualificationBasis: 'published' })).toBe(
-      'Needs another code',
+      'Needs another code or documentation',
     )
   })
 

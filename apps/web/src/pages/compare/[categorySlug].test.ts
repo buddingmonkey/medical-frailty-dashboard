@@ -199,7 +199,9 @@ beforeEach(() => {
 })
 
 const table = () =>
-  screen.findByRole('table', { name: /Serious mental illness: codes by how many states list them/ })
+  screen.findByRole('table', {
+    name: /Serious mental illness: codes by how many states include them/,
+  })
 const codeRows = (t: HTMLElement) =>
   within(t)
     .queryAllByRole('rowheader')
@@ -212,7 +214,16 @@ describe('category drill-down', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Serious mental illness' }),
     ).toBeTruthy()
-    expect(screen.getByText('Federal category: Disabling mental disorder')).toBeTruthy()
+    expect(screen.getByText(/^Federal category: Disabling mental disorder/)).toBeTruthy()
+    // M6 step 3b: the law's own words, what a comparison category is, and the legend.
+    expect(
+      screen.getByText(/Clause \(cc\) of the law: “an individual with a disabling/),
+    ).toBeTruthy()
+    expect(screen.getByText(/this site’s own grouping of codes/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'About the CCSR (AHRQ)' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Reading the table' }).textContent).toContain(
+      'Covered by a broader entry:',
+    )
     expect(screen.getByText('Psychotic and severe mood disorders.')).toBeTruthy()
     expect(screen.getByText(/Schizophrenia, bipolar disorder\./)).toBeTruthy()
     expect(screen.getByText(/MBD001/)).toBeTruthy()
@@ -220,7 +231,7 @@ describe('category drill-down', () => {
     expect(screen.getByRole('link', { name: /Compare single codes/ }).getAttribute('href')).toBe(
       '/compare/codes?states=GA%2CLA%2CMT&category=disabling_mental_disorder',
     )
-    expect(screen.getByRole('link', { name: /Download every row/ }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: /Download this table/ }).getAttribute('href')).toBe(
       '/compare/serious-mental-illness/codes.csv',
     )
     expect(document.title).toBe(
@@ -234,7 +245,7 @@ describe('category drill-down', () => {
     const t = await table()
     const f20 = within(t).getByRole('button', { name: 'F20' })
     expect(f20.getAttribute('aria-expanded')).toBe('false')
-    expect(within(t).getByText('3 of 3 list any')).toBeTruthy()
+    expect(within(t).getByText('3 of 3 include any')).toBeTruthy()
     expect(codeRows(t)).toEqual([])
 
     await user.click(f20)
@@ -242,7 +253,7 @@ describe('category drill-down', () => {
     expect(codeRows(t)).toEqual(['F20.0', 'F20.9'])
     const f200 = within(t).getByRole('row', { name: /^F20\.0/ })
     expect(within(f200).getByText('3 of 3 states')).toBeTruthy()
-    expect(within(f200).getByText('Qualifies alone 3 (1 inferred)')).toBeTruthy()
+    expect(within(f200).getByText('Enough by itself: 3 states (1 inferred)')).toBeTruthy()
     await user.click(f20)
     expect(codeRows(t)).toEqual([])
   })
@@ -256,12 +267,14 @@ describe('category drill-down', () => {
       within(filters).getByRole('button', { name: 'All codes' }).getAttribute('aria-pressed'),
     ).toBe('true')
 
-    await user.click(within(filters).getByRole('button', { name: 'Only one state' }))
+    await user.click(within(filters).getByRole('button', { name: 'Included by one state only' }))
     await waitFor(() => {
       expect(router.currentRoute.value.query).toEqual({ show: 'one' })
     })
     expect(
-      within(filters).getByRole('button', { name: 'Only one state' }).getAttribute('aria-pressed'),
+      within(filters)
+        .getByRole('button', { name: 'Included by one state only' })
+        .getAttribute('aria-pressed'),
     ).toBe('true')
     await waitFor(() => {
       expect(requested.at(-1)).toBe('?show=one')
@@ -279,7 +292,7 @@ describe('category drill-down', () => {
     const user = userEvent.setup()
     const { router } = await renderRoute('/compare/serious-mental-illness')
     await table()
-    const box = screen.getByRole('checkbox', { name: 'Include codes no state lists' })
+    const box = screen.getByRole('checkbox', { name: 'Also show codes no state includes' })
     expect((box as HTMLInputElement).disabled).toBe(false)
     await user.click(box)
     await waitFor(() => {
@@ -299,12 +312,12 @@ describe('category drill-down', () => {
     universe = 0
     await renderRoute('/compare/serious-mental-illness')
     await table()
-    const box = screen.getByRole('checkbox', { name: 'Include codes no state lists' })
+    const box = screen.getByRole('checkbox', { name: 'Also show codes no state includes' })
     expect((box as HTMLInputElement).disabled).toBe(true)
     expect(box.getAttribute('aria-describedby')).toBeTruthy()
     expect(
       screen.getByText(
-        'No full code list for this category, so only codes some state lists are shown.',
+        'This category has no reference list, so only codes some state includes are shown.',
       ),
     ).toBeTruthy()
   })
@@ -322,7 +335,7 @@ describe('category drill-down', () => {
     const f200 = within(t).getByRole('row', { name: /^F20\.0/ })
     expect(within(f200).getByText('Listed')).toBeTruthy()
     expect(within(f200).getByText('Attachment A')).toBeTruthy()
-    expect(within(f200).getAllByText('Qualifies alone').length).toBeGreaterThan(0)
+    expect(within(f200).getAllByText('Enough by itself').length).toBeGreaterThan(0)
     const f31 = within(t).getByRole('row', { name: /^F31\.\*/ })
     expect(within(f31).getByText('2 narrower codes listed')).toBeTruthy()
   })
@@ -339,14 +352,14 @@ describe('category drill-down', () => {
       })
     })
     const panel = await screen.findByRole('region', { name: /F20\.0 Paranoid schizophrenia/ })
-    expect(within(panel).getByText('Listed by 2 of 3 states with lists.')).toBeTruthy()
+    expect(within(panel).getByText('Included by 2 of 3 states with a list.')).toBeTruthy()
     const georgia = within(panel).getByText('Georgia').closest('li')
     expect(georgia?.textContent).toContain('Listed')
     expect(georgia?.textContent).toContain('Attachment A')
-    expect(georgia?.textContent).toContain('Filed under Behavioral Health')
+    expect(georgia?.textContent).toContain('State’s category: Behavioral Health')
     const montana = within(panel).getByText('Montana').closest('li')
     expect(montana?.textContent).toContain('Covered by F20.0–F20.9')
-    expect(montana?.textContent).toContain('Qualifies alone (inferred)')
+    expect(montana?.textContent).toContain('Enough by itself (inferred)')
     expect(within(panel).getByText('Not listed (1)')).toBeTruthy()
     expect(within(panel).getByText('LA')).toBeTruthy()
     expect(within(panel).getByText('No list on this site (1)')).toBeTruthy()
@@ -365,11 +378,11 @@ describe('category drill-down', () => {
     await table()
     expect(
       within(screen.getByRole('group', { name: 'Show' }))
-        .getByRole('button', { name: 'Gaps (under half)' })
+        .getByRole('button', { name: 'Included by fewer than half' })
         .getAttribute('aria-pressed'),
     ).toBe('true')
     expect(
-      screen.getByRole<HTMLInputElement>('checkbox', { name: 'Include codes no state lists' })
+      screen.getByRole<HTMLInputElement>('checkbox', { name: 'Also show codes no state includes' })
         .checked,
     ).toBe(true)
     expect(screen.getByLabelText<HTMLSelectElement>('Focus state').value).toBe('MT')

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import {
+  compareEmptyText,
+  COMPARE_HEADING,
+  COMPARE_INTRO,
+  COMPARE_INVALID_LINK,
   type CompareQuery,
   compareSearchParams,
-  compareStatusLabels,
   compareSubject,
+  downloadTableText,
   formatCount,
   pageTitles,
 } from '@mfcd/shared'
@@ -13,6 +17,7 @@ import { useRoute, useRouter } from 'vue-router'
 import CompareTabs from '../../components/compare/CompareTabs.vue'
 import CompareControls from '../../components/compare/CompareControls.vue'
 import CompareTable from '../../components/compare/CompareTable.vue'
+import StatusLegend from '../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../lib/api'
 import { usePageTitle } from '../../lib/page-title'
 import {
@@ -26,7 +31,7 @@ import {
 } from '../../lib/public-compare'
 import { usePublicStates } from '../../lib/public-states'
 
-// Compare by category (roadmap M4 step 2). The URL holds the whole selection, so a link shows
+// Compare single codes (roadmap M4 step 2). The URL holds the whole selection, so a link shows
 // the same table to anyone; the controls write to it as soon as the selection is complete.
 
 usePageTitle(() => pageTitles.compare)
@@ -73,7 +78,7 @@ const errorText = computed(() => {
   const e = result.error.value
   if (!e) return null
   return e instanceof ApiError && e.status === 400
-    ? e.message
+    ? COMPARE_INVALID_LINK
     : 'The comparison could not be loaded. Please try again later.'
 })
 
@@ -94,13 +99,9 @@ const csvHref = computed(() => {
 <template>
   <article class="space-y-8">
     <header class="space-y-3">
-      <h1 class="font-display text-4xl font-medium text-heading">Compare states by category</h1>
+      <h1 class="font-display text-4xl font-medium text-heading">{{ COMPARE_HEADING }}</h1>
       <CompareTabs />
-      <p class="max-w-prose">
-        Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
-        least one of them lists in that category; each column shows what that state’s whole list
-        says about it.
-      </p>
+      <p class="max-w-prose">{{ COMPARE_INTRO }}</p>
     </header>
 
     <CompareControls v-model="selection" :states="states.data.value?.items ?? []" />
@@ -120,15 +121,11 @@ const csvHref = computed(() => {
           {{ formatCount(data.totalRows) }} codes, page {{ data.page }} of {{ data.pageCount }}
         </p>
         <a v-if="csvHref && data.totalRows > 0" :href="csvHref" class="text-link" download>
-          Download all {{ formatCount(data.totalRows) }} rows (CSV)
+          {{ downloadTableText(data.totalRows) }}
         </a>
       </div>
 
-      <p v-if="data.totalRows === 0">
-        None of these states lists a code in this category<template v-if="active.alone">
-          that qualifies alone</template
-        >.
-      </p>
+      <p v-if="data.totalRows === 0">{{ compareEmptyText(active.alone) }}</p>
       <CompareTable v-else :data="data" :query="active" :caption="caption" />
 
       <nav v-if="data.pageCount > 1" aria-label="Pages" class="flex items-center gap-3">
@@ -150,30 +147,7 @@ const csvHref = computed(() => {
         </button>
       </nav>
 
-      <section aria-labelledby="legend-heading" class="max-w-prose space-y-2 text-sm">
-        <h3 id="legend-heading" class="font-semibold">Reading the table</h3>
-        <dl class="space-y-1">
-          <div>
-            <dt class="inline font-semibold">{{ compareStatusLabels.exact }}:</dt>
-            <dd class="inline">the state lists this code, wildcard or range itself.</dd>
-          </div>
-          <div>
-            <dt class="inline font-semibold">{{ compareStatusLabels.covered }}:</dt>
-            <dd class="inline">a wildcard or range on the state’s list includes it.</dd>
-          </div>
-          <div>
-            <dt class="inline font-semibold">{{ compareStatusLabels.narrower }}:</dt>
-            <dd class="inline">the state lists some of the codes under it, not all of them.</dd>
-          </div>
-          <div>
-            <dt class="inline font-semibold">Badges:</dt>
-            <dd class="inline">
-              each state’s own rule for whether the code is enough on its own. “Inferred” means we
-              worked it out from the state’s documents; the state does not say so directly.
-            </dd>
-          </div>
-        </dl>
-      </section>
+      <StatusLegend />
     </section>
   </article>
 </template>

@@ -28,7 +28,7 @@ test('unknown paths show the app’s not-found page', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible()
 })
 
-const MAP = 'Map of state frailty code lists'
+const MAP = 'Map of state medical frailty code lists'
 
 test('the state map is keyboard navigable and has a table view', async ({ page }) => {
   const errors = collectErrors(page)
@@ -43,7 +43,7 @@ test('the state map is keyboard navigable and has a table view', async ({ page }
   await expect(page.getByRole('region', { name: 'Alaska' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Table' }).click()
-  const table = page.getByRole('table', { name: 'State frailty code lists' })
+  const table = page.getByRole('table', { name: 'State medical frailty code lists' })
   await expect(table.getByRole('row')).toHaveCount(52)
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])

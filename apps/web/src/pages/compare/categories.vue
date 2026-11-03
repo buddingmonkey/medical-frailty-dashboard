@@ -2,8 +2,13 @@
 import {
   CATEGORIES_HEADING,
   CATEGORIES_INTRO,
+  CCSR_LINK_TEXT,
+  CCSR_URL,
+  federalCategoryClauseText,
   overviewCategoryGroups,
   pageTitles,
+  STATUTE_LINK_TEXT,
+  STATUTE_URL,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -28,6 +33,14 @@ const groups = computed(() => overviewCategoryGroups(overview.data.value?.catego
       <h1 class="font-display text-4xl font-medium text-heading">{{ CATEGORIES_HEADING }}</h1>
       <CompareTabs />
       <p class="max-w-prose">{{ CATEGORIES_INTRO }}</p>
+      <p class="flex flex-wrap gap-x-4 text-sm">
+        <a :href="CCSR_URL" rel="noopener noreferrer external" class="text-link">{{
+          CCSR_LINK_TEXT
+        }}</a>
+        <a :href="STATUTE_URL" rel="noopener noreferrer external" class="text-link">{{
+          STATUTE_LINK_TEXT
+        }}</a>
+      </p>
     </header>
 
     <p v-if="overview.error.value" role="alert" class="text-danger">
@@ -49,6 +62,12 @@ const groups = computed(() => overviewCategoryGroups(overview.data.value?.catego
         >
           {{ g.label }}
         </h2>
+        <p
+          v-if="federalCategoryClauseText(g.federalCategory)"
+          class="text-sm text-muted-foreground"
+        >
+          {{ federalCategoryClauseText(g.federalCategory) }}
+        </p>
         <ul class="divide-y divide-border border-y border-border">
           <li v-for="c in g.categories" :key="c.id" class="space-y-1 py-3">
             <RouterLink :to="`/compare/${c.slug}`" class="font-semibold">{{ c.label }}</RouterLink>

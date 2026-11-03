@@ -109,7 +109,7 @@ export const coverageBandLabels: Record<CoverageBand, string> = {
 export const OVERVIEW_NO_LIST = 'No list on this site yet'
 
 /** The words beside a cell whose placements an admin has not reviewed. */
-export const OVERVIEW_NOT_REVIEWED = 'not reviewed'
+export const OVERVIEW_NOT_REVIEWED = 'not yet reviewed'
 
 export const overviewCellText = (share: number | null): string =>
   `${String(coveragePercent(share))}%`
@@ -120,8 +120,8 @@ export const overviewCellNotReviewed = (cell: OverviewCell): boolean =>
 
 /** What the share is a share of, by the category's coverage basis. */
 const shareOf: Record<OverviewCoverageBasis, string> = {
-  universe: 'of the category’s codes',
-  union: 'of the codes any state lists',
+  universe: 'of the category’s diagnosis codes',
+  union: 'of the entries any state lists',
 }
 
 /** The cell's accessible name: it starts with the number the cell shows. */
@@ -303,29 +303,56 @@ export function overviewOrderAnnouncement(
   categories: readonly OverviewCategory[],
 ): string {
   if (order.by === 'name') return 'States in order of name, states with a list first.'
-  if (order.by === 'similar') return 'States with similar coverage placed next to each other.'
+  if (order.by === 'similar') return 'States with similar numbers placed next to each other.'
   const label =
     order.by === 'overall'
-      ? 'overall coverage'
+      ? 'the average across categories'
       : (categories.find((c) => c.id === order.unifiedId)?.label ?? 'a category')
   return `Sorted by ${label}, ${order.dir === 'desc' ? 'highest' : 'lowest'} first.`
 }
 
+/** The page's heading (the browser title is `pageTitles.overview`). */
+export const OVERVIEW_HEADING = 'How much of each category each state lists'
+
+/** Under the heading, in the Vue page and the server-rendered HTML. */
+export const OVERVIEW_INTRO =
+  'Each row is a state; each column is one of this site’s comparison categories, grouped under ' +
+  'the federal category it belongs to. A number is the share of the category’s diagnosis codes ' +
+  'that the state’s list includes (see “Reading this table” below). Select a number to open ' +
+  'that category’s codes with the state highlighted.'
+
+/** The table's caption. */
+export const OVERVIEW_CAPTION =
+  'Share of each category’s diagnosis codes that each state’s list includes'
+
+/** The "Overall" column and the order that sorts by it. */
+export const OVERVIEW_OVERALL_HEADING = 'Overall (average)'
+export const OVERVIEW_OVERALL_ORDER = 'Average across categories'
+
+/** Beside a † column label, for screen readers. */
+export const OVERVIEW_UNION_MARK = '(share of the entries any state lists)'
+
 /** The page's description, in the browser and the server-rendered HTML. */
 export const OVERVIEW_DESCRIPTION =
-  'Which states cover what: every state’s Medicaid medical frailty code list against the same ' +
-  'categories, as the share of each category’s codes the state lists.'
+  'Every state’s Medicaid medical frailty code list against the same comparison categories: the ' +
+  'share of each category’s diagnosis codes that the state’s list includes.'
 
 /** "Reading this table", the same words in the Vue page and the server-rendered HTML. */
 export const overviewReadingNotes: readonly string[] = [
-  'Each number is the share of a category’s diagnosis codes that the state lists. A category’s ' +
-    'codes are the ICD-10-CM codes in its CCSR groups (the Clinical Classifications Software ' +
-    'Refined, from AHRQ).',
-  'Categories marked † have no full code list. Their number is the share of the codes that any ' +
-    'state lists in the category.',
+  'Each number is the share of the category’s billable ICD-10-CM diagnosis codes that the ' +
+    'state’s list includes, either listed one by one or covered by a wildcard or range. Entries ' +
+    'in other code systems (CPT, HCPCS, drug classes) are not counted here, so a state that ' +
+    'relies on service codes shows a low number. A category’s codes come from the CCSR groups ' +
+    '(AHRQ’s Clinical Classifications Software Refined) this site assigned to it.',
+  'Categories marked † have no reference list of diagnosis codes (no CCSR groups), so their ' +
+    'number is the state’s distinct entries in the category as a share of the distinct entries ' +
+    'every state lists there.',
   'A cell counts the state’s codes in the category no matter which of the state’s own ' +
     'categories they are filed under.',
-  'Overall is the average of the state’s numbers, each category counting the same.',
-  'Not reviewed (*): some of the codes in the cell were placed by their CCSR group, and an ' +
-    'admin has not yet reviewed how the state’s categories map to ours.',
+  'Overall is the plain average of the state’s percentages across every category (each ' +
+    'category counts the same, whatever its size). It is not a measure of how many people the ' +
+    'list reaches.',
+  '* Not yet reviewed: some of this state’s entries were put in the category automatically (by ' +
+    'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
+    'own categories. The number may change after review.',
 ]

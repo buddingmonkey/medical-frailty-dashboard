@@ -503,7 +503,7 @@ export function compareCellText(
   }
 }
 
-/** The state's rule for the entry: `Qualifies alone`, `Needs another code (inferred)`. */
+/** The state's rule for the entry: `Enough by itself`, `Supporting only (inferred)`. */
 export function compareQualificationText(
   match: Pick<CompareMatch, 'qualification' | 'qualificationBasis'>,
 ): string {
@@ -542,3 +542,82 @@ export function compareSubject(
   if (query.category !== undefined) return federalCategoryInfo[query.category].label
   return `${stateName(query.ownState ?? '')}: ${stateCategoryName(query.ownCategory ?? '', query.ownSubcategory)}`
 }
+
+// ---------------------------------------------------------------------------------------------
+// Words of the single-code page (`/compare/codes`) and the legend every code table shows
+// (M6 step 3b). On the legal review list (docs/status.md).
+
+export const COMPARE_HEADING = 'Compare single codes'
+
+export const COMPARE_INTRO =
+  'Pick a federal category (or one state’s own category) and the states to compare. Each row ' +
+  'is one code, wildcard or range that at least one of them lists there; each state’s column ' +
+  'shows whether its whole list includes that code, and how.'
+
+export const COMPARE_DESCRIPTION =
+  'Compare the medical frailty code lists of any number of states, one category at a time: ' +
+  'which codes each state lists, covers with a wildcard or range, or leaves out.'
+
+/** Shown for a comparison link the API refuses (in the Vue page and the Worker's HTML). */
+export const COMPARE_INVALID_LINK =
+  'This comparison link is not valid. Pick a category and states to compare.'
+
+/** Shown when a comparison link names a state code that does not exist. */
+export const compareUnknownStatesText = (ids: readonly string[]): string =>
+  `No state has the code ${ids.join(', ')}. Pick a category and states to compare.`
+
+/** The empty-table sentence; `alone` when the "enough by itself" filter is on. */
+export const compareEmptyText = (alone: boolean): string =>
+  alone
+    ? 'None of these states lists a code in this category that is enough by itself.'
+    : 'None of these states lists a code in this category.'
+
+/** The filter that keeps codes some state says are enough by themselves. */
+export const COMPARE_ALONE_LABEL =
+  'Only codes that are enough by themselves in at least one state (by the state’s rule)'
+
+/** The legend of every code table: each cell word, then the badges. */
+export const compareLegend: readonly { term: string; text: string }[] = [
+  {
+    term: compareStatusLabels.exact,
+    text: 'the state’s list has this code, wildcard or range itself.',
+  },
+  {
+    term: compareStatusLabels.covered,
+    text: 'a wildcard or range on the state’s list includes it.',
+  },
+  {
+    term: compareStatusLabels.narrower,
+    text: 'the state lists some of the more specific codes under it, but not this code itself.',
+  },
+  {
+    term: compareStatusLabels.not_listed,
+    text: 'the state has a list on this site, and the code is not on it in any form.',
+  },
+  {
+    term: compareStatusLabels.no_list,
+    text: 'this site has no list from the state yet, so nothing is known.',
+  },
+  {
+    term: 'Badges',
+    text:
+      'the state’s rule on whether the code is enough by itself. “Inferred” means this site ' +
+      'worked the rule out from the state’s documents; the state does not say so directly.',
+  },
+]
+
+/** The heading over the legend. */
+export const COMPARE_LEGEND_HEADING = 'Reading the table'
+
+/** Under a description that is the state's own text (the default text is CMS's). */
+export const descriptionSourceText = (stateName: string): string => `As published by ${stateName}`
+
+/** In place of a description when neither CMS nor the state gives one. */
+export const NO_DESCRIPTION = 'No description from CMS or the state'
+
+/** Before the state's own category in a cell, when it is not the category compared. */
+export const STATE_CATEGORY_PREFIX = 'State’s category:'
+
+/** "Download this table (CSV, 1,234 rows)". */
+export const downloadTableText = (rows: number): string =>
+  `Download this table (CSV, ${rows.toLocaleString('en-US')} ${rows === 1 ? 'row' : 'rows'})`

@@ -17,9 +17,7 @@ test('pick a category and states, read the table, share the link', async ({ page
     .getByRole('link', { name: 'Single codes' })
     .click()
 
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Compare states by category' }),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Compare single codes' })).toBeVisible()
   await page
     .getByLabel('Federal category', { exact: true })
     .selectOption('disabling_mental_disorder')
@@ -34,7 +32,7 @@ test('pick a category and states, read the table, share the link', async ({ page
   await expect(row).toContainText('Paranoid schizophrenia')
   await expect(row).toContainText('Listed')
   await expect(row).toContainText('Tier 1 - DPHHS Approved Condition')
-  await expect(row).toContainText('Qualifies alone')
+  await expect(row).toContainText('Enough by itself')
   expect(await seriousA11yViolations(page)).toEqual([])
 
   // The same link in a new tab shows the same table.
@@ -85,12 +83,12 @@ test.describe('with JavaScript off', () => {
   test('the table is in the HTML, and the page is not indexed', async ({ page }) => {
     await page.goto('/compare/codes?states=MT,AL&category=sud')
 
-    await expect(page).toHaveTitle('Compare states by category | Medical Frailty Coding Dashboard')
+    await expect(page).toHaveTitle('Compare single codes | Medical Frailty Coding Dashboard')
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/compare\/codes$/)
     const table = page.getByRole('table', { name: 'Substance use disorder: codes by state' })
     await expect(table.getByRole('row', { name: /F10\.20/ })).toContainText(
-      'Listed; Tier 1 - DPHHS Approved Condition; Qualifies alone',
+      'Listed; Tier 1 - DPHHS Approved Condition; Enough by itself',
     )
     await expect(table.getByRole('row', { name: /F10\.20/ })).toContainText('No list on this site')
   })
@@ -99,8 +97,9 @@ test.describe('with JavaScript off', () => {
 // The tile map on the Map tab (roadmap M5 step 8; on the home page until 2026-11-03). e2e/fixtures/public-seed.sql publishes "Test alcohol use"
 // (substance use disorder, first by federal order; Montana 100%, not reviewed) and "Test
 // psychoses" (Montana 33%); Nebraska has a list with nothing in either.
-const ALCOHOL = 'Test alcohol use: each state’s share of the codes any state lists'
-const PSYCHOSES = 'Test psychoses: share of the category’s codes that each state lists'
+const ALCOHOL = 'Test alcohol use: each state’s share of the entries any state lists'
+const PSYCHOSES =
+  'Test psychoses: share of the category’s diagnosis codes that each state’s list includes'
 
 test('the tile map: picker changes the map and the URL, tiles link to the drill-down', async ({
   page,
@@ -111,7 +110,7 @@ test('the tile map: picker changes the map and the URL, tiles link to the drill-
   await expect(map.getByRole('listitem')).toHaveCount(51)
   await expect(
     map.getByRole('link', {
-      name: 'Montana, Test alcohol use: 100% of the codes any state lists, not reviewed',
+      name: 'Montana, Test alcohol use: 100% of the entries any state lists, not yet reviewed',
     }),
   ).toHaveAttribute('href', '/compare/test-alcohol-use?focus=MT')
   await expect(
@@ -141,7 +140,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByText('Show as a table').click()
     const table = page.getByRole('table', { name: ALCOHOL })
     await expect(table.getByRole('row')).toHaveCount(52)
-    await expect(table.getByRole('row', { name: /^Montana/ })).toContainText('100% (not reviewed)')
+    await expect(table.getByRole('row', { name: /^Montana/ })).toContainText(
+      '100% (not yet reviewed)',
+    )
     expect(await seriousA11yViolations(page)).toEqual([])
   })
 }
@@ -165,7 +166,9 @@ test.describe('the tile map with JavaScript off', () => {
   test('the default category is a table in the HTML', async ({ page }) => {
     await page.goto('/compare/map')
     const table = page.getByRole('table', { name: ALCOHOL })
-    await expect(table.getByRole('row', { name: /^Montana/ })).toContainText('100% (not reviewed)')
+    await expect(table.getByRole('row', { name: /^Montana/ })).toContainText(
+      '100% (not yet reviewed)',
+    )
     await expect(page.getByRole('combobox', { name: 'Category' })).toHaveValue('test-alcohol-use')
   })
 })

@@ -10,6 +10,11 @@ The design wiki says "type of code" for two different things. In code and docs w
 | **State category** | The label a state puts on a code, exactly as published | LA "SMI", "Temporary disabling"; MT "SCMC", "SID-SDD-SPD"; NE ICD chapter headings |
 | **Federal category** | Our fixed list based on the H.R.1 medically frail definition. Each state category maps to one | See below |
 | **Entry** | One row from a state's list: a code (or wildcard/range) + its state category + published text |
+| **Comparison category** | The public name of a **unified category** (below): this site's own grouping, built from CCSR groups, that every state's list is measured against. Never "unified" on a public page (M6 step 3b) | "Serious mental illness", "Cancer" |
+| **Includes** | A state's list **includes** a code when it lists the code itself or a wildcard or range covers it ("listed or covered"). Every public count of states ("3 of 4 states", "Only Georgia includes") counts this, out of the states with a list on this site. A narrower code does not include its parent | `F31.*` includes F31.2 |
+| **Reference list** | The public name of a comparison category's **universe**: the billable ICD-10-CM codes of its CCSR groups. The overview's share is of this list; a category without one is marked † | 158 codes for MBD001–MBD003 |
+| **State's rule** | The public name of an entry's **qualification**: whether the state says the code is enough by itself. Never "qualifies" on a public page (it reads as a member's eligibility) | "Enough by itself", "Supporting only" |
+| **Review status** | Whether an admin has reviewed how a state category maps (public "Reviewed" / "Not yet reviewed (automatic suggestion)"; `confirmed` in the API). Not the code page's "Included" | |
 | **Dataset version** | One complete snapshot of a state's list, from one or more source documents |
 | **Like code** | A code in a different code system that points at the same condition (e.g. an ICD-10 cancer diagnosis vs a CPT chemotherapy service) |
 
@@ -34,7 +39,8 @@ Plus two of our own:
 
 6. `state_specific`: the state uses a category that does not fit 1–5 (e.g. LA "Temporary
    disabling", MT Tier 2 "Frailty indicators")
-7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Unclassified"
+7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Not yet classified" (until M6
+   step 3b, "Unclassified"); `state_specific` is shown as "State's own category (not in the law)"
 
 **Which federal categories an entry counts under** (M5 step 5b, project lead 2026-11-02:
 "Federal category should be pre mapped. It's the non-federal we have to manage";
@@ -72,8 +78,9 @@ What this means where counts are shown:
 ## Unified categories (M5)
 
 Three levels (project lead, 2026-11-02): **federal** (the law, above), **unified** (curated by
-admins, e.g. "Serious mental illness", "Kidney failure and dialysis") and **state** (each state's
-own categories, exactly as written). Unified categories are what the many-state views compare.
+admins, e.g. "Serious mental illness", "Chronic kidney disease and kidney failure") and **state**
+(each state's own categories, exactly as written). Unified categories are what the many-state
+views compare; public pages call them **comparison categories** (glossary).
 
 ```
 unified_categories   id, slug (unique; URL /compare/<slug>), label, definition, includes, excludes,
@@ -114,7 +121,7 @@ unified_mappings     id, state_id, state_category, state_subcategory,
    ICD-10-CM → all targets. Basis `mapping`.
 3. Otherwise (an approved `by_code` row, or no approved mapping yet): ICD-10-CM entries go to every
    unified category whose CCSR groups include one of the entry's; basis `by_code`, reviewed only
-   if a `by_code` row is approved. Other code systems → none ("Unclassified").
+   if a `by_code` row is approved. Other code systems → none ("Not yet classified").
 4. Public pages use published unified categories only; retired ones never count.
 
 The entry's CCSR groups come from a lookup passed in (step 2 builds `ref_ccsr`); a wildcard or
@@ -482,10 +489,10 @@ States differ on whether a listed code is enough by itself. Each entry records:
 
 | `qualification` | Meaning | Examples |
 | --- | --- | --- |
-| `standalone` | A matching claim is enough | MT both tiers; GA Attachment A; LA designation 0 (inferred) |
-| `needs_support` | Counts only together with another code or documentation | GA Attachment B; LA designation 1 (inferred) |
-| `supporting_only` | Evidence that supports another code; never enough alone | LA designation 2 (inferred) |
-| `unknown` | The state does not say | NE ("might have to meet other criteria") |
+| `standalone` | The code by itself meets the state's criteria (public: "Enough by itself") | MT both tiers; GA Attachment A; LA designation 0 (inferred) |
+| `needs_support` | Counts only together with another code or documentation (public: "Needs another code or documentation") | GA Attachment B; LA designation 1 (inferred) |
+| `supporting_only` | Evidence that supports another code; never enough alone (public: "Supporting only") | LA designation 2 (inferred) |
+| `unknown` | The state does not say (public: "State doesn't say") | NE ("might have to meet other criteria") |
 
 `qualification_basis` is `published` when the state's own document says it, `inferred` when we
 deduced it (LA, until LDH confirms). The site shows inferred values with a label. The tier label

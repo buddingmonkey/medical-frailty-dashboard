@@ -6,6 +6,9 @@ import {
   compareFiledUnder,
   type CompareQuery,
   type CompareResponse,
+  descriptionSourceText,
+  NO_DESCRIPTION,
+  STATE_CATEGORY_PREFIX,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -65,10 +68,14 @@ const tone: Record<CompareCell['status'], string> = {
               <span
                 v-if="row.descriptionSource && row.descriptionSource !== 'cms'"
                 class="block text-xs text-muted-foreground"
-                >{{ stateName.get(row.descriptionSource) ?? row.descriptionSource }}’s text</span
+                >{{
+                  descriptionSourceText(
+                    stateName.get(row.descriptionSource) ?? row.descriptionSource,
+                  )
+                }}</span
               >
             </template>
-            <span v-else class="text-muted-foreground">No description published</span>
+            <span v-else class="text-muted-foreground">{{ NO_DESCRIPTION }}</span>
           </td>
           <td v-for="(cell, i) in row.cells" :key="data.states[i]?.id ?? i" class="px-3 py-2">
             <span class="block" :class="tone[cell.status]">{{ compareCellText(cell) }}</span>
@@ -78,7 +85,7 @@ const tone: Record<CompareCell['status'], string> = {
               <span
                 v-if="compareFiledUnder(query, data.states[i]?.id ?? '', cell.match)"
                 class="block text-xs text-muted-foreground"
-                >Filed under
+                >{{ STATE_CATEGORY_PREFIX }}
                 {{ compareFiledUnder(query, data.states[i]?.id ?? '', cell.match) }}</span
               >
             </template>

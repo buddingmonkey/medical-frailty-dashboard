@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { formatCount, formatDay, type PublicStateSummary, stateStatusLabels } from '@mfcd/shared'
+import {
+  formatCount,
+  formatDay,
+  type PublicStateSummary,
+  SOURCE_DATE_HEADING,
+  stateStatusLabels,
+} from '@mfcd/shared'
 import { RouterLink } from 'vue-router'
 
 // The map's data as a table: for screen readers, small screens and anyone who prefers it.
@@ -11,14 +17,14 @@ defineProps<{ states: readonly PublicStateSummary[] }>()
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm">
       <caption class="sr-only">
-        State frailty code lists
+        State medical frailty code lists
       </caption>
       <thead class="border-b-2 border-border">
         <tr>
           <th scope="col" class="py-2 pr-4">State</th>
           <th scope="col" class="py-2 pr-4">Status</th>
           <th scope="col" class="py-2 pr-4 text-right">Entries</th>
-          <th scope="col" class="py-2">State list dated</th>
+          <th scope="col" class="py-2">{{ SOURCE_DATE_HEADING }}</th>
         </tr>
       </thead>
       <tbody>

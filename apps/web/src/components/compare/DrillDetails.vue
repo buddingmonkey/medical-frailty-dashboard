@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DrillDetailResponse, drillCountText } from '@mfcd/shared'
+import { DRILL_NOT_LISTED_NOTE, type DrillDetailResponse, drillDetailCountText } from '@mfcd/shared'
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 
 import DrillCellView from './DrillCellView.vue'
@@ -55,9 +55,7 @@ watch(
         Close details
       </button>
     </div>
-    <p class="text-sm">
-      Listed by {{ drillCountText(detail.row.count, detail.statesWithList) }} with lists.
-    </p>
+    <p class="text-sm">{{ drillDetailCountText(detail.row.count, detail.statesWithList) }}</p>
     <ul v-if="shown.length > 0" class="space-y-2 text-sm">
       <li v-for="s in shown" :key="s.id">
         <span class="font-semibold">{{ s.name }}</span>
@@ -65,7 +63,10 @@ watch(
       </li>
     </ul>
     <div v-if="notListed.length > 0" class="text-sm">
-      <p class="font-semibold">Not listed ({{ notListed.length }})</p>
+      <p>
+        <span class="font-semibold">Not listed ({{ notListed.length }})</span>:
+        {{ DRILL_NOT_LISTED_NOTE.toLowerCase() }}
+      </p>
       <p class="font-mono text-xs leading-relaxed">
         <template v-for="(s, i) in notListed" :key="s.id"
           >{{ i > 0 ? ' ' : '' }}<abbr :title="s.name">{{ s.id }}</abbr></template

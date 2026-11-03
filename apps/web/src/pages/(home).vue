@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { pageTitles, STATES_AND_DC, TILE_MAP_HOME_LINK } from '@mfcd/shared'
+import {
+  ENTRY_DEFINITION,
+  HOME_INTRO,
+  pageTitles,
+  STATUTE_CITATION,
+  STATUTE_LINK_TEXT,
+  STATUTE_URL,
+  statesWithListText,
+  TILE_MAP_HOME_LINK,
+} from '@mfcd/shared'
 import { computed, onMounted, ref } from 'vue'
 
 import StateMap from '../components/home/StateMap.vue'
@@ -53,10 +62,12 @@ const legend = [
       <h1 class="font-display text-4xl font-medium text-balance text-heading">
         Compare medical frailty codes by state
       </h1>
-      <p class="text-lg text-foreground">
-        Under H.R.1, Medicaid members who are medically frail are exempt from work requirements.
-        Each state publishes its own list of diagnosis and service codes for frailty. This site puts
-        those lists side by side.
+      <p class="text-lg text-foreground">{{ HOME_INTRO }}</p>
+      <p>
+        <a :href="STATUTE_URL" rel="noopener noreferrer external" class="text-link">{{
+          STATUTE_LINK_TEXT
+        }}</a>
+        <span class="text-muted-foreground"> ({{ STATUTE_CITATION }})</span>
       </p>
     </section>
 
@@ -64,9 +75,8 @@ const legend = [
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 id="states-heading" class="font-display text-2xl font-medium text-heading">States</h2>
-          <p v-if="data" class="text-muted-foreground">
-            {{ withList }} of {{ STATES_AND_DC }} states and DC have a list on this site.
-          </p>
+          <p v-if="data" class="text-muted-foreground">{{ statesWithListText(withList) }}</p>
+          <p class="max-w-prose text-sm text-muted-foreground">{{ ENTRY_DEFINITION }}</p>
         </div>
         <div
           class="inline-flex rounded-md border border-input-border"

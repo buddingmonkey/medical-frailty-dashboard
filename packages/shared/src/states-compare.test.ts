@@ -162,17 +162,19 @@ describe('words', () => {
     expect(statesCompareCaption(['Georgia', 'Montana', 'Nebraska'], false)).toBe(
       'Every code of Georgia, Montana and Nebraska',
     )
-    expect(statesCompareAllLabel(2)).toBe('Both')
-    expect(statesCompareAllLabel(3)).toBe('All 3')
+    expect(statesCompareAllLabel(2)).toBe('Both include')
+    expect(statesCompareAllLabel(3)).toBe('All 3 include')
   })
 })
 
 describe('state comparison wording', () => {
   it('names which categories group the codes, and says what one code is', () => {
-    expect(STATES_COMPARE_INTRO).toContain('grouped by the same categories as the overview.')
+    expect(STATES_COMPARE_INTRO).toContain(
+      'grouped by the same comparison categories as the overview.',
+    )
     expect(STATES_COMPARE_SUMMARY_NOTE).toBe(
-      'Each code here is one entry from the chosen lists: a single code, a wildcard or a range. ' +
-        'A state counts a code when it lists it or covers it with a broader entry.',
+      'These counts are entries from the chosen lists (a single code, a wildcard or a range each). ' +
+        'A state includes an entry when its list has it or covers it with a wildcard or range.',
     )
   })
 })

@@ -1,5 +1,7 @@
 import {
   codeSystemLabels,
+  COMPARE_INVALID_LINK,
+  compareUnknownStatesText,
   compareCellText,
   compareQuerySchema,
   drillQueryFromRecord,
@@ -166,7 +168,7 @@ export const pagesRoute = new Hono<AppEnv>()
     const parsed = compareQueryOf(c)
     if (parsed === null) return sendPage(c, comparePage(origin(c), null))
     if (!parsed.success) {
-      return sendPage(c, comparePage(origin(c), { error: 'This comparison link is not valid.' }))
+      return sendPage(c, comparePage(origin(c), { error: COMPARE_INVALID_LINK }))
     }
     const load = await publicCompare(createDb(c.env.DB), parsed.data)
     return sendPage(
@@ -175,7 +177,7 @@ export const pagesRoute = new Hono<AppEnv>()
         origin(c),
         load.ok
           ? { query: parsed.data, result: load.result }
-          : { error: `Unknown state: ${load.unknownStates.join(', ')}` },
+          : { error: compareUnknownStatesText(load.unknownStates) },
       ),
     )
   })
@@ -466,7 +468,9 @@ export const pagesRoute = new Hono<AppEnv>()
       updatedAt: published.updatedAt,
       url: `${origin(c)}/states/${detail.state.slug}`,
       publisher: SITE_NAME,
-      note: 'Descriptions are the text the state published, cited to its source document.',
+      note:
+        'descriptionPublished is the text the state published, or null where it published none. ' +
+        'Each entry cites its source document and where in it (sourceLocator).',
       sources: detail.sources,
       entries: rows.map((r) => ({
         codeSystem: r.codeSystem,

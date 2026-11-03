@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import {
+  descriptionSourceText,
+  DRILL_COUNT_HEADING,
+  DRILL_RULES_HEADING,
   type DrillGroup,
   drillCountText,
   drillGroupCountText,
@@ -7,6 +10,7 @@ import {
   type DrillResponse,
   drillRuleText,
   DRILL_NOBODY,
+  NO_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
 
@@ -40,6 +44,8 @@ function toggle(g: DrillGroup) {
 }
 
 const total = computed(() => props.data.states.length)
+/** A state's name from its postal code (the description's source). */
+const stateName = (id: string) => props.data.states.find((s) => s.id === id)?.name ?? id
 const focusState = computed(
   () => props.data.states.find((s) => s.id === props.data.query.focus) ?? null,
 )
@@ -64,8 +70,8 @@ const percent = (n: number) => (total.value === 0 ? 0 : Math.round((n / total.va
         <tr>
           <th scope="col" class="sticky left-0 z-10 bg-surface px-3 py-2">Code</th>
           <th scope="col" class="min-w-40 px-3 py-2">Description</th>
-          <th scope="col" class="px-3 py-2">States listing it</th>
-          <th scope="col" class="min-w-36 px-3 py-2">Their rules</th>
+          <th scope="col" class="px-3 py-2">{{ DRILL_COUNT_HEADING }}</th>
+          <th scope="col" class="min-w-36 px-3 py-2">{{ DRILL_RULES_HEADING }}</th>
           <th
             v-if="focusState"
             scope="col"
@@ -133,10 +139,10 @@ const percent = (n: number) => (total.value === 0 ? 0 : Math.round((n / total.va
                 <span
                   v-if="r.descriptionSource && r.descriptionSource !== 'cms'"
                   class="block text-xs text-muted-foreground"
-                  >{{ r.descriptionSource }}’s text</span
+                  >{{ descriptionSourceText(stateName(r.descriptionSource)) }}</span
                 >
               </template>
-              <span v-else class="text-muted-foreground">No description published</span>
+              <span v-else class="text-muted-foreground">{{ NO_DESCRIPTION }}</span>
             </td>
             <td class="px-3 py-2">
               <span class="flex items-center gap-2">

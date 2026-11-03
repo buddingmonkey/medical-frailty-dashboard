@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { qualificationBasisLabels } from '@mfcd/shared'
 
 import { makePdf } from '../../ingest/fixtures/make-pdf'
 import { server } from '../../test/msw-server'
@@ -154,14 +155,16 @@ describe('/admin/ingest', () => {
 
     await user.selectOptions(screen.getByLabelText('Qualification for “0”'), 'standalone')
     await user.selectOptions(screen.getByLabelText('Qualification for “2”'), 'supporting_only')
-    await user.click(screen.getByLabelText('Inferred by us'))
+    await user.click(screen.getByLabelText(qualificationBasisLabels.inferred))
 
     expect(screen.queryByRole('alert')).toBeNull()
     const preview = screen.getByRole('table', { name: 'Mapped rows (first 20)' })
     const rows = within(preview).getAllByRole('row').slice(1)
     expect(rows[0]?.textContent).toContain('F20.0')
-    expect(rows[0]?.textContent).toContain('Qualifies alone (Inferred by us)')
-    expect(rows[1]?.textContent).toContain('Supporting evidence only')
+    expect(rows[0]?.textContent).toContain(
+      `Enough by itself (${qualificationBasisLabels.inferred})`,
+    )
+    expect(rows[1]?.textContent).toContain('Supporting only')
   })
 
   it('saves the column profile for the state and header layout', async () => {

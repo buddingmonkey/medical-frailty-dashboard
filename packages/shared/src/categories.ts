@@ -52,16 +52,30 @@ export const federalCategoryInfo: Record<FederalCategory, FederalCategoryInfo> =
     statuteText: 'with a serious or complex medical condition',
   },
   state_specific: {
-    label: 'State-specific category',
+    label: 'State’s own category (not in the law)',
     statuteClause: null,
-    statuteText: 'The state uses a category that does not fit the five groups in the statute.',
+    statuteText: 'The state uses a category that does not fit the five groups in the law.',
   },
   unmapped: {
-    label: 'Unclassified',
+    label: 'Not yet classified',
     statuteClause: null,
-    statuteText: 'Not yet reviewed by an admin.',
+    statuteText: 'This site has not yet assigned a federal category to these entries.',
   },
 }
+
+/**
+ * The law's own words for a statutory category (the short label drops some of them, such as
+ * the activities of daily living in (dd)); null for the two that are not in the law.
+ */
+export function federalCategoryClauseText(category: FederalCategory): string | null {
+  const info = federalCategoryInfo[category]
+  return info.statuteClause === null
+    ? null
+    : `Clause ${info.statuteClause} of the law: “an individual ${info.statuteText}”`
+}
+
+/** The link text beside the law's words; the link goes to `STATUTE_URL`. */
+export const STATUTE_LINK_TEXT = 'Read the law'
 
 /**
  * The labels of the federal categories a code counts under, `; ` between them (a code in two

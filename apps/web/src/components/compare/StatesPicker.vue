@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { STATES_COMPARE_MAX, STATES_COMPARE_MIN } from '@mfcd/shared'
+import { STATES_COMPARE_MAX, STATES_COMPARE_MIN, STATES_PICKER_LABELS } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
 
 // The comparison's state pickers (roadmap M5 step 7): two required and two optional selects of
@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ compare: [ids: string[]] }>()
 
-const labels = ['First state', 'Second state', 'Third state', 'Fourth state']
+const labels = STATES_PICKER_LABELS.slice(0, STATES_COMPARE_MAX)
 const slots = ref<string[]>([])
 // Reset only when the comparison itself changes (the parent passes new arrays on every render).
 // A chosen state without a list is not a choice: its select starts empty.

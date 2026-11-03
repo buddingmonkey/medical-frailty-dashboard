@@ -63,7 +63,7 @@ function open(event: MouseEvent, href: string) {
     :aria-labelledby="titleId"
     class="h-auto w-full"
   >
-    <title :id="titleId">Map of state frailty code lists</title>
+    <title :id="titleId">Map of state medical frailty code lists</title>
     <defs>
       <pattern
         :id="hatchId"

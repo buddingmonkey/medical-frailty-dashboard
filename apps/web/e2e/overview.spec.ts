@@ -6,7 +6,7 @@ import { collectErrors, seriousA11yViolations } from './helpers'
 // Montana and Nebraska a list (Nebraska's in neither category) and two published unified categories: "Test alcohol use" (substance use
 // disorder; 100%, not reviewed) and "Test psychoses" (disabling mental disorder; 33%).
 
-const caption = 'Share of each category’s codes that each state lists'
+const caption = 'Share of each category’s diagnosis codes that each state’s list includes'
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`the matrix shows numbers, links each cell and passes axe (${scheme})`, async ({ page }) => {
@@ -18,7 +18,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const montana = table.getByRole('row', { name: /^Montana/ })
     await expect(
       montana.getByRole('link', {
-        name: 'Montana, Test alcohol use: 100% of the codes any state lists, not reviewed',
+        name: 'Montana, Test alcohol use: 100% of the entries any state lists, not yet reviewed',
       }),
     ).toHaveAttribute('href', '/compare/test-alcohol-use?focus=MT')
     await expect(
@@ -65,13 +65,15 @@ test.describe('with JavaScript off', () => {
   test('the matrix is in the HTML and the page is indexed', async ({ page }) => {
     await page.goto('/compare')
 
-    await expect(page).toHaveTitle('Which states cover what | Medical Frailty Coding Dashboard')
+    await expect(page).toHaveTitle(
+      'How much of each category each state lists | Medical Frailty Coding Dashboard',
+    )
     await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/compare$/)
     const montana = page
       .getByRole('table', { name: caption })
       .getByRole('row', { name: /^Montana/ })
-    await expect(montana).toContainText('100% (not reviewed)')
+    await expect(montana).toContainText('100% (not yet reviewed)')
     await expect(montana.getByRole('link', { name: '33%' })).toHaveAttribute(
       'href',
       '/compare/test-psychoses?focus=MT',

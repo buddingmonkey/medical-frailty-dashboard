@@ -8,7 +8,7 @@ test('a state on the map opens its page', async ({ page }) => {
   const errors = collectErrors(page)
   await page.goto('/')
   await page
-    .getByRole('group', { name: 'Map of state frailty code lists' })
+    .getByRole('group', { name: 'Map of state medical frailty code lists' })
     .getByRole('link', { name: /^Alabama:/ })
     .click()
 
