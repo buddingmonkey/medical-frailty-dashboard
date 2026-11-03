@@ -1,4 +1,4 @@
-import { sha256Hex, type SourceDocument } from '@mfcd/shared'
+import { sha256Hex, sourceDetailsSchema, type SourceDocument } from '@mfcd/shared'
 import { screen, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
@@ -38,6 +38,7 @@ interface Upload {
 function fakeSourcesApi(stored: SourceDocument[]) {
   const items = [...stored]
   const uploads: Upload[] = []
+  const edits: { id: string; body: unknown }[] = []
   server.use(
     http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),
     http.get('/api/admin/watch', () => HttpResponse.json({ items: [] })),
@@ -72,8 +73,18 @@ function fakeSourcesApi(stored: SourceDocument[]) {
       items.unshift(created)
       return HttpResponse.json({ source: created, duplicate: false }, { status: 201 })
     }),
+    http.put('/api/admin/sources/:sourceId', async ({ params, request }) => {
+      const body = sourceDetailsSchema.parse(await request.json())
+      edits.push({ id: String(params['sourceId']), body })
+      const index = items.findIndex((s) => String(s.id) === params['sourceId'])
+      const current = items[index]
+      if (!current) return HttpResponse.json({ error: 'Not found' }, { status: 404 })
+      const next = { ...current, ...body }
+      items[index] = next
+      return HttpResponse.json(next)
+    }),
   )
-  return { uploads }
+  return { uploads, edits }
 }
 
 async function chooseState(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -166,6 +177,58 @@ describe('/admin/sources', () => {
     expect(warning.textContent).toContain('as version 2')
     expect(screen.queryByRole('button', { name: 'Upload' })).toBeNull()
     expect(api.uploads).toEqual([])
+  })
+
+  it('edits a stored file’s title, URL and date', async () => {
+    const api = fakeSourcesApi([source(7, { title: 'GA list' }), source(8, { title: 'Other' })])
+
+    await renderRoute('/admin/sources')
+    await chooseState(user, 'Montana')
+    const table = await screen.findByRole('table', { name: 'Stored files for Montana' })
+    await user.click(within(table).getByRole('button', { name: 'Edit details of “GA list”' }))
+
+    const form = screen.getByRole('form', { name: 'Edit details of “GA list”' })
+    expect(within(form).getByLabelText<HTMLInputElement>('Title').value).toBe('GA list')
+    await user.type(within(form).getByLabelText('State’s URL for this file'), 'http://dch.ga.gov')
+    await user.click(within(form).getByRole('button', { name: 'Save details' }))
+    expect(within(form).getByText('Enter a full https:// address.')).toBeTruthy()
+    expect(api.edits).toEqual([])
+
+    await user.clear(within(form).getByLabelText('State’s URL for this file'))
+    await user.type(
+      within(form).getByLabelText('State’s URL for this file'),
+      'https://dch.ga.gov/a.pdf',
+    )
+    await user.type(within(form).getByLabelText('Date on the document'), '2026-07-01')
+    await user.click(within(form).getByRole('button', { name: 'Save details' }))
+
+    expect((await screen.findByRole('status')).textContent).toContain(
+      'Saved the details of “GA list”',
+    )
+    expect(api.edits).toEqual([
+      {
+        id: '7',
+        body: { title: 'GA list', url: 'https://dch.ga.gov/a.pdf', publisherDate: '2026-07-01' },
+      },
+    ])
+    expect(screen.queryByRole('form', { name: 'Edit details of “GA list”' })).toBeNull()
+    expect(await within(table).findByRole('link', { name: 'State’s copy' })).toBeTruthy()
+    expect(table.textContent).toContain('Jul 1, 2026')
+  })
+
+  it('cancels an edit without saving', async () => {
+    const api = fakeSourcesApi([source(7, { title: 'GA list' })])
+
+    await renderRoute('/admin/sources')
+    await chooseState(user, 'Montana')
+    await user.click(await screen.findByRole('button', { name: 'Edit details of “GA list”' }))
+    const form = screen.getByRole('form', { name: 'Edit details of “GA list”' })
+    await user.type(within(form).getByLabelText('Title'), ' changed')
+    await user.click(within(form).getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('form', { name: 'Edit details of “GA list”' })).toBeNull()
+    expect(api.edits).toEqual([])
+    expect(screen.getByText('GA list')).toBeTruthy()
   })
 
   it('refuses a file type we cannot parse, before hashing or uploading', async () => {

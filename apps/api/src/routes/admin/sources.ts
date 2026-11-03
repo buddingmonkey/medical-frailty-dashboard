@@ -4,6 +4,7 @@ import {
   type SourceDocument,
   sha256Hex,
   sniffMatches,
+  sourceDetailsSchema,
   sourceDocumentSchema,
   sourceListQuerySchema,
   sourceListResponseSchema,
@@ -15,6 +16,7 @@ import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { bumpDataVersion } from '../../db/meta'
 import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import type { AppEnv } from '../../types'
 
@@ -148,6 +150,56 @@ export const sources = new Hono<AppEnv>()
       await c.env.FILES.delete(r2Key)
       throw err
     }
+  })
+
+  // Fix the details shown on public pages (title, state URL, publisher date) after upload.
+  // The file, hash and R2 key never change. A source of a version the public pages show
+  // (published, or superseded in the history) bumps data_version, so cached pages refresh.
+  .put('/:id', async (c) => {
+    const id = idParamSchema.safeParse(c.req.param('id'))
+    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    const body = sourceDetailsSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) {
+      return c.json({ error: body.error.issues[0]?.message ?? 'Invalid details' }, 400)
+    }
+    const db = createDb(c.env.DB)
+    const [row] = await db.select().from(sourceDocuments).where(eq(sourceDocuments.id, id.data))
+    if (!row) return c.json({ error: 'Not found' }, 404)
+
+    const [shown] = await db
+      .select({ id: datasetVersions.id })
+      .from(versionSources)
+      .innerJoin(datasetVersions, eq(versionSources.versionId, datasetVersions.id))
+      .where(
+        and(
+          eq(versionSources.sourceDocumentId, row.id),
+          inArray(datasetVersions.status, ['published', 'superseded']),
+        ),
+      )
+      .limit(1)
+
+    const next = body.data
+    const update = db
+      .update(sourceDocuments)
+      .set({ title: next.title, url: next.url, publisherDate: next.publisherDate })
+      .where(eq(sourceDocuments.id, row.id))
+      .returning()
+    const audit = auditInsert(db, {
+      actorEmail: c.var.identity?.email ?? '',
+      action: 'source.update',
+      target: `source:${String(row.id)}`,
+      details: {
+        stateId: row.stateId,
+        before: { title: row.title, url: row.url, publisherDate: row.publisherDate },
+        after: next,
+      },
+    })
+    const [updated] = shown
+      ? (await db.batch([update, audit, bumpDataVersion(db)]))[0]
+      : (await db.batch([update, audit]))[0]
+    if (!updated) return c.json({ error: 'Not found' }, 404)
+    const [source] = await withVersions(db, [updated])
+    return c.json(source)
   })
 
   .get('/:id/file', async (c) => {

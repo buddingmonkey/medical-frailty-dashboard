@@ -4,7 +4,10 @@ import {
   MAX_SOURCE_BYTES,
   type SourceDocument,
   type SourceFileType,
+  type SourceDetails,
+  type SourceDetailsDraft,
   sha256Hex,
+  sourceDocumentSchema,
   sourceListResponseSchema,
   sourceUploadResponseSchema,
   stateListResponseSchema,
@@ -12,8 +15,9 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 
+import SourceDetailsForm from '../../components/admin/SourceDetailsForm.vue'
 import { formatIsoDate, formatTimestampDate } from '../../lib/admin-watch'
-import { apiRequest, getJson } from '../../lib/api'
+import { apiRequest, getJson, sendJson } from '../../lib/api'
 
 const id = useId()
 const queryClient = useQueryClient()
@@ -130,6 +134,38 @@ const upload = useMutation({
       ? `Already stored as “${source.title}”. Nothing new was saved.`
       : `Stored “${source.title}”.`
     await queryClient.invalidateQueries({ queryKey: ['admin'] })
+  },
+})
+
+// Fix a stored file's details (title, state URL, date) after upload. One form open at a time.
+const editingId = ref<number | null>(null)
+const draft = ref<SourceDetailsDraft>({ title: '', url: '', publisherDate: '' })
+
+function startEdit(source: SourceDocument) {
+  done.value = null
+  saveDetails.reset()
+  draft.value = {
+    title: source.title,
+    url: source.url ?? '',
+    publisherDate: source.publisherDate ?? '',
+  }
+  editingId.value = source.id
+}
+
+function cancelEdit() {
+  editingId.value = null
+  saveDetails.reset()
+}
+
+watch(stateId, cancelEdit)
+
+const saveDetails = useMutation({
+  mutationFn: ({ sourceId, details }: { sourceId: number; details: SourceDetails }) =>
+    sendJson('PUT', `/api/admin/sources/${String(sourceId)}`, details, sourceDocumentSchema),
+  onSuccess: async (source) => {
+    editingId.value = null
+    done.value = `Saved the details of “${source.title}”.`
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'sources'] })
   },
 })
 
@@ -266,28 +302,48 @@ const inputClass =
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="source in sourcesQuery.data.value"
-              :key="source.id"
-              class="border-b border-border align-top"
-            >
-              <td class="py-2 pr-4">{{ source.title }}</td>
-              <td class="py-2 pr-4 whitespace-nowrap">
-                {{ source.publisherDate ? formatIsoDate(source.publisherDate) : '' }}
-              </td>
-              <td class="py-2 pr-4 whitespace-nowrap">
-                {{ formatTimestampDate(source.retrievedAt) }} by {{ source.uploadedBy }}
-              </td>
-              <td class="py-2 pr-4 uppercase">{{ source.fileType }}</td>
-              <td class="py-2 pr-4 whitespace-nowrap">{{ formatSize(source.byteSize) }}</td>
-              <td class="py-2 pr-4">{{ versionText(source) }}</td>
-              <td class="space-x-3 py-2 whitespace-nowrap">
-                <a :href="`/api/admin/sources/${source.id}/file`" download>Download</a>
-                <a v-if="source.url" :href="source.url" rel="noopener noreferrer" target="_blank"
-                  >State’s copy</a
-                >
-              </td>
-            </tr>
+            <template v-for="source in sourcesQuery.data.value" :key="source.id">
+              <tr class="border-b border-border align-top">
+                <td class="py-2 pr-4">{{ source.title }}</td>
+                <td class="py-2 pr-4 whitespace-nowrap">
+                  {{ source.publisherDate ? formatIsoDate(source.publisherDate) : '' }}
+                </td>
+                <td class="py-2 pr-4 whitespace-nowrap">
+                  {{ formatTimestampDate(source.retrievedAt) }} by {{ source.uploadedBy }}
+                </td>
+                <td class="py-2 pr-4 uppercase">{{ source.fileType }}</td>
+                <td class="py-2 pr-4 whitespace-nowrap">{{ formatSize(source.byteSize) }}</td>
+                <td class="py-2 pr-4">{{ versionText(source) }}</td>
+                <td class="space-x-3 py-2 whitespace-nowrap">
+                  <a :href="`/api/admin/sources/${source.id}/file`" download>Download</a>
+                  <a v-if="source.url" :href="source.url" rel="noopener noreferrer" target="_blank"
+                    >State’s copy</a
+                  >
+                  <button
+                    type="button"
+                    class="underline hover:no-underline"
+                    :aria-label="`Edit details of “${source.title}”`"
+                    :aria-expanded="editingId === source.id"
+                    @click="editingId === source.id ? cancelEdit() : startEdit(source)"
+                  >
+                    Edit details
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="editingId === source.id" class="border-b border-border">
+                <td colspan="7" class="py-3">
+                  <SourceDetailsForm
+                    v-model="draft"
+                    class="max-w-2xl"
+                    :label="`Edit details of “${source.title}”`"
+                    :saving="saveDetails.isPending.value"
+                    :error="saveDetails.error.value?.message ?? null"
+                    @save="(details) => saveDetails.mutate({ sourceId: source.id, details })"
+                    @cancel="cancelEdit"
+                  />
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
