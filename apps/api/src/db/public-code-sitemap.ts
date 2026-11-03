@@ -17,7 +17,8 @@ import { rangeCovers } from './public-drill'
  * scans: left to itself, local D1's planner scanned all of `ref_codes` instead (24 s on the
  * seed; 14 ms in this order).
  */
-const includedCodes = sql.raw(`WITH
+/** The included-codes CTE as plain SQL (no parameters); exported for the query-plan test. */
+export const includedCodesSql = `WITH
   pe AS (
     SELECT e.code_system, e.code_norm, e.match_kind, e.range_end_norm, e.includes_children
     FROM states s JOIN entries e ON e.version_id = s.published_version_id),
@@ -41,7 +42,8 @@ const includedCodes = sql.raw(`WITH
     SELECT r.code_system, r.code_norm FROM rng g
       CROSS JOIN ref_codes r ON r.code_system = g.code_system
         AND r.code_norm >= g.code_norm AND r.code_norm < g.range_end_norm || '~'
-      WHERE ${rangeCovers('g', 'r.code_norm')})`)
+      WHERE ${rangeCovers('g', 'r.code_norm')})`
+const includedCodes = sql.raw(includedCodesSql)
 
 /** How many codes the sitemap lists. */
 export async function includedCodeCount(db: Db): Promise<number> {
