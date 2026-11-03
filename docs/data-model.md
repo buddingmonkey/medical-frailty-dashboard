@@ -373,6 +373,9 @@ watch_items         id, title, kind ('court'|'federal'|'state_list'|'internal'),
                     repeat_days (nullable), created_by, created_at
 entries_fts         FTS5 virtual table over (code_norm, raw_code, description_published);
                     external content (text lives in entries), kept in step by triggers
+ref_codes_fts       FTS5 virtual table over ref_codes (description, code_norm; code_system and
+                    valid_from unindexed); its own copy of the text (ref_codes is WITHOUT ROWID),
+                    kept in step by triggers; ~25 MB and ~219k shadow rows for 107k codes (0012)
 ```
 
 The schema is `apps/api/src/db/schema.ts` (Drizzle); `apps/api/migrations/` holds the SQL.

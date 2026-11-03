@@ -243,6 +243,7 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   Categories (`/compare/categories`, new), Map (`/compare/map`, new; the only place for the tile map since 2026-11-03, when the project lead moved it off home; old `/?category=` links get a 301 there), States side
   by side (`/compare/states`, new, with "States like mine") and Single codes. Matrix column
   labels link to their category. `categories` and `map` are reserved slugs.
+- **M6 step 1 done** (branch `m6-step1-search`): `GET /api/public/codes/search` (code prefix or words; state and system filters; `listedBy`), `ref_codes_fts` over the CMS text (migration 0012, backfilled in the migration), query schema in `packages/shared/src/search.ts`.
 - **51-state seed** on preview (PR #66): 4 real states (300 entries each), 40 synthetic lists,
   4 announced, 3 none.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see

@@ -24,6 +24,7 @@ import { watch } from './routes/admin/watch'
 import { whoami } from './routes/admin/whoami'
 import { pagesRoute } from './routes/pages'
 import { publicCategoriesRoute } from './routes/public/categories'
+import { publicCodeSearchRoute } from './routes/public/code-search'
 import { publicCompareRoute } from './routes/public/compare'
 import { health } from './routes/public/health'
 import { publicOverviewRoute } from './routes/public/overview'
@@ -61,6 +62,9 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.route('/api/public/categories', publicCategoriesRoute)
   app.use('/api/public/states-compare', publicCache)
   app.route('/api/public/states-compare', publicStatesCompareRoute)
+  app.use('/api/public/codes/*', publicCache)
+  // Before /api/public/codes/:system/:code, so `search` is never read as a code system.
+  app.route('/api/public/codes/search', publicCodeSearchRoute)
 
   // Admin pages and API: the only places admin features may live (CLAUDE.md).
   const adminOnly = requireAdmin(getJwks)
