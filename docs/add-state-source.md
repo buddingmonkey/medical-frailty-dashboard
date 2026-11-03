@@ -20,6 +20,13 @@ Choose the state, pick the file, and fill in the title, the state's address for 
 the date on the document. These become the citation on the public page. The page warns you if
 the same file is already stored.
 
+**Fixing the title, address or date later.** If a stored file is missing its address or date,
+or has a typo, choose the state on Admin → Source files and click **Edit details** on that file.
+The address must start with `https://`; the date cannot be in the future; leave either blank if
+the state gives none. Saving never changes the stored file. Every change goes in the audit log
+with the old and new values, and if the file is part of a published version, the public pages
+show the new citation right away.
+
 ## 2. Read and map it (Admin → Read and map)
 
 1. Choose the state and the same file. A PDF can take a few seconds.
