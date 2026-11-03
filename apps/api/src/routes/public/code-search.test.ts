@@ -116,6 +116,11 @@ describe('GET /api/public/codes/search: words', () => {
     expect(codes(await results('q=schizoaff'))).toEqual(['icd10cm:F25', 'icd10cm:F25.0'])
   })
 
+  it('stems CMS text: "disorders" finds "disorder" and "disorders" (porter)', async () => {
+    const found = codes(await results('q=schizoaffective%20disorders%20bipolar'))
+    expect(found).toEqual(['icd10cm:F25.0'])
+  })
+
   it('finds state text too, and CPT codes only there', async () => {
     const body = await results('q=office visit')
     expect(codes(body)).toEqual(['cpt:99213'])

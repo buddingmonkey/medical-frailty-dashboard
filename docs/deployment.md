@@ -236,7 +236,11 @@ with a gold test-site banner (`apps/api/src/middleware/environment-banner.ts`).
   rows, drop the old table, rename). Dropping `entries` also drops the FTS triggers, silently.
   Any migration that rebuilds `entries` must recreate the three triggers from
   `0001_entries_fts.sql` and run `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')`. The
-  FTS tests in `apps/api/src/db/schema.test.ts` fail if the triggers are missing.
+  FTS tests in `apps/api/src/db/schema.test.ts` fail if the triggers are missing. The same
+  holds for `ref_codes` and its three `ref_codes_fts` triggers (`0012_ref_codes_fts.sql`).
+  `ref_codes_fts` is a regular FTS5 table with its own copy of the text, so `'rebuild'` does
+  not apply to it. Instead, run `DELETE FROM ref_codes_fts` and then the backfill `INSERT`
+  from 0012.
 - Migrations must be backward-compatible with the previous Worker version (add columns and
   tables first, drop them in a later release), because migrations run before the new code is live.
 - Rollback a bad deploy: `wrangler rollback` to the previous Worker version (data is not
@@ -259,8 +263,9 @@ Restore paths, from smallest to largest:
    normal draft → checks → publish flow.
 3. **Whole database bad:** `wrangler d1 time-travel restore frailty-prod --timestamp=<before>`,
    (or `--bookmark=<from the deploy log>`), or rebuild a new D1 from the latest weekly JSON
-   dump. `wrangler d1 export` works only after dropping `entries_fts` (recreate it and run
-   `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')` afterwards).
+   dump. `wrangler d1 export` works only after dropping `entries_fts` and `ref_codes_fts`.
+   Afterwards, recreate both from 0001 and 0012, run
+   `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')`, and run 0012's backfill `INSERT`.
 
 Test restore path 2 in E2E, and do a path 3 drill on the preview database once before launch.
 
