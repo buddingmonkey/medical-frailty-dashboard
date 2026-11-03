@@ -28,6 +28,7 @@ describe('main navigation', () => {
       ['States', '/states'],
       ['Compare', '/compare'],
       ['Search', '/search'],
+      ['About', '/about'],
     ])
   })
 
