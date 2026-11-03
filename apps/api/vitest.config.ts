@@ -5,7 +5,9 @@ import { defineProject } from 'vitest/config'
 
 // API tests run inside workerd with the bindings from wrangler.jsonc, on a local D1 with every
 // migration in ./migrations applied (src/test/apply-migrations.ts).
-const migrations = await readD1Migrations(fileURLToPath(new URL('./migrations', import.meta.url)))
+const migrations = await readD1Migrations(
+  fileURLToPath(new URL('./migrations', import.meta.url).href),
+)
 
 export default defineProject({
   plugins: [
