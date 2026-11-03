@@ -9,14 +9,13 @@
 //
 // wrangler's output is never printed: an export prints a signed download link, and the rows hold
 // admin email addresses. Runs directly on Node 26 (type stripping).
-import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { localConfigArgs } from './d1-ids.ts'
+import { runPnpm } from './lib/run.ts'
 
 /**
  * Columns too long for one statement, written in pieces after the rows (`appendSql`). Their
@@ -178,7 +177,7 @@ function idsConfig(): string[] {
 }
 
 function wrangler(args: string[]): string {
-  const r = spawnSync('pnpm', ['exec', 'wrangler', ...args, ...idsConfig()], {
+  const r = runPnpm(['exec', 'wrangler', ...args, ...idsConfig()], {
     cwd: apiDir,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -347,7 +346,7 @@ function main() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   try {
     main()
   } catch (error) {

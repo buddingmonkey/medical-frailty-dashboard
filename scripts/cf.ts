@@ -8,11 +8,11 @@
 // The D1 ids are not in wrangler.jsonc (scripts/d1-ids.ts): this passes a gitignored copy with
 // the ids from apps/api/.env.cloudflare (D1_PREVIEW_DATABASE_ID, optional
 // D1_PRODUCTION_DATABASE_ID), unless the command names its own --config.
-import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { localConfigArgs } from './d1-ids.ts'
+import { runPnpm } from './lib/run.ts'
 
 const apiDir = join(import.meta.dirname, '..', 'apps', 'api')
 const envFile = join(apiDir, '.env.cloudflare')
@@ -60,7 +60,7 @@ if (!ownConfig && targetsPreview(args) && config.ids.preview === undefined) {
   process.exit(1)
 }
 
-const result = spawnSync('pnpm', ['exec', 'wrangler', ...args, ...config.args], {
+const result = runPnpm(['exec', 'wrangler', ...args, ...config.args], {
   cwd: apiDir,
   stdio: 'inherit',
 })

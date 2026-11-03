@@ -19,14 +19,18 @@ A **terminal** is a window where you type commands instead of clicking.
 
 1. Open the terminal (step 3 says which one for your computer).
 2. Copy the command from this guide. Copy only the text in the grey box.
-3. Paste it into the terminal. On macOS, press Cmd+V. In the Ubuntu or Linux terminal, press
-   Ctrl+Shift+V or right-click.
+3. Paste it into the terminal. On Windows, press Ctrl+V or right-click. On macOS, press
+   Cmd+V. In a Linux terminal, press Ctrl+Shift+V or right-click.
 4. Press Enter.
-5. Wait until the terminal shows a new line that ends with `$` or `%`. That means it is
-   ready for the next command.
+5. Wait until the terminal shows a new line that ends with `>` (Windows), `%` (macOS) or `$`
+   (Linux). That means it is ready for the next command.
 
-When a command asks for your **password**, type your computer password and press Enter.
-Nothing appears while you type. That is normal.
+Most commands are the same on every computer. Where they differ, the guide shows a
+**Windows** box and a **macOS and Linux** box. Use only the one for your computer.
+
+When a command on macOS or Linux asks for your **password**, type your computer password and
+press Enter. Nothing appears while you type. That is normal. On Windows, a window may ask
+"Do you want to allow this app to make changes?" instead. Click **Yes**.
 
 ## Step 1. Look at the project on GitHub
 
@@ -70,36 +74,29 @@ Prices change, so check https://claude.com/pricing (plans) and https://claude.co
 
 ## Step 3. Get a terminal
 
-### Windows: install WSL first
+### Windows: PowerShell
 
-**Use WSL. Do not use PowerShell or Command Prompt for this project.** WSL (Windows Subsystem
-for Linux) runs a small Linux system inside Windows. This project's helper scripts use Linux
-commands, so `pnpm check`, `pnpm dev:stop` and the database scripts do not work in plain
-Windows. With WSL, you follow the same steps as a Linux user.
+Windows 10 or 11 works as it is. You do not need WSL or Linux.
 
-You need Windows 10 version 2004 or later, or Windows 11.
-
-1. Click Start, type `PowerShell`, right-click **Windows PowerShell** and choose **Run as
-   administrator**. Click **Yes**.
-2. Type this and press Enter:
+1. Click Start, type `Terminal` and press Enter. (On Windows 10 without Terminal, type
+   `PowerShell` and open **Windows PowerShell**.) Do not choose "Run as administrator".
+2. Allow the tools you install in the next steps to run. Type this and press Enter:
 
    ```powershell
-   wsl --install
+   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
    ```
 
-3. When it finishes, restart your computer.
-4. After the restart, an **Ubuntu** window opens (if not, click Start and type `Ubuntu`).
-   Wait while it finishes setting up.
-5. It asks for a **UNIX username** and a **password**. Choose a short lowercase name and a
-   password you will remember. This is a new account for Linux only.
+   If it asks a question, type `Y` and press Enter. This changes a setting for your own
+   account only. Without it, `pnpm` stops with "running scripts is disabled on this system".
 
-**Success:** the Ubuntu window shows a line like `yourname@COMPUTER:~$`.
+**Success:** the window shows a line like `PS C:\Users\yourname>`.
 
-From now on, **every command in these guides goes in the Ubuntu window**, not in PowerShell.
-Keep all project files inside Ubuntu (step 10 does this for you). Do not put them in
-`C:\Users\...` or open them through `/mnt/c/`: that is slow and causes line-ending errors.
+Every command in these guides goes in this window. Keep the project in your own folder
+(step 10 does this for you), not in OneDrive or on a network drive.
 
-Microsoft's full guide: https://learn.microsoft.com/en-us/windows/wsl/install
+**Prefer WSL?** It works too. Install it (https://learn.microsoft.com/en-us/windows/wsl/install),
+then follow the **Linux** steps in the Ubuntu window, and keep the project inside Ubuntu (`~`),
+not under `/mnt/c/`.
 
 ### macOS
 
@@ -116,7 +113,15 @@ On another Linux system, use its own package manager where these guides say `apt
 
 **Git** keeps the history of every file and sends your changes to GitHub.
 
-- **Windows (Ubuntu window) and Linux:**
+- **Windows:**
+
+  ```powershell
+  winget install --id Git.Git -e --source winget
+  ```
+
+  Then close the terminal and open a new one, so it finds Git.
+
+- **Linux:**
 
   ```bash
   sudo apt update && sudo apt install -y git curl
@@ -127,7 +132,7 @@ On another Linux system, use its own package manager where these guides say `apt
 
 **Check it worked:**
 
-```bash
+```text
 git --version
 ```
 
@@ -135,7 +140,7 @@ You should see `git version 2.` and more numbers.
 
 Now tell Git who you are. Use the private GitHub email from step 2:
 
-```bash
+```text
 git config --global user.name "Your Name"
 git config --global user.email "12345678+yourname@users.noreply.github.com"
 ```
@@ -148,34 +153,49 @@ Official page: https://git-scm.com/downloads
 the terminal.
 
 1. Install it:
-   - **Windows (Ubuntu window) and Linux:** follow the "Debian, Ubuntu" steps on
+   - **Windows:** `winget install --id GitHub.cli -e --source winget`, then close the
+     terminal and open a new one.
+   - **Linux:** follow the "Debian, Ubuntu" steps on
      https://github.com/cli/cli/blob/trunk/docs/install_linux.md. Paste the whole block.
    - **macOS:** install Homebrew from https://brew.sh (follow the steps it prints at the
      end), then run `brew install gh`.
 2. Check it worked: `gh --version` shows `gh version 2.` and more numbers.
 3. Sign in:
 
-   ```bash
+   ```text
    gh auth login
    ```
 
    Answer the questions with the arrow keys and Enter: **GitHub.com**, **HTTPS**, **Yes**
    (authenticate Git with your GitHub credentials), **Login with a web browser**. It shows a
-   one-time code. Copy it, press Enter, and paste the code on the page that opens. In WSL, if
-   no browser opens, go to https://github.com/login/device yourself.
+   one-time code. Copy it, press Enter, and paste the code on the page that opens. If no
+   browser opens, go to https://github.com/login/device yourself.
 
 **Check it worked:**
 
-```bash
+```text
 gh auth status
 ```
 
 You should see `Logged in to github.com account yourname`.
 
-## Step 6. Install Node.js 26 with nvm
+## Step 6. Install Node.js 26
 
-**Node.js** runs the site's tools. This project needs **version 26**. **nvm** installs the
-right version and lets you switch later.
+**Node.js** runs the site's tools. This project needs **version 26**.
+
+### Windows
+
+```powershell
+winget install --id OpenJS.NodeJS.LTS -e --source winget
+```
+
+Close the terminal and open a new one. If `node --version` (below) shows a number other than
+`v26`, uninstall that Node (Start, Settings, Apps), then download the **v26** Windows
+installer (`.msi`) from https://nodejs.org/en/download and run it.
+
+### macOS and Linux: with nvm
+
+**nvm** installs the right version and lets you switch later.
 
 1. Open https://github.com/nvm-sh/nvm#installing-and-updating and copy the `curl` install
    command shown there. It looks like this (the version number may be newer):
@@ -193,16 +213,16 @@ right version and lets you switch later.
    nvm alias default 26
    ```
 
-**Check it worked:**
+Do not install Node from the Node.js website or with `sudo apt install nodejs` as well. Two
+copies of Node cause the errors in [Troubleshooting](#troubleshooting).
 
-```bash
+### Check it worked
+
+```text
 node --version
 ```
 
 You should see `v26.` and more numbers.
-
-Do not install Node from the Node.js website or with `sudo apt install nodejs` as well. Two
-copies of Node cause the errors in [Troubleshooting](#troubleshooting).
 
 ## Step 7. Install pnpm 12.16.1
 
@@ -210,13 +230,13 @@ copies of Node cause the errors in [Troubleshooting](#troubleshooting).
 12.16.1. Node 26 no longer includes the tool (corepack) that used to install pnpm, so you
 install it yourself:
 
-```bash
+```text
 npm install -g pnpm@12.16.1
 ```
 
 **Check it worked:**
 
-```bash
+```text
 pnpm --version
 ```
 
@@ -227,16 +247,23 @@ Official page: https://pnpm.io/installation
 ## Step 8. Install Claude Code and sign in
 
 1. Install it:
+   - **Windows:**
 
-   ```bash
-   curl -fsSL https://claude.ai/install.sh | bash
-   ```
+     ```powershell
+     irm https://claude.ai/install.ps1 | iex
+     ```
+
+   - **macOS and Linux:**
+
+     ```bash
+     curl -fsSL https://claude.ai/install.sh | bash
+     ```
 
    It shows no progress while it downloads. Wait for the prompt to come back.
 2. Close the terminal and open a new one.
 3. Check it worked:
 
-   ```bash
+   ```text
    claude --version
    ```
 
@@ -252,10 +279,8 @@ https://code.claude.com/docs/en/terminal-guide
 You do not need an editor: Claude Code edits the files for you. An editor helps you read the
 files and the changes. **Visual Studio Code** is free: https://code.visualstudio.com
 
-- **Windows:** install VS Code in Windows, then add the **WSL** extension
-  (https://code.visualstudio.com/docs/remote/wsl). In the Ubuntu window, `code .` then opens
-  the project folder.
-- **macOS and Linux:** install it, then open the project folder from the File menu.
+Install it, then open the project folder from the File menu. (With WSL, add the **WSL**
+extension too: https://code.visualstudio.com/docs/remote/wsl.)
 
 ## Step 10. Copy the project to your computer (fork and clone)
 
@@ -265,25 +290,25 @@ then copy your fork to your computer (a **clone**).
 
 1. Go to your home folder:
 
-   ```bash
+   ```text
    cd ~
    ```
 
 2. Fork and clone in one command:
 
-   ```bash
+   ```text
    gh repo fork buddingmonkey/medical-frailty-dashboard --clone
    ```
 
 3. Go into the project folder:
 
-   ```bash
+   ```text
    cd medical-frailty-dashboard
    ```
 
 **Check it worked:**
 
-```bash
+```text
 git remote -v
 ```
 
@@ -299,7 +324,8 @@ of them, use `gh repo clone buddingmonkey/medical-frailty-dashboard`.
 Run every command from here on **inside the project folder**. If you open a new terminal,
 first type `cd ~/medical-frailty-dashboard`.
 
-1. Make sure the right Node is in use (it reads `.nvmrc`, which says `26`):
+1. macOS and Linux only: make sure the right Node is in use (it reads `.nvmrc`, which says
+   `26`):
 
    ```bash
    nvm use
@@ -307,7 +333,7 @@ first type `cd ~/medical-frailty-dashboard`.
 
 2. Install the packages:
 
-   ```bash
+   ```text
    pnpm install
    ```
 
@@ -327,7 +353,7 @@ the real codes, 120 entries per state. Run them in this order.
 
 1. Create the tables:
 
-   ```bash
+   ```text
    pnpm db:migrate:local
    ```
 
@@ -337,13 +363,13 @@ the real codes, 120 entries per state. Run them in this order.
    need the internet. On a test run from a fresh clone it took about 75 seconds. It prints
    many `rows` lines and ends with `loaded 173935 rows` (the number may change).
 
-   ```bash
+   ```text
    pnpm db:ref:local
    ```
 
 3. Load the sample state lists:
 
-   ```bash
+   ```text
    pnpm db:seed:local
    ```
 
@@ -357,7 +383,7 @@ when a maintainer adds a new migration (after you update from `main`).
 
 1. Start the site:
 
-   ```bash
+   ```text
    pnpm dev
    ```
 
@@ -374,7 +400,7 @@ when a maintainer adds a new migration (after you update from `main`).
 
 Open a **second** terminal, go to the project folder, and run:
 
-```bash
+```text
 pnpm dev:stop
 ```
 
@@ -385,7 +411,7 @@ prompt. Use this command rather than closing the window: it stops every part of 
 
 1. In the project folder, type:
 
-   ```bash
+   ```text
    claude
    ```
 
@@ -411,11 +437,11 @@ To leave Claude Code, type `/exit` and press Enter (or press Ctrl+D twice).
 `pnpm check:full`, also runs the site in a test browser. The project's CI runs it on every
 pull request, so you do not have to. To run it on your computer, install the test browser once:
 
-```bash
+```text
 pnpm --filter @mfcd/web exec playwright install --with-deps chromium
 ```
 
-It asks for your password (it installs system libraries on Linux and WSL).
+On Linux and WSL it asks for your password (it installs system libraries).
 
 ## Optional: the Vue skill for Claude Code
 
@@ -433,16 +459,19 @@ the repo. To add it, in Claude Code type these two commands, one at a time:
 
 | What you see | Why | Fix |
 | --- | --- | --- |
-| `claude: command not found` (or `nvm`, `pnpm`) right after installing | The terminal started before the install | Close the terminal and open a new one. For Claude Code, see https://code.claude.com/docs/en/troubleshoot-install |
-| `node --version` shows something other than `v26`, or errors about `.ts` files or "Unsupported engine" | The wrong Node is in use | In the project folder: `nvm install`, `nvm use`, `nvm alias default 26`. Remove any other Node you installed |
+| `claude: command not found` (or `nvm`, `pnpm`, `git`; on Windows "is not recognized as the name of a cmdlet") right after installing | The terminal started before the install | Close the terminal and open a new one. For Claude Code, see https://code.claude.com/docs/en/troubleshoot-install |
+| Windows: `pnpm` says "running scripts is disabled on this system" | PowerShell blocks the small script npm installed for pnpm | Do step 3, part 2 (`Set-ExecutionPolicy ...`), then open a new terminal |
+| `node --version` shows something other than `v26`, or errors about `.ts` files or "Unsupported engine" | The wrong Node is in use | macOS and Linux: in the project folder, `nvm install`, `nvm use`, `nvm alias default 26`. Windows: see step 6. Remove any other Node you installed |
 | `pnpm: command not found`, or `pnpm --version` is not `12.16.1` | pnpm is missing or a different version | `npm install -g pnpm@12.16.1`, then open a new terminal |
-| `EACCES` or "permission denied" when you run `npm install -g` | You are using a Node that came with the system, not nvm's | Never add `sudo`. Do step 6 again, open a new terminal, check that `which node` shows a path with `.nvm` in it |
+| `EACCES` or "permission denied" when you run `npm install -g` (macOS, Linux) | You are using a Node that came with the system, not nvm's | Never add `sudo`. Do step 6 again, open a new terminal, check that `which node` shows a path with `.nvm` in it |
 | pnpm refuses a package because it was published too recently (`minimumReleaseAge`) | The project refuses packages less than 3 days old, which blocks most hijacked releases | Ask Claude Code to use the previous version of that package. Do not change the setting |
-| `Port 8787 is still in use`, or `pnpm dev` says the address is already in use | An earlier `pnpm dev` is still running | `pnpm dev:stop`. If that does not free it: on Linux or WSL `ss -ltnp \| grep 8787`, on macOS `lsof -i :8787`, to see what holds it |
+| `Port 8787 is still in use`, or `pnpm dev` says the address is already in use | An earlier `pnpm dev` is still running | `pnpm dev:stop`. If that does not free it, see what holds it: on Windows `netstat -ano \| findstr :8787` (the last number is the process ID; Task Manager shows it under Details), on Linux or WSL `ss -ltnp \| grep 8787`, on macOS `lsof -i :8787` |
 | Pages show errors such as `no such table`, or the site has no states | The local database is empty | Do step 12 again, then press Rebuild coverage (step 13) |
 | Compare or Map is empty but state pages work | Coverage was not rebuilt after seeding | Admin → Unified categories → Rebuild coverage |
 | `pnpm check` says `FAIL format` | Files are not laid out the project's way | `pnpm format`, then `pnpm check` again |
-| Windows: `FAIL format` on almost every file, or `\r` in an error, or everything is very slow | The project is in a Windows folder (`/mnt/c/...`) or Git turned line endings into Windows ones | In Ubuntu: `git config --global core.autocrlf input`, then clone again into `~` (step 10) |
+| Windows: `FAIL format` on almost every file, or `\r` in an error | Git turned line endings into Windows ones (the project's `.gitattributes` should prevent this) | `git config --global core.autocrlf input`, then clone again (step 10) |
+| Windows: `Filename too long` or `ENAMETOOLONG` | Windows limits path length, and the project's packages sit deep in folders | `git config --global core.longpaths true`, and keep the project in your user folder (`C:\Users\yourname\medical-frailty-dashboard`) |
+| WSL: everything is very slow | The project is in a Windows folder (`/mnt/c/...`) | Clone again inside Ubuntu, into `~` (step 10) |
 | `pnpm db:ref:local` fails with a network or download error | It downloads files from cms.gov | Check your internet and try again later |
 | `git push` says `Permission denied`, `403`, or `GH013: Repository rule violations` | You pushed to the main project or to `main` | Push your own branch to your fork: `git push -u origin your-branch-name` |
 | A check says browsers are missing (`Executable doesn't exist`) | The test browser is not installed | See "Optional: the browser tests" above |

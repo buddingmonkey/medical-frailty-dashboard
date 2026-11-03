@@ -3,7 +3,6 @@
 // `pnpm --filter @mfcd/reference-data load --local` (or `--env preview [--max-rows N]`): apply
 // the chunks that D1 does not have yet. `ccsr-coverage`: check local D1's published ICD-10-CM
 // codes against ref_ccsr. See README.md.
-import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -13,6 +12,7 @@ import { unzipSync } from 'fflate'
 
 import { ccsrGroupsOf, ccsrLookupPrefixes, type CcsrRow } from '@mfcd/shared/ccsr'
 
+import { runPnpm } from '../../../scripts/lib/run.ts'
 import { compressCcsr, parseDxccsrCsv } from './ccsr.ts'
 import { parseHcpcsFile } from './hcpcs.ts'
 import { parseIcd10cmOrderFile } from './icd10cm.ts'
@@ -123,7 +123,7 @@ function wrangler(target: string[], args: string[]): string {
   const command = viaCf
     ? ['cf', 'd1', 'execute', 'DB', ...target, ...args]
     : ['exec', 'wrangler', 'd1', 'execute', 'DB', ...target, ...args]
-  const result = spawnSync('pnpm', command, {
+  const result = runPnpm(command, {
     cwd: viaCf ? join(apiDir, '..', '..') : apiDir,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,

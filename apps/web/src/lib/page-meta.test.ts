@@ -100,9 +100,12 @@ describe('every page sets its title', () => {
 
   // Public pages set a title and description (usePageMeta, or InfoPageView for About and the
   // other fixed-text pages); the admin layout sets one title for every admin page.
-  it.each(files(pagesDir).map((path) => relative(pagesDir, path)))('%s', (file) => {
-    if (file.startsWith('admin/')) return
-    const source = readFileSync(join(pagesDir, file), 'utf8')
-    expect(source).toMatch(/usePageMeta\(|<InfoPageView\b/)
-  })
+  it.each(files(pagesDir).map((path) => relative(pagesDir, path).replaceAll('\\', '/')))(
+    '%s',
+    (file) => {
+      if (file.startsWith('admin/')) return
+      const source = readFileSync(join(pagesDir, file), 'utf8')
+      expect(source).toMatch(/usePageMeta\(|<InfoPageView\b/)
+    },
+  )
 })

@@ -16,7 +16,7 @@ opens the PR.
 
 ## Before you write code
 
-1. Run `date` and note the time, then `scripts/builder-setup.sh` (syncs your worktree with
+1. Run `date` and note the time, then `node scripts/builder-setup.ts` (syncs your worktree with
    `main`, installs packages, links the local secret files). If it fails, stop and report.
 2. Read `CLAUDE.md`, then `docs/status.md`, then the roadmap step you were given
    (`docs/roadmap.md`). Read other docs only when the step needs them: `grep -n` for the
@@ -42,8 +42,8 @@ opens the PR.
   `apps/web/src/styles/main.css`; new tokens are a product decision, so report rather than add.
 - **Workers:** follow `cloudflare:workers-best-practices`; regenerate types with
   `pnpm --filter @mfcd/api cf-types` after changing `wrangler.jsonc`.
-- Stop dev servers by process group or port (`ss -ltnp`), never with `pkill -f` or a
-  `pgrep` pattern: they match your own shell.
+- Stop dev servers by process group or port (`ss -ltnp`; Windows: `netstat -ano`), never
+  with `pkill -f` or a `pgrep` pattern: they match your own shell.
 
 ## Never
 
