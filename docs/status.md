@@ -326,11 +326,14 @@ _Last updated: 2026-11-03 (M7 complete)_
   lead's review. Built: bulk remap with a preview (`/admin/categories`), backup download as a
   zip and restore path 2 (`/admin/restore`), and a weekly cron: dump, prunes, draft cleanup
   (migration 0015). **For the review:**
-  - Tag `v0.8.0`? It applies 0015 on production and turns on the Sunday cron there.
+  - **`v0.8.0` is live** (the project lead tagged and approved it; CI run 41718101149,
+    2026-11-03). 0015 applied, and the Sunday cron is set on production. Bookmark before the
+    migration: `00000013-00000000-00005118-ca54835bca6d3b3549bf2d294f885a67`. Checked:
+    `/admin/restore` and its Maintenance API, and `/admin/categories`. The project lead tested
+    the backup download (a zip) and it worked.
+  - Workers Paid stays (project lead, 2026-11-03), so the weekly dump runs.
   - Try "Run maintenance now" on preview (Backup and restore page). It writes a weekly dump
     to R2 and deletes only drafts idle for 30 days or more; preview has none that old.
-  - **The weekly dump needs Workers Paid** (65–160 ms of CPU; a Free cron gets 10 ms). On a
-    downgrade, drop the dump from the cron or move it to a Workflow (`docs/deployment.md`).
   - Backup decisions taken by the lead (main session): the download leaves out R2 keys and the
     weekly dump keeps them; 50 MB import cap; a restored mapping keeps its original mapper,
     and the audit row names who restored it.
