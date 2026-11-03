@@ -215,6 +215,9 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
 - **M5 review** (project lead, 2026-11-02): 19 starter unified categories seeded as drafts
   (migration 0011); the two rules stay as built and go to the legal list; the "no list" shade is a
   neutral grey in both themes; `v0.5.0` approved.
+- **Preview data, step 2 done** (branch `coverage-rebuild`): **Rebuild coverage** on Admin →
+  Unified categories (`POST /api/admin/coverage/rebuild`) rebuilds full code lists, placements and
+  similarity from the base rows. For seed data loaded as SQL and for a new CCSR or ICD-10-CM release.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on

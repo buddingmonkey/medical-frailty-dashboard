@@ -90,6 +90,21 @@ export const unifiedSaveResponseSchema = z.object({
   version: z.number().int().positive(),
 })
 
+/**
+ * Body of `POST /api/admin/coverage/rebuild`: the derived tables' sizes after the rebuild
+ * (docs/deployment.md, "Preview data").
+ */
+export const coverageRebuildResponseSchema = z.object({
+  /** Unified categories (not retired) whose full code list was rebuilt. */
+  categories: z.number().int().nonnegative(),
+  universeCodes: z.number().int().nonnegative(),
+  placements: z.number().int().nonnegative(),
+  similarPairs: z.number().int().nonnegative(),
+  ms: z.number().nonnegative(),
+})
+
+export type CoverageRebuildResponse = z.infer<typeof coverageRebuildResponseSchema>
+
 /** Body of `GET /api/admin/ccsr-categories`. */
 export const ccsrCategoryListResponseSchema = z.object({
   items: z.array(

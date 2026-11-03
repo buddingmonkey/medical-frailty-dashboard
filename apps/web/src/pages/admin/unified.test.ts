@@ -196,3 +196,44 @@ describe('/admin/unified', () => {
     ])
   })
 })
+
+describe('/admin/unified: rebuild coverage', () => {
+  it('rebuilds every derived table and says how much it found', async () => {
+    fakeApi()
+    let calls = 0
+    server.use(
+      http.post('/api/admin/coverage/rebuild', () => {
+        calls += 1
+        return HttpResponse.json({
+          categories: 19,
+          universeCodes: 12_034,
+          placements: 812,
+          similarPairs: 6,
+          ms: 4210,
+        })
+      }),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    expect(
+      (await within(region).findByRole('status')).textContent.replace(/\s+/g, ' ').trim(),
+    ).toBe(
+      'Rebuilt 19 categories: 12,034 codes in their full lists, 812 placements, 6 state pairs (4.2 s).',
+    )
+    expect(calls).toBe(1)
+  })
+
+  it('shows the error when the rebuild fails', async () => {
+    fakeApi()
+    server.use(
+      http.post('/api/admin/coverage/rebuild', () =>
+        HttpResponse.json({ error: 'Internal error' }, { status: 500 }),
+      ),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    expect((await within(region).findByRole('alert')).textContent).toContain('Internal error')
+  })
+})
