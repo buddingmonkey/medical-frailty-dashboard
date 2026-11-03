@@ -411,7 +411,7 @@ _Last updated: 2026-11-03 (M7 complete)_
    code list; the source URL of our `HR1-Codes` PDF is unknown. Next step if wanted: ask LDH
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
-4. **Georgia source:** URL and publish date of Attachments A and B.
+4. **Georgia source:** answered 2026-11-03 (DCH public notices page, posted 2026-07-09; `docs/sources.md`). Left: set the URL and publisher date (2026-07-09) on GA's two source documents on production (`/admin/sources` gets an edit form for that, M8), and watch for a list with the 2026-08 HIV additions.
 
 ## Watch dates
 
