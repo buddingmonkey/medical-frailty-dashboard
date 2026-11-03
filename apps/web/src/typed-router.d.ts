@@ -203,6 +203,13 @@ declare module 'vue-router/auto-routes' {
       { pair: ParamValue<false> },
       | never
     >,
+    '/search': RouteRecordInfo<
+      '/search',
+      '/search',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/states/': RouteRecordInfo<
       '/states/',
       '/states',
@@ -425,6 +432,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'pair'
+    }
+    'src/pages/search.vue': {
+      routes:
+        | '/search'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/states/index.vue': {
       routes:
