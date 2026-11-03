@@ -1,10 +1,17 @@
-// `node scripts/make-seed.ts [--from preview|production] [--per-state 120]`: writes
+// `node scripts/make-seed.ts [--from production|preview] [--per-state 300]`: writes
 // apps/api/seed/seed.sql, the test data for preview and local development (docs/deployment.md,
-// "Preview data"). It samples each published state list (real, state-published rows), favouring
-// codes several states share so the comparisons have something to compare, and keeps that
-// state's sources, category mappings and unified mappings for the sampled categories. Admin
-// identities become the seed actor (the repo is public), and the script stops if any other email
-// address is left. No reference data, so no AHRQ or CMS text. It only reads the source database.
+// "Preview data"). It reads production by default (the real lists live there; preview holds
+// only the seed). Two parts:
+//
+// - The real states: it samples each published state list (real, state-published rows),
+//   favouring codes several states share so the comparisons have something to compare, and keeps
+//   that state's sources, category mappings and unified mappings for the sampled categories.
+// - Every other state: a synthetic list (scripts/synthetic-states.ts) drawn from the real lists'
+//   code patterns, without their text, so the matrix, map and comparisons show 51 states.
+//
+// Admin identities become the seed actor (the repo is public), and the script stops if any
+// other email address is left. No reference data, so no AHRQ or CMS text. It only reads the
+// source database.
 //
 // Load it with `pnpm db:seed:local` or `pnpm db:seed:preview` (scripts/seed.ts), then press
 // Rebuild coverage (Admin → Unified categories). Runs directly on Node 26 (type stripping).
@@ -14,6 +21,16 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { finishSql, insertSql, parseWranglerJson, sqlString, statesSql } from './copy-state-data.ts'
+import {
+  assignStatuses,
+  buildCandidates,
+  dedupePool,
+  mixSystems,
+  type PoolEntry,
+  SYNTHETIC_IDS,
+  syntheticState,
+  withCategoryCodes,
+} from './synthetic-states.ts'
 
 export const SEED_ACTOR = 'seed@localhost'
 
@@ -179,6 +196,77 @@ export function sampleEntries<T extends SampleEntry>(
   return picked
 }
 
+export interface SeedArgs {
+  from: 'preview' | 'production'
+  perState: number
+}
+
+/** The command line: production and 300 entries per real state unless told otherwise. */
+export function parseArgs(argv: readonly string[]): SeedArgs {
+  const value = (flag: string) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined)
+  const from = value('--from') ?? 'production'
+  if (from !== 'preview' && from !== 'production') throw new Error('--from preview|production')
+  const perState = Number(value('--per-state') ?? 300)
+  if (!Number.isInteger(perState) || perState < 1) throw new Error('--per-state <n>')
+  return { from, perState }
+}
+
+/**
+ * Rows with the same columns as INSERTs of up to `per` rows each, a third of the size of one
+ * INSERT per row. Keep `per` small enough for D1's statement size (about 100 KB).
+ */
+export function insertRowsSql(
+  table: string,
+  rows: readonly Record<string, unknown>[],
+  per: number,
+): string[] {
+  const columns = Object.keys(rows[0] ?? {}).join(', ')
+  const tuples = rows.map((r) => {
+    const one = insertSql(table, r)
+    const head = `INSERT INTO ${table} (${columns}) VALUES `
+    if (!one.startsWith(head)) throw new Error(`Rows of ${table} differ in their columns`)
+    return one.slice(head.length, -1)
+  })
+  const out: string[] = []
+  for (let i = 0; i < tuples.length; i += per)
+    out.push(`INSERT INTO ${table} (${columns}) VALUES\n${tuples.slice(i, i + per).join(',\n')};`)
+  return out
+}
+
+/** Throws if a real row's id reaches the synthetic ids' range. */
+export function assertIdsBelow(
+  table: string,
+  rows: readonly Record<string, unknown>[],
+  offset: number,
+): void {
+  if (rows.some((r) => Number(r['id']) >= offset))
+    throw new Error(`A real ${table} id reaches the synthetic range (${String(offset)})`)
+}
+
+/**
+ * Each unified category's full ICD-10-CM list, as `universeStatements` (apps/api/src/db/
+ * placement.ts) builds it, for every category at once: a read, since the source database's
+ * `unified_universe` is only filled by Rebuild coverage.
+ */
+const UNIVERSE_SQL = `WITH groups AS (SELECT u.slug, uc.ccsr_category FROM unified_ccsr uc
+    JOIN unified_categories u ON u.id = uc.unified_id),
+  cats AS (SELECT DISTINCT substr(code_norm, 1, 3) AS cat FROM ref_ccsr
+    WHERE ccsr_category IN (SELECT ccsr_category FROM groups)),
+  hits AS (SELECT c.code_norm AS code, length(r.code_norm) AS len, r.ccsr_category AS grp
+    FROM cats JOIN ref_codes c
+      ON c.code_system = 'icd10cm' AND c.code_norm >= cats.cat AND c.code_norm < cats.cat || '~'
+    JOIN ref_ccsr r ON r.code_norm IN (substr(c.code_norm, 1, 3), substr(c.code_norm, 1, 4),
+      substr(c.code_norm, 1, 5), substr(c.code_norm, 1, 6), substr(c.code_norm, 1, 7))
+    WHERE c.billable = 1 AND c.valid_to IS NULL),
+  best AS (SELECT code, max(len) AS len FROM hits GROUP BY code)
+SELECT DISTINCT g.slug AS slug, h.code AS code FROM hits h
+  JOIN best b ON b.code = h.code AND b.len = h.len
+  JOIN groups g ON g.ccsr_category = h.grp
+  ORDER BY g.slug, h.code`
+
+/** Entries in the full non-ICD list that union-basis categories take a share of. */
+const NON_ICD_LIST = 60
+
 // ---- Running it ----
 
 const apiDir = join(import.meta.dirname, '..', 'apps', 'api')
@@ -204,15 +292,11 @@ const ids = (rows: Record<string, unknown>[], key: string) =>
   [...new Set(rows.map((r) => Number(r[key])))].sort((a, b) => a - b).join(', ')
 
 function main() {
-  const argv = process.argv.slice(2)
-  const from = argv.includes('--from') ? argv[argv.indexOf('--from') + 1] : 'preview'
-  if (from !== 'preview' && from !== 'production') throw new Error('--from preview|production')
-  const perState = argv.includes('--per-state')
-    ? Number(argv[argv.indexOf('--per-state') + 1])
-    : 120
+  const { from, perState } = parseArgs(process.argv.slice(2))
   const envFile = join(apiDir, '.env.cloudflare')
   if (!process.env['CLOUDFLARE_API_TOKEN'] && existsSync(envFile)) process.loadEnvFile(envFile)
 
+  const now = new Date().toISOString()
   const states = query(
     from,
     "SELECT id, status, published_version_id, updated_at FROM states WHERE status <> 'none' OR published_version_id IS NOT NULL ORDER BY id",
@@ -298,21 +382,74 @@ function main() {
     `SELECT * FROM unified_mappings WHERE state_id IN (${stateList}) AND status <> 'superseded' ORDER BY id`,
   ).filter(inSample)
 
-  const slugOf = new Map(
-    query(from, 'SELECT id, slug FROM unified_categories').map((u) => [
-      Number(u['id']),
-      String(u['slug']),
-    ]),
-  )
+  const unified = query(
+    from,
+    'SELECT id, slug, federal_category FROM unified_categories ORDER BY sort_order, id',
+  ).map((u) => ({
+    id: Number(u['id']),
+    slug: String(u['slug']),
+    federal_category: String(u['federal_category']),
+  }))
+  const slugOf = new Map(unified.map((u) => [u.id, u.slug]))
+
+  // Synthetic lists for every state without a list, from the real lists' code patterns.
+  assertIdsBelow('source_documents', docs, SYNTHETIC_IDS.source)
+  assertIdsBelow('dataset_versions', versions, SYNTHETIC_IDS.version)
+  assertIdsBelow('entries', sample, SYNTHETIC_IDS.entry)
+  assertIdsBelow('category_mappings', catMaps, SYNTHETIC_IDS.categoryMapping)
+  assertIdsBelow('unified_mappings', uniMaps, SYNTHETIC_IDS.unifiedMapping)
+  const universe = new Map<string, string[]>()
+  for (const r of query(from, UNIVERSE_SQL)) {
+    const slug = String(r['slug'])
+    universe.set(slug, [...(universe.get(slug) ?? []), String(r['code'])])
+  }
+  const pool: PoolEntry[] = all.map((e) => ({
+    code_system: e.code_system,
+    raw_code: text(e['raw_code']),
+    code_norm: e.code_norm,
+    match_kind: text(e['match_kind']),
+    range_end_norm: typeof e['range_end_norm'] === 'string' ? e['range_end_norm'] : null,
+    includes_children: typeof e['includes_children'] === 'number' ? e['includes_children'] : null,
+  }))
+  const ctx = {
+    categories: unified,
+    candidates: buildCandidates(withCategoryCodes(pool), universe),
+    universeSize: new Map([...universe].map(([k, v]) => [k, v.length])),
+    nonIcd: mixSystems(dedupePool(pool.filter((e) => e.code_system !== 'icd10cm')), NON_ICD_LIST),
+    actor: SEED_ACTOR,
+  }
+  const listed = new Set(states.map((s) => s.id))
+  const others = (query(from, 'SELECT id FROM states ORDER BY id') as { id: string }[])
+    .map((s) => s.id)
+    .filter((id) => !listed.has(id))
+  const statusOf = assignStatuses(others)
+  const synthetic = others
+    .filter((id) => statusOf.get(id) === 'published')
+    .map((id, i) => ({ id, ...syntheticState(id, i, ctx) }))
+  const syntheticStates = others.flatMap((id) => {
+    const status = statusOf.get(id) ?? 'none'
+    if (status === 'none') return []
+    const s = synthetic.find((x) => x.id === id)
+    return [
+      {
+        id,
+        status,
+        published_version_id: s ? Number(s.version['id']) : null,
+        updated_at: s ? String(s.version['published_at']) : now,
+      },
+    ]
+  })
+  const syntheticEntries = synthetic.flatMap((s) => s.entries)
 
   const countOf = new Map<number, number>()
   for (const e of sample) countOf.set(e.version_id, (countOf.get(e.version_id) ?? 0) + 1)
-  const now = new Date().toISOString()
   const lines = [
     `-- Seed data for preview and local development (docs/deployment.md, "Preview data").`,
     `-- Written by scripts/make-seed.ts from ${from} on ${now.slice(0, 10)}: up to ${String(perState)} entries`,
-    `-- per published state list (real, state-published rows), their sources and mappings. Admin`,
-    `-- identities are replaced by ${SEED_ACTOR}. No reference data. Do not edit by hand.`,
+    `-- per published state list (real, state-published rows), their sources and mappings, and a`,
+    `-- synthetic list for ${String(synthetic.length)} other states (real code patterns, no text; ids from`,
+    `-- ${String(SYNTHETIC_IDS.version)} and ${String(SYNTHETIC_IDS.entry)}). Admin identities are replaced by ${SEED_ACTOR}.`,
+    `-- No reference data. Do not edit by hand.`,
     `-- Loading it DELETES every state list, mapping and audit row in the target first.`,
     'PRAGMA defer_foreign_keys=TRUE;',
     ...RESET_SQL,
@@ -328,10 +465,21 @@ function main() {
     ...catMaps.map((m) => insertSql('category_mappings', scrub(m))),
     // As they are (proposed or approved), so preview also tests the approval flow.
     ...uniMaps.map((m) => mappingSql(scrub({ ...m, superseded_by: null }), slugOf)),
+    ...synthetic.map((x) => insertSql('source_documents', x.source)),
+    ...synthetic.map((x) => insertSql('dataset_versions', x.version)),
+    ...synthetic.map((x) =>
+      insertSql('version_sources', {
+        version_id: x.version['id'],
+        source_document_id: x.source['id'],
+      }),
+    ),
+    ...insertRowsSql('entries', syntheticEntries, 100),
+    ...synthetic.flatMap((x) => x.categoryMappings.map((m) => insertSql('category_mappings', m))),
+    ...synthetic.flatMap((x) => x.unifiedMappings.map((m) => mappingSql(m, slugOf))),
     // The starter categories (migration 0011), published so every public page has content.
     "UPDATE unified_categories SET status = 'published', updated_by = 'seed@localhost' WHERE status = 'draft' AND created_by = 'migration 0011';",
-    ...statesSql(states),
-    ...finishSql({ entries: sample.length }, now).map((s) =>
+    ...statesSql([...states, ...syntheticStates]),
+    ...finishSql({ entries: sample.length + syntheticEntries.length }, now).map((s) =>
       s.replace(
         "'ci: copy-state-data', 'data.copy', 'env:preview'",
         `${sqlString(SEED_ACTOR)}, 'seed.load', ${sqlString(`env:${from}`)}`,
@@ -346,6 +494,18 @@ function main() {
     `Wrote ${SEED_FILE}: ${String(sample.length)} entries (${published.map((s) => `${s.id} ${String(countOf.get(s.published_version_id ?? 0) ?? 0)}`).join(', ')}), ` +
       `${String(docs.length)} sources, ${String(catMaps.length)} category mappings, ${String(uniMaps.length)} unified mappings; ` +
       `${String(shared.size)} codes shared by two or more states, ${String(useful.size)} in a unified category. Versions ${ids(versions, 'id')}.`,
+  )
+  const counts = synthetic.map((x) => x.entries.length).sort((a, b) => a - b)
+  const bands = new Map<string, number>()
+  for (const x of synthetic)
+    for (const band of Object.values(x.bands)) bands.set(band, (bands.get(band) ?? 0) + 1)
+  console.log(
+    `Synthetic: ${String(synthetic.length)} published, ` +
+      `${String(syntheticStates.length - synthetic.length)} announced, ` +
+      `${String(others.length - syntheticStates.length)} none; ${String(syntheticEntries.length)} entries ` +
+      `(min ${String(counts[0] ?? 0)}, median ${String(counts[Math.floor(counts.length / 2)] ?? 0)}, ` +
+      `max ${String(counts.at(-1) ?? 0)}); target bands ` +
+      `${[...bands].map(([b, n]) => `${b} ${String(n)}`).join(', ')}. ${String(Math.round(sql.length / 1024))} KB.`,
   )
 }
 

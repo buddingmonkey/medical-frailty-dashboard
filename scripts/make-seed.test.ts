@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  assertIdsBelow,
   assertNoEmails,
+  insertRowsSql,
   mappingSql,
+  parseArgs,
   RESET_SQL,
   sampleEntries,
   scrub,
@@ -115,5 +118,38 @@ describe('mappingSql', () => {
 
   it('refuses a target it has no slug for', () => {
     expect(() => mappingSql(row, new Map())).toThrow(/slug/)
+  })
+})
+
+describe('parseArgs', () => {
+  it('reads production with 300 entries per real state by default', () => {
+    expect(parseArgs([])).toEqual({ from: 'production', perState: 300 })
+    expect(parseArgs(['--from', 'preview', '--per-state', '50'])).toEqual({
+      from: 'preview',
+      perState: 50,
+    })
+    expect(() => parseArgs(['--from', 'local'])).toThrow(/--from/)
+  })
+})
+
+describe('assertIdsBelow', () => {
+  it('stops when a real row would collide with the synthetic ids', () => {
+    expect(() => {
+      assertIdsBelow('entries', [{ id: 5 }], 1000)
+    }).not.toThrow()
+    expect(() => {
+      assertIdsBelow('entries', [{ id: 1000 }], 1000)
+    }).toThrow(/entries/)
+  })
+})
+
+describe('insertRowsSql', () => {
+  it('writes rows with the same columns as multi-row INSERTs of at most `per` rows', () => {
+    const rows = [1, 2, 3].map((id) => ({ id, code: `A${String(id)}`, note: null }))
+    expect(insertRowsSql('entries', rows, 2)).toEqual([
+      "INSERT INTO entries (id, code, note) VALUES\n(1, 'A1', NULL),\n(2, 'A2', NULL);",
+      "INSERT INTO entries (id, code, note) VALUES\n(3, 'A3', NULL);",
+    ])
+    expect(() => insertRowsSql('entries', [{ id: 1 }, { code: 'x' }], 2)).toThrow(/columns/)
   })
 })

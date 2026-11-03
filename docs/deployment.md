@@ -161,17 +161,38 @@ moves them to production. It also waits for the production approval.
 - A `run:` step only gets `pipefail` when it sets `shell: bash`. Without it, `| tee` hides a
   failure.
 
-**Seed data.** `apps/api/seed/seed.sql` is committed. `pnpm db:seed:make` writes it, reading
-only, from preview by default or from production with `-- --from production`.
+**Seed data.** `apps/api/seed/seed.sql` is committed. `pnpm db:seed:make` writes it. It only
+reads, from production by default (the real lists live there) or from preview with
+`-- --from preview`.
 
-- **What's in it:** up to 120 entries for each published state list, as the states published
-  them, with their sources and their category and unified mappings. Mappings keep their status.
-- **How it samples:**
+- **What's in it:**
+  - **The real states** (GA, LA, MT, NE): up to 300 entries for each published list, as the
+    states published them, with their sources and their category and unified mappings.
+    Mappings keep their status.
+  - **Every other state** gets a synthetic list (`scripts/synthetic-states.ts`), so the
+    matrix, map and comparisons show 51 states: 40 published, 4 announced, 3 none.
+- **How it samples the real states:**
   - Shared codes come first: codes two or more states list and that fall in a unified
     category. They fill at most half of each state's sample.
   - Then one entry per group in turn: code system, state category, subcategory and
     qualification.
   - Picks spread evenly over the code range, so the sample isn't all from chapter A.
+- **How it makes a synthetic list:**
+  - It is deterministic: one seeded PRNG per state id.
+  - The entries are code patterns from the four full real lists: exact codes, wildcards and
+    ranges, plus the 3-character category of any pool code whose category the pool lacks.
+    `description_published` is NULL, so no state's text (CPT in particular) is copied.
+  - For each unified category it picks a band (high, mid, low or none) and takes entries until
+    the share of the category's full code list falls inside that band. Categories without a
+    full list (frailty indicators) take a share of 60 HCPCS, CPT, revenue and drug-class codes.
+  - Category names are one list without categories (like GA) or realistic names per category,
+    sometimes with subcategories. Qualification is all standalone, tiered, all unknown, or
+    partly supporting-only.
+  - About 70% of state categories get an approved `exact` unified mapping, so some cells show
+    "not reviewed". Every named category gets a manual federal mapping.
+  - One source per state, titled "Synthetic test list (seed data, not a real state list)", with
+    no URL and R2 key `seed/<ST>`. Ids start at 1000 (sources, versions) and 1,000,000
+    (entries). The generator stops if a real id reaches them.
 - **What changes:** the 19 starter categories are published. Admin identities become
   `seed@localhost`, and the generator stops if any other email address is left. There's no
   reference data, and `check_report_json` is NULL.
@@ -187,13 +208,17 @@ To load it:
    `POST /api/admin/coverage/rebuild`). Seed SQL leaves the full code lists, placements and
    similarity empty, and the rebuild fills them.
 
-Measured locally (2026-11-02), on 480 entries:
+Measured locally (2026-11-02), on 12,153 entries (1,200 real, 10,953 synthetic; 2.8 MB):
 
-- loading the seed took about 1 s;
-- the rebuild took 10.7 s and produced 3,538 codes in full lists, 368 placements and 6 pairs;
-- each state had entries in 11 to 17 of the 19 categories.
+- loading the seed took about 3 s;
+- the rebuild took 10.9 s and produced 3,538 codes in full lists, 12,369 placements and 946
+  pairs;
+- synthetic lists hold 135 to 353 entries (median 281);
+- of the 836 cells of published states, 184 were high, 277 mid, 252 low and 123 none.
+  Blindness and IDD never reach high: the real lists cover only 34% and 52% of their full
+  code lists.
 
-The first sampler took the first codes in code order, and only 118 entries were placed.
+The first sampler took the first codes in code order, and only 118 of 480 entries were placed.
 
 The R2 source files stay in preview's bucket, so local downloads answer 404.
 
