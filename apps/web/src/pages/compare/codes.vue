@@ -8,12 +8,12 @@ import {
   pageTitles,
 } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import CompareControls from '../components/compare/CompareControls.vue'
-import CompareTable from '../components/compare/CompareTable.vue'
-import { ApiError } from '../lib/api'
-import { usePageTitle } from '../lib/page-title'
+import CompareControls from '../../components/compare/CompareControls.vue'
+import CompareTable from '../../components/compare/CompareTable.vue'
+import { ApiError } from '../../lib/api'
+import { usePageTitle } from '../../lib/page-title'
 import {
   type CompareSelection,
   emptySelection,
@@ -22,8 +22,8 @@ import {
   selectionFromQuery,
   selectionKey,
   useCompare,
-} from '../lib/public-compare'
-import { usePublicStates } from '../lib/public-states'
+} from '../../lib/public-compare'
+import { usePublicStates } from '../../lib/public-states'
 
 // Compare by category (roadmap M4 step 2). The URL holds the whole selection, so a link shows
 // the same table to anyone; the controls write to it as soon as the selection is complete.
@@ -86,13 +86,14 @@ const caption = computed(() => {
 
 const csvHref = computed(() => {
   if (!active.value) return null
-  return `/compare.csv?${compareSearchParams({ ...active.value, page: 1 }).toString()}`
+  return `/compare/codes.csv?${compareSearchParams({ ...active.value, page: 1 }).toString()}`
 })
 </script>
 
 <template>
   <article class="space-y-8">
     <header class="max-w-prose space-y-3">
+      <p><RouterLink to="/compare">Overview of every state</RouterLink></p>
       <h1 class="font-display text-4xl font-medium text-heading">Compare states by category</h1>
       <p>
         Pick a category and the states to compare. Each row is a code, a wildcard or a range that at

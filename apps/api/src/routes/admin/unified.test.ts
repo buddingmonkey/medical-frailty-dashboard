@@ -119,6 +119,16 @@ describe('/api/admin/unified', () => {
     expect(await list()).toEqual([])
   })
 
+  it('refuses the reserved slug "codes", given or made from the label', async () => {
+    const fromLabel = await send('POST', '/api/admin/unified', { ...body, label: 'Codes' })
+    expect(fromLabel.status).toBe(400)
+    expect(await fromLabel.json()).toEqual({
+      error: 'The slug "codes" is reserved for the site; choose another slug',
+    })
+    expect((await send('POST', '/api/admin/unified', { ...body, slug: 'codes' })).status).toBe(400)
+    expect(await list()).toEqual([])
+  })
+
   it('answers 409 when the slug is taken, on create and on edit', async () => {
     const first = await create()
     const clash = await send('POST', '/api/admin/unified', body)

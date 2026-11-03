@@ -130,6 +130,11 @@ the public pages say who reviewed it and when.
 5. **Overview matrix** (`/compare`): states × unified categories grouped by federal category;
    sort by any column, overall, or "similar states together"; each cell a number and a shade;
    a cell opens the drill-down. Server-rendered; a real table (WCAG 1.3.1, 1.4.1).
+5b. **Follow-ups from the review** (project lead, 2026-11-02): a code's federal category follows
+   its unified categories' federal parents (M2 mapping as fallback; a code in two counts under
+   both); a never-published draft may be retired; the admin sources list stays under D1's
+   100-parameter limit; the overview's sort order in the URL. Rebuilding placements on a new
+   reference release goes with the update tooling (watch date: HCPCS January 2027).
 6. **Category drill-down** (`/compare/<unified category>`): codes grouped by ICD-10-CM
    category, ranked by how many states list them; filters (everyone, gaps, only one state);
    focus state; details per code with each state's tier and badge. **"Include codes no state

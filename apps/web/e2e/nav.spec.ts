@@ -23,7 +23,7 @@ test('the nav bar reaches every page and marks the current one', async ({ page }
 
   await nav.getByRole('link', { name: 'Compare' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Compare states by category' }),
+    page.getByRole('heading', { level: 1, name: 'Which states cover what' }),
   ).toBeVisible()
   await nav.getByRole('link', { name: 'Home' }).click()
   await expect(page).toHaveURL(/\/$/)

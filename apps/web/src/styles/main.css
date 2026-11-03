@@ -50,6 +50,20 @@
   --color-map-none: #e3e8ef;
   --color-map-border: #ffffff;
 
+  /*
+   * Overview matrix shades (M5 step 5), from the approved M5 mockup. Every cell also shows its
+   * number, so the shade is never the only cue; each text pair passes WCAG AA.
+   */
+  --color-cover-high: #26578c;
+  --color-on-cover-high: #ffffff;
+  --color-cover-mid: #86a9d3;
+  --color-on-cover-mid: #0c2a59;
+  --color-cover-low: #dce7f4;
+  --color-on-cover-low: #0c2a59;
+  --color-cover-none: #f0f2f5;
+  --color-cover-none-line: #b9c2cf;
+  --color-cover-nolist: #e3e8ef;
+
   /* Open-licensed (SIL OFL) fonts, self-hosted from npm (Fontsource). */
   --font-display: 'Jost Variable', 'Futura', 'Avenir Next', ui-sans-serif, sans-serif;
   --font-sans: 'Source Sans 3 Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
@@ -94,6 +108,15 @@
     --color-map-announced: #f7c343;
     --color-map-none: #26374f;
     --color-map-border: #0a1424;
+    --color-cover-high: #9cc3f0;
+    --color-on-cover-high: #031b3f;
+    --color-cover-mid: #3b6aa3;
+    --color-on-cover-mid: #ffffff;
+    --color-cover-low: #1c3354;
+    --color-on-cover-low: #e6ebf2;
+    --color-cover-none: #12213a;
+    --color-cover-none-line: #3a4c6a;
+    --color-cover-nolist: #1a2840;
   }
 }
 
@@ -129,6 +152,15 @@
   --color-map-announced: #f7c343;
   --color-map-none: #26374f;
   --color-map-border: #0a1424;
+  --color-cover-high: #9cc3f0;
+  --color-on-cover-high: #031b3f;
+  --color-cover-mid: #3b6aa3;
+  --color-on-cover-mid: #ffffff;
+  --color-cover-low: #1c3354;
+  --color-on-cover-low: #e6ebf2;
+  --color-cover-none: #12213a;
+  --color-cover-none-line: #3a4c6a;
+  --color-cover-nolist: #1a2840;
 }
 
 /* `dark:` variant for the rare case a token is not enough; matches both ways of being dark. */
@@ -171,4 +203,14 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }
+}
+
+/* "None listed" in the overview matrix (M5 step 5): a hatch, so it differs from the lightest
+   shade without relying on colour alone. */
+@utility hatch-none {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-cover-none) 0 4px,
+    var(--color-cover-none-line) 4px 5px
+  );
 }

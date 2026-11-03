@@ -12,6 +12,7 @@ import {
   COMPARE_PAGE_SIZE,
   compareSearchParams,
   displayEntryCode,
+  isCodeTableQuery,
 } from './compare'
 
 // Compare by category (roadmap M4 step 1): the query, the rows and each state's cell.
@@ -402,5 +403,15 @@ describe('compare wording', () => {
     expect(
       compareSubject({ ownState: 'MT', ownCategory: 'Cancer', ownSubcategory: 'Solid' }, name),
     ).toBe('Montana: Cancer › Solid')
+  })
+})
+
+describe('the code table moved to /compare/codes (M5 step 5)', () => {
+  it('recognises a code-table query, so /compare can redirect it', () => {
+    expect(isCodeTableQuery(new URLSearchParams('states=GA&category=sud'))).toBe(true)
+    expect(isCodeTableQuery(new URLSearchParams('ownState=MT&ownCategory=SMI'))).toBe(true)
+    expect(isCodeTableQuery(new URLSearchParams('page=2'))).toBe(true)
+    expect(isCodeTableQuery(new URLSearchParams(''))).toBe(false)
+    expect(isCodeTableQuery(new URLSearchParams('utm_source=x'))).toBe(false)
   })
 })

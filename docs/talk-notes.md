@@ -132,6 +132,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | M5 step 2 (2026-11-02) | 16:50–17:04 | not measured | $0 | CCSR loaded (75,725 codes → 66,762 rows); found 16 invalid codes in the seed lists |
 | M5 step 3 (2026-11-02) | 17:12–17:38 | not measured | $0 | Admin screens for unified categories and mappings, with CCSR suggestions; 74 new tests |
 | M5 step 4 (2026-11-02) | 17:40–17:59 | not measured | $0 | Placements and the overview API, computed in D1; Nebraska recompute ~0.1 s |
+| M5 step 5 (2026-11-02) | 18:03–18:25 | not measured | $0 | Overview matrix at /compare; screenshots with real data caught a wrong label |
 
 ## Assets to capture for slides
 

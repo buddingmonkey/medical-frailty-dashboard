@@ -60,6 +60,8 @@ unified_mappings     id, state_id, state_category, state_subcategory,
                      status ('proposed'|'approved'|'superseded'), superseded_by → unified_mappings
 ```
 
+- The slug `codes` is reserved (`reservedUnifiedSlugs` in `packages/shared/src/unified.ts`):
+  `/compare/codes` is the code table (M5 step 5). The schema refuses it; the API says why.
 - Relations follow SKOS: `exact` (the same set), `close` (nearly), `broad` (the unified category is
   broader than the state's), `narrow` (narrower), `related`. `by_code` means "this state category
   is not a meaningful group (GA and NE have none): place each code by its CCSR group".
@@ -161,6 +163,15 @@ unified_universe  unified_id → unified_categories (ON DELETE CASCADE), code_no
   **share** = that over the distinct entries of every state together.
 - **Reviewed**: every placement in the cell is reviewed (false when the state has none).
 - States without a list have no cells.
+
+**The overview matrix** (`/compare`, M5 step 5; helpers in `packages/shared/src/overview.ts`, used
+by the Vue page and the server-rendered HTML): a cell shows the share as a whole percentage
+(never 0% above zero, never 100% below one) and a shade: 75% or more, 25–74%, 1–24%, none
+(hatched). **Overall** is the plain average of the state's category shares (categories with no
+denominator left out), so every category counts the same. "Similar states together" is greedy
+nearest-neighbour seriation on the share vectors (squared distance), starting from the highest
+overall, ties by overall then name; states without a list always come last, by name. A cell is
+marked "not reviewed" when it has entries and not every placement is reviewed.
 
 ## Tables (D1 / SQLite)
 

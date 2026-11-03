@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 4)_
+_Last updated: 2026-11-02 (M5 step 5)_
 
 ## Where things stand
 
@@ -199,6 +199,8 @@ _Last updated: 2026-11-02 (M5 step 4)_
 - **M5 step 4 done** (branch `m5-step4-coverage`): placements (`entry_unified`), universes,
   `GET /api/public/overview` (SQL aggregates). A remap of a large state costs ~8k D1 writes; a new
   reference release does not rebuild placements yet.
+- **M5 step 5 done** (branch `m5-step5-overview`): the overview matrix at `/compare`
+  (server-rendered, indexed); the M4 table moved to `/compare/codes`.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -237,7 +239,7 @@ _Last updated: 2026-11-02 (M5 step 4)_
 | IDs and dates | Integer IDs (states keep the 2-letter code); ISO-8601 text dates (user, 2026-11-01) |
 | State page URLs | Lowercase postal code, `/states/ga`; the database enforces `slug = lower(id)` (user, 2026-11-01) |
 | Code page URLs | Computed from code system + code, e.g. `/codes/icd-10-cm/F20.0`; no slug column (user, 2026-11-01) |
-| Workers Paid for one month | $5 once (user, 2026-11-01), so the 107k reference rows load in one go instead of two days per database. **Downgrade to Free by 2026-11-30** (watch date). Nothing in the code depends on the paid plan |
+| Workers Paid for one month | $5 once (user, 2026-11-01), so the 107k reference rows load in one go instead of two days per database. Superseded 2026-11-02: the project lead stays on Workers Paid (see "Workers plan") |
 | States only | The site covers the 50 states and DC; no territories (project lead, 2026-11-01) |
 | Excel reader | `read-excel-file` from npm, not SheetJS from its CDN (project lead, 2026-11-01) |
 | Add-a-state guide | Served in the app at `/admin/guide` (rendered from `docs/add-state-source.md`), linked from "Read and map" when a file cannot be read. No separate agent skill (project lead, 2026-11-02) |
@@ -249,7 +251,11 @@ _Last updated: 2026-11-02 (M5 step 4)_
 | Three category levels (M5) | Federal, unified (admin-curated) and state-specific; all five mockup views; M5 before code search (project lead, 2026-11-02; `docs/devlog/2026-11-02-m5-plan.md`) |
 | CCSR (M5) | Used from the start; downloaded from AHRQ at load time, pinned by version and SHA-256, never committed (AHRQ states no licence) (project lead + AI, 2026-11-02) |
 | Mapping approval (M5) | One admin may approve; public pages say who reviewed it and when (project lead, 2026-11-02) |
-| Compare CPU on the Free plan | Acceptable for now (project lead, 2026-11-02); measure on preview in the lead's signed-in browser before the 2026-11-30 downgrade |
+| Workers plan | Stay on Workers Paid ($5/month); the 2026-11-30 downgrade is dropped (project lead, 2026-11-02) |
+| Federal category (M5) | Pre-mapped through unified categories: a code's federal category follows its unified categories' fixed federal parents (a code in two counts under both); admins manage only state → unified; the M2 federal mapping is the fallback (project lead, 2026-11-02) |
+| Retiring drafts | A never-published unified category may be retired (project lead, 2026-11-02) |
+| Reference releases | A new CCSR or ICD-10-CM release rebuilds universes and placements (project lead, 2026-11-02) |
+| Compare CPU on the Free plan | Moot: staying on Workers Paid (project lead, 2026-11-02) |
 | Professional site basics | Added to M8 (favicon and icons, share image, footer links, privacy and accessibility statements, `security.txt`, print styles) (project lead, 2026-11-02) |
 | `pnpm dev:stop` | Stops the whole `pnpm dev` tree, parents first (project lead asked, 2026-11-01) |
 | Launch criteria | At least **2 states** with every category mapping confirmed by an admin, plus a usability gate: real target users can complete the core tasks (roadmap M8) |
@@ -257,8 +263,9 @@ _Last updated: 2026-11-02 (M5 step 4)_
 ## Open questions
 
 
-1. **Dates to watch** live in the app at `/admin/watch` (next: 2026-11-30, the Workers Paid
-   downgrade; ~2026-12-28, the *Massachusetts v. Oz* appeal deadline).
+1. **Dates to watch** live in the app at `/admin/watch` (next: ~2026-12-28, the
+   *Massachusetts v. Oz* appeal deadline). Close the 2026-11-30 downgrade item there: the
+   project lead stays on Workers Paid.
 2. **Louisiana "Code Designation" (0/1/2):** likely 0 = qualifies alone, 1 = needs a
    supporting code, 2 = supporting evidence only (SHVS 2026-09-11 + a fit against the data).
    Not confirmed by LDH, so it is shown as "inferred". The "code system" explanation does not
@@ -269,10 +276,6 @@ _Last updated: 2026-11-02 (M5 step 4)_
    or an MCO provider-relations line for the .xlsx and the Code Designation definition.
    Until then, parse the PDF.
 4. **Georgia source:** URL and publish date of Attachments A and B.
-
-5. **Federal category from unified mappings (M5):** once a state category has an approved
-   unified mapping, should its entries' federal category follow the unified category's federal
-   parent (replacing the M2 federal mapping)? Step 1 leaves the federal rule unchanged.
 
 ## Watch dates
 
@@ -291,7 +294,7 @@ close dates there, not here. Approximate dates are marked ~.
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
 | No date | Legal team decides the licence of the compiled lists (for the `license` field in the state pages' `Dataset` JSON-LD and the downloads; left out until then) | Search engines recommend a licence on datasets | `docs/seo.md` |
-| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk; for M5, the CCSR licence and citation (AHRQ states no terms), the unified category labels and the match words (exact, close, broad, narrow) | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) the overview's public wording ("Which states cover what", legend, notes, "not reviewed"), plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk; for M5, the CCSR licence and citation (AHRQ states no terms), the unified category labels and the match words (exact, close, broad, narrow) | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 

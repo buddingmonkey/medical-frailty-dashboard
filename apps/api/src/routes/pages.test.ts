@@ -1,4 +1,4 @@
-import { pageTitles } from '@mfcd/shared'
+import { OVERVIEW_DESCRIPTION, pageTitles } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb } from '../db/client'
 import { sourceDocuments, states } from '../db/schema'
 import { call } from '../test/access-fixtures'
+import { seedOverview } from '../test/overview-fixtures'
 import { seedPublicStates } from '../test/public-fixtures'
 
 // Server-rendered public pages, downloads and the sitemap (roadmap M3 step 4; docs/seo.md).
@@ -259,18 +260,21 @@ describe('GET /sitemap.xml', () => {
     )
     expect(xml).toContain('<loc>http://frailty.example.org/states/mt</loc>')
     expect(xml).toContain('<loc>http://frailty.example.org/states</loc>')
+    expect(xml).toContain(
+      '<url><loc>http://frailty.example.org/compare</loc><lastmod>2026-11-02</lastmod></url>',
+    )
   })
 })
 
-describe('GET /compare (server-rendered, noindex)', () => {
+describe('GET /compare/codes (server-rendered, noindex)', () => {
   it('renders the table for the selection in the URL, never indexed', async () => {
-    const res = await get('/compare?states=ga,ne&category=sud')
+    const res = await get('/compare/codes?states=ga,ne&category=sud')
     expect(res.status).toBe(200)
     const html = await res.text()
 
     expect(html).toContain(`<title>${pageTitles.compare}</title>`)
     expect(html).toContain('<meta name="robots" content="noindex" />')
-    expect(html).toMatch(/<link rel="canonical" href="https?:\/\/[^"]+\/compare" \/>/)
+    expect(html).toMatch(/<link rel="canonical" href="https?:\/\/[^"]+\/compare\/codes" \/>/)
     expect(html).toContain('<h1>Compare states by category</h1>')
     expect(html).toContain('<th scope="col"><a href="/states/ga">Georgia</a></th>')
     expect(html).toContain('<th scope="col"><a href="/states/ne">Nebraska</a></th>')
@@ -278,25 +282,25 @@ describe('GET /compare (server-rendered, noindex)', () => {
     expect(html).toMatch(/<th scope="row">F10\.\*<\/th>\s*<td>[^<]*<\/td>\s*<td>Listed/)
     expect(html).toContain('No list on this site')
     expect(html).toContain('2 codes, page 1 of 1')
-    expect(html).toContain('href="/compare.csv?states=GA%2CNE&amp;category=sud"')
+    expect(html).toContain('href="/compare/codes.csv?states=GA%2CNE&amp;category=sud"')
   })
 
   it('without a selection, explains the page and still says noindex', async () => {
-    const html = await (await get('/compare')).text()
+    const html = await (await get('/compare/codes')).text()
     expect(html).toContain('<meta name="robots" content="noindex" />')
     expect(html).toContain('Pick a category and at least one state')
     expect(html).not.toContain('<table')
   })
 
   it('says what was wrong with a bad selection', async () => {
-    const html = await (await get('/compare?states=ZZ&category=sud')).text()
+    const html = await (await get('/compare/codes?states=ZZ&category=sud')).text()
     expect(html).toContain('Unknown state: ZZ')
   })
 })
 
-describe('GET /compare.csv', () => {
+describe('GET /compare/codes.csv', () => {
   it('every row, a column group per state', async () => {
-    const res = await get('/compare.csv?states=GA,NE&category=sud&page=2')
+    const res = await get('/compare/codes.csv?states=GA,NE&category=sud&page=2')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('text/csv; charset=utf-8')
     expect(res.headers.get('content-disposition')).toBe(
@@ -315,7 +319,7 @@ describe('GET /compare.csv', () => {
   })
 
   it('answers 400 for a bad selection', async () => {
-    const res = await get('/compare.csv?states=GA')
+    const res = await get('/compare/codes.csv?states=GA')
     expect(res.status).toBe(400)
   })
 })
@@ -327,6 +331,7 @@ describe('main navigation in the server-rendered HTML', () => {
       ['/states', 'States'],
       ['/states/ga', 'States'],
       ['/compare', 'Compare'],
+      ['/compare/codes', 'Compare'],
     ] as const) {
       const html = await (await get(path)).text()
       expect(html, path).toContain('<nav aria-label="Main">')
@@ -352,5 +357,83 @@ describe('GET /states (server-rendered)', () => {
     expect(html).toMatch(/<link rel="canonical" href="http:\/\/[^"]+\/states" \/>/)
     expect(html).toContain('<h1>All states</h1>')
     expect(html).toContain('<a href="/states/ga">Georgia</a>')
+  })
+})
+
+describe('old /compare links to the code table', () => {
+  it('answer 301 to /compare/codes with the same query', async () => {
+    const res = await get('/compare?states=GA,NE&category=sud&page=2')
+    expect(res.status).toBe(301)
+    expect(res.headers.get('location')).toBe('/compare/codes?states=GA,NE&category=sud&page=2')
+
+    const csv = await get('/compare.csv?states=GA&category=sud')
+    expect(csv.status).toBe(301)
+    expect(csv.headers.get('location')).toBe('/compare/codes.csv?states=GA&category=sud')
+  })
+})
+
+describe('GET /compare (server-rendered overview, indexed)', () => {
+  beforeEach(async () => {
+    await seedOverview()
+  })
+
+  it('has its own title, description and canonical, and is indexed', async () => {
+    const res = await get('/compare', { host: 'frailty.example.org' })
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain(`<title>${pageTitles.overview}</title>`)
+    expect(html).toContain(`<meta name="description" content="${OVERVIEW_DESCRIPTION}"`)
+    expect(html).toContain('<link rel="canonical" href="http://frailty.example.org/compare" />')
+    expect(html).not.toContain('noindex')
+    expect(res.headers.get('cache-control')).toBe('public, max-age=0, must-revalidate')
+  })
+
+  it('renders the whole matrix as a real table: federal groups, categories, numbers in words', async () => {
+    const app = appHtml(await (await get('/compare')).text())
+    expect(app).toContain('<h1>Which states cover what</h1>')
+    expect(app).toMatch(
+      /<caption>\s*Share of each category’s codes that each state lists\s*<\/caption>/,
+    )
+    // Two header rows: the federal parents (in federal order), then the categories.
+    expect(app).toContain('<th scope="col" rowspan="2">State</th>')
+    expect(app).toContain('<th scope="colgroup" colspan="1">Disabling mental disorder</th>')
+    expect(app).toContain(
+      '<th scope="colgroup" colspan="1">Physical, intellectual or developmental disability</th>',
+    )
+    expect(app).toContain('<th scope="col" rowspan="2">Overall</th>')
+    expect(app.indexOf('Serious mental illness')).toBeLessThan(app.indexOf('Equipment'))
+    expect(app.indexOf('Equipment')).toBeLessThan(app.indexOf('Kidney failure'))
+    // A category without a full code list is marked.
+    expect(app).toMatch(/<th scope="col">\s*Equipment †\s*<\/th>/)
+
+    // Georgia: 3 of 6 SMI codes, placed by CCSR without review; all equipment; no kidney code.
+    const georgia = app.slice(
+      app.indexOf('<a href="/states/ga">'),
+      app.indexOf('</tr>', app.indexOf('<a href="/states/ga">')),
+    )
+    const cells = [...georgia.matchAll(/<td>([\s\S]*?)<\/td>/g)].map((m) =>
+      (m[1] ?? '').replace(/\s+/g, ' ').trim(),
+    )
+    expect(cells).toEqual([
+      '<a href="/compare/serious-mental-illness?focus=GA">50%</a> (not reviewed)',
+      '<a href="/compare/equipment?focus=GA">100%</a>',
+      '<a href="/compare/kidney-failure?focus=GA">0%</a>',
+      '50%',
+    ])
+    // States without a list: one cell across the row.
+    expect(app).toMatch(
+      /<a href="\/states\/la">Louisiana<\/a><\/th>\s*<td colspan="4">\s*No list on this site yet\s*<\/td>/,
+    )
+    // Reading notes, the same words as the Vue page.
+    expect(app).toContain('<h2>Reading this table</h2>')
+    expect(app).toContain('whichever of the state’s own categories')
+    expect(app).toContain('href="/compare/codes"')
+  })
+
+  it('says so when there are no published categories yet', async () => {
+    await seedPublicStates()
+    const app = appHtml(await (await get('/compare')).text())
+    expect(app).toContain('No categories are published yet.')
+    expect(app).not.toContain('<table')
   })
 })

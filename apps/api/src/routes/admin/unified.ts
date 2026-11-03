@@ -1,5 +1,6 @@
 import {
   ccsrCategoryListResponseSchema,
+  isReservedUnifiedSlug,
   type UnifiedCategoryBody,
   unifiedCategoryBodySchema,
   unifiedListResponseSchema,
@@ -47,6 +48,10 @@ async function slugTaken(db: Db, slug: string, exceptId?: number): Promise<boole
     )
   return row !== undefined
 }
+
+const slugReserved = (slug: string) => ({
+  error: `The slug "${slug}" is reserved for the site; choose another slug`,
+})
 
 const slugClash = (slug: string) => ({
   error: `The slug "${slug}" is already used by another unified category`,
@@ -154,6 +159,7 @@ export const unifiedRoute = new Hono<AppEnv>()
       return c.json({ error: 'A new unified category is a draft or published' }, 400)
     }
     const slug = fields.slug ?? unifiedSlugFromLabel(fields.label)
+    if (isReservedUnifiedSlug(slug)) return c.json(slugReserved(slug), 400)
     if (!unifiedSlugSchema.safeParse(slug).success) {
       return c.json({ error: 'The label needs letters or digits for its slug' }, 400)
     }

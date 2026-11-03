@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CodeSystem, MappingRelation, UnifiedMappingStatus, UnifiedStatus } from './enums'
 import {
+  isReservedUnifiedSlug,
   type UnifiedMappingRow,
   type UnifiedOfContext,
   unifiedCategorySaveSchema,
@@ -236,6 +237,13 @@ describe('unified schemas', () => {
     expect(
       unifiedCategorySaveSchema.safeParse({ ...category, federalCategory: 'unmapped' }).success,
     ).toBe(false)
+  })
+
+  it('reserves the slugs the site uses under /compare/ (the code table)', () => {
+    expect(unifiedCategorySaveSchema.safeParse({ ...category, slug: 'codes' }).success).toBe(false)
+    expect(isReservedUnifiedSlug('codes')).toBe(true)
+    expect(isReservedUnifiedSlug('codes-of-practice')).toBe(false)
+    expect(unifiedCategorySaveSchema.safeParse({ ...category, slug: 'codes-x' }).success).toBe(true)
   })
 
   const mapping = {

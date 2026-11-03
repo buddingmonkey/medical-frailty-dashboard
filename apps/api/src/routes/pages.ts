@@ -3,6 +3,7 @@ import {
   compareCellText,
   compareQuerySchema,
   federalCategoryInfo,
+  isCodeTableQuery,
   qualificationBasisLabels,
   qualificationLabels,
   SITE_NAME,
@@ -12,6 +13,7 @@ import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
 import { publicCompare } from '../db/public-compare'
+import { publicOverview } from '../db/public-overview'
 import { publicStateDetail, publishedEntriesForDownload } from '../db/public-state'
 import { publicSummaries } from '../db/public-summary'
 import { cachePublic, publicCache } from '../middleware/public-cache'
@@ -20,6 +22,7 @@ import {
   downloadName,
   homePage,
   notFoundPage,
+  overviewPage,
   type PageParts,
   renderInto,
   statePage,
@@ -82,6 +85,16 @@ async function downloadData(c: Context<AppEnv>) {
   return { detail, published: detail.state.published, rows }
 }
 
+/**
+ * `/compare?states=…` and `/compare.csv?…` are links from before M5 step 5, when the code table
+ * lived there: 301 to its new address with the same query. Null when the query is not one.
+ */
+function codeTableRedirect(c: Context<AppEnv>, to: string) {
+  const url = new URL(c.req.url)
+  if (!isCodeTableQuery(url.searchParams)) return null
+  return c.redirect(`${to}${url.search}`, 301)
+}
+
 /** The compare query in the URL: null when there is none, else the parsed query or an error. */
 function compareQueryOf(c: Context<AppEnv>) {
   const raw = c.req.query()
@@ -98,7 +111,16 @@ export const pagesRoute = new Hono<AppEnv>()
     const { items } = await publicSummaries(createDb(c.env.DB))
     return sendPage(c, statesPage(items, origin(c)))
   })
+  .get('/compare', async (c, next) => {
+    // Before the cache: a redirect is not a page.
+    return codeTableRedirect(c, '/compare/codes') ?? next()
+  })
   .get('/compare', pageCache, async (c) => {
+    const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
+    return sendPage(c, overviewPage(data, origin(c)))
+  })
+  .get('/compare.csv', async (c, next) => codeTableRedirect(c, '/compare/codes.csv') ?? next())
+  .get('/compare/codes', pageCache, async (c) => {
     const parsed = compareQueryOf(c)
     if (parsed === null) return sendPage(c, comparePage(origin(c), null))
     if (!parsed.success) {
@@ -115,7 +137,7 @@ export const pagesRoute = new Hono<AppEnv>()
       ),
     )
   })
-  .get('/compare.csv', publicCache, async (c) => {
+  .get('/compare/codes.csv', publicCache, async (c) => {
     const parsed = compareQueryOf(c)
     if (!parsed?.success) return c.json({ error: 'Invalid compare query' }, 400)
     const query = parsed.data
@@ -179,6 +201,7 @@ export const pagesRoute = new Hono<AppEnv>()
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       url(`${base}/`, newest),
       url(`${base}/states`, newest),
+      url(`${base}/compare`, newest),
       ...items.map((s) => url(`${base}/states/${s.slug}`, s.published?.updatedAt?.slice(0, 10))),
       '</urlset>',
       '',

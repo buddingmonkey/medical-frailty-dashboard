@@ -8,11 +8,22 @@ import {
   type CompareResult,
   compareSearchParams,
   compareSubject,
+  coverageBandLabels,
   type FederalCategory,
   federalCategoryInfo,
   formatCount,
   formatDay,
+  OVERVIEW_DESCRIPTION,
+  OVERVIEW_NO_LIST,
+  OVERVIEW_NOT_REVIEWED,
+  overviewCategoryGroups,
+  overviewCellNotReviewed,
+  overviewCellText,
+  overviewDrillDownPath,
+  overviewOverall,
+  overviewReadingNotes,
   pageTitles,
+  type PublicOverviewResponse,
   type PublicStateDetail,
   type PublicStateSummary,
   type Qualification,
@@ -325,19 +336,21 @@ const COMPARE_DESCRIPTION =
   'Compare the medical frailty codes of any number of states, one category at a time: which ' +
   'codes each state lists, covers with a wildcard or range, or leaves out.'
 
-/** `/compare.csv?…` for a selection: every row, so no page. */
+/** `/compare/codes.csv?…` for a selection: every row, so no page. */
 export const compareCsvPath = (query: CompareQuery) =>
-  `/compare.csv?${compareSearchParams({ ...query, page: 1 }).toString()}`
+  `/compare/codes.csv?${compareSearchParams({ ...query, page: 1 }).toString()}`
 
 /**
- * `/compare`: never indexed (each combination is a view of facts whose home is the state page),
- * canonical to the bare `/compare`. Renders the table for the selection in the URL, if any.
+ * `/compare/codes`: never indexed (each combination is a view of facts whose home is the state
+ * page), canonical to the bare `/compare/codes`. Renders the table for the selection in the
+ * URL, if any.
  */
 export function comparePage(
   origin: string,
   view: { query: CompareQuery; result: CompareResult } | { error: string } | null,
 ): PageParts {
-  const intro = html`<h1>Compare states by category</h1>
+  const intro = html`<p><a href="/compare">Overview of every state</a></p>
+    <h1>Compare states by category</h1>
     <p>
       Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
       least one of them lists in that category; each column shows what that state’s whole list says
@@ -400,11 +413,91 @@ export function comparePage(
     status: 200,
     title: pageTitles.compare,
     description: COMPARE_DESCRIPTION,
-    path: '/compare',
-    canonical: `${origin}/compare`,
+    path: '/compare/codes',
+    canonical: `${origin}/compare/codes`,
     noindex: true,
     jsonLd: [],
     body,
+  }
+}
+
+/**
+ * `/compare`: the overview matrix (roadmap M5 step 5), every state against every published
+ * unified category. Indexed: it is the one page that answers "which states cover what".
+ */
+export function overviewPage(data: PublicOverviewResponse, origin: string): PageParts {
+  const { categories } = data
+  const groups = overviewCategoryGroups(categories)
+  const intro = html`<h1>Which states cover what</h1>
+    <p>
+      Each row is a state; each column is a category, grouped under its federal category in the law.
+      A number is the share of the category’s codes that the state lists. Select a number to see the
+      category’s codes with that state in focus.
+    </p>`
+  const table =
+    categories.length === 0
+      ? html`<p>No categories are published yet.</p>`
+      : html`<table>
+          <caption>
+            Share of each category’s codes that each state lists
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" rowspan="2">State</th>
+              ${groups.map(
+                (g) => html`<th scope="colgroup" colspan="${g.categories.length}">${g.label}</th>`,
+              )}
+              <th scope="col" rowspan="2">Overall</th>
+            </tr>
+            <tr>
+              ${categories.map(
+                (c) =>
+                  html`<th scope="col">
+                    ${c.coverageBasis === 'union' ? `${c.label} †` : c.label}
+                  </th>`,
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            ${data.states.map((s) => {
+              const head = html`<th scope="row"><a href="/states/${s.slug}">${s.name}</a></th>`
+              if (!s.hasList) {
+                return html`<tr>
+                  ${head}
+                  <td colspan="${categories.length + 1}">${OVERVIEW_NO_LIST}</td>
+                </tr>`
+              }
+              return html`<tr>
+                ${head}
+                ${categories.map((c, i) => {
+                  const cell = s.cells[i]
+                  if (!cell) return html`<td></td>`
+                  const note = overviewCellNotReviewed(cell) ? ` (${OVERVIEW_NOT_REVIEWED})` : ''
+                  const href = overviewDrillDownPath(c.slug, s.id)
+                  const link = html`<a href="${href}">${overviewCellText(cell.share)}</a>`
+                  return html`<td>${link}${note}</td>`
+                })}
+                <td>${overviewCellText(overviewOverall(s))}</td>
+              </tr>`
+            })}
+          </tbody>
+        </table>`
+  return {
+    status: 200,
+    title: pageTitles.overview,
+    description: OVERVIEW_DESCRIPTION,
+    path: '/compare',
+    canonical: `${origin}/compare`,
+    noindex: false,
+    jsonLd: [],
+    body: html`${intro} ${table}
+      <h2>Reading this table</h2>
+      ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
+      <p>
+        Shades:
+        ${(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]).join('; ')}.
+      </p>
+      <p>To compare single codes, use the <a href="/compare/codes">code table</a>.</p>`,
   }
 }
 

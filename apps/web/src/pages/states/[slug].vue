@@ -61,7 +61,7 @@ const countTables = computed(() => {
   ]
 })
 
-/** The compare page on one of this state's categories. */
+/** The code table (`/compare/codes`) on one of this state's categories. */
 function compareLink(category: string, subcategory: string) {
   const id = state.value?.id ?? ''
   const params = compareSearchParams({
@@ -72,7 +72,7 @@ function compareLink(category: string, subcategory: string) {
     alone: false,
     page: 1,
   })
-  return `/compare?${params.toString()}`
+  return `/compare/codes?${params.toString()}`
 }
 
 function categoryName(category: string, subcategory: string) {
