@@ -19,7 +19,7 @@ pnpm test <filter>    # run matching Vitest tests in every workspace (no `--`: i
 pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it
 pnpm db:migrate:local # apply D1 migrations to the local database
-pnpm db:ref:local     # load the CMS reference codes (ICD-10-CM, HCPCS) into local D1, ~20 s
+pnpm db:ref:local     # load the CMS reference codes (ICD-10-CM, HCPCS) into local D1, about a minute
 pnpm db:seed:local    # replace local state data with the seed (120 real entries per state), then Rebuild coverage
 pnpm db:seed:preview  # the same on preview (never production; it holds the real lists)
 pnpm format           # prettier --write
@@ -70,6 +70,7 @@ Read the doc that matches the task. Do not load all of them.
 
 | Read this | When you need |
 | --- | --- |
+| [docs/getting-started.md](docs/getting-started.md) | First-time setup for non-technical contributors: accounts, WSL, installs, fork, local site |
 | [docs/status.md](docs/status.md) | **Read first.** Where things stand, open questions, how the user likes to work |
 | [docs/roadmap.md](docs/roadmap.md) | Milestones and steps, with acceptance checks |
 | [docs/MedicalFrailtyCode-design-wiki.md](docs/MedicalFrailtyCode-design-wiki.md) | Product goals, users and features (the user's spec) |
@@ -83,5 +84,5 @@ Read the doc that matches the task. Do not load all of them.
 | [docs/testing.md](docs/testing.md) | Test layers, tools, fixtures, how to add and run tests |
 | [docs/deployment.md](docs/deployment.md) | Cloudflare setup, environments, CI/CD, costs, backups, going live |
 | [docs/devlog/](docs/devlog/README.md) | How the site was built, session by session; entry template |
-| [docs/playbook.md](docs/playbook.md) | Step-by-step guide for less-technical builders adding to the site |
+| [docs/playbook.md](docs/playbook.md) | How to make a change and open a pull request, for less-technical builders |
 | [docs/talk-notes.md](docs/talk-notes.md) | Story, moments and numbers for a future blog post or talk |
