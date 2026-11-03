@@ -96,7 +96,9 @@ describe('home page', () => {
     expect(card.textContent).toContain('Substance use disorder47')
     expect(card.textContent).toContain('Unclassified6,000')
     expect(card.textContent).toContain('September 15, 2026')
-    expect(card.textContent).toContain('not yet confirmed')
+    expect(card.textContent).toContain(
+      'Our team has not yet confirmed how this state’s categories fit',
+    )
     expect(card.textContent).not.toContain(FEDERAL_OVERLAP_NOTE)
     expect(
       within(card).getByRole('link', { name: 'See Georgia’s list' }).getAttribute('href'),

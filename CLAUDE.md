@@ -44,10 +44,18 @@ approves. Never run `wrangler deploy` against production by hand.
 - **Admin is behind Cloudflare Access**, and the API also checks the Access JWT. Never add an
   admin route outside `/admin` or `/api/admin`. See `docs/security.md`.
 - **Secrets** go in `wrangler secret` or `.dev.vars` (gitignored). The repo is public.
-- **Builders are optional.** The main session plans with the project lead, and reviews,
-  writes the devlog and opens the PR. It may hand one approved step to the `builder` agent
-  (`.claude/agents/builder.md`): one step per builder, commit and stop. Builders use the main
-  session's model; pass Sonnet only for pure rote work (doc edits, search, mechanical refactors).
+- **Builders in worktrees** (project lead, 2026-11-02, as in the holepanic repo). The main
+  session (the lead) plans with the project lead, and stays free to talk while work runs. It
+  hands each approved step to a `builder` agent (`.claude/agents/builder.md`) with
+  `isolation: "worktree"`, in the background. Independent steps run in parallel.
+  - **One step per builder:** commit and stop. Start a new builder for the next step.
+  - **The brief holds** the task, the branch name, the files the builder owns, the files other
+    builders own, a word limit for the report, and the commit trailer lines.
+  - **Builders run `pnpm check`, never `check:full`:** the e2e ports would clash. The lead
+    reviews the diff, merges the branch, runs `pnpm check:full` once, writes the devlog and
+    opens the PR.
+  - **Model:** builders use the main session's model. Pass Sonnet only for pure rote work
+    (doc edits, search, mechanical refactors).
 - Do not read a large doc in full. `grep -n` for the section, then read that range.
 - **Keep the devlog.** At the end of every session that changed the plan or code, and at
   every milestone, add an entry to `docs/devlog/` (template in its README). Promote lessons to

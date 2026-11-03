@@ -321,8 +321,8 @@ export const overviewReadingNotes: readonly string[] = [
     'Refined, from AHRQ).',
   'Categories marked † have no full code list. Their number is the share of the codes that any ' +
     'state lists in the category.',
-  'A cell counts the state’s codes in the category whichever of the state’s own categories ' +
-    'they are filed under.',
+  'A cell counts the state’s codes in the category no matter which of the state’s own ' +
+    'categories they are filed under.',
   'Overall is the average of the state’s numbers, each category counting the same.',
   'Not reviewed (*): some of the codes in the cell were placed by their CCSR group, and an ' +
     'admin has not yet reviewed how the state’s categories map to ours.',
