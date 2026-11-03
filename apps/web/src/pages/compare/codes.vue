@@ -10,6 +10,7 @@ import {
   downloadTableText,
   formatCount,
   pageTitles,
+  COMPARE_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -19,7 +20,7 @@ import CompareControls from '../../components/compare/CompareControls.vue'
 import CompareTable from '../../components/compare/CompareTable.vue'
 import StatusLegend from '../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../lib/api'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import {
   type CompareSelection,
   emptySelection,
@@ -34,7 +35,7 @@ import { usePublicStates } from '../../lib/public-states'
 // Compare single codes (roadmap M4 step 2). The URL holds the whole selection, so a link shows
 // the same table to anyone; the controls write to it as soon as the selection is complete.
 
-usePageTitle(() => pageTitles.compare)
+usePageMeta({ title: pageTitles.compare, description: COMPARE_DESCRIPTION })
 
 const route = useRoute()
 const router = useRouter()

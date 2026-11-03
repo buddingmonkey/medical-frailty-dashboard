@@ -24,6 +24,8 @@ import {
   federalCategoryInfo,
   pageTitles,
   learnMore,
+  pageDescriptions,
+  drillDescription,
 } from '@mfcd/shared'
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -33,7 +35,7 @@ import DrillDetails from '../../components/compare/DrillDetails.vue'
 import DrillTable from '../../components/compare/DrillTable.vue'
 import StatusLegend from '../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../lib/api'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { useDrill, useDrillDetail } from '../../lib/public-drill'
 import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
@@ -59,11 +61,14 @@ const notFound = computed(
   () => drill.error.value instanceof ApiError && drill.error.value.status === 404,
 )
 const category = computed(() => data.value?.category ?? null)
-usePageTitle(() =>
+usePageMeta(() =>
   notFound.value
-    ? pageTitles.categoryNotFound
+    ? { title: pageTitles.categoryNotFound, description: pageDescriptions.categoryNotFound }
     : category.value
-      ? pageTitles.drillDown(category.value.label)
+      ? {
+          title: pageTitles.drillDown(category.value.label),
+          description: drillDescription(category.value.definition),
+        }
       : null,
 )
 

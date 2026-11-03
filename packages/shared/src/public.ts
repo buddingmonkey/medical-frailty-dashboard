@@ -184,6 +184,35 @@ export type QualificationCounts = Record<Qualification, number>
 
 export const SITE_NAME = 'Medical Frailty Coding Dashboard'
 
+/** One line about the site: the share image's text and the default description. */
+export const SITE_TAGLINE =
+  'Compare the code lists US states use to mark Medicaid members as medically frail.'
+
+/**
+ * The icons, web manifest and share image in apps/web/public (roadmap M8 step 4), written by
+ * `node scripts/make-icons.ts`. Both apps/web/index.html and the Worker's HTML link them.
+ */
+export const SITE_ICONS = {
+  svg: '/favicon.svg',
+  png32: '/favicon-32.png',
+  appleTouch: '/apple-touch-icon.png',
+  manifest: '/site.webmanifest',
+  icon192: '/icon-192.png',
+  icon512: '/icon-512.png',
+} as const
+
+/** The browser chrome colour: the header colour of each theme (`--color-header`). */
+export const THEME_COLORS = { light: '#0c2a59', dark: '#031b3f' } as const
+
+/** The Open Graph / Twitter image. `og:image` is absolute: `${origin}${SHARE_IMAGE.path}`. */
+export const SHARE_IMAGE = {
+  path: '/og-image.png',
+  type: 'image/png',
+  width: 1200,
+  height: 630,
+  alt: `${SITE_NAME}: ${SITE_TAGLINE}`,
+} as const
+
 /** The site covers the 50 states and DC (project lead, 2026-11-01). */
 export const STATES_AND_DC = 51
 
@@ -277,7 +306,44 @@ export const pageTitles = {
   statesCompare: (names: string) => `${names} medical frailty codes | ${SITE_NAME}`,
   statesCompareNotFound: `Comparison not found | ${SITE_NAME}`,
   states: `All states | ${SITE_NAME}`,
+  /** The browser's 404 page for an address no route knows. */
+  pageNotFound: `Page not found | ${SITE_NAME}`,
+  /** Every admin page (they are `noindex` and behind Access, so one title is enough). */
+  admin: `Admin | ${SITE_NAME}`,
 }
+
+/**
+ * Meta descriptions of the pages with fixed words, the same in the browser and the
+ * server-rendered HTML. Pages with their own (compare tabs, search, About) export it beside
+ * their other words; pages built from data use the functions below.
+ */
+export const pageDescriptions = {
+  home:
+    'Compare the code lists US states use to identify medically frail Medicaid members, who ' +
+    'are excluded from the H.R.1 work requirements.',
+  states:
+    'Every US state and DC: whether each has published a Medicaid medical frailty code list, ' +
+    'how many entries it has, and the date on the state’s document.',
+  notFound: 'There is no state at this address.',
+  categoryNotFound: 'There is no published category at this address.',
+  pageNotFound: 'There is no page at this address.',
+  admin: 'The admin screens, behind Cloudflare Access.',
+}
+
+/** A state page's meta description. */
+export function stateDescription(state: PublicStateDetail['state']): string {
+  const p = state.published
+  if (!p) return noListText(state.name, state.status === 'announced')
+  return (
+    `${state.name}’s Medicaid medical frailty code list: ${formatCount(p.totalEntries)} entries` +
+    `${p.sourceDate ? `, state document dated ${formatDay(p.sourceDate)}` : ''}. Counts by code ` +
+    'system and federal category, sources, version history and downloads.'
+  )
+}
+
+/** A category drill-down's meta description: its definition, at most 300 characters. */
+export const drillDescription = (definition: string): string =>
+  definition.length > 300 ? `${definition.slice(0, 297)}…` : definition
 
 /**
  * The main navigation, in order, for the Vue header and the server-rendered HTML. Add a page

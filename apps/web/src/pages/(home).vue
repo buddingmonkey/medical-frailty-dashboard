@@ -10,13 +10,14 @@ import {
   statesWithListText,
   TILE_MAP_HOME_LINK,
   learnMore,
+  pageDescriptions,
 } from '@mfcd/shared'
 import { computed, onMounted, ref } from 'vue'
 
 import StateMap from '../components/home/StateMap.vue'
 import StateSummaryCard from '../components/home/StateSummaryCard.vue'
 import StateTable from '../components/home/StateTable.vue'
-import { usePageTitle } from '../lib/page-title'
+import { usePageMeta } from '../lib/page-meta'
 import { usePublicStates } from '../lib/public-states'
 import AboutLinkView from '../components/about/AboutLinkView.vue'
 
@@ -29,7 +30,7 @@ defineOptions({
   },
 })
 
-usePageTitle(pageTitles.home)
+usePageMeta({ title: pageTitles.home, description: pageDescriptions.home })
 const { data, isPending, isError } = usePublicStates()
 
 const view = ref<'map' | 'table'>('map')

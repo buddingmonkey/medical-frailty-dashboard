@@ -225,3 +225,90 @@
   font-size: 0.875rem;
   text-align: center;
 }
+
+/*
+ * Print (M8 step 4): the compare tables (Overview, Categories, Map, States side by side, Single
+ * codes) and every other page print as black on white at full width. Navigation, the theme
+ * menu, filters and buttons are screen-only. Table headers repeat on each page and rows do not
+ * split. Link URLs are not printed: CSS cannot tell a short URL from a long one, and the
+ * state's document title already names the source.
+ */
+@media print {
+  :root,
+  :root:not([data-theme='light']),
+  :root[data-theme='dark'] {
+    color-scheme: light;
+    --color-background: #ffffff;
+    --color-surface: #ffffff;
+    --color-foreground: #000000;
+    --color-heading: #000000;
+    --color-muted-foreground: #000000;
+    --color-link: #000000;
+    --color-primary: #000000;
+    --color-on-primary: #ffffff;
+    --color-border: #000000;
+    --color-header: #ffffff;
+    --color-on-header: #000000;
+    --color-cover-high: #ffffff;
+    --color-on-cover-high: #000000;
+    --color-cover-mid: #ffffff;
+    --color-on-cover-mid: #000000;
+    --color-cover-low: #ffffff;
+    --color-on-cover-low: #000000;
+    --color-cover-none: #ffffff;
+    --color-cover-nolist: #ffffff;
+  }
+
+  nav,
+  button,
+  form,
+  select,
+  input,
+  textarea,
+  [role='tablist'],
+  .env-banner {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Scrolling table wrappers show the whole table; sticky cells sit in place. */
+  div:has(> table) {
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  th,
+  td {
+    break-inside: avoid;
+  }
+
+  th,
+  td {
+    position: static !important;
+    border: 1px solid #000000;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}

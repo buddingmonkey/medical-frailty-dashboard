@@ -12,6 +12,7 @@ import {
   overviewReadingNotes,
   pageTitles,
   learnMore,
+  OVERVIEW_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -19,7 +20,7 @@ import { useRoute, useRouter } from 'vue-router'
 import CompareTabs from '../../components/compare/CompareTabs.vue'
 import CoverageLegend from '../../components/compare/CoverageLegend.vue'
 import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { usePublicOverview } from '../../lib/public-overview'
 import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
@@ -35,7 +36,7 @@ defineOptions({
   },
 })
 
-usePageTitle(() => pageTitles.overview)
+usePageMeta({ title: pageTitles.overview, description: OVERVIEW_DESCRIPTION })
 
 const overview = usePublicOverview()
 const data = computed(() => overview.data.value)

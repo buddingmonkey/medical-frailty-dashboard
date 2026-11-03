@@ -89,7 +89,15 @@ import {
   overviewOverall,
   overviewReadingNotes,
   orderOverviewStates,
+  pageDescriptions,
   pageTitles,
+  SHARE_IMAGE,
+  SITE_ICONS,
+  THEME_COLORS,
+  drillDescription,
+  stateDescription,
+  statesCompareDescription,
+  STATES_COMPARE_NOT_FOUND_DESCRIPTION,
   type PublicOverviewResponse,
   type PublicStateDetail,
   type PublicStateSummary,
@@ -126,7 +134,6 @@ import {
   statesCompareGroupCountText,
   statesCompareGroupDiffText,
   statesCompareNames,
-  statesCompareNoListText,
   statesCompareOnlyLabel,
   statesComparePath,
   type StatesCompareQuery,
@@ -183,9 +190,7 @@ function learnMoreHtml(link: { text: string; href: string }): Html {
   return html`<a href="${link.href}">${link.text}</a>`
 }
 
-const HOME_DESCRIPTION =
-  'Compare the code lists US states use to identify medically frail Medicaid members, who are ' +
-  'excluded from the H.R.1 work requirements.'
+const HOME_DESCRIPTION = pageDescriptions.home
 
 /** "Read the law" with its citation, as on the Vue pages. */
 function statuteLink(): Html {
@@ -273,7 +278,7 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
   return {
     status: 200,
     title: pageTitles.states,
-    description: `Every US state and DC: whether each has published a Medicaid medical frailty code list, how many entries it has, and the date on the state’s document.`,
+    description: pageDescriptions.states,
     path: '/states',
     canonical: `${origin}/states`,
     noindex: false,
@@ -489,11 +494,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
   const p = state.published
   const url = `${origin}/states/${state.slug}`
   const sentences = summarySentences(detail)
-  const description = p
-    ? `${state.name}’s Medicaid medical frailty code list: ${formatCount(p.totalEntries)} entries` +
-      `${p.sourceDate ? `, state document dated ${formatDay(p.sourceDate)}` : ''}. Counts by code ` +
-      'system and federal category, sources, version history and downloads.'
-    : sentences.join(' ')
+  const description = stateDescription(state)
 
   const jsonLd: unknown[] = []
   if (p) {
@@ -1107,10 +1108,7 @@ export function drillPage(
   return {
     status: 200,
     title: pageTitles.drillDown(category.label),
-    description:
-      category.definition.length > 300
-        ? `${category.definition.slice(0, 297)}…`
-        : category.definition,
+    description: drillDescription(category.definition),
     path,
     canonical: `${origin}${path}`,
     noindex: hasQuery,
@@ -1168,13 +1166,7 @@ export function statesComparePage(
   const noList = data.states.filter((s) => !s.hasList)
   const nameOf = (id: string) => data.states.find((s) => s.id === id)?.name ?? id
   const summary = data.summary
-  const description = summary
-    ? `Where ${names.join(' and ')}’s medical frailty code lists differ: ${data.states
-        .map((s, i) => `${String(summary.only[i] ?? 0)} codes only ${s.name} includes`)
-        .join(
-          ', ',
-        )}, ${String(summary.all)} included by ${data.states.length === 2 ? 'both' : 'all'}.`
-    : statesCompareNoListText(noList.map((s) => s.name))
+  const description = statesCompareDescription(data)
 
   const head = html`<h1>${statesCompareNames(names)}</h1>
     ${compareTabsHtml(path)}
@@ -1318,7 +1310,7 @@ export function statesCompareNotFoundPage(
   return {
     status: 404,
     title: pageTitles.statesCompareNotFound,
-    description: `${STATES_COMPARE_NOT_FOUND_TEXT} /compare/states/ga-vs-ne.`,
+    description: STATES_COMPARE_NOT_FOUND_DESCRIPTION,
     path,
     canonical: `${origin}${path}`,
     noindex: true,
@@ -1388,7 +1380,7 @@ export function categoryNotFoundPage(origin: string, path: string): PageParts {
   return {
     status: 404,
     title: pageTitles.categoryNotFound,
-    description: 'There is no published category at this address.',
+    description: pageDescriptions.categoryNotFound,
     path,
     canonical: `${origin}${path}`,
     noindex: true,
@@ -1406,7 +1398,7 @@ export function notFoundPage(origin: string, path: string): PageParts {
   return {
     status: 404,
     title: pageTitles.notFound,
-    description: 'There is no state at this address.',
+    description: pageDescriptions.notFound,
     path,
     canonical: `${origin}${path}`,
     noindex: true,
@@ -1445,20 +1437,58 @@ export function compareTabsHtml(path: string): Html {
   </nav>`
 }
 
-/** The tags added to <head>. */
+/**
+ * The icons, manifest and theme colours (roadmap M8 step 4). apps/web/index.html carries the
+ * same tags for the browser-only pages; `renderInto` drops those and writes these, so a page
+ * has one set and the API tests can see it.
+ */
+export function siteIconTags(): Html {
+  return html`
+    <link rel="icon" href="${SITE_ICONS.svg}" type="image/svg+xml" />
+    <link rel="icon" href="${SITE_ICONS.png32}" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="${SITE_ICONS.appleTouch}" />
+    <link rel="manifest" href="${SITE_ICONS.manifest}" />
+    <meta
+      name="theme-color"
+      content="${THEME_COLORS.light}"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta name="theme-color" content="${THEME_COLORS.dark}" media="(prefers-color-scheme: dark)" />
+  `
+}
+
+/** The tags added to <head>. `og:image` is absolute, on the canonical URL's origin. */
 export function headTags(parts: PageParts): Html {
+  const origin = new URL(parts.canonical).origin
   return html`
     <link rel="canonical" href="${parts.canonical}" />
+    ${siteIconTags()}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="${SITE_NAME}" />
     <meta property="og:title" content="${parts.title}" />
     <meta property="og:description" content="${parts.description}" />
     <meta property="og:url" content="${parts.canonical}" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="${origin}${SHARE_IMAGE.path}" />
+    <meta property="og:image:type" content="${SHARE_IMAGE.type}" />
+    <meta property="og:image:width" content="${SHARE_IMAGE.width}" />
+    <meta property="og:image:height" content="${SHARE_IMAGE.height}" />
+    <meta property="og:image:alt" content="${SHARE_IMAGE.alt}" />
+    <meta name="twitter:card" content="summary_large_image" />
     ${parts.noindex ? html`<meta name="robots" content="noindex" />` : null}
     ${parts.jsonLd.map((d) => jsonLdScript(d))}
   `
 }
+
+/** index.html's own copies of the tags `headTags` writes, removed so none appears twice. */
+const REPLACED_HEAD_TAGS = [
+  'link[rel="icon"]',
+  'link[rel="apple-touch-icon"]',
+  'link[rel="manifest"]',
+  'link[rel="canonical"]',
+  'meta[name="theme-color"]',
+  'meta[property^="og:"]',
+  'meta[name^="twitter:"]',
+].join(', ')
 
 /** Writes the page into the built index.html. Vue mounts over #app as usual. */
 export async function renderInto(indexHtml: string, parts: PageParts): Promise<string> {
@@ -1471,6 +1501,11 @@ export async function renderInto(indexHtml: string, parts: PageParts): Promise<s
     .on('meta[name="description"]', {
       element(el) {
         el.setAttribute('content', parts.description)
+      },
+    })
+    .on(REPLACED_HEAD_TAGS, {
+      element(el) {
+        el.remove()
       },
     })
     .on('head', {

@@ -5,20 +5,21 @@ import {
   TILE_MAP_INTRO,
   tileMapCategory,
   tileMapQuery,
+  MAP_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import CategoryTileMap from '../../components/home/CategoryTileMap.vue'
 import CompareTabs from '../../components/compare/CompareTabs.vue'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { usePublicOverview } from '../../lib/public-overview'
 
 // The Map tab (project lead, 2026-11-02): the tile map, one category across the country. It was
 // on the home page too until 2026-11-03; old `/?category=` links redirect here. The category
 // lives in the URL (`?category=<slug>`); the Worker renders the same page as HTML.
 
-usePageTitle(pageTitles.map)
+usePageMeta({ title: pageTitles.map, description: MAP_DESCRIPTION })
 
 const overview = usePublicOverview()
 const data = computed(() => overview.data.value)
