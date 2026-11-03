@@ -37,6 +37,7 @@ import { publicOverviewRoute } from './routes/public/overview'
 import { publicStates } from './routes/public/states'
 import { publicStatesCompareRoute } from './routes/public/states-compare'
 import { robots } from './routes/robots'
+import { securityTxt } from './routes/security-txt'
 import type { AppEnv } from './types'
 
 export interface AppDeps {
@@ -54,6 +55,7 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.use(siteGate(getJwks))
 
   app.route('/robots.txt', robots)
+  app.route('/.well-known/security.txt', securityTxt)
 
   // Before the cache, so cached answers count too. Admin and pages are not limited (rate-limit.ts).
   app.use('/api/public/*', rateLimit)

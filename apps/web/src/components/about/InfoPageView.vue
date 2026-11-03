@@ -3,14 +3,14 @@ import type { InfoPage } from '@mfcd/shared'
 import { nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import AboutBlocks from './AboutBlocks.vue'
 
 // About/methodology, disclaimer, privacy and accessibility (roadmap M8 step 4): one layout for
 // the words in packages/shared/src/about.ts, the same as the Worker's HTML (`infoPageParts`).
 
 const props = defineProps<{ page: InfoPage }>()
-usePageTitle(() => props.page.title)
+usePageMeta(() => ({ title: props.page.title, description: props.page.description }))
 
 // A "learn more" link (`/about#matching`) opens at its section. The router does not scroll
 // (its `scrollBehavior` is deprecated in Vue Router 5), so the page does it when it opens or

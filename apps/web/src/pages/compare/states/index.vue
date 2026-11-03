@@ -7,6 +7,7 @@ import {
   STATES_LANDING_OWN_LABEL,
   STATES_LANDING_PICK_HEADING,
   statesComparePath,
+  STATES_LANDING_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,7 +15,7 @@ import { useRoute, useRouter } from 'vue-router'
 import CompareTabs from '../../../components/compare/CompareTabs.vue'
 import StatesPicker from '../../../components/compare/StatesPicker.vue'
 import SimilarStates from '../../../components/states/SimilarStates.vue'
-import { usePageTitle } from '../../../lib/page-title'
+import { usePageMeta } from '../../../lib/page-meta'
 import { usePublicState, usePublicStates } from '../../../lib/public-states'
 
 // The "States side by side" tab (project lead, 2026-11-02): pick your state to see the states
@@ -22,7 +23,7 @@ import { usePublicState, usePublicStates } from '../../../lib/public-states'
 // state lives in the URL (`?state=ga`); `?states=` is the no-JavaScript form, which the Worker
 // redirects to the comparison. The Worker renders the same page as HTML.
 
-usePageTitle(pageTitles.statesLanding)
+usePageMeta({ title: pageTitles.statesLanding, description: STATES_LANDING_DESCRIPTION })
 
 const route = useRoute()
 const router = useRouter()

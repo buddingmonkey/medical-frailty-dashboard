@@ -28,6 +28,8 @@ import {
   REPORT_LIST_LINK_TEXT,
   REPORT_PROBLEM_URL,
   reportListText,
+  pageDescriptions,
+  stateDescription,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
@@ -35,7 +37,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import MarkdownView from '../../components/MarkdownView.vue'
 import SimilarStates from '../../components/states/SimilarStates.vue'
 import { ApiError } from '../../lib/api'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { usePublicState } from '../../lib/public-states'
 import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
@@ -50,8 +52,12 @@ const { data, error, isPending } = usePublicState(slug)
 const notFound = computed(() => error.value instanceof ApiError && error.value.status === 404)
 const state = computed(() => data.value?.state ?? null)
 const published = computed(() => state.value?.published ?? null)
-usePageTitle(() =>
-  notFound.value ? pageTitles.notFound : state.value ? pageTitles.state(state.value.name) : null,
+usePageMeta(() =>
+  notFound.value
+    ? { title: pageTitles.notFound, description: pageDescriptions.notFound }
+    : state.value
+      ? { title: pageTitles.state(state.value.name), description: stateDescription(state.value) }
+      : null,
 )
 
 function nonZero<K extends string>(counts: Record<K, number>, label: (key: K) => string) {

@@ -205,6 +205,40 @@ accurately than scraped tables.
   times, 7,900 `ref_codes` rows); the index runs the same query once for its count.
 - At launch, add `Sitemap: https://<final-domain>/sitemap.xml` to the public `robots.txt`.
 
+### 6a. Icons, share image, titles and security.txt (M8 step 4)
+
+- **Files** in `apps/web/public/` (Vite copies them to the build root; the Worker serves them
+  as static assets): `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` (180 px, square
+  corners; iOS rounds them), `icon-192.png`, `icon-512.png`, `site.webmanifest`
+  (`display: browser`; the site is linked pages, not an app) and `og-image.png` (1200×630).
+  `node scripts/make-icons.ts` writes all of them with `sharp`; they are committed, so builds
+  never run it. `scripts/make-icons.test.ts` checks the committed files match the generator,
+  the sizes and the design tokens. The mark: a navy (`--color-primary`) rounded square with a
+  three-line list, white lines with gold (`--color-highlight`) bullets. No CCF name or logo.
+- **Head tags on every page.** `apps/web/index.html` links the icons (SVG, then the 32 px PNG),
+  the Apple touch icon, the manifest and `theme-color` for light (`#0c2a59`) and dark
+  (`#031b3f`, the dark header). The Worker's `headTags` (`apps/api/src/seo/pages.ts`) drops
+  index.html's copies and writes the same set plus canonical, `og:type`, `og:site_name`,
+  `og:title`, `og:description`, `og:url` (canonical), `og:image` (absolute, on the request's
+  origin) with type, size and alt, and `twitter:card=summary_large_image`. Paths and colours:
+  `SITE_ICONS`, `THEME_COLORS`, `SHARE_IMAGE` in `packages/shared/src/public.ts`.
+- **Titles and descriptions.** Every page has its own title and meta description, the same in
+  both renderers: `pageTitles`, `pageDescriptions`, `stateDescription`, `drillDescription`,
+  `statesCompareDescription` and the per-page constants (`OVERVIEW_DESCRIPTION`, …). In the
+  browser `usePageMeta` (`apps/web/src/lib/page-meta.ts`) sets the title, description and the
+  Open Graph tags on each navigation. Admin pages share one title (`pageTitles.admin`).
+  `apps/api/src/routes/site-basics.test.ts` checks each public page type has a non-empty,
+  unique title and description; `page-meta.test.ts` checks every Vue page sets them.
+- **`/.well-known/security.txt`** (RFC 9116, `apps/api/src/routes/security-txt.ts`): Contact
+  is GitHub private vulnerability reporting, `Expires` is computed per request (midnight UTC
+  365 days ahead, so it never goes stale), `Preferred-Languages: en`, `Canonical` on the
+  request's host over https, `Policy` is `SECURITY.md` on GitHub. Like `robots.txt`, the site
+  gate lets it through without signing in while the site is private (`X-Robots-Tag: noindex,
+  nofollow` still set).
+- **Print:** a `@media print` block at the end of `main.css` prints black on white, hides
+  navigation, the theme menu, forms and buttons, shows tables at full width, repeats `thead`
+  on each page and keeps rows whole. Link URLs are not printed (CSS cannot tell a short one).
+
 ### 7. llms.txt (M8)
 
 A short Markdown file at `/llms.txt`: what the site is, how to read a state's status, links to

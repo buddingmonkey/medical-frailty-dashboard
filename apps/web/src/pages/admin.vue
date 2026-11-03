@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { whoamiResponseSchema } from '@mfcd/shared'
+import { pageDescriptions, pageTitles, whoamiResponseSchema } from '@mfcd/shared'
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
 import WatchBanner from '../components/admin/WatchBanner.vue'
 import { ApiError, getJson } from '../lib/api'
+import { usePageMeta } from '../lib/page-meta'
+
+// One title for every admin page: they are `noindex` and behind Access (M8 step 4).
+usePageMeta({ title: pageTitles.admin, description: pageDescriptions.admin })
 
 // The Worker has already checked the Access token before this page loads; this call only
 // shows who is signed in (and catches a session that expired while the tab was open).

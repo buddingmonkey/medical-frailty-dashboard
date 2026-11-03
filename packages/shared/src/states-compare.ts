@@ -232,6 +232,18 @@ export function statesCompareNoListText(names: readonly string[]): string {
   return `${who} no list on this site yet, so there is nothing to compare. Choose states with a list.`
 }
 
+/** A comparison page's meta description, the same in the browser and the server HTML. */
+export function statesCompareDescription(
+  data: Pick<StatesCompareResponse, 'states' | 'summary'>,
+): string {
+  const { states, summary } = data
+  if (!summary) return statesCompareNoListText(states.filter((s) => !s.hasList).map((s) => s.name))
+  const names = states.map((s) => s.name)
+  return `Where ${names.join(' and ')}’s medical frailty code lists differ: ${states
+    .map((s, i) => `${String(summary.only[i] ?? 0)} codes only ${s.name} includes`)
+    .join(', ')}, ${String(summary.all)} included by ${states.length === 2 ? 'both' : 'all'}.`
+}
+
 /** The status line above the table. */
 export function statesCompareSummaryText(d: {
   totalRows: number
@@ -266,6 +278,9 @@ export const STATES_PICKER_LABELS = [
 /** The not-found page's explanation, before its example link. */
 export const STATES_COMPARE_NOT_FOUND_TEXT =
   'A comparison address names 2 to 4 states that have a list on this site, like'
+
+/** The meta description of a comparison address that names no valid states. */
+export const STATES_COMPARE_NOT_FOUND_DESCRIPTION = `${STATES_COMPARE_NOT_FOUND_TEXT} /compare/states/ga-vs-ne.`
 
 /** How many states the similar-states list lets a reader add to the state itself. */
 export const SIMILAR_PICK_MAX = STATES_COMPARE_MAX - 1

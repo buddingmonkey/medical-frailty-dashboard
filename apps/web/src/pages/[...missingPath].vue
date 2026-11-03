@@ -1,3 +1,11 @@
+<script setup lang="ts">
+import { pageDescriptions, pageTitles } from '@mfcd/shared'
+
+import { usePageMeta } from '../lib/page-meta'
+
+usePageMeta({ title: pageTitles.pageNotFound, description: pageDescriptions.pageNotFound })
+</script>
+
 <template>
   <section class="max-w-prose space-y-4">
     <h1 class="font-display text-3xl font-medium text-heading">Page not found</h1>

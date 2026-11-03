@@ -10,12 +10,13 @@ import {
   STATUTE_LINK_TEXT,
   STATUTE_URL,
   learnMore,
+  CATEGORIES_DESCRIPTION,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import CompareTabs from '../../components/compare/CompareTabs.vue'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { usePublicOverview } from '../../lib/public-overview'
 import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
@@ -23,7 +24,7 @@ import AboutLinkView from '../../components/about/AboutLinkView.vue'
 // federal category, each linking to its page (`/compare/<slug>`). The overview's data, which
 // is cached on data_version, lists them. The Worker renders the same page as HTML.
 
-usePageTitle(pageTitles.categories)
+usePageMeta({ title: pageTitles.categories, description: CATEGORIES_DESCRIPTION })
 
 const overview = usePublicOverview()
 const groups = computed(() => overviewCategoryGroups(overview.data.value?.categories ?? []))
