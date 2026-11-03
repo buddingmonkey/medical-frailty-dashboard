@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import {
-  type CoverageBand,
-  coverageBandLabels,
   isCodeTableQuery,
-  OVERVIEW_NO_LIST,
   type OverviewOrder,
   overviewOrderAnnouncement,
   overviewOrderFromQuery,
@@ -14,6 +11,7 @@ import {
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import CoverageLegend from '../../components/compare/CoverageLegend.vue'
 import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicOverview } from '../../lib/public-overview'
@@ -59,14 +57,6 @@ const orderChoice = computed({
 })
 
 const caption = 'Share of each category’s codes that each state lists'
-
-const bands: CoverageBand[] = ['high', 'mid', 'low', 'none']
-const swatch: Record<CoverageBand, string> = {
-  high: 'bg-cover-high',
-  mid: 'bg-cover-mid',
-  low: 'bg-cover-low',
-  none: 'hatch-none',
-}
 </script>
 
 <template>
@@ -101,23 +91,7 @@ const swatch: Record<CoverageBand, string> = {
             <option v-if="order.by === 'category'" value="column">The column you sorted</option>
           </select>
         </div>
-        <ul aria-label="Legend" class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <li v-for="b in bands" :key="b" class="flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              class="inline-block h-4 w-6 rounded-sm border border-border"
-              :class="swatch[b]"
-            ></span
-            >{{ coverageBandLabels[b] }}
-          </li>
-          <li class="flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              class="inline-block h-4 w-6 rounded-sm border border-border bg-cover-nolist"
-            ></span
-            >{{ OVERVIEW_NO_LIST }}
-          </li>
-        </ul>
+        <CoverageLegend />
         <p
           role="status"
           aria-live="polite"

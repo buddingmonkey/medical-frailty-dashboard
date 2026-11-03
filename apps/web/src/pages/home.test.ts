@@ -53,7 +53,13 @@ const alabama: PublicStateSummary = {
 }
 
 function serve(items: PublicStateSummary[]) {
-  server.use(http.get('/api/public/states', () => HttpResponse.json({ dataVersion: 3, items })))
+  server.use(
+    http.get('/api/public/states', () => HttpResponse.json({ dataVersion: 3, items })),
+    // No published category: the tile map (home-tiles.test.ts) stays out of these tests.
+    http.get('/api/public/overview', () =>
+      HttpResponse.json({ dataVersion: 3, categories: [], states: [] }),
+    ),
+  )
 }
 
 describe('home page', () => {

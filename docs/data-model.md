@@ -294,6 +294,28 @@ state_similarity  state_a → states, state_b → states (state_a < state_b), sh
 - A chosen state without a list: nothing is compared, the page says so. An unknown state, one,
   five or a repeated state: 404.
 
+### Tile map (M5 step 8)
+
+"One category across the country" on the home page (`apps/web/src/components/home/CategoryTileMap.vue`,
+helpers and layout in `packages/shared/src/tile-map.ts`): one published unified category at a
+time, read from `GET /api/public/overview` (no new query; the server-rendered home page calls the
+same loader, and the page is cached on `data_version`).
+
+- **Layout** (`usTileLayout`): 51 equal tiles on an 11 × 8 grid (the approved mockup), each with
+  its postal code and a fallback name for a state the overview does not send.
+- **A tile**: the overview's number and band (`coverageBand`); "none" (hatched) when the state
+  has a list but no entry in the category; "No list" (the no-list shade, not a link) when it has
+  no list; `*` when not reviewed. A tile with a list links to `/compare/<slug>?focus=<ST>`. Its
+  accessible name is the overview cell's (`overviewCellLabel`); only the number is link text (the
+  link covers the tile), so the visible words are in the name (axe `label-content-name-mismatch`).
+- **Reading order**: the tiles are a list in order of state name; CSS grid (`row-start-*`,
+  `col-start-*`) places them on the map. Below it, `<details>` "Show as a table" holds the same data.
+- **Category**: `?category=<slug>`; the default (left out of the URL) is the first category in
+  the overview's order (federal parent, sort order, label). The section is absent when no category
+  is published.
+- **Server-rendered HTML**: the chosen category as a plain table (every state and DC by name),
+  not the visual grid, and the picker as a GET form, so it works without JavaScript.
+
 ## Tables (D1 / SQLite)
 
 ```
