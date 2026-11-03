@@ -67,3 +67,23 @@ Search for a code by number or words, and a page per code that shows every state
 - `.gitattributes` forces LF. The first version would have rewritten three CRLF fixtures that
   the CMS/AHRQ parser tests depend on. The lead caught this when renormalizing, and those
   fixtures are now `-text`.
+
+## Step 1: search endpoint (10:34–11:02 builder; lead review to 11:15)
+- `GET /api/public/codes/search?q=&states=&system=&limit=`. A code number (`F20`, `f20.0`,
+  `J1234`) prefix-matches through the normal indexes, with the exact code first. Words go to
+  FTS5 over both state entries and the new `ref_codes_fts` (migration 0012: ICD-10-CM and
+  HCPCS descriptions, never CPT). Every token is quoted, and the last one is a prefix for
+  type-ahead. Two D1 round trips; lists are bound with `json_each`, far below 100 parameters.
+- Measured locally: the backfill of 107,173 rows took ~2 s and added ~219k FTS rows; the
+  database grew from 17 to 43 MB. A search for "disorder*" returned 2,157 matches in 4 ms.
+- The lead added porter stemming to `ref_codes_fts` before the migration ran anywhere, so
+  "disorders" finds "disorder", and added a test that fails without it. `entries_fts` (0001)
+  is unchanged: changing it means rebuilding an applied table.
+
+### Corrections and surprises
+- Ranking: bm25 scores from two indexes are not comparable; F20.9 ranked above F20. Fix: when
+  a code has CMS text, the CMS score wins.
+- `ORDER BY e.id` made SQLite read every row of `entries`. A test on the query plan caught
+  it, and `INDEXED BY entries_code_idx` fixed it.
+- Numbers: 17 files, about 3.2k lines (2k of them drizzle's snapshot); 86 new tests.
+  `check:full`: 562 unit, 363 API, 53 e2e.

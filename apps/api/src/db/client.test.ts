@@ -38,7 +38,7 @@ describe('resetDb', () => {
 
     const { results } = await env.DB.prepare(
       `SELECT name FROM sqlite_master WHERE type = 'table'
-         AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'entries_fts%'
+         AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'entries_fts%' AND name NOT LIKE 'ref_codes_fts%'
          AND name != 'd1_migrations'`,
     ).all<{ name: string }>()
     expect(results.length).toBeGreaterThanOrEqual(12)
