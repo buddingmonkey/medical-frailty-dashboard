@@ -2,6 +2,7 @@
 import {
   ENTRY_DEFINITION,
   HOME_INTRO,
+  MAP_CARD_PLACEHOLDER,
   pageTitles,
   STATUTE_CITATION,
   STATUTE_LINK_TEXT,
@@ -146,7 +147,37 @@ const legend = [
               </li>
             </ul>
           </div>
-          <StateSummaryCard v-if="activeState" :state="activeState" />
+          <!--
+            One grid cell holds every state's card, stacked and invisible (sizers), so the cell is
+            always as tall as the tallest card at this width. Only the active card and the
+            placeholder change, and neither changes the cell's size, so the map never moves when
+            the pointer crosses states (it used to "bounce": project lead, 2026-11-03). The sizers
+            are aria-hidden and inert, so they add no headings, regions or tab stops. The active
+            card is one instance that updates in place, so its live region still announces.
+          -->
+          <div data-testid="state-card-stack" class="grid self-start">
+            <StateSummaryCard
+              v-for="s in states"
+              :key="s.id"
+              :state="s"
+              data-sizer
+              aria-hidden="true"
+              :inert="true"
+              class="invisible col-start-1 row-start-1"
+            />
+            <p
+              class="col-start-1 row-start-1 self-start rounded-lg border border-border bg-surface p-4 text-muted-foreground"
+              :class="{ invisible: activeState }"
+              :aria-hidden="activeState ? 'true' : undefined"
+            >
+              {{ MAP_CARD_PLACEHOLDER }}
+            </p>
+            <StateSummaryCard
+              v-if="activeState"
+              :state="activeState"
+              class="col-start-1 row-start-1 self-start"
+            />
+          </div>
         </div>
         <StateTable v-else :states="states" />
       </template>

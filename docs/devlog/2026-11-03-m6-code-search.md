@@ -166,3 +166,13 @@ Search for a code by number or words, and a page per code that shows every state
 - Cost to watch: one sitemap request reads ~44k rows (an estimate; local D1 doesn't report
   rows read). `*.workers.dev` has no edge cache, so every crawler fetch reads them, until the
   custom domain (M8).
+## Fix: the home map bounced on hover (project lead's report, 12:00)
+- The project lead said highlighting states made the map "shift positions and sometimes
+  'bounce' at the framerate of the tab". Cause: the state summary card under or beside the
+  map had a different height for each state. The page height changed, the browser moved the
+  scroll, the pointer landed on another state, and the cycle repeated.
+- Fix: all cards sit stacked in one grid cell, hidden (`invisible`, `aria-hidden`, `inert`)
+  except the active one, so the cell is always as tall as the tallest card. Screen readers
+  still hear one region.
+- The new e2e spec hovers over very different states at 390 and 1280 px and checks that the
+  map doesn't move by a pixel. The lead ran it without the fix, and all 4 cases failed.

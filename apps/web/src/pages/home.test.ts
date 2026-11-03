@@ -1,6 +1,7 @@
 import {
   codeSystems,
   FEDERAL_OVERLAP_NOTE,
+  MAP_CARD_PLACEHOLDER,
   federalCategories,
   type PublicStateSummary,
   qualifications,
@@ -120,6 +121,64 @@ describe('home page', () => {
     expect(screen.getByRole('region', { name: 'Georgia' }).textContent).toContain(
       FEDERAL_OVERLAP_NOTE,
     )
+  })
+
+  // The card's height used to follow the active state, so the map moved under the pointer and
+  // could "bounce" (project lead, 2026-11-03). Every state's card now sits in one grid cell, so
+  // the cell is always as tall as the tallest one; only the active card is visible.
+  it('renders every state’s card in one cell and exposes only the active one', async () => {
+    serve([alabama, georgia, montana])
+    const user = userEvent.setup()
+    await renderRoute('/')
+    const map = await screen.findByRole('group', {
+      name: 'Map of state medical frailty code lists',
+    })
+
+    const stack = screen.getByTestId('state-card-stack')
+
+    // Before any hover: the first state with a list, as before.
+    expect(within(stack).getAllByRole('region')).toHaveLength(1)
+    expect(within(stack).getByRole('region', { name: 'Georgia' })).toBeTruthy()
+
+    await user.hover(within(map).getByRole('link', { name: /^Montana/ }))
+
+    expect(within(stack).getAllByRole('region')).toHaveLength(1)
+    expect(within(stack).getByRole('region', { name: 'Montana' })).toBeTruthy()
+    expect(within(stack).queryByRole('region', { name: 'Georgia' })).toBeNull()
+
+    // Every state's card is in the DOM (the sizers), hidden from assistive technology.
+    for (const name of ['Alabama', 'Georgia', 'Montana']) {
+      const headings = within(stack).getAllByRole('heading', { name, hidden: true })
+      expect(headings.length, name).toBeGreaterThanOrEqual(1)
+    }
+    const sizers = stack.querySelectorAll('[data-sizer]')
+    expect(sizers).toHaveLength(3)
+    for (const sizer of sizers) {
+      expect(sizer.getAttribute('aria-hidden')).toBe('true')
+      expect(sizer.hasAttribute('inert')).toBe(true)
+      expect(sizer.classList.contains('invisible')).toBe(true)
+    }
+    // Their links cannot be reached: only the visible card's link is accessible.
+    expect(within(stack).getAllByRole('link')).toHaveLength(1)
+    // Heading ids stay unique.
+    const ids = [...stack.querySelectorAll('h2')].map((h) => h.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    // The placeholder keeps its place in the cell, hidden.
+    const placeholder = within(stack).getByText(MAP_CARD_PLACEHOLDER)
+    expect(placeholder.classList.contains('invisible')).toBe(true)
+    expect(placeholder.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('shows the placeholder when no state is active', async () => {
+    serve([alabama, montana])
+    await renderRoute('/')
+    await screen.findByRole('group', { name: 'Map of state medical frailty code lists' })
+
+    const stack = screen.getByTestId('state-card-stack')
+    expect(within(stack).queryByRole('region')).toBeNull()
+    const placeholder = within(stack).getByText(MAP_CARD_PLACEHOLDER)
+    expect(placeholder.classList.contains('invisible')).toBe(false)
+    expect(placeholder.hasAttribute('aria-hidden')).toBe(false)
   })
 
   it('shows the same data as a table', async () => {
