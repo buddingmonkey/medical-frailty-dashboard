@@ -65,10 +65,16 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   `typescript-eslint` 8.x supports only `<6.1.0` and `vue-tsc` needs the JS compiler API that 7
   dropped. Revisit when both support 7. TS 6 changed some defaults (`types` is `[]`), so
   `tsconfig.base.json` sets every option explicitly.
+- **Security overrides** (`overrides` in `pnpm-workspace.yaml`, 2026-11-03). Dependabot cannot
+  update pnpm subdependencies, so three dev-only transitive packages are forced to patched
+  versions: `minimatch@<11.0.1` → 11.0.3 (eslint and others), `glob@>=9.0.0 <=14.0.1` → 14.0.3
+  (js-beautify under `@vue/test-utils`), `esbuild@<0.28.1` → 0.28.2 (drizzle-kit and its
+  `@esbuild-kit` loader; `pnpm db:generate` still works). None ship in the Worker bundle. Each
+  selector covers only the vulnerable range; remove an entry once `pnpm why -r <pkg>` shows the
+  parent pulls a patched version by itself. `pnpm audit` is clean.
 - **Drizzle: `drizzle-orm` 0.45.x and `drizzle-kit` 0.31.x**, the stable lines. 1.0 is still
   an RC (2026-11-01); revisit when it is final. drizzle-kit 0.31 pulls the deprecated
-  `@esbuild-kit` loader with an old esbuild (one moderate dev-only advisory about esbuild's dev
-  server, which drizzle-kit does not start). `pnpm audit --prod` is clean. Migrations: change
+  `@esbuild-kit` loader with an old esbuild, which an override now lifts (below). Migrations: change
   `apps/api/src/db/schema.ts`, run `pnpm db:generate`, review the SQL. Virtual tables (FTS5)
   and triggers go in hand-written migrations (`drizzle-kit generate --custom --name <x>`).
 - **`d3-geo` 3.1.1, `topojson-client` 3.1.0, `us-atlas` 3.0.1** (dev only, `packages/reference-data`):

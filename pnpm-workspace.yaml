@@ -20,3 +20,18 @@ allowBuilds:
 # pdfjs-dist lists a native canvas module as optional. We only read text, so it is never needed.
 ignoredOptionalDependencies:
   - '@napi-rs/canvas'
+
+# Security overrides for transitive dev dependencies (Dependabot alerts; none ship in the
+# Worker bundle). Dependabot cannot update pnpm subdependencies, so we force patched versions
+# here. Each selector matches only the vulnerable range. Remove an entry once its parent
+# package depends on a patched version by itself (`pnpm why -r <pkg>` shows none in range).
+overrides:
+  # minimatch "DoS via globparts amplification" (< 11.0.1). Parents: eslint
+  # (@eslint/config-array) and others. Remove when they require minimatch >= 11.0.1.
+  'minimatch@<11.0.1': 11.0.3
+  # glob (>= 9.0.0, <= 14.0.1). Parent: js-beautify < @vue/test-utils < @testing-library/vue.
+  # Remove when js-beautify requires glob >= 14.0.2.
+  'glob@>=9.0.0 <=14.0.1': 14.0.3
+  # esbuild (<= 0.24.2 and < 0.28.1). Parent: drizzle-kit 0.31 (via the @esbuild-kit loader,
+  # and directly). Remove when drizzle-kit requires esbuild >= 0.28.1.
+  'esbuild@<0.28.1': 0.28.2

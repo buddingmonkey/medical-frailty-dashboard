@@ -13,7 +13,21 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 | Attachment A | 87 | ~1,700 ICD-10-CM rows |
 | Attachment B | 258 | ~4,500 ICD-10-CM rows |
 
-- Source URL and publish date: **unknown, ask the user** (open question in `docs/status.md`).
+- **Source** (project lead, 2026-11-03): DCH's public notices page,
+  https://dch.georgia.gov/meetings-notices/public-notices, under "Medicaid Community
+  Engagement Requirement for Certain Adults Public Notice" (**posted 2026-07-09**; a state plan
+  amendment, effective 2027-01-01 on CMS approval; public comment call 2026-07-14). Files:
+  [notice](https://dch.georgia.gov/document/document/medicaid-community-engagement-requirement-certain-adults-public-notice/download)
+  (7 pages), [Attachment A](https://dch.georgia.gov/document/document/attachment/download),
+  [Attachment B](https://dch.georgia.gov/document/document/attachment-b/download). PDF creation
+  date 2026-07-06 for all three. The A and B downloaded 2026-11-03 are byte-identical to the
+  files we loaded (SHA-256 A `2635ffa7…ab41b4`, B `54f10d89…2b0b176cd1bee`).
+- The notice says: A "contains the list of health conditions and diagnoses that satisfy the
+  criteria for medical frailty"; B "contains a listing of conditions that may meet the criteria
+  for medical frailty if combined with certain diagnosis", and DCH "will develop a policy and
+  process" for B. Both lists "will be revised on an ongoing basis". This confirms the two tiers.
+- Open: the HIV diagnoses the Board added in 2026-08 (below) postdate these July files, and the
+  posted A and B are still the July files. Watch the notices page for a revised list.
 - Columns: `Code | Code Type | Description | Yes/ No | Rationale`. Every row reviewed so far is
   "Yes". Keep `yes_no` and `rationale` in `attributes_json`. If a later file has "No" rows,
   they are **not** frail codes. Do not publish them as included (add an ingestion check).
