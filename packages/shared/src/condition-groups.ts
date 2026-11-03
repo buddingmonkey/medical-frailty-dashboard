@@ -229,7 +229,7 @@ export type LikeCodeMatch = z.infer<typeof likeCodeMatchSchema>
 export const LIKE_CODES = {
   heading: 'Like codes',
   help: 'A like code is a code in another code system that points at the same condition, such as a cancer diagnosis for a chemotherapy service; it does not mean the state lists or counts this code.',
-  note: 'These states do not list this code. Condition groups are a short list this site keeps by hand, not an official crosswalk.',
+  note: 'These states’ lists do not include this code. Condition groups are a short list this site keeps by hand, not an official crosswalk.',
 } as const
 
 function joinNames(names: readonly string[]): string {

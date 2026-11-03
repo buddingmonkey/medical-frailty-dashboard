@@ -121,3 +121,24 @@ Search for a code by number or words, and a page per code that shows every state
 - Migration 0013 had no drizzle journal entry. The lead added it, with a copy of 0012's
   snapshot, and `db:generate` confirmed no drift.
 - Numbers: 70 files, +1,600/−596. `check:full`: 583 unit, 238 component, 365 API, 55 e2e.
+
+## Step 4: condition groups and like codes (11:07–11:32 builder; lead merge to 11:55)
+- Migration 0014 rebuilds the empty `condition_groups` table to add a definition, sources and
+  draft/published status. It seeds eight **draft** groups: cancer and chemotherapy, kidney
+  failure and dialysis, organ transplant, HIV, serious mental illness, substance use,
+  hemophilia and multiple sclerosis. Every ICD-10-CM and HCPCS member was checked against
+  `ref_codes`. The CPT ranges are numbers only and still need a human check before publishing.
+- Admin at `/admin/condition-groups`. Every change writes an audit row and bumps
+  `data_version` in the same batch.
+- Code page: `likeCodes` sits next to each state's real status, in its own "Like codes"
+  section. A like code never becomes a status, so it can't look like a match. Only
+  published groups count, so nothing shows publicly yet.
+
+### Corrections and surprises
+- drizzle-kit's rebuild SQL had two bugs. Its INSERT selected columns the old table didn't
+  have, and its CHECK named the temporary table, which plain SQLite rejects after the rename
+  (Miniflare accepted it). The builder fixed both by hand. Lesson: read the generated SQL.
+- Three migrations were made at the same time (0012, 0013, 0014). The lead put the drizzle
+  journal and the snapshots' `prevId` chain back in order at each merge, and `db:generate`
+  confirmed no drift.
+- Numbers: 60 new tests. `check:full`: 620+ unit, 378+ API, 55 e2e (all passed).
