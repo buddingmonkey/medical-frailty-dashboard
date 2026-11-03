@@ -8,9 +8,16 @@ import {
   icd10cmChapterOf,
   icd10cmChapters,
   mappingKey,
+  previewRemap,
+  type RemapChanges,
+  type RemapPreview,
+  remapChangesSchema,
+  remapPreviewResponseSchema,
+  remapSaveSchema,
+  sha256Hex,
   stateCategoriesResponseSchema,
 } from '@mfcd/shared'
-import { and, count, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
@@ -51,6 +58,97 @@ function publicChange(db: Db, stateId: string) {
   ] as const
 }
 
+const icdCategory = sql<string>`CASE WHEN ${entries.codeSystem} = 'icd10cm' THEN substr(${entries.codeNorm}, 1, 3) ELSE '' END`
+
+/**
+ * The remap preview (M7 step 3) with its token. Reads every published entry of the state once
+ * (with its unified parents, one primary-key seek each), the open drafts' counts by category
+ * and ICD-10-CM category, and the state's mappings and chapter overrides; writes nothing. The
+ * token hashes everything the preview depends on, so a save after any change is refused.
+ */
+async function remapPreview(
+  db: Db,
+  state: { id: string; publishedVersionId: number | null },
+  changes: RemapChanges,
+): Promise<{
+  preview: RemapPreview
+  mappings: Map<string, FederalCategory>
+  overrides: Map<number, FederalCategory>
+}> {
+  const [published, drafts, mappingRows, overrideRows] = await Promise.all([
+    state.publishedVersionId === null
+      ? Promise.resolve([])
+      : db
+          .select({
+            codeSystem: entries.codeSystem,
+            codeNorm: entries.codeNorm,
+            rawCode: entries.rawCode,
+            description: entries.descriptionPublished,
+            stateCategory: entries.stateCategory,
+            stateSubcategory: entries.stateSubcategory,
+            parents: unifiedParentsSql,
+          })
+          .from(entries)
+          .where(eq(entries.versionId, state.publishedVersionId))
+          .orderBy(asc(entries.id)),
+    db
+      .select({
+        stateCategory: entries.stateCategory,
+        stateSubcategory: entries.stateSubcategory,
+        icd: icdCategory,
+        n: count(),
+      })
+      .from(entries)
+      .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
+      .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
+      .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
+      .orderBy(entries.stateCategory, entries.stateSubcategory, icdCategory),
+    db
+      .select({
+        stateCategory: categoryMappings.stateCategory,
+        stateSubcategory: categoryMappings.stateSubcategory,
+        federalCategory: categoryMappings.federalCategory,
+        method: categoryMappings.method,
+      })
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateId, state.id))
+      .orderBy(categoryMappings.stateCategory, categoryMappings.stateSubcategory),
+    db
+      .select({
+        chapter: chapterMappings.chapter,
+        federalCategory: chapterMappings.federalCategory,
+      })
+      .from(chapterMappings)
+      .where(eq(chapterMappings.stateId, state.id))
+      .orderBy(chapterMappings.chapter),
+  ])
+  const mappings = new Map(
+    mappingRows.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory]),
+  )
+  const overrides = new Map(overrideRows.map((o) => [o.chapter, o.federalCategory]))
+  const result = previewRemap({
+    entries: published.map((e) => ({ ...e, unifiedParents: federalCategoryList(e.parents) })),
+    mappings,
+    chapterOverrides: overrides,
+    changes,
+    draftGroups: drafts,
+  })
+  const token = await sha256Hex(
+    new Uint8Array(
+      new TextEncoder().encode(
+        JSON.stringify({
+          stateId: state.id,
+          publishedVersionId: state.publishedVersionId,
+          mappingRows,
+          overrideRows,
+          result,
+        }),
+      ),
+    ),
+  )
+  return { preview: remapPreviewResponseSchema.parse({ token, ...result }), mappings, overrides }
+}
+
 export const categoriesRoute = new Hono<AppEnv>()
   .get('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
@@ -62,7 +160,6 @@ export const categoriesRoute = new Hono<AppEnv>()
       .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
     const draftIds = drafts.map((d) => d.id)
 
-    const icdCategory = sql<string>`CASE WHEN ${entries.codeSystem} = 'icd10cm' THEN substr(${entries.codeNorm}, 1, 3) ELSE '' END`
     const countBy = (versionIds: number[]) =>
       versionIds.length === 0
         ? Promise.resolve([])
@@ -278,5 +375,93 @@ export const categoriesRoute = new Hono<AppEnv>()
         details: { chapter, federalCategory },
       }),
     ])
+    return c.json({ ok: true })
+  })
+
+  // Bulk remap, step 1: what the proposed changes would do (read-only; a POST for the body).
+  .post('/:stateId/categories/preview', async (c) => {
+    const db = createDb(c.env.DB)
+    const state = await findState(db, c)
+    if (!state) return c.json({ error: 'Not found' }, 404)
+    const body = remapChangesSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: 'Invalid changes' }, 400)
+    const { preview } = await remapPreview(db, state, body.data)
+    return c.json(preview)
+  })
+
+  // Bulk remap, step 2: save what was previewed, or 409 when anything changed since.
+  .post('/:stateId/categories/remap', async (c) => {
+    const db = createDb(c.env.DB)
+    const state = await findState(db, c)
+    if (!state) return c.json({ error: 'Not found' }, 404)
+    const body = remapSaveSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: 'Invalid changes' }, 400)
+    const { token, ...changes } = body.data
+    const { preview, mappings, overrides } = await remapPreview(db, state, changes)
+    if (preview.token !== token) {
+      return c.json({ error: 'The data changed since the preview. Preview again.' }, 409)
+    }
+    const actor = c.var.identity?.email ?? ''
+    const now = new Date().toISOString()
+    const categoryWrites = changes.categories.map((item) => {
+      const values = {
+        federalCategory: item.federalCategory,
+        method: 'manual' as const,
+        confidence: null,
+        mappedBy: actor,
+        mappedAt: now,
+      }
+      return db
+        .insert(categoryMappings)
+        .values({
+          stateId: state.id,
+          stateCategory: item.stateCategory,
+          stateSubcategory: item.stateSubcategory,
+          ...values,
+        })
+        .onConflictDoUpdate({
+          target: [
+            categoryMappings.stateId,
+            categoryMappings.stateCategory,
+            categoryMappings.stateSubcategory,
+          ],
+          set: values,
+        })
+    })
+    const chapterWrites = changes.chapters.map(({ chapter, federalCategory }) =>
+      federalCategory === null
+        ? db
+            .delete(chapterMappings)
+            .where(and(eq(chapterMappings.stateId, state.id), eq(chapterMappings.chapter, chapter)))
+        : db
+            .insert(chapterMappings)
+            .values({ stateId: state.id, chapter, federalCategory, mappedBy: actor, mappedAt: now })
+            .onConflictDoUpdate({
+              target: [chapterMappings.stateId, chapterMappings.chapter],
+              set: { federalCategory, mappedBy: actor, mappedAt: now },
+            }),
+    )
+    const moved = (i: number) => preview.changes[i]?.movingTotal ?? 0
+    const audit = auditInsert(db, {
+      actorEmail: actor,
+      action: 'category.remap',
+      target: `state:${state.id}`,
+      details: {
+        categories: changes.categories.map((item, i) => ({
+          stateCategory: item.stateCategory,
+          stateSubcategory: item.stateSubcategory,
+          from: mappings.get(mappingKey(item.stateCategory, item.stateSubcategory)) ?? null,
+          to: item.federalCategory,
+          moved: moved(i),
+        })),
+        chapters: changes.chapters.map((item, i) => ({
+          chapter: item.chapter,
+          from: overrides.get(item.chapter) ?? null,
+          to: item.federalCategory,
+          moved: moved(changes.categories.length + i),
+        })),
+      },
+    })
+    await db.batch([audit, ...categoryWrites, ...chapterWrites, ...publicChange(db, state.id)])
     return c.json({ ok: true })
   })

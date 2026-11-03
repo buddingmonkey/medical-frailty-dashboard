@@ -1,4 +1,8 @@
-import { auditListResponseSchema, stateCategoriesResponseSchema } from '@mfcd/shared'
+import {
+  auditListResponseSchema,
+  remapPreviewResponseSchema,
+  stateCategoriesResponseSchema,
+} from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -243,5 +247,177 @@ describe('/api/admin/states/:stateId/categories', () => {
         })
       ).status,
     ).toBe(404)
+  })
+})
+
+describe('/api/admin/states/:stateId/categories/preview and /remap', () => {
+  beforeEach(async () => {
+    await resetDb(env.DB)
+    await seed()
+    await db.insert(categoryMappings).values([
+      {
+        stateId: 'MT',
+        stateCategory: 'SMI',
+        federalCategory: 'disabling_mental_disorder',
+        method: 'auto',
+        confidence: 0.9,
+      },
+      { stateId: 'MT', stateCategory: 'SUD', federalCategory: 'sud', method: 'manual' },
+    ])
+  })
+
+  const changes = {
+    categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
+    chapters: [],
+  }
+
+  async function preview(body: unknown = changes) {
+    const res = await send('POST', '/api/admin/states/MT/categories/preview', body)
+    expect(res.status).toBe(200)
+    return remapPreviewResponseSchema.parse(await res.json())
+  }
+
+  it('says which published entries move, which stay because a placement wins, and the drafts', async () => {
+    const [unified] = await db
+      .insert(unifiedCategories)
+      .values({
+        slug: 'smi',
+        label: 'SMI',
+        definition: 'Test.',
+        federalCategory: 'serious_complex_medical',
+        status: 'published',
+        createdBy: ADMIN,
+        updatedBy: ADMIN,
+      })
+      .returning()
+    const [f310] = await db.select().from(entries).where(eq(entries.codeNorm, 'F310'))
+    if (!unified || !f310) throw new Error('seed failed')
+    await db
+      .insert(entryUnified)
+      .values({ entryId: f310.id, unifiedId: unified.id, basis: 'by_code', reviewed: 0 })
+
+    const result = await preview()
+    expect(result.token).toMatch(/^[0-9a-f]{64}$/)
+    expect(result.changes[0]).toMatchObject({
+      kind: 'category',
+      entries: 2,
+      moves: [{ from: 'disabling_mental_disorder', to: 'sud', n: 1 }],
+      placed: { n: 1, federal: ['serious_complex_medical'] },
+      sample: [{ code: 'F200', from: ['disabling_mental_disorder'], to: ['sud'] }],
+      draftEntries: 1,
+    })
+    expect(result.totals).toEqual([
+      { federalCategory: 'sud', before: 1, after: 2 },
+      { federalCategory: 'disabling_mental_disorder', before: 1, after: 0 },
+      { federalCategory: 'serious_complex_medical', before: 1, after: 1 },
+    ])
+    // A preview writes nothing.
+    const [meta] = await db.select().from(appMeta).where(eq(appMeta.key, 'data_version'))
+    expect(meta).toBeUndefined()
+  })
+
+  it('says which entries stay because a chapter override wins', async () => {
+    await db
+      .insert(chapterMappings)
+      .values({ stateId: 'MT', chapter: 5, federalCategory: 'blind_or_disabled', mappedBy: ADMIN })
+    const result = await preview()
+    expect(result.changes[0]).toMatchObject({
+      movingTotal: 0,
+      chapterOverride: [{ chapter: 5, federalCategory: 'blind_or_disabled', n: 2 }],
+    })
+  })
+
+  it('saves categories and chapters in one batch, with the data version, date and audit', async () => {
+    const body = {
+      categories: [
+        { stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' },
+        { stateCategory: 'SUD', stateSubcategory: '', federalCategory: 'serious_complex_medical' },
+      ],
+      chapters: [{ chapter: 21, federalCategory: 'state_specific' }],
+    }
+    const { token } = await preview(body)
+    const res = await send('POST', '/api/admin/states/MT/categories/remap', { ...body, token })
+    expect(res.status).toBe(200)
+    const mappings = await db
+      .select()
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateId, 'MT'))
+    expect(mappings.map((m) => [m.stateCategory, m.federalCategory, m.method, m.mappedBy])).toEqual(
+      [
+        ['SMI', 'sud', 'manual', ADMIN],
+        ['SUD', 'serious_complex_medical', 'manual', ADMIN],
+      ],
+    )
+    expect((await db.select().from(chapterMappings)).map((c) => c.chapter)).toEqual([21])
+    const [meta] = await db.select().from(appMeta).where(eq(appMeta.key, 'data_version'))
+    expect(meta?.value).toBe('1')
+    const [version] = await db
+      .select()
+      .from(datasetVersions)
+      .where(eq(datasetVersions.id, publishedId))
+    expect(version?.contentUpdatedAt).not.toBe('2026-11-01T00:00:00.000Z')
+    const audit = auditListResponseSchema.parse(
+      await (await send('GET', '/api/admin/audit')).json(),
+    )
+    expect(audit.items[0]).toMatchObject({
+      action: 'category.remap',
+      target: 'state:MT',
+      details: {
+        categories: [
+          { stateCategory: 'SMI', from: 'disabling_mental_disorder', to: 'sud', moved: 2 },
+          { stateCategory: 'SUD', from: 'sud', to: 'serious_complex_medical', moved: 1 },
+        ],
+        chapters: [{ chapter: 21, from: null, to: 'state_specific', moved: 0 }],
+      },
+    })
+  })
+
+  it('refuses a stale preview with 409 and writes nothing', async () => {
+    const { token } = await preview()
+    // Another admin changes the SMI mapping after the preview.
+    await send('PUT', '/api/admin/states/MT/categories', {
+      items: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'state_specific' }],
+    })
+    const res = await send('POST', '/api/admin/states/MT/categories/remap', { ...changes, token })
+    expect(res.status).toBe(409)
+    const [smi] = await db
+      .select()
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateCategory, 'SMI'))
+    expect(smi?.federalCategory).toBe('state_specific')
+    const bad = await send('POST', '/api/admin/states/MT/categories/remap', {
+      ...changes,
+      token: 'x'.repeat(64),
+    })
+    expect(bad.status).toBe(409)
+  })
+
+  it('refuses invalid changes, unknown states and non-admins', async () => {
+    expect(
+      (
+        await send('POST', '/api/admin/states/MT/categories/preview', {
+          categories: [],
+          chapters: [],
+        })
+      ).status,
+    ).toBe(400)
+    expect((await send('POST', '/api/admin/states/ZZ/categories/preview', changes)).status).toBe(
+      404,
+    )
+    for (const path of ['preview', 'remap']) {
+      const res = await call(`/api/admin/states/MT/categories/${path}`, {
+        token: await accessToken({ email: 'guest@example.org' }),
+        method: 'POST',
+        body: { ...changes, token: 'x' },
+      })
+      expect(res.status).toBe(403)
+    }
+    const crossSite = await call('/api/admin/states/MT/categories/preview', {
+      token: await accessToken(),
+      method: 'POST',
+      body: changes,
+      origin: 'https://evil.example',
+    })
+    expect(crossSite.status).toBe(403)
   })
 })

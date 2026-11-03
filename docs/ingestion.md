@@ -232,6 +232,28 @@ override (ICD-10-CM entries only) wins, then the category mapping, else `unmappe
 (`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
 
+**Bulk remap, built in M7 step 3.** On `/admin/categories` the admin ticks rows (or "Select
+all"), in the category table or the chapter table, chooses one federal category (or chapter
+override, or "Use the category mapping"), and clicks Preview. The server
+(`POST /api/admin/states/:stateId/categories/preview`, `previewRemap()` in
+`packages/shared/src/remap.ts`) applies `federalCategoriesOf()` to every published entry of the
+state before and after the changes, so it says honestly what moves: per change, the entries
+that move (from → to), those that stay because a published unified placement wins (and under
+which federal categories), those that stay because a chapter override wins (which chapter),
+those already there, a sample of 20 moving entries (code and state's text), and the open
+drafts' entries the change also covers (mappings belong to the state). It also gives the
+state's published entries per federal category before → after. Cost: one read of the state's
+published entries (~8k rows for NE, with a primary-key seek per entry for its placements),
+one grouped read of the drafts, and the state's mappings; no list goes into SQL parameters.
+The response carries a token (SHA-256 of the mappings, overrides, published version and the
+preview itself). Save (`POST …/categories/remap`) re-runs the preview and answers 409 if the
+token differs; the screen then shows the new preview to check again. The save is one
+`db.batch()`: one write per mapping or override (`method = 'manual'`), an audit row
+(`category.remap`, each change with from, to and the number of entries moved), the published
+version's `content_updated_at` and `data_version`. Nothing is recomputed: placements and
+similarity do not depend on the category mapping. The per-row "Confirm" and chapter "Save"
+still save at once, without a preview.
+
 ## AI cleanup
 
 Used when a file does not parse into usable rows (scanned PDF, merged cells, free text).
