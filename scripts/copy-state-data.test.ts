@@ -123,8 +123,12 @@ describe('insertSql', () => {
 
   it('refuses a column name or value it cannot write safely', () => {
     expect(() => insertSql('t', { 'a b': 1 })).toThrow(/column/)
+    expect(() => insertSql('t', { '1a': 1 })).toThrow(/column/)
+    expect(insertSql('t', { sha256: 'x' })).toBe("INSERT INTO t (sha256) VALUES ('x');")
     expect(() => insertSql('t', { a: { x: 1 } })).toThrow(/value/)
-    expect(() => insertSql('t', { a: 1.5 })).toThrow(/value/)
+    expect(() => insertSql('t', { a: Number.NaN })).toThrow(/value/)
+    // REAL columns (a mapping's confidence) keep their decimals.
+    expect(insertSql('t', { a: 0.85 })).toBe('INSERT INTO t (a) VALUES (0.85);')
   })
 })
 

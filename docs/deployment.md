@@ -161,6 +161,49 @@ moves them to production. It also waits for the production approval.
 - A `run:` step only gets `pipefail` when it sets `shell: bash`. Without it, `| tee` hides a
   failure.
 
+**Seed data.** `apps/api/seed/seed.sql` is committed. `pnpm db:seed:make` writes it, reading
+only, from preview by default or from production with `-- --from production`.
+
+- **What's in it:** up to 120 entries for each published state list, as the states published
+  them, with their sources and their category and unified mappings. Mappings keep their status.
+- **How it samples:**
+  - Shared codes come first: codes two or more states list and that fall in a unified
+    category. They fill at most half of each state's sample.
+  - Then one entry per group in turn: code system, state category, subcategory and
+    qualification.
+  - Picks spread evenly over the code range, so the sample isn't all from chapter A.
+- **What changes:** the 19 starter categories are published. Admin identities become
+  `seed@localhost`, and the generator stops if any other email address is left. There's no
+  reference data, and `check_report_json` is NULL.
+- **Unified mappings** find their category by slug, because category ids differ between
+  databases.
+
+To load it:
+
+1. Run `pnpm db:seed:local` or `pnpm db:seed:preview`. Either one **deletes every state list,
+   mapping and audit row** in that database first. Reference data, states, unified categories
+   and watch items stay. The script refuses any target except local and preview.
+2. Press **Rebuild coverage** (Admin → Unified categories,
+   `POST /api/admin/coverage/rebuild`). Seed SQL leaves the full code lists, placements and
+   similarity empty, and the rebuild fills them.
+
+Measured locally (2026-11-02), on 480 entries:
+
+- loading the seed took about 1 s;
+- the rebuild took 10.7 s and produced 3,538 codes in full lists, 368 placements and 6 pairs;
+- each state had entries in 11 to 17 of the 19 categories.
+
+The first sampler took the first codes in code order, and only 118 entries were placed.
+
+The R2 source files stay in preview's bucket, so local downloads answer 404.
+
+**Banner.** Every HTML page of a Worker whose `ENVIRONMENT` is not exactly `production` opens
+with a gold test-site banner (`apps/api/src/middleware/environment-banner.ts`).
+
+- The banner is added when each page is served, not at build time, so both Workers run the
+  same build.
+- A missing or wrong value shows the banner rather than hiding it.
+
 - The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
 - **Never edit a migration after a remote database has applied it** (from M1 step 6 on). Until
   then, M1 regenerated `0000_init` twice (no remote D1 had applied it).
