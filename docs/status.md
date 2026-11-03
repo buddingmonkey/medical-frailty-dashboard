@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 7)_
+_Last updated: 2026-11-02 (M5 step 8)_
 
 ## Where things stand
 
@@ -209,6 +209,7 @@ _Last updated: 2026-11-02 (M5 step 7)_
 - **M5 step 7 done** (branch `m5-step7-diff`): `/compare/states/<a>-vs-<b>` (2–4 states, noindex),
   similar states on state pages, `state_similarity` (migration 0010). A rule a state doesn't
   state counts as no disagreement (to confirm at the M5 review).
+- **M5 step 8 done** (branch `m5-step8-tilemap`): the tile map on the home page.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
@@ -302,7 +303,7 @@ close dates there, not here. Approximate dates are marked ~.
 | No date | *Taylor v. Kennedy* (D. Md. 1:26-cv-03705) pending | A ruling could change the federal rules again | `docs/sources.md` |
 | No date | LDH confirms Louisiana "Code Designation" meaning | Remove the "inferred" label, or fix the mapping | `docs/sources.md`, Louisiana |
 | No date | Legal team decides the licence of the compiled lists (for the `license` field in the state pages' `Dataset` JSON-LD and the downloads; left out until then) | Search engines recommend a licence on datasets | `docs/seo.md` |
-| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) the overview's and drill-down's public wording ("n of N states", filter names, "Only <state>", "Differs", "Similarity", "Which states cover what", legend, notes, "not reviewed"), plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk; for M5, the CCSR licence and citation (AHRQ states no terms), the unified category labels and the match words (exact, close, broad, narrow) | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
+| No date | Legal team reviews qualification badges, federal category labels (`categories.ts`), ruling note, disclaimer, CPT text, LA drug class codes (they look like First Databank's licensed HIC3 classes; we show only the state's own text), `ai-train=yes` in `robots.txt`, and the compare page's cell words and legend ("Listed", "Covered by a broader entry", "Narrower codes listed", "Not listed", "No list on this site"; `compareStatusLabels` in `packages/shared/src/compare.ts`) the overview's and drill-down's public wording ("n of N states", filter names, "Only <state>", "Differs", "Similarity", the tile map's wording, "Which states cover what", legend, notes, "not reviewed"), plus the compare CSV, which carries each state's published descriptions (CPT text included) in bulk; for M5, the CCSR licence and citation (AHRQ states no terms), the unified category labels and the match words (exact, close, broad, narrow) | Badges may be removed or reworded; AI training signal may change | This file, decisions table; `docs/seo.md` |
 
 ## Re-ingestion safety (user requirement, 2026-11-01)
 
