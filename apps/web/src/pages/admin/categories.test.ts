@@ -22,6 +22,8 @@ const data = {
       stateSubcategory: '',
       publishedEntries: 200,
       draftEntries: 0,
+      placedEntries: 150,
+      placedFederal: ['disabling_mental_disorder', 'serious_complex_medical'],
       mapping: {
         federalCategory: 'disabling_mental_disorder',
         method: 'auto',
@@ -36,6 +38,8 @@ const data = {
       stateSubcategory: '',
       publishedEntries: 50,
       draftEntries: 0,
+      placedEntries: 0,
+      placedFederal: [],
       mapping: {
         federalCategory: 'sud',
         method: 'manual',
@@ -50,6 +54,8 @@ const data = {
       stateSubcategory: '',
       publishedEntries: 10,
       draftEntries: 2,
+      placedEntries: 0,
+      placedFederal: [],
       mapping: null,
       suggestion: null,
     },
@@ -103,6 +109,15 @@ describe('/admin/categories', () => {
     expect(within(rowOf(table, 'SMI')).getByText(/Guessed from “smi”/)).toBeTruthy()
     expect(within(rowOf(table, 'SUD')).getByText(/Confirmed by admin@example.org/)).toBeTruthy()
     expect(within(rowOf(table, 'Miscellaneous')).getByText('Not mapped')).toBeTruthy()
+  })
+
+  it('says which entries follow their unified categories instead of this mapping', async () => {
+    fakeApi()
+    const table = await open()
+    expect(rowOf(table, 'SMI').textContent).toContain(
+      '150 follow their unified categories: Disabling mental disorder; Serious or complex medical condition',
+    )
+    expect(rowOf(table, 'SUD').textContent).not.toContain('unified')
   })
 
   it('confirms one category with the chosen federal category', async () => {

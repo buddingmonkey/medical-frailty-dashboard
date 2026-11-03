@@ -236,8 +236,9 @@ export const unifiedRoute = new Hono<AppEnv>()
         .sort()
         .join(',') !== ccsr.join(',')
     const version = current.version + (unifiedVersionChanges(current, fields) ? 1 : 0)
-    // Drafts are never public; anything else (or leaving draft) can change public pages.
-    const isPublic = current.status !== 'draft' || fields.status !== 'draft'
+    // Drafts are never public, and a draft retired unpublished never was; anything else can
+    // change public pages.
+    const isPublic = current.status !== 'draft' || fields.status === 'published'
     const actor = c.var.identity?.email ?? ''
     const write = db.batch([
       db

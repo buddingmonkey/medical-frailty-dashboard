@@ -3,7 +3,9 @@ import {
   type CodeSystem,
   codeSystemLabels,
   type FederalCategory,
+  FEDERAL_OVERLAP_NOTE,
   federalCategoryInfo,
+  federalCountsOverlap,
   type PublicStateSummary,
   formatCount,
   formatDay,
@@ -75,6 +77,9 @@ const byCategory = computed(() => {
             <dd class="tabular-nums">{{ formatCount(row.n) }}</dd>
           </div>
         </dl>
+        <p v-if="federalCountsOverlap(state.published)" class="mt-2 text-sm text-muted-foreground">
+          {{ FEDERAL_OVERLAP_NOTE }}
+        </p>
         <p v-if="!state.published.mappingsConfirmed" class="mt-2 text-sm text-muted-foreground">
           How this state’s categories fit the federal ones is not yet confirmed by our team.
         </p>

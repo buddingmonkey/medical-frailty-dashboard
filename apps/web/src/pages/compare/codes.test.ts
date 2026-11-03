@@ -103,7 +103,7 @@ const cell = (
     qualificationBasis: 'published' as const,
     stateCategory: 'Mental health',
     stateSubcategory: '',
-    federalCategory: 'sud' as const,
+    federalCategories: ['sud' as const],
     ...match,
   },
 })
@@ -136,7 +136,7 @@ const comparison: CompareResponse = {
           qualification: 'needs_support',
           qualificationBasis: 'inferred',
           stateCategory: 'SMI',
-          federalCategory: 'disabling_mental_disorder',
+          federalCategories: ['disabling_mental_disorder'],
         }),
       ],
     },

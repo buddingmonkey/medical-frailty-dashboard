@@ -2,7 +2,8 @@ import {
   codeSystems,
   type FederalCategory,
   federalCategories,
-  federalCategoryOf,
+  federalCategoriesOf,
+  federalCategoryList,
   icd10cmChapterOf,
   mappingKey,
   type PublicStateCategory,
@@ -13,6 +14,7 @@ import {
 import { asc, count, eq, max, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { placementsReviewedSql, unifiedParentsSql } from './federal'
 import {
   categoryMappings,
   chapterMappings,
@@ -25,12 +27,17 @@ import {
 
 // The public summary of each state (home map, state pages): counts of the published version
 // by code system, federal category and qualification, and the state's own categories with the
-// federal category each one counts under. Reads only through states.published_version_id, so
+// federal categories each one counts under. Reads only through states.published_version_id, so
 // drafts never show. Five queries, all states at once unless `stateId` narrows them.
+//
+// Federal categories (docs/data-model.md, "Federal categories"): an entry counts once under
+// each federal parent of its unified categories, so `byFederalCategory` can add up to more
+// than `totalEntries`; an entry placed nowhere counts under its M2 mapping. Confirmed: every
+// placement reviewed, or, placed nowhere, a manual mapping or a chapter override.
 
 export interface PublicSummaries {
   items: PublicStateSummary[]
-  /** Each state's categories, split by federal category where a chapter override applies. */
+  /** Each state's categories, one row per federal category its entries count under. */
   categories: Map<string, PublicStateCategory[]>
 }
 
@@ -62,6 +69,8 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         stateSubcategory: entries.stateSubcategory,
         qualification: entries.qualification,
         icd: icdCategory,
+        parents: unifiedParentsSql,
+        reviewed: placementsReviewedSql,
         n: count(),
       })
       .from(states)
@@ -74,6 +83,8 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         entries.stateSubcategory,
         entries.qualification,
         icdCategory,
+        unifiedParentsSql,
+        placementsReviewedSql,
       ),
     db
       .select()
@@ -142,35 +153,45 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       stateCategory: g.stateCategory,
       stateSubcategory: g.stateSubcategory,
     }
-    const federal = federalCategoryOf(
+    const parents = federalCategoryList(g.parents)
+    const federal = federalCategoriesOf(
       entry,
+      parents,
       mappingsBy.get(g.stateId) ?? noMappings,
       stateOverrides,
     )
     p.totalEntries += g.n
     p.bySystem[g.codeSystem] += g.n
-    p.byFederalCategory[federal] += g.n
+    for (const f of federal) p.byFederalCategory[f] += g.n
     p.byQualification[g.qualification] += g.n
 
-    // Confirmed: a chapter override (always set by hand) or a manual mapping decides it.
-    const chapter = g.icd === '' ? null : icd10cmChapterOf(g.icd)
-    const byOverride = chapter !== null && stateOverrides.has(chapter.number)
-    const manual = manualBy.get(g.stateId)?.has(mappingKey(g.stateCategory, g.stateSubcategory))
-    const confirmed = byOverride || manual === true
+    let confirmed: boolean
+    if (parents.length > 0) {
+      // Placed: an admin reviewed every placement (an approved mapping or by_code row).
+      confirmed = g.reviewed === 1
+    } else {
+      // Placed nowhere: a chapter override (always set by hand) or a manual mapping decides it.
+      const chapter = g.icd === '' ? null : icd10cmChapterOf(g.icd)
+      const byOverride = chapter !== null && stateOverrides.has(chapter.number)
+      const manual = manualBy.get(g.stateId)?.has(mappingKey(g.stateCategory, g.stateSubcategory))
+      confirmed = byOverride || manual === true
+    }
     if (!confirmed) p.mappingsConfirmed = false
 
     const forState = categories.get(g.stateId) ?? new Map<string, PublicStateCategory>()
-    const key = `${g.stateCategory}\u0000${g.stateSubcategory}\u0000${federal}`
-    const cat = forState.get(key) ?? {
-      stateCategory: g.stateCategory,
-      stateSubcategory: g.stateSubcategory,
-      federalCategory: federal,
-      confirmed: true,
-      entries: 0,
+    for (const f of federal) {
+      const key = `${g.stateCategory}\u0000${g.stateSubcategory}\u0000${f}`
+      const cat = forState.get(key) ?? {
+        stateCategory: g.stateCategory,
+        stateSubcategory: g.stateSubcategory,
+        federalCategory: f,
+        confirmed: true,
+        entries: 0,
+      }
+      cat.entries += g.n
+      if (!confirmed) cat.confirmed = false
+      forState.set(key, cat)
     }
-    cat.entries += g.n
-    if (!confirmed) cat.confirmed = false
-    forState.set(key, cat)
     categories.set(g.stateId, forState)
   }
 

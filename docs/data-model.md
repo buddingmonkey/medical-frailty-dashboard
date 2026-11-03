@@ -36,6 +36,39 @@ Plus two of our own:
    disabling", MT Tier 2 "Frailty indicators")
 7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Unclassified"
 
+**Which federal categories an entry counts under** (M5 step 5b, project lead 2026-11-02:
+"Federal category should be pre mapped. It's the non-federal we have to manage";
+`federalCategoriesOf()` in `packages/shared/src/category-mapping.ts`, one rule for admin and
+public pages):
+
+1. **Placed entries** (rows in `entry_unified`, below): the distinct federal parents
+   (`unified_categories.federal_category`) of the **published** unified categories the entry is
+   placed in. A code in two unified categories with different parents counts under **both**.
+   Admins manage only state → unified; each unified category's parent is fixed.
+2. **Entries placed nowhere** fall back to the M2 rule: an ICD-10-CM chapter override of the
+   state (`chapter_mappings`) wins, then the mapping of the entry's state category
+   (`category_mappings`), else `unmapped`.
+
+What this means where counts are shown:
+
+- `byFederalCategory` (home map card, state pages) counts an entry once under **each** of its
+  federal categories, so the counts can add up to more than the entries; the pages then say "A
+  code can count under more than one federal category" (`FEDERAL_OVERLAP_NOTE`,
+  `federalCountsOverlap`). A state page's category table has one row per state category and
+  federal category.
+- Downloads: the CSV column is `federal_categories` (labels joined by `; `), the JSON field
+  `federalCategories` (a list). The code-table CSV's per-state column likewise.
+- The code table (`/compare/codes`) shows an entry in the table of **any** of its federal
+  categories; "filed under" names the state's category, or the federal labels joined by `; `.
+- **Confirmed** (state pages, `mappingsConfirmed`): a placed entry is confirmed when every one of
+  its placements is reviewed (`entry_unified.reviewed`); an unplaced one when its M2 mapping is
+  `manual` or a chapter override applies. A state's mappings are confirmed when all its entries
+  are.
+- Public reads stay lookups: two correlated subqueries per entry on `entry_unified` joined to
+  `unified_categories` (`apps/api/src/db/federal.ts`), never CCSR work per request.
+- The admin categories screen shows, per state category, how many published entries follow their
+  unified categories and under which federal categories; its mapping covers the rest.
+
 ## Unified categories (M5)
 
 Three levels (project lead, 2026-11-02): **federal** (the law, above), **unified** (curated by
@@ -84,9 +117,8 @@ unified_mappings     id, state_id, state_category, state_subcategory,
 4. Public pages use published unified categories only; retired ones never count.
 
 The entry's CCSR groups come from a lookup passed in (step 2 builds `ref_ccsr`); a wildcard or
-range entry takes the groups of the codes it covers. The entry's **federal** category is
-unchanged in step 1 (M2 mapping and chapter overrides); whether an approved unified mapping
-should set it is an open question for the project lead (`docs/status.md`).
+range entry takes the groups of the codes it covers. The entry's **federal** categories follow
+these placements since M5 step 5b ("Federal categories", above).
 
 **Full code lists.** A unified category's universe of ICD-10-CM codes is every code in its CCSR
 groups. The drill-down uses it to show codes no state lists (roadmap M5 step 6). Other code

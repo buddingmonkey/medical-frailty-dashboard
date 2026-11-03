@@ -247,6 +247,54 @@ export function nextOverviewOrder(
   return column === 'overall' ? { by: 'overall', dir } : { by: 'category', unifiedId: column, dir }
 }
 
+/** One value of a URL parameter (the first when repeated), as Vue Router or Hono give them. */
+function queryValue(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+  return undefined
+}
+
+/**
+ * The order in the URL (`/compare?order=similar`, `?order=overall&dir=asc`, `?sort=<category
+ * slug>&dir=asc`), so a shared link keeps it; `sort=overall` reads like `order=overall`. A
+ * column sort wins over an order; anything unknown gives the default (by name). Directions
+ * default to highest first.
+ */
+export function overviewOrderFromQuery(
+  query: Readonly<Record<string, unknown>>,
+  categories: readonly Pick<OverviewCategory, 'id' | 'slug'>[],
+): OverviewOrder {
+  const dir: OverviewSortDir = queryValue(query['dir']) === 'asc' ? 'asc' : 'desc'
+  const sort = queryValue(query['sort'])
+  if (sort === 'overall') return { by: 'overall', dir }
+  const column = categories.find((c) => c.slug === sort)
+  if (column) return { by: 'category', unifiedId: column.id, dir }
+  const order = queryValue(query['order'])
+  if (order === 'similar') return { by: 'similar' }
+  if (order === 'overall') return { by: 'overall', dir }
+  return { by: 'name' }
+}
+
+/** The order as URL parameters, defaults left out (by name, highest first): the reverse. */
+export function overviewOrderQuery(
+  order: OverviewOrder,
+  categories: readonly Pick<OverviewCategory, 'id' | 'slug'>[],
+): Record<string, string> {
+  const dir: Record<string, string> = 'dir' in order && order.dir === 'asc' ? { dir: 'asc' } : {}
+  switch (order.by) {
+    case 'name':
+      return {}
+    case 'similar':
+      return { order: 'similar' }
+    case 'overall':
+      return { order: 'overall', ...dir }
+    case 'category': {
+      const slug = categories.find((c) => c.id === order.unifiedId)?.slug
+      return slug === undefined ? {} : { sort: slug, ...dir }
+    }
+  }
+}
+
 /** What the live region says after the order changes. */
 export function overviewOrderAnnouncement(
   order: OverviewOrder,

@@ -181,7 +181,10 @@ const inputClass =
       </div>
     </div>
     <p v-if="item && item.status !== 'draft'" class="text-sm text-muted-foreground">
-      Once published, a category cannot go back to draft; retire it instead.
+      Once out of draft, a category cannot go back to draft; retire it instead.
+    </p>
+    <p v-else-if="item" class="text-sm text-muted-foreground">
+      A draft that will not be published can be retired.
     </p>
 
     <CcsrPicker v-model="draft.ccsr" :options="ccsrOptions" />

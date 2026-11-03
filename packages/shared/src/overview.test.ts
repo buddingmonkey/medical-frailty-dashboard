@@ -13,6 +13,8 @@ import {
   overviewDrillDownPath,
   type OverviewOrder,
   overviewOrderAnnouncement,
+  overviewOrderFromQuery,
+  overviewOrderQuery,
   overviewOverall,
   type OverviewState,
   orderOverviewStates,
@@ -229,5 +231,55 @@ describe('ordering the states', () => {
     expect(overviewOrderAnnouncement({ by: 'similar' }, categories)).toBe(
       'States with similar coverage placed next to each other.',
     )
+  })
+})
+
+describe('the order in the URL, so a shared link keeps it', () => {
+  const categories = [category(1, { slug: 'psychoses' }), category(2, { slug: 'kidney' })]
+  const cases: [OverviewOrder, Record<string, string>][] = [
+    [{ by: 'name' }, {}],
+    [{ by: 'similar' }, { order: 'similar' }],
+    [{ by: 'overall', dir: 'desc' }, { order: 'overall' }],
+    [
+      { by: 'overall', dir: 'asc' },
+      { order: 'overall', dir: 'asc' },
+    ],
+    [{ by: 'category', unifiedId: 2, dir: 'desc' }, { sort: 'kidney' }],
+    [
+      { by: 'category', unifiedId: 1, dir: 'asc' },
+      { sort: 'psychoses', dir: 'asc' },
+    ],
+  ]
+
+  it.each(cases)('%o ⇄ %o, defaults left out', (order, query) => {
+    expect(overviewOrderQuery(order, categories)).toEqual(query)
+    expect(overviewOrderFromQuery(query, categories)).toEqual(order)
+  })
+
+  it('reads sort=overall, the first of repeated values, and ignores what it does not know', () => {
+    expect(overviewOrderFromQuery({ sort: 'overall', dir: 'asc' }, categories)).toEqual({
+      by: 'overall',
+      dir: 'asc',
+    })
+    expect(overviewOrderFromQuery({ sort: ['kidney', 'psychoses'] }, categories)).toEqual({
+      by: 'category',
+      unifiedId: 2,
+      dir: 'desc',
+    })
+    // An unknown or retired category, an unknown order, a bad direction: the defaults.
+    expect(overviewOrderFromQuery({ sort: 'gone' }, categories)).toEqual({ by: 'name' })
+    expect(overviewOrderFromQuery({ order: 'random' }, categories)).toEqual({ by: 'name' })
+    expect(overviewOrderFromQuery({ order: 'overall', dir: 'up' }, categories)).toEqual({
+      by: 'overall',
+      dir: 'desc',
+    })
+    // A column sort wins over an order.
+    expect(overviewOrderFromQuery({ order: 'similar', sort: 'kidney' }, categories)).toMatchObject({
+      by: 'category',
+    })
+  })
+
+  it('writes nothing for a category it cannot name', () => {
+    expect(overviewOrderQuery({ by: 'category', unifiedId: 9, dir: 'asc' }, categories)).toEqual({})
   })
 })

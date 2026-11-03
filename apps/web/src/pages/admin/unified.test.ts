@@ -33,13 +33,13 @@ const smi = {
   approvedMappings: 3,
 }
 
-function fakeApi() {
+function fakeApi(items: unknown[] = [smi]) {
   const creates: unknown[] = []
   const updates: { path: string; body: unknown }[] = []
   server.use(
     http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),
     http.get('/api/admin/watch', () => HttpResponse.json({ items: [] })),
-    http.get('/api/admin/unified', () => HttpResponse.json({ items: [smi] })),
+    http.get('/api/admin/unified', () => HttpResponse.json({ items })),
     http.get('/api/admin/ccsr-categories', () => HttpResponse.json({ items: ccsr })),
     http.post('/api/admin/unified', async ({ request }) => {
       const body = (await request.json()) as { slug?: string }
@@ -168,6 +168,30 @@ describe('/admin/unified', () => {
           status: 'published',
           ccsr: [],
         }) as unknown,
+      },
+    ])
+  })
+
+  it('retires a draft that was never published', async () => {
+    const draft = {
+      ...smi,
+      id: 2,
+      slug: 'draft-psychoses',
+      label: 'Draft psychoses',
+      status: 'draft',
+    }
+    const { updates } = fakeApi([smi, draft])
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Edit Draft psychoses' }))
+    const form = screen.getByRole('form', { name: 'Edit Draft psychoses' })
+    const status = within(form).getByLabelText<HTMLSelectElement>('Status')
+    expect([...status.options].map((o) => o.value)).toEqual(['draft', 'published', 'retired'])
+    await user.selectOptions(status, 'retired')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+    expect(updates).toEqual([
+      {
+        path: '/api/admin/unified/2',
+        body: expect.objectContaining({ status: 'retired' }) as unknown,
       },
     ])
   })

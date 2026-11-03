@@ -10,7 +10,9 @@ import {
   compareSubject,
   coverageBandLabels,
   type FederalCategory,
+  FEDERAL_OVERLAP_NOTE,
   federalCategoryInfo,
+  federalCountsOverlap,
   formatCount,
   formatDay,
   OVERVIEW_DESCRIPTION,
@@ -20,8 +22,10 @@ import {
   overviewCellNotReviewed,
   overviewCellText,
   overviewDrillDownPath,
+  overviewOrderFromQuery,
   overviewOverall,
   overviewReadingNotes,
+  orderOverviewStates,
   pageTitles,
   type PublicOverviewResponse,
   type PublicStateDetail,
@@ -31,11 +35,12 @@ import {
   SITE_NAME,
   siteNav,
   siteNavCurrent,
+  stateCategoriesIntro,
   stateStatusLabels,
   STATES_AND_DC,
 } from '@mfcd/shared'
 
-import { type Html, html, jsonLdScript } from './html'
+import { Html, html, jsonLdScript } from './html'
 
 // The content of each public page as plain semantic HTML, for crawlers that do not run
 // JavaScript (docs/seo.md). Vue replaces it when it mounts. Wording and numbers come from the
@@ -244,12 +249,10 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
         </p>
         ${countTable('Entries by code system', p.bySystem, (k: CodeSystem) => codeSystemLabels[k])}
         ${countTable('Entries by federal category', p.byFederalCategory, (k: FederalCategory) => federalCategoryInfo[k].label)}
+        ${federalCountsOverlap(p) ? html`<p>${FEDERAL_OVERLAP_NOTE}</p>` : null}
         ${countTable('Entries by whether a code qualifies alone', p.byQualification, (k: Qualification) => qualificationLabels[k])}
         <h2>Categories</h2>
-        <p>
-          How each of ${state.name}’s own categories fits the federal categories in the law. A
-          mapping that is not yet confirmed is our best guess from the category’s name.
-        </p>
+        <p>${stateCategoriesIntro(state.name)}</p>
         <table>
           <caption>
             ${state.name}’s categories
@@ -425,9 +428,29 @@ export function comparePage(
  * `/compare`: the overview matrix (roadmap M5 step 5), every state against every published
  * unified category. Indexed: it is the one page that answers "which states cover what".
  */
-export function overviewPage(data: PublicOverviewResponse, origin: string): PageParts {
+export function overviewPage(
+  data: PublicOverviewResponse,
+  origin: string,
+  query: Readonly<Record<string, string>> = {},
+): PageParts {
   const { categories } = data
   const groups = overviewCategoryGroups(categories)
+  // The order a shared link asks for (`?order=`, `?sort=&dir=`), as the Vue page reads it.
+  const order = overviewOrderFromQuery(query, categories)
+  const rows = orderOverviewStates(data.states, order)
+  /** A column header's opening tag, with `aria-sort` when the rows are sorted by it. */
+  const headerOpen = (column: 'overall' | number, attributes: string) => {
+    const active =
+      column === 'overall'
+        ? order.by === 'overall'
+        : order.by === 'category' && order.unifiedId === column
+    const sort =
+      active && 'dir' in order
+        ? ` aria-sort="${order.dir === 'desc' ? 'descending' : 'ascending'}"`
+        : ''
+    return new Html(`<th ${attributes}${sort}>`)
+  }
+
   const intro = html`<h1>Which states cover what</h1>
     <p>
       Each row is a state; each column is a category, grouped under its federal category in the law.
@@ -447,19 +470,19 @@ export function overviewPage(data: PublicOverviewResponse, origin: string): Page
               ${groups.map(
                 (g) => html`<th scope="colgroup" colspan="${g.categories.length}">${g.label}</th>`,
               )}
-              <th scope="col" rowspan="2">Overall</th>
+              ${headerOpen('overall', 'scope="col" rowspan="2"')}Overall</th>
             </tr>
             <tr>
               ${categories.map(
                 (c) =>
-                  html`<th scope="col">
+                  html`${headerOpen(c.id, 'scope="col"')}
                     ${c.coverageBasis === 'union' ? `${c.label} †` : c.label}
                   </th>`,
               )}
             </tr>
           </thead>
           <tbody>
-            ${data.states.map((s) => {
+            ${rows.map((s) => {
               const head = html`<th scope="row"><a href="/states/${s.slug}">${s.name}</a></th>`
               if (!s.hasList) {
                 return html`<tr>

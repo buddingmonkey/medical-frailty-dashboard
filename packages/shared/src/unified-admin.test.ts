@@ -63,7 +63,7 @@ describe('unifiedStatusChangeAllowed', () => {
   it.each([
     ['draft', 'draft', true],
     ['draft', 'published', true],
-    ['draft', 'retired', false],
+    ['draft', 'retired', true],
     ['published', 'retired', true],
     ['published', 'draft', false],
     ['retired', 'published', true],

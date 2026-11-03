@@ -1,6 +1,7 @@
 import {
   type FederalCategory,
-  federalCategoryOf,
+  federalCategoriesOf,
+  federalCategoryList,
   mappingKey,
   type PublicStateDetail,
   publicStateDetailResponseSchema,
@@ -8,6 +9,7 @@ import {
 import { and, asc, desc, eq, inArray } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { unifiedParentsSql } from './federal'
 import { publicSummaries } from './public-summary'
 import {
   categoryMappings,
@@ -85,7 +87,7 @@ export async function publicStateDetail(
   })
 }
 
-/** Every entry of a state's published list, with its federal category and source, by code. */
+/** Every entry of a state's published list, with its federal categories and source, by code. */
 export async function publishedEntriesForDownload(db: Db, stateId: string) {
   const [rows, mappings, overrides] = await Promise.all([
     db
@@ -94,6 +96,7 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
         sourceTitle: sourceDocuments.title,
         sourceUrl: sourceDocuments.url,
         sourceDate: sourceDocuments.publisherDate,
+        parents: unifiedParentsSql,
       })
       .from(states)
       .innerJoin(entries, eq(entries.versionId, states.publishedVersionId))
@@ -111,7 +114,12 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
   )
   return rows.map((r) => ({
     ...r.entry,
-    federalCategory: federalCategoryOf(r.entry, byKey, byChapter),
+    federalCategories: federalCategoriesOf(
+      r.entry,
+      federalCategoryList(r.parents),
+      byKey,
+      byChapter,
+    ),
     sourceTitle: r.sourceTitle,
     sourceUrl: safeUrl(r.sourceUrl),
     sourceDate: r.sourceDate,

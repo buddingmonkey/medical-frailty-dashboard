@@ -31,7 +31,7 @@ const entry = (
   descriptionPublished: null,
   stateCategory: 'Mental health',
   stateSubcategory: '',
-  federalCategory: 'disabling_mental_disorder',
+  federalCategories: ['disabling_mental_disorder'],
   tier: null,
   qualification: 'unknown',
   qualificationBasis: 'published',
@@ -151,12 +151,26 @@ describe('buildCompare', () => {
         entry('MT', 'F200'),
         entry('GA', 'F200'),
         entry('GA', 'F10', { matchKind: 'prefix' }),
-        entry('GA', 'C50', { federalCategory: 'serious_complex_medical' }),
+        entry('GA', 'C50', { federalCategories: ['serious_complex_medical'] }),
         entry('LA', 'F319'), // not selected
       ]),
     )
     expect(result.rows.map((r) => r.display)).toEqual(['F10.*', 'F20.0'])
     expect(result).toMatchObject({ totalRows: 2, page: 1, pageCount: 1 })
+  })
+
+  it('shows a code under two federal categories in either category’s table', () => {
+    const both = entry('GA', 'F31', {
+      matchKind: 'prefix',
+      federalCategories: ['disabling_mental_disorder', 'serious_complex_medical'],
+    })
+    const rows = (category: 'disabling_mental_disorder' | 'serious_complex_medical' | 'sud') =>
+      buildCompare({ ...input([both]), query: { ...input([]).query, category } }).rows.map(
+        (r) => r.display,
+      )
+    expect(rows('disabling_mental_disorder')).toEqual(['F31.*'])
+    expect(rows('serious_complex_medical')).toEqual(['F31.*'])
+    expect(rows('sud')).toEqual([])
   })
 
   it('marks each cell exact, covered, narrower, not listed or no list', () => {
@@ -185,7 +199,7 @@ describe('buildCompare', () => {
       qualificationBasis: 'published',
       stateCategory: 'Mental health',
       stateSubcategory: '',
-      federalCategory: 'disabling_mental_disorder',
+      federalCategories: ['disabling_mental_disorder'],
     })
     expect(f200?.cells[1]?.match).toMatchObject({
       display: 'F20.*',
@@ -199,12 +213,12 @@ describe('buildCompare', () => {
     const result = buildCompare(
       input([
         entry('GA', 'F200'),
-        entry('MT', 'F200', { federalCategory: 'unmapped', stateCategory: '' }),
+        entry('MT', 'F200', { federalCategories: ['unmapped'], stateCategory: '' }),
       ]),
     )
     expect(result.rows[0]?.cells[1]).toMatchObject({
       status: 'exact',
-      match: { federalCategory: 'unmapped' },
+      match: { federalCategories: ['unmapped'] },
     })
   })
 
@@ -358,7 +372,7 @@ describe('compare wording', () => {
     qualificationBasis: 'inferred' as const,
     stateCategory: 'SMI',
     stateSubcategory: '',
-    federalCategory: 'disabling_mental_disorder' as const,
+    federalCategories: ['disabling_mental_disorder' as const],
   }
 
   it('says what each cell means in a few words', () => {
@@ -390,6 +404,18 @@ describe('compare wording', () => {
         stateCategory: '',
       }),
     ).toBe('Disabling mental disorder')
+    // A code under two federal categories is in either one's table, and names both elsewhere.
+    const both = {
+      ...match,
+      stateCategory: '',
+      federalCategories: ['disabling_mental_disorder' as const, 'serious_complex_medical' as const],
+    }
+    expect(
+      compareFiledUnder({ category: 'serious_complex_medical', ownSubcategory: '' }, 'GA', both),
+    ).toBeNull()
+    expect(compareFiledUnder({ category: 'sud', ownSubcategory: '' }, 'GA', both)).toBe(
+      'Disabling mental disorder; Serious or complex medical condition',
+    )
     const own = { ownState: 'MT', ownCategory: 'smi', ownSubcategory: '' }
     expect(compareFiledUnder(own, 'MT', match)).toBeNull()
     expect(compareFiledUnder(own, 'GA', match)).toBe('SMI')

@@ -1,8 +1,22 @@
 // One row per state category in docs/sources.md, as published.
 import { describe, expect, it } from 'vitest'
 
-import { autoMapCategory, federalCategoryInfo, normalizeCategoryLabel } from './categories'
+import {
+  autoMapCategory,
+  federalCategoriesText,
+  federalCategoryInfo,
+  normalizeCategoryLabel,
+} from './categories'
 import { federalCategories, type FederalCategory } from './enums'
+
+describe('federalCategoriesText', () => {
+  it('names each federal category a code counts under, joined by semicolons', () => {
+    expect(federalCategoriesText(['sud'])).toBe('Substance use disorder')
+    expect(federalCategoriesText(['disabling_mental_disorder', 'serious_complex_medical'])).toBe(
+      'Disabling mental disorder; Serious or complex medical condition',
+    )
+  })
+})
 
 describe('federalCategoryInfo', () => {
   it('describes every federal category, citing the statute for the five statutory ones', () => {

@@ -2,6 +2,9 @@ import {
   autoMapCategory,
   categoryMappingSaveSchema,
   chapterOverrideSaveSchema,
+  type FederalCategory,
+  federalCategories,
+  federalCategoryList,
   icd10cmChapterOf,
   icd10cmChapters,
   mappingKey,
@@ -12,6 +15,7 @@ import { type Context, Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { unifiedParentsSql } from '../../db/federal'
 import { bumpDataVersion } from '../../db/meta'
 import {
   categoryMappings,
@@ -76,6 +80,31 @@ export const categoriesRoute = new Hono<AppEnv>()
       state.publishedVersionId === null ? [] : [state.publishedVersionId],
     )
     const inDrafts = await countBy(draftIds)
+    // Published entries placed in a published unified category take its federal parent; the
+    // M2 mapping on this screen is only the fallback for the rest (docs/data-model.md).
+    const placed =
+      state.publishedVersionId === null
+        ? []
+        : await db
+            .select({
+              category: entries.stateCategory,
+              subcategory: entries.stateSubcategory,
+              parents: unifiedParentsSql,
+              n: count(),
+            })
+            .from(entries)
+            .where(eq(entries.versionId, state.publishedVersionId))
+            .groupBy(entries.stateCategory, entries.stateSubcategory, unifiedParentsSql)
+    const placedBy = new Map<string, { n: number; federal: Set<FederalCategory> }>()
+    for (const r of placed) {
+      const parents = federalCategoryList(r.parents)
+      if (parents.length === 0) continue
+      const key = `${r.category}\u0000${r.subcategory}`
+      const p = placedBy.get(key) ?? { n: 0, federal: new Set<FederalCategory>() }
+      p.n += r.n
+      for (const f of parents) p.federal.add(f)
+      placedBy.set(key, p)
+    }
 
     const categories = new Map<
       string,
@@ -134,8 +163,11 @@ export const categoriesRoute = new Hono<AppEnv>()
           .map((cat) => {
             const m = byKey.get(mappingKey(cat.stateCategory, cat.stateSubcategory))
             const auto = autoMapCategory(cat.stateCategory, cat.stateSubcategory)
+            const p = placedBy.get(`${cat.stateCategory}\u0000${cat.stateSubcategory}`)
             return {
               ...cat,
+              placedEntries: p?.n ?? 0,
+              placedFederal: federalCategories.filter((f) => p?.federal.has(f) === true),
               mapping: m
                 ? {
                     federalCategory: m.federalCategory,

@@ -4,16 +4,19 @@ import {
   type CompareQuery,
   type CompareResult,
   type FederalCategory,
-  federalCategoryOf,
+  federalCategoriesOf,
+  federalCategoryList,
   mappingKey,
 } from '@mfcd/shared'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { unifiedParentsSql } from './federal'
 import { categoryMappings, chapterMappings, entries, refCodes, states } from './schema'
 
 // Compare by category (roadmap M4): loads the selected states' published entries with their
-// federal category, lets `buildCompare` align them, then fills ICD-10-CM and HCPCS row
+// federal categories (their unified categories' parents, else the M2 mapping), lets
+// `buildCompare` align them, then fills ICD-10-CM and HCPCS row
 // descriptions from the CMS reference codes (public domain; CPT text only ever comes from a
 // state, docs/data-model.md "Licensing of code text"). Four queries, plus one per 100 rows
 // described.
@@ -53,6 +56,7 @@ export async function publicCompare(
         tier: entries.tier,
         qualification: entries.qualification,
         qualificationBasis: entries.qualificationBasis,
+        parents: unifiedParentsSql,
       })
       .from(states)
       .innerJoin(entries, eq(entries.versionId, states.publishedVersionId))
@@ -88,14 +92,15 @@ export async function publicCompare(
         name: s.name,
         published: s.publishedVersionId !== null,
       })),
-      entries: rows.map((r) => ({
+      entries: rows.map(({ parents, ...r }) => ({
         ...r,
         // Descriptions are read for the rows shown only (describeFromStates): the bulk load
         // stays small, which keeps the Worker inside the Free plan's CPU time.
         descriptionPublished: null,
         includesChildren: r.includesChildren === 1 ? 1 : r.includesChildren === 0 ? 0 : null,
-        federalCategory: federalCategoryOf(
+        federalCategories: federalCategoriesOf(
           r,
+          federalCategoryList(parents),
           mappingsBy.get(r.stateId) ?? none,
           overridesBy.get(r.stateId) ?? none,
         ),
