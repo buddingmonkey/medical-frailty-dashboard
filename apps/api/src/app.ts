@@ -6,6 +6,7 @@ import { adminWriteGuard } from './middleware/admin-write-guard'
 import { environmentBanner } from './middleware/environment-banner'
 import { publicCache } from './middleware/public-cache'
 import { publicGetOnly } from './middleware/public-get-only'
+import { rateLimit } from './middleware/rate-limit'
 import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
@@ -54,6 +55,8 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
 
   app.route('/robots.txt', robots)
 
+  // Before the cache, so cached answers count too. Admin and pages are not limited (rate-limit.ts).
+  app.use('/api/public/*', rateLimit)
   app.use('/api/public/*', publicGetOnly)
   app.route('/api/public/health', health)
   app.use('/api/public/states', publicCache)

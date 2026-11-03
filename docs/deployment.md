@@ -15,7 +15,7 @@ tier. The limits below were correct when planned (2026-11). Check the
 | R2 bucket | `frailty-prod-files` | `frailty-preview-files` |
 | Access application | whole host until launch, then `/admin*` + `/api/admin*` | whole host, always |
 | URL | `frailty-dashboard.<subdomain>.workers.dev` (custom domain later) | `frailty-dashboard-preview.<subdomain>.workers.dev` |
-| Bindings | `DB` (D1), `FILES` (R2) | same |
+| Bindings | `DB` (D1), `FILES` (R2), `PUBLIC_RATE_LIMITER` and `SEARCH_RATE_LIMITER` (rate limits, `docs/security.md`) | same (own rate-limit namespaces) |
 
 Workers preview URLs (per-version URLs) stay **off**, or behind Access, so no unprotected copy of
 the site exists.
@@ -57,7 +57,15 @@ Local values go in `apps/api/.dev.vars` (gitignored; `.dev.vars.example` is comm
 | --- | --- | --- |
 | Who can deploy | `main` only | `main` and `v*` tags, after the required reviewer (project lead) approves |
 | Secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | same names, own values |
-| Variables | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL` | same names, own values |
+| Variables | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL`, `D1_DATABASE_ID` | same names, own values |
+
+`D1_DATABASE_ID` is the environment's D1 database id (`pnpm cf d1 list`). The ids are not
+secret, but they are not committed: `apps/api/wrangler.jsonc` holds the placeholders
+`local-frailty-prod` and `local-frailty-preview`, which local dev and tests use, and each
+workflow that touches a remote database (Deploy, Reference data, Copy state data) first runs
+`node scripts/d1-ids.ts --<environment> "$D1_DATABASE_ID"` to write the real id into its own
+checkout. The job stops with an error if the variable is unset. Copy state data runs in
+`production` and looks up preview's id by the name `frailty-preview`.
 
 Each environment has its own CI API token ("Edit Cloudflare Workers" template plus D1 Edit and
 R2 Edit, this account only), so either can be revoked alone. Cloudflare API tokens can be
@@ -70,6 +78,13 @@ limited to an account, not to single Workers, databases or buckets.
 `CLOUDFLARE_ACCOUNT_ID` (a token named `mfcd-local`, same permissions as CI's). Run wrangler
 through `pnpm cf <args>` (`scripts/cf.ts`), which loads that file. It **refuses any `deploy` or
 `rollback` without `--env preview`**: production changes code only from CI.
+
+The same file holds the D1 ids for commands from a laptop, since `wrangler.jsonc` has only
+placeholders: `D1_PREVIEW_DATABASE_ID=<preview id>` (needed for anything with `--env preview`,
+such as `pnpm db:seed:preview` and the preview reference load) and, optionally,
+`D1_PRODUCTION_DATABASE_ID=<production id>` for read-only queries. `pnpm cf` writes a gitignored
+copy, `apps/api/wrangler.local-ids.jsonc`, with those ids and passes it as `--config` (unless you
+pass your own). Only the two `D1_*` keys are read for this.
 `pnpm deploy:preview` builds the site and deploys the preview Worker.
 
 ## Cost
@@ -359,3 +374,19 @@ Before launch (M8), with everything below checked off in `docs/status.md`:
    crawlers must not be challenged).
 
 To take the site private again, do steps 4 then 3 in reverse.
+
+### Moving to a new host
+
+An organization that takes over the site deploys it from its own Cloudflare account and GitHub
+repository without editing code:
+
+1. Create the D1 databases `frailty-prod` and `frailty-preview` and the R2 buckets
+   `frailty-prod-files` and `frailty-preview-files` (the bucket names are still in
+   `wrangler.jsonc`; other names need an edit there).
+2. Set up Access and the GitHub environments as above. In each environment set the variables
+   `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL` and `D1_DATABASE_ID` (that environment's
+   database id), and the four secrets.
+3. Rate-limit `namespace_id`s (`1001`, `1002`, `2001`, `2002` in `wrangler.jsonc`) only need to be
+   unique within the account; change them only if the account already uses them.
+4. Push to `main` (preview deploys, migrations included), load the reference data with the
+   Reference data workflow, then tag a release for production.
