@@ -6,7 +6,7 @@ import { collectErrors, seriousA11yViolations } from './helpers'
 // Nebraska have a list; "Test psychoses" has a 3-code universe (F20.0, F20.1, F20.9), Montana
 // lists F20.0, Nebraska none of them; "Test alcohol use" has no CCSR group, so no full code list.
 
-const caption = /Test psychoses: codes by how many states list them/
+const caption = /Test psychoses: codes by how many states include them/
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`from an overview cell to the drill-down, details and axe (${scheme})`, async ({ page }) => {
@@ -14,7 +14,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/compare')
     await page
-      .getByRole('link', { name: 'Montana, Test psychoses: 33% of the category’s codes' })
+      .getByRole('link', { name: 'Montana, Test psychoses: 33% of the category’s diagnosis codes' })
       .click()
 
     await expect(page).toHaveURL(/\/compare\/test-psychoses\?focus=MT$/)
@@ -36,7 +36,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     await row.getByRole('button', { name: 'Details for F20.0' }).click()
     const panel = page.getByRole('region', { name: /F20\.0/ })
-    await expect(panel).toContainText('Listed by 1 of 2 states with lists.')
+    await expect(panel).toContainText('Included by 1 of 2 states with a list.')
     await expect(panel).toContainText('Montana')
     await expect(panel.getByRole('heading')).toBeFocused()
     expect(new URL(page.url()).searchParams.get('code')).toBe('icd10cm|exact|F200')
@@ -51,21 +51,23 @@ test('include codes no state lists; filters; no full list elsewhere', async ({ p
   const table = page.getByRole('table', { name: caption })
   await expect(table.getByRole('button', { name: 'F20', exact: true })).toBeVisible()
 
-  await page.getByRole('checkbox', { name: 'Include codes no state lists' }).check()
+  await page.getByRole('checkbox', { name: 'Also show codes no state includes' }).check()
   await expect(page).toHaveURL(/all=1/)
   await page
     .getByRole('group', { name: 'Show' })
-    .getByRole('button', { name: 'Gaps (under half)' })
+    .getByRole('button', { name: 'Included by fewer than half' })
     .click()
   await expect(page).toHaveURL(/show=gaps/)
   await expect(table.getByRole('row', { name: /^F20\.1/ })).toContainText('0 of 2 states')
   await expect(table.getByRole('row', { name: /^F20\.0 / })).toHaveCount(0)
 
   await page.goto('/compare/test-alcohol-use')
-  await expect(page.getByRole('checkbox', { name: 'Include codes no state lists' })).toBeDisabled()
+  await expect(
+    page.getByRole('checkbox', { name: 'Also show codes no state includes' }),
+  ).toBeDisabled()
   await expect(
     page.getByText(
-      'No full code list for this category, so only codes some state lists are shown.',
+      'This category has no reference list, so only codes some state includes are shown.',
     ),
   ).toBeVisible()
 })
@@ -96,7 +98,7 @@ test.describe('with JavaScript off', () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
     await expect(page.getByRole('region', { name: /F20\.0/ })).toContainText('Montana')
 
-    await page.getByLabel('Include codes no state lists').check()
+    await page.getByLabel('Also show codes no state includes').check()
     await page.getByRole('button', { name: 'Apply' }).click()
     await expect(page).toHaveURL(/all=1/)
     await expect(table.getByRole('row', { name: /^F20\.9/ })).toContainText('0 of 2 states')

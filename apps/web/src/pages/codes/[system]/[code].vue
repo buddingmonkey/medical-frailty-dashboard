@@ -5,6 +5,8 @@ import {
   CODE_DETAIL_OTHERS,
   codeDetailDescriptionNote,
   codeDetailGroups,
+  CODE_DETAIL_NO_DESCRIPTION,
+  codeDetailColumns,
   codeDetailNarrowerText,
   codeDetailTitle,
   codeSystemLabels,
@@ -21,7 +23,7 @@ import { ApiError } from '../../../lib/api'
 import { usePageTitle } from '../../../lib/page-title'
 
 // One code's page (roadmap M6 step 3): the code and its official description, then every state
-// grouped by status, confirmed first. Wording lives in packages/shared/src/code-detail.ts.
+// grouped by status, included first. Wording lives in packages/shared/src/code-detail.ts.
 
 const route = useRoute('/codes/[system]/[code]')
 const { data, error, isPending } = useCodeDetail(
@@ -39,7 +41,7 @@ usePageTitle(() =>
 )
 
 const groups = computed(() => (data.value ? codeDetailGroups(data.value.states) : []))
-/** "Confirmed" (listed or covered), then the other states; a part with no states is left out. */
+/** "Included" (listed or covered), then the other states; a part with no states is left out. */
 const parts = computed(() =>
   [
     { id: 'confirmed', ...CODE_DETAIL_CONFIRMED, groups: groups.value.filter((g) => g.confirmed) },
@@ -112,13 +114,15 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
             </caption>
             <thead class="bg-surface">
               <tr>
-                <th scope="col" class="px-3 py-2">State</th>
-                <th scope="col" class="px-3 py-2">Entry</th>
-                <th scope="col" class="min-w-48 px-3 py-2">State’s description</th>
-                <th scope="col" class="px-3 py-2">State’s category</th>
-                <th scope="col" class="px-3 py-2">Tier</th>
-                <th v-if="showRule" scope="col" class="px-3 py-2">Rule</th>
-                <th scope="col" class="min-w-40 px-3 py-2">Source</th>
+                <th scope="col" class="px-3 py-2">{{ codeDetailColumns.state }}</th>
+                <th scope="col" class="px-3 py-2">{{ codeDetailColumns.entry }}</th>
+                <th scope="col" class="min-w-48 px-3 py-2">
+                  {{ codeDetailColumns.description }}
+                </th>
+                <th scope="col" class="px-3 py-2">{{ codeDetailColumns.category }}</th>
+                <th scope="col" class="px-3 py-2">{{ codeDetailColumns.tier }}</th>
+                <th v-if="showRule" scope="col" class="px-3 py-2">{{ codeDetailColumns.rule }}</th>
+                <th scope="col" class="min-w-40 px-3 py-2">{{ codeDetailColumns.source }}</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +150,9 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
                   </td>
                   <td class="px-3 py-2">
                     <template v-if="e.description">{{ e.description }}</template>
-                    <span v-else class="text-muted-foreground">No description published</span>
+                    <span v-else class="text-muted-foreground">{{
+                      CODE_DETAIL_NO_DESCRIPTION
+                    }}</span>
                   </td>
                   <td class="px-3 py-2">
                     {{ stateCategoryName(e.stateCategory, e.stateSubcategory) }}

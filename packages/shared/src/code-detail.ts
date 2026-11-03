@@ -117,37 +117,54 @@ export const codeDetailStatusHelp: Record<CodeDetailStatus, string> = {
   covered:
     'The state’s list has a broader entry (a wildcard, a range or a parent code with its children) that includes this code.',
   narrower: 'The state lists more specific codes under this one, but not this code itself.',
-  not_listed: 'The state has a list on this site, and this code is not on it.',
-  no_list: 'We do not have a list from this state on this site yet.',
+  not_listed: 'The state has a list on this site, and this code is not on it in any form.',
+  no_list: 'This site has no list from this state yet.',
 }
 
-/** The heading over the first two groups (design wiki: "confirmed" = listed or covered). */
+/**
+ * The heading over the first two groups (design wiki: "confirmed" = listed or covered). Public
+ * name "Included" since M6 step 3b: "confirmed" means a reviewed mapping on the state pages.
+ */
 export const CODE_DETAIL_CONFIRMED = {
-  heading: 'Confirmed',
-  help: 'These states’ lists include this code, by itself or inside a broader entry.',
+  heading: 'Included',
+  help: 'These states’ lists include this code: listed itself, or covered by a wildcard, a range or a parent code.',
 } as const
 
 export const CODE_DETAIL_OTHERS = {
-  heading: 'Other states',
-  help: 'These states do not list this code. A narrower code does not make this code count.',
+  heading: 'Not included',
+  help: 'These states’ lists do not include this code. Listing more specific codes under it does not count as including it.',
 } as const
 
 export const codeDetailTitle = (display: string): string =>
-  `${display}: which states list it | ${SITE_NAME}`
+  `${display}: which states include it | ${SITE_NAME}`
 
 export const CODE_DETAIL_NOT_FOUND = {
   title: `Code not found | ${SITE_NAME}`,
   heading: 'Code not found',
-  body: 'This code is not an official code we know of, and no state on this site lists it.',
+  body: 'This code is not in the CMS code sets this site holds (ICD-10-CM and HCPCS), and no state on this site lists it.',
 } as const
+
+/** Column headings of an "Included" group's table. */
+export const codeDetailColumns = {
+  state: 'State',
+  entry: 'Entry as published',
+  description: 'State’s description',
+  category: 'State’s category',
+  tier: 'Tier',
+  rule: 'State’s rule',
+  source: 'Source',
+} as const
+
+/** In place of the state's description when it published none. */
+export const CODE_DETAIL_NO_DESCRIPTION = 'None published'
 
 /** Under the code's description: where the text comes from. */
 export function codeDetailDescriptionNote(system: CodeSystem, hasOfficial: boolean): string {
   if (hasOfficial) return 'Official description from the CMS code set (public domain).'
   if (system === 'cpt') {
-    return 'CPT descriptions are not shown here. Each listing below shows the text each state published, with its source.'
+    return 'CPT descriptions are not shown here. Each state below shows the text it published, with its source.'
   }
-  return 'No official description. Each listing below shows the text the state published, with its source.'
+  return 'No official description in the CMS code sets this site holds. Each state below shows the text it published, with its source.'
 }
 
 export const codeDetailNarrowerText = (n: number): string =>

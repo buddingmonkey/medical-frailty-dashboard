@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 
+import SiteFooter from './components/SiteFooter.vue'
 import SiteNav from './components/SiteNav.vue'
 import ThemeMenu from './components/ThemeMenu.vue'
 </script>
@@ -30,9 +31,5 @@ import ThemeMenu from './components/ThemeMenu.vue'
     <RouterView />
   </main>
 
-  <footer class="border-t border-border">
-    <div class="mx-auto max-w-6xl px-4 py-6 text-sm text-muted-foreground">
-      Data comes from each state's published policy documents. No patient data.
-    </div>
-  </footer>
+  <SiteFooter />
 </template>

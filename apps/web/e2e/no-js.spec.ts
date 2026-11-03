@@ -18,15 +18,17 @@ test.describe('with JavaScript off', () => {
     await expect(
       page.getByText(
         'Montana’s medical frailty code list on this site has 3 entries (version 1), from the ' +
-          'state’s list dated September 29, 2026.',
+          'state’s document dated September 29, 2026.',
       ),
     ).toBeVisible()
     await expect(
-      page.getByText('Entries by the state’s rules: Qualifies alone, 2; State doesn’t say, 1.'),
+      page.getByText(
+        'Entries by the state’s rule on whether a code is enough by itself: Enough by itself, 2; State doesn’t say, 1.',
+      ),
     ).toBeVisible()
     const categories = page.getByRole('table', { name: 'Montana’s categories' })
     await expect(
-      categories.getByRole('row', { name: /SMI Disabling mental disorder 1 Confirmed/ }),
+      categories.getByRole('row', { name: /SMI Disabling mental disorder 1 Reviewed/ }),
     ).toBeVisible()
     await expect(
       page.getByRole('link', { name: 'DPHHS Medically Frail Condition List' }),
@@ -45,7 +47,7 @@ test.describe('with JavaScript off', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       'Compare medical frailty codes by state',
     )
-    const table = page.getByRole('table', { name: 'State frailty code lists' })
+    const table = page.getByRole('table', { name: 'State medical frailty code lists' })
     await expect(table.getByRole('row')).toHaveCount(52)
     await expect(table.getByRole('row', { name: /^Montana List on this site 3/ })).toBeVisible()
   })

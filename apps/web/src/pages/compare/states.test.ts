@@ -138,10 +138,14 @@ describe('/compare/states/:pair', () => {
     ).toBeTruthy()
     expect(requested).toEqual(['?states=GA%2CMT'])
     const summary = screen.getByRole('region', { name: 'Summary' })
-    expect(summary.textContent).toContain('Only Georgia1')
-    expect(summary.textContent).toContain('Only Montana2')
-    expect(summary.textContent).toContain('Both4')
-    expect(summary.textContent).toContain('Similarity0.44')
+    expect(summary.textContent).toContain('Only Georgia includes1')
+    expect(summary.textContent).toContain('Only Montana includes2')
+    expect(summary.textContent).toContain('Both include4')
+    expect(summary.textContent).toContain('Similarity (0–1)0.44')
+    expect(summary.textContent).toContain('so it is on a different basis')
+    expect(screen.getByRole('region', { name: 'Reading the table' }).textContent).toContain(
+      'No list on this site:',
+    )
 
     const table = screen.getByRole('table', { name: 'Codes where Georgia and Montana differ' })
     const headers = within(table)
@@ -185,7 +189,10 @@ describe('/compare/states/:pair', () => {
         .getAllByRole('combobox')
         .map((s) => (s as HTMLSelectElement).value),
     ).toEqual(['GA', 'MT', '', ''])
-    await user.selectOptions(within(pickers).getByRole('combobox', { name: 'Third state' }), 'NE')
+    await user.selectOptions(
+      within(pickers).getByRole('combobox', { name: 'Third state (optional)' }),
+      'NE',
+    )
     await user.click(within(pickers).getByRole('button', { name: 'Compare' }))
     await waitFor(() => {
       expect(router.currentRoute.value.fullPath).toBe('/compare/states/ga-vs-mt-vs-ne')

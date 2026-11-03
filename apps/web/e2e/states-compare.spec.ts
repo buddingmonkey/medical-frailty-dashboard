@@ -35,7 +35,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(table.getByRole('rowheader', { name: /Test psychoses/ })).toBeVisible()
     await expect(table.getByRole('row', { name: /^F20\.0/ })).toContainText('Not listed')
     await expect(table.getByRole('row', { name: /^F10\.20/ })).toContainText('Needs another code')
-    await expect(table.getByRole('rowheader', { name: /Not in a unified category/ })).toBeVisible()
+    await expect(
+      table.getByRole('rowheader', { name: /Not in any comparison category/ }),
+    ).toBeVisible()
     await expect(table.getByRole('row', { name: /^J44\.9/ })).toBeVisible()
     expect(await seriousA11yViolations(page)).toEqual([])
 

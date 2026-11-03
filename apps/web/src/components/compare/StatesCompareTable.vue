@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { type StatesCompareResponse, statesCompareGroupCountText } from '@mfcd/shared'
+import {
+  descriptionSourceText,
+  NO_DESCRIPTION,
+  STATES_COMPARE_DIFFERS,
+  type StatesCompareResponse,
+  statesCompareGroupCountText,
+  statesCompareGroupDiffText,
+} from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
@@ -14,6 +21,7 @@ import DrillCellView from './DrillCellView.vue'
 const props = defineProps<{ data: StatesCompareResponse; caption: string }>()
 
 const columns = computed(() => props.data.states.length + 2)
+const names = computed(() => new Map(props.data.states.map((s) => [s.id, s.name])))
 </script>
 
 <template>
@@ -51,8 +59,7 @@ const columns = computed(() => props.data.states.length + 2)
               g.label
             }}</span>
             <span class="block text-xs font-normal text-muted-foreground"
-              >{{ g.differing }} of {{ g.allRows }}
-              {{ g.allRows === 1 ? 'code differs' : 'codes differ'
+              >{{ statesCompareGroupDiffText(g.differing, g.allRows)
               }}<template v-if="g.continued"> (continued)</template></span
             >
           </th>
@@ -70,7 +77,7 @@ const columns = computed(() => props.data.states.length + 2)
             <span
               v-if="!data.query.diff && r.differs"
               class="mt-0.5 block font-sans text-xs font-medium text-danger"
-              >Differs</span
+              >{{ STATES_COMPARE_DIFFERS }}</span
             >
           </th>
           <td class="px-3 py-2">
@@ -79,10 +86,12 @@ const columns = computed(() => props.data.states.length + 2)
               <span
                 v-if="r.descriptionSource && r.descriptionSource !== 'cms'"
                 class="block text-xs text-muted-foreground"
-                >{{ r.descriptionSource }}’s text</span
+                >{{
+                  descriptionSourceText(names.get(r.descriptionSource) ?? r.descriptionSource)
+                }}</span
               >
             </template>
-            <span v-else class="text-muted-foreground">No description published</span>
+            <span v-else class="text-muted-foreground">{{ NO_DESCRIPTION }}</span>
           </td>
           <td v-for="(cell, i) in r.cells" :key="i" class="px-3 py-2">
             <DrillCellView :cell="cell" />

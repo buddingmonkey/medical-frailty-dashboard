@@ -1,10 +1,19 @@
 import {
+  ADDED_HEADING,
   CATEGORIES_DESCRIPTION,
   CATEGORIES_HEADING,
   CATEGORIES_INTRO,
+  CCSR_LINK_TEXT,
+  CCSR_URL,
   type CodeSystem,
   codeSystemLabels,
+  COMPARE_DESCRIPTION,
+  COMPARE_HEADING,
+  COMPARE_INTRO,
+  COMPARE_LEGEND_HEADING,
   COMPARE_TABS_LABEL,
+  compareEmptyText,
+  compareLegend,
   compareTabMark,
   compareTabs,
   compareCellText,
@@ -16,11 +25,22 @@ import {
   compareSubject,
   coverageBandLabels,
   CCSR_CITATION,
+  descriptionSourceText,
+  downloadTableText,
+  DRILL_ABOUT,
+  DRILL_COUNT_HEADING,
+  DRILL_COUNT_NOTE,
+  DRILL_NOT_LISTED_NOTE,
+  DRILL_RULES_HEADING,
+  DRILL_UNIVERSE_LABEL,
+  drillCaption,
+  drillCcsrHeading,
   type DrillCell,
   drillCodeTablePath,
   drillCountText,
   drillCsvPath,
   type DrillDetailResponse,
+  drillDetailCountText,
   drillFiledUnder,
   drillGroupCountText,
   type DrillQuery,
@@ -32,16 +52,26 @@ import {
   drillShows,
   drillStatusText,
   drillUniverseNote,
+  ENTRY_DEFINITION,
   type FederalCategory,
   FEDERAL_OVERLAP_NOTE,
+  federalCategoryClauseText,
   federalCategoryInfo,
   federalCountsOverlap,
+  FOOTER_TEXT,
   formatCount,
   formatDay,
+  HOME_INTRO,
   MAP_DESCRIPTION,
+  NO_DESCRIPTION,
+  noListText,
+  OVERVIEW_CAPTION,
   OVERVIEW_DESCRIPTION,
+  OVERVIEW_HEADING,
+  OVERVIEW_INTRO,
   OVERVIEW_NO_LIST,
   OVERVIEW_NOT_REVIEWED,
+  OVERVIEW_OVERALL_HEADING,
   overviewCategoryGroups,
   overviewCellNotReviewed,
   overviewCellText,
@@ -56,24 +86,36 @@ import {
   type PublicStateSummary,
   type Qualification,
   qualificationLabels,
+  REVIEW_STATUS_HEADING,
+  reviewStatusText,
   SITE_NAME,
   siteNav,
   siteNavCurrent,
+  SOURCE_DATE_HEADING,
+  sourceDetailsText,
+  STATE_CATEGORY_PREFIX,
+  STATE_COUNT_CAPTIONS,
   stateCategoriesIntro,
+  stateCategoryName,
   stateStatusLabels,
-  STATES_AND_DC,
+  statesWithListText,
   SIMILAR_PICK_MAX,
   type SimilarState,
+  SIMILARITY_LABEL,
   SIMILARITY_NOTE,
   similarityText,
+  STATES_COMPARE_BASIS_NOTE,
+  STATES_COMPARE_DIFFERS,
   STATES_COMPARE_INTRO,
   STATES_COMPARE_MAX,
   STATES_COMPARE_MIN,
+  STATES_COMPARE_NOT_FOUND_TEXT,
   STATES_COMPARE_SUMMARY_NOTE,
   statesCompareAllLabel,
   statesCompareCaption,
   statesCompareCsvPath,
   statesCompareGroupCountText,
+  statesCompareGroupDiffText,
   statesCompareNames,
   statesCompareNoListText,
   statesCompareOnlyLabel,
@@ -89,6 +131,10 @@ import {
   STATES_LANDING_OWN_HEADING,
   STATES_LANDING_OWN_LABEL,
   STATES_LANDING_PICK_HEADING,
+  STATES_PICKER_LABELS,
+  STATUTE_CITATION,
+  STATUTE_LINK_TEXT,
+  STATUTE_URL,
   TILE_MAP_HEADING,
   TILE_MAP_HOME_LINK,
   TILE_MAP_INTRO,
@@ -118,8 +164,45 @@ export interface PageParts {
 }
 
 const HOME_DESCRIPTION =
-  'Compare the code lists US states use to mark Medicaid members as medically frail, the ' +
-  'exemption from the H.R.1 work requirements.'
+  'Compare the code lists US states use to identify medically frail Medicaid members, who are ' +
+  'excluded from the H.R.1 work requirements.'
+
+/** "Read the law" with its citation, as on the Vue pages. */
+function statuteLink(): Html {
+  return html`<a href="${STATUTE_URL}" rel="noopener noreferrer external">${STATUTE_LINK_TEXT}</a>
+    (${STATUTE_CITATION})`
+}
+
+/** The footer of every page, the same words as the Vue `SiteFooter`. */
+export function footerHtml(): Html {
+  return html`<footer>
+    <p>${FOOTER_TEXT}</p>
+    <p>${statuteLink()}</p>
+  </footer>`
+}
+
+/** What each cell word and the badges mean, under every code table (Vue `StatusLegend`). */
+function legendHtml(): Html {
+  return html`<h3>${COMPARE_LEGEND_HEADING}</h3>
+    <dl>
+      ${compareLegend.map(
+        (item) =>
+          html`<dt>${item.term}</dt>
+            <dd>${item.text}</dd>`,
+      )}
+    </dl>`
+}
+
+/** A description and, when it is the state's own text, the state that published it. */
+function describedText(
+  r: Pick<DrillRow, 'description' | 'descriptionSource'>,
+  stateName: (id: string) => string,
+): string {
+  if (r.description === null) return NO_DESCRIPTION
+  return r.descriptionSource && r.descriptionSource !== 'cms'
+    ? `${r.description} (${descriptionSourceText(stateName(r.descriptionSource))})`
+    : r.description
+}
 
 export const downloadName = (slug: string, versionNo: number, ext: 'csv' | 'json') =>
   `${slug}-medical-frailty-codes-v${String(versionNo)}.${ext}`
@@ -128,14 +211,14 @@ export const downloadName = (slug: string, versionNo: number, ext: 'csv' | 'json
 function stateListTable(items: readonly PublicStateSummary[]): Html {
   return html`<table>
     <caption>
-      State frailty code lists
+      State medical frailty code lists
     </caption>
     <thead>
       <tr>
         <th scope="col">State</th>
         <th scope="col">Status</th>
         <th scope="col">Entries</th>
-        <th scope="col">State list dated</th>
+        <th scope="col">${SOURCE_DATE_HEADING}</th>
       </tr>
     </thead>
     <tbody>
@@ -157,22 +240,20 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
   return {
     status: 200,
     title: pageTitles.states,
-    description: `Every US state and DC: whether each has published a Medicaid medically frail code list, how many entries it has, and when the state dated it.`,
+    description: `Every US state and DC: whether each has published a Medicaid medical frailty code list, how many entries it has, and the date on the state’s document.`,
     path: '/states',
     canonical: `${origin}/states`,
     noindex: false,
     jsonLd: [],
     body: html`<h1>All states</h1>
-      <p>
-        ${withList} of ${STATES_AND_DC} states and DC have a list on this site. Choose a state to
-        see its list, sources and history.
-      </p>
+      <p>${statesWithListText(withList)} Choose a state to see its list, sources and history.</p>
+      <p>${ENTRY_DEFINITION}</p>
       ${stateListTable(items)}`,
   }
 }
 
 /**
- * "One category across the country" (roadmap M5 step 8) for crawlers, on the Map tab
+ * "One category, every state" (roadmap M5 step 8) for crawlers, on the Map tab
  * (`/compare/map`): the category in the URL (the first by default) as a plain table of
  * every state and DC by name, not the visual grid, and the picker as a GET form to `action`.
  * Nothing when no category is published.
@@ -270,12 +351,17 @@ export function categoriesPage(overview: PublicOverviewResponse, origin: string)
     body: html`<h1>${CATEGORIES_HEADING}</h1>
       ${compareTabsHtml(path)}
       <p>${CATEGORIES_INTRO}</p>
+      <p>
+        <a href="${CCSR_URL}" rel="noopener noreferrer external">${CCSR_LINK_TEXT}</a>
+        <a href="${STATUTE_URL}" rel="noopener noreferrer external">${STATUTE_LINK_TEXT}</a>
+      </p>
       ${
         groups.length === 0
           ? html`<p>No categories are published yet.</p>`
           : groups.map(
               (g) =>
                 html`<h2>${g.label}</h2>
+                  ${federalCategoryClauseText(g.federalCategory) ? html`<p>${federalCategoryClauseText(g.federalCategory)}</p>` : null}
                   <ul>
                     ${g.categories.map(
                       (c) =>
@@ -310,13 +396,11 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
       },
     ],
     body: html`<h1>Compare medical frailty codes by state</h1>
-      <p>
-        Under H.R.1, Medicaid members who are medically frail are exempt from work requirements.
-        Each state publishes its own list of diagnosis and service codes for frailty. This site puts
-        those lists side by side.
-      </p>
+      <p>${HOME_INTRO}</p>
+      <p>${statuteLink()}</p>
       <h2>States</h2>
-      <p>${withList} of ${STATES_AND_DC} states and DC have a list on this site.</p>
+      <p>${statesWithListText(withList)}</p>
+      <p>${ENTRY_DEFINITION}</p>
       ${stateListTable(items)}
       <p><a href="/compare/map">${TILE_MAP_HOME_LINK}</a></p>`,
   }
@@ -344,32 +428,23 @@ function countTable<K extends string>(
   </table>`
 }
 
-function categoryName(category: string, subcategory: string) {
-  if (category === '' && subcategory === '') return '(no category)'
-  return subcategory === '' ? category : `${category} › ${subcategory}`
-}
+const categoryName = stateCategoryName
 
 /** The answer in plain sentences, near the top (docs/seo.md, "Facts that AI can quote"). */
 function summarySentences(detail: PublicStateDetail): string[] {
   const { state } = detail
   const p = state.published
-  if (!p) {
-    return [
-      state.status === 'announced'
-        ? `${state.name} has announced a list of medical frailty codes. It is not on this site yet.`
-        : `${state.name} has not published a list of medical frailty codes that we know of.`,
-    ]
-  }
+  if (!p) return [noListText(state.name, state.status === 'announced')]
   const dated = p.sourceDate
-    ? `from the state’s list dated ${formatDay(p.sourceDate)}`
-    : 'from a state list that gives no date'
+    ? `from the state’s document dated ${formatDay(p.sourceDate)}`
+    : 'from a state document that gives no date'
   const sentences = [
     `${state.name}’s medical frailty code list on this site has ${formatCount(p.totalEntries)} entries (version ${String(p.versionNo)}), ${dated}.`,
   ]
   const byRule = (Object.entries(p.byQualification) as [Qualification, number][])
     .filter(([, n]) => n > 0)
     .map(([q, n]) => `${qualificationLabels[q]}, ${formatCount(n)}`)
-  if (byRule.length > 0) sentences.push(`Entries by the state’s rules: ${byRule.join('; ')}.`)
+  if (byRule.length > 0) sentences.push(`${STATE_COUNT_CAPTIONS.rule}: ${byRule.join('; ')}.`)
   if (p.updatedAt) sentences.push(`Last updated on this site ${formatDay(p.updatedAt)}.`)
   return sentences
 }
@@ -380,8 +455,8 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
   const url = `${origin}/states/${state.slug}`
   const sentences = summarySentences(detail)
   const description = p
-    ? `${state.name}’s Medicaid medically frail code list: ${formatCount(p.totalEntries)} entries` +
-      `${p.sourceDate ? `, state list dated ${formatDay(p.sourceDate)}` : ''}. Counts by code ` +
+    ? `${state.name}’s Medicaid medical frailty code list: ${formatCount(p.totalEntries)} entries` +
+      `${p.sourceDate ? `, state document dated ${formatDay(p.sourceDate)}` : ''}. Counts by code ` +
       'system and federal category, sources, version history and downloads.'
     : sentences.join(' ')
 
@@ -421,14 +496,11 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
 
   const listed = p
     ? html`<h2>What the list contains</h2>
-        <p>
-          An entry is one line of the state’s list: a single code, or a group of codes written with
-          a wildcard or a range.
-        </p>
-        ${countTable('Entries by code system', p.bySystem, (k: CodeSystem) => codeSystemLabels[k])}
-        ${countTable('Entries by federal category', p.byFederalCategory, (k: FederalCategory) => federalCategoryInfo[k].label)}
+        <p>${ENTRY_DEFINITION}</p>
+        ${countTable(STATE_COUNT_CAPTIONS.system, p.bySystem, (k: CodeSystem) => codeSystemLabels[k])}
+        ${countTable(STATE_COUNT_CAPTIONS.federal, p.byFederalCategory, (k: FederalCategory) => federalCategoryInfo[k].label)}
         ${federalCountsOverlap(p) ? html`<p>${FEDERAL_OVERLAP_NOTE}</p>` : null}
-        ${countTable('Entries by whether a code qualifies alone', p.byQualification, (k: Qualification) => qualificationLabels[k])}
+        ${countTable(STATE_COUNT_CAPTIONS.rule, p.byQualification, (k: Qualification) => qualificationLabels[k])}
         <h2>Categories</h2>
         <p>${stateCategoriesIntro(state.name)}</p>
         <table>
@@ -440,7 +512,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
               <th scope="col">State category</th>
               <th scope="col">Federal category</th>
               <th scope="col">Entries</th>
-              <th scope="col">Mapping</th>
+              <th scope="col">${REVIEW_STATUS_HEADING}</th>
             </tr>
           </thead>
           <tbody>
@@ -450,7 +522,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
                   <th scope="row">${categoryName(c.stateCategory, c.stateSubcategory)}</th>
                   <td>${federalCategoryInfo[c.federalCategory].label}</td>
                   <td>${formatCount(c.entries)}</td>
-                  <td>${c.confirmed ? 'Confirmed' : 'Not yet confirmed'}</td>
+                  <td>${reviewStatusText(c.confirmed)}</td>
                 </tr>`,
             )}
           </tbody>
@@ -462,9 +534,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
             (s) =>
               html`<li>
                 ${s.url ? html`<a href="${s.url}" rel="noopener noreferrer external">${s.title}</a>` : `${s.title} (link not known)`}
-                ·
-                ${s.fileType.toUpperCase()}${s.publisherDate ? ` · dated ${formatDay(s.publisherDate)}` : ''}
-                · retrieved ${formatDay(s.retrievedAt)}
+                · ${sourceDetailsText(s)}
               </li>`,
           )}
         </ul>
@@ -482,7 +552,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
             <tr>
               <th scope="col">Version</th>
               <th scope="col">Status</th>
-              <th scope="col">Published here</th>
+              <th scope="col">${ADDED_HEADING}</th>
               <th scope="col">Entries</th>
             </tr>
           </thead>
@@ -549,10 +619,6 @@ function similarSection(
     }`
 }
 
-const COMPARE_DESCRIPTION =
-  'Compare the medical frailty codes of any number of states, one category at a time: which ' +
-  'codes each state lists, covers with a wildcard or range, or leaves out.'
-
 /** `/compare/codes.csv?…` for a selection: every row, so no page. */
 export const compareCsvPath = (query: CompareQuery) =>
   `/compare/codes.csv?${compareSearchParams({ ...query, page: 1 }).toString()}`
@@ -566,13 +632,9 @@ export function comparePage(
   origin: string,
   view: { query: CompareQuery; result: CompareResult } | { error: string } | null,
 ): PageParts {
-  const intro = html`<h1>Compare states by category</h1>
+  const intro = html`<h1>${COMPARE_HEADING}</h1>
     ${compareTabsHtml('/compare/codes')}
-    <p>
-      Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
-      least one of them lists in that category; each column shows what that state’s whole list says
-      about it.
-    </p>`
+    <p>${COMPARE_INTRO}</p>`
   let body: Html
   if (view === null) {
     body = html`${intro}
@@ -584,47 +646,52 @@ export function comparePage(
     const { query, result } = view
     const names = new Map(result.states.map((s) => [s.id, s.name]))
     const subject = compareSubject(query, (id) => names.get(id) ?? id)
+    const stateName = (id: string) => names.get(id) ?? id
+    const table =
+      result.totalRows === 0
+        ? html`<p>${compareEmptyText(query.alone)}</p>`
+        : html`<table>
+            <caption>
+              ${subject}: codes by state
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Description</th>
+                ${result.states.map((s) => html`<th scope="col"><a href="/states/${s.slug}">${s.name}</a></th>`)}
+              </tr>
+            </thead>
+            <tbody>
+              ${result.rows.map(
+                (row) =>
+                  html`<tr>
+                    <th scope="row">${row.display}</th>
+                    <td>${describedText(row, stateName)}</td>
+                    ${row.cells.map((cell, i) => {
+                      const stateId = result.states[i]?.id ?? ''
+                      const m = cell.match
+                      const filed = m ? compareFiledUnder(query, stateId, m) : null
+                      const text = [
+                        compareCellText(cell),
+                        m?.tier,
+                        m ? compareQualificationText(m) : null,
+                        filed ? `${STATE_CATEGORY_PREFIX} ${filed}` : null,
+                      ]
+                        .filter((part) => part !== null && part !== undefined && part !== '')
+                        .join('; ')
+                      return html`<td>${text}</td>`
+                    })}
+                  </tr>`,
+              )}
+            </tbody>
+          </table>`
     body = html`${intro}
       <h2>${subject}: codes by state</h2>
       <p>
         ${formatCount(result.totalRows)} codes, page ${result.page} of ${result.pageCount}.
-        <a href="${compareCsvPath(query)}">Download all rows (CSV)</a>
+        ${result.totalRows > 0 ? html`<a href="${compareCsvPath(query)}">${downloadTableText(result.totalRows)}</a>` : null}
       </p>
-      <table>
-        <caption>
-          ${subject}: codes by state
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Code</th>
-            <th scope="col">Description</th>
-            ${result.states.map((s) => html`<th scope="col"><a href="/states/${s.slug}">${s.name}</a></th>`)}
-          </tr>
-        </thead>
-        <tbody>
-          ${result.rows.map(
-            (row) =>
-              html`<tr>
-                <th scope="row">${row.display}</th>
-                <td>${row.description ?? ''}</td>
-                ${row.cells.map((cell, i) => {
-                  const stateId = result.states[i]?.id ?? ''
-                  const m = cell.match
-                  const filed = m ? compareFiledUnder(query, stateId, m) : null
-                  const text = [
-                    compareCellText(cell),
-                    m?.tier,
-                    m ? compareQualificationText(m) : null,
-                    filed ? `filed under ${filed}` : null,
-                  ]
-                    .filter((part) => part !== null && part !== undefined && part !== '')
-                    .join('; ')
-                  return html`<td>${text}</td>`
-                })}
-              </tr>`,
-          )}
-        </tbody>
-      </table>`
+      ${table} ${legendHtml()}`
   }
   return {
     status: 200,
@@ -640,7 +707,8 @@ export function comparePage(
 
 /**
  * `/compare`: the overview matrix (roadmap M5 step 5), every state against every published
- * unified category. Indexed: it is the one page that answers "which states cover what".
+ * unified category. Indexed: it is the one page that answers "how much of each category each
+ * state lists".
  */
 export function overviewPage(
   data: PublicOverviewResponse,
@@ -665,23 +733,19 @@ export function overviewPage(
     return new Html(`<th ${attributes}${sort}>`)
   }
 
-  /** A column's label; † marks a category without a full code list. */
+  /** A column's label; † marks a category without a reference list. */
   const headerLabel = (c: PublicOverviewResponse['categories'][number]) =>
     c.coverageBasis === 'union' ? `${c.label} †` : c.label
 
-  const intro = html`<h1>Which states cover what</h1>
+  const intro = html`<h1>${OVERVIEW_HEADING}</h1>
     ${compareTabsHtml('/compare')}
-    <p>
-      Each row is a state; each column is a category, grouped under its federal category in the law.
-      A number is the share of the category’s codes that the state lists. Select a number to see the
-      category’s codes with that state in focus.
-    </p>`
+    <p>${OVERVIEW_INTRO}</p>`
   const table =
     categories.length === 0
       ? html`<p>No categories are published yet.</p>`
       : html`<table>
           <caption>
-            Share of each category’s codes that each state lists
+            ${OVERVIEW_CAPTION}
           </caption>
           <thead>
             <tr>
@@ -689,7 +753,7 @@ export function overviewPage(
               ${groups.map(
                 (g) => html`<th scope="colgroup" colspan="${g.categories.length}">${g.label}</th>`,
               )}
-              ${headerOpen('overall', 'scope="col" rowspan="2"')}Overall</th>
+              ${headerOpen('overall', 'scope="col" rowspan="2"')}${OVERVIEW_OVERALL_HEADING}</th>
             </tr>
             <tr>
               ${categories.map(
@@ -737,7 +801,7 @@ export function overviewPage(
       ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
       <p>
         Shades:
-        ${(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]).join('; ')}.
+        ${[...(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]), OVERVIEW_NO_LIST].join('; ')}.
       </p>`,
   }
 }
@@ -750,19 +814,11 @@ export function drillCellWords(cell: DrillCell): string {
     compareCellText(cell),
     m?.tier,
     m ? compareQualificationText(m) : null,
-    filed ? `filed under ${filed}` : null,
+    filed ? `${STATE_CATEGORY_PREFIX} ${filed}` : null,
   ]
     .filter((part) => part !== null && part !== undefined && part !== '')
     .join('; ')
 }
-
-/** The row's description, with the state named when the text is the state's own. */
-const drillDescription = (r: Pick<DrillRow, 'description' | 'descriptionSource'>): string =>
-  r.description === null
-    ? ''
-    : r.descriptionSource && r.descriptionSource !== 'cms'
-      ? `${r.description} (${r.descriptionSource}’s text)`
-      : r.description
 
 /** A link to the same view with some options changed (`?…`, relative to the page). */
 function drillHref(query: DrillQuery, change: Partial<DrillQuery>, hash = ''): string {
@@ -782,7 +838,7 @@ function drillDetailHtml(detail: DrillDetailResponse): Html {
       : html`<p>${label} (${list.length}): ${list.map((s) => s.id).join(' ')}</p>`
   return html`<section id="code-details" aria-labelledby="code-details-heading">
     <h2 id="code-details-heading">${row.display}${row.description ? ` ${row.description}` : ''}</h2>
-    <p>Listed by ${drillCountText(row.count, detail.statesWithList)} with lists.</p>
+    <p>${drillDetailCountText(row.count, detail.statesWithList)}</p>
     ${
       shown.length === 0
         ? null
@@ -807,7 +863,8 @@ function drillDetailHtml(detail: DrillDetailResponse): Html {
             </tbody>
           </table>`
     }
-    ${abbreviations('Not listed', notListed)} ${abbreviations('No list on this site', noList)}
+    ${abbreviations(`Not listed (${DRILL_NOT_LISTED_NOTE.toLowerCase()})`, notListed)}
+    ${abbreviations('No list on this site', noList)}
   </section>`
 }
 
@@ -827,23 +884,32 @@ export function drillPage(
   const path = `/compare/${category.slug}`
   const focusState = data.states.find((s) => s.id === data.query.focus) ?? null
   const applied: DrillQuery = { ...query, ...data.query, page: data.page }
-  const caption = `${category.label}: codes by how many states list them`
+  const caption = drillCaption(category.label)
   const total = data.states.length
+  const stateName = (id: string) => data.states.find((s) => s.id === id)?.name ?? id
+  const clause = federalCategoryClauseText(category.federalCategory)
 
   const about = html`<h1>${category.label}</h1>
     ${compareTabsHtml(path)}
-    <p>Federal category: ${federalCategoryInfo[category.federalCategory].label}.</p>
+    <p>${DRILL_ABOUT} <a href="/compare/categories">See every comparison category</a></p>
+    <p>
+      Federal category:
+      ${federalCategoryInfo[category.federalCategory].label}.${clause ? ` ${clause}` : ''}
+    </p>
     <p>${category.definition}</p>
     ${category.includes ? html`<p>Includes: ${category.includes}</p>` : null}
     ${category.excludes ? html`<p>Excludes: ${category.excludes}</p>` : null}
     ${
       category.ccsr.length === 0
         ? null
-        : html`<h2>CCSR groups</h2>
+        : html`<h2>${drillCcsrHeading(category.ccsr.length)}</h2>
             <ul>
               ${category.ccsr.map((g) => html`<li>${g.id}: ${g.description}</li>`)}
             </ul>
-            <p>Source: ${CCSR_CITATION}</p>`
+            <p>
+              Source: ${CCSR_CITATION}
+              <a href="${CCSR_URL}" rel="noopener noreferrer external">${CCSR_LINK_TEXT}</a>
+            </p>`
     }`
 
   const form = html`<form method="get" action="${path}">
@@ -900,7 +966,7 @@ export function drillPage(
               .join(' '),
           )}
         />
-        Include codes no state lists</label
+        ${DRILL_UNIVERSE_LABEL}</label
       >
       ${drillUniverseNote(category.universeSize)}
     </p>
@@ -908,7 +974,7 @@ export function drillPage(
   </form>`
 
   const links = html`<p>
-    <a href="${drillCsvPath(category.slug, applied)}">Download every row (CSV)</a>.
+    <a href="${drillCsvPath(category.slug, applied)}">${downloadTableText(data.totalRows)}</a>.
     <a
       href="${drillCodeTablePath(
         category.federalCategory,
@@ -922,49 +988,50 @@ export function drillPage(
   const table =
     data.groups.length === 0
       ? html`<p>No codes match this filter.</p>`
-      : html`<table>
-          <caption>
-            ${caption}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Code</th>
-              <th scope="col">Description</th>
-              <th scope="col">States listing it</th>
-              <th scope="col">Their rules</th>
-              ${focusState ? html`<th scope="col">${focusState.name}</th>` : null}
-              <th scope="col">Details</th>
-            </tr>
-          </thead>
-          ${data.groups.map(
-            (g) =>
-              html`<tbody>
-                <tr>
-                  <th scope="rowgroup">${g.label}</th>
-                  <td>${g.description ?? ''}</td>
-                  <td>${drillGroupCountText(g.anyCount, total)}</td>
-                  <td colspan="${columns - 2}">
-                    ${g.rowCount} ${g.rowCount === 1 ? 'code' : 'codes'}
-                  </td>
-                </tr>
-                ${g.rows.map(
-                  (r) =>
-                    html`<tr>
-                      <th scope="row">${r.display}</th>
-                      <td>${drillDescription(r)}</td>
-                      <td>${drillCountText(r.count, total)}</td>
-                      <td>${drillRulesText(r.rules)}</td>
-                      ${r.focus ? html`<td>${drillCellWords(r.focus)}</td>` : null}
-                      <td>
-                        <a href="${drillHref(applied, { code: r.key }, '#code-details')}"
-                          >Details</a
-                        >
-                      </td>
-                    </tr>`,
-                )}
-              </tbody>`,
-          )}
-        </table>`
+      : html`<p>${DRILL_COUNT_NOTE}</p>
+          <table>
+            <caption>
+              ${caption}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Description</th>
+                <th scope="col">${DRILL_COUNT_HEADING}</th>
+                <th scope="col">${DRILL_RULES_HEADING}</th>
+                ${focusState ? html`<th scope="col">${focusState.name}</th>` : null}
+                <th scope="col">Details</th>
+              </tr>
+            </thead>
+            ${data.groups.map(
+              (g) =>
+                html`<tbody>
+                  <tr>
+                    <th scope="rowgroup">${g.label}</th>
+                    <td>${g.description ?? ''}</td>
+                    <td>${drillGroupCountText(g.anyCount, total)}</td>
+                    <td colspan="${columns - 2}">
+                      ${g.rowCount} ${g.rowCount === 1 ? 'code' : 'codes'}
+                    </td>
+                  </tr>
+                  ${g.rows.map(
+                    (r) =>
+                      html`<tr>
+                        <th scope="row">${r.display}</th>
+                        <td>${describedText(r, stateName)}</td>
+                        <td>${drillCountText(r.count, total)}</td>
+                        <td>${drillRulesText(r.rules)}</td>
+                        ${r.focus ? html`<td>${drillCellWords(r.focus)}</td>` : null}
+                        <td>
+                          <a href="${drillHref(applied, { code: r.key }, '#code-details')}"
+                            >Details</a
+                          >
+                        </td>
+                      </tr>`,
+                  )}
+                </tbody>`,
+            )}
+          </table>`
 
   const pager =
     data.pageCount > 1
@@ -1001,7 +1068,7 @@ export function drillPage(
     jsonLd: [],
     body: html`${about} ${form}
       <p>${drillStatusText(data)}</p>
-      ${links} ${table} ${pager} ${detail ? drillDetailHtml(detail) : null}`,
+      ${links} ${table} ${pager} ${legendHtml()} ${detail ? drillDetailHtml(detail) : null}`,
   }
 }
 
@@ -1010,11 +1077,10 @@ function statesPickerForm(
   choices: readonly { slug: string; name: string }[],
   currentSlugs: readonly string[] = [],
 ): Html {
-  const labels = ['First state', 'Second state', 'Third state', 'Fourth state']
   return html`<form method="get" action="/compare/states">
     <fieldset>
       <legend>States to compare</legend>
-      ${labels.slice(0, STATES_COMPARE_MAX).map((label, i) => {
+      ${STATES_PICKER_LABELS.slice(0, STATES_COMPARE_MAX).map((label, i) => {
         const current = currentSlugs[i]
         return html`<p>
           <label for="states-picker-${i}">${label}</label>
@@ -1051,13 +1117,14 @@ export function statesComparePage(
   const href = (change: Partial<StatesCompareQuery>) =>
     `?${statesCompareSearchParams({ ...applied, page: 1, ...change }).toString()}`
   const noList = data.states.filter((s) => !s.hasList)
+  const nameOf = (id: string) => data.states.find((s) => s.id === id)?.name ?? id
   const summary = data.summary
   const description = summary
     ? `Where ${names.join(' and ')}’s medical frailty code lists differ: ${data.states
-        .map((s, i) => `${String(summary.only[i] ?? 0)} codes only ${s.name} lists`)
+        .map((s, i) => `${String(summary.only[i] ?? 0)} codes only ${s.name} includes`)
         .join(
           ', ',
-        )}, ${String(summary.all)} listed by ${data.states.length === 2 ? 'both' : 'all'}.`
+        )}, ${String(summary.all)} included by ${data.states.length === 2 ? 'both' : 'all'}.`
     : statesCompareNoListText(noList.map((s) => s.name))
 
   const head = html`<h1>${statesCompareNames(names)}</h1>
@@ -1096,12 +1163,15 @@ export function statesComparePage(
       <dd>${formatCount(summary.all)}</dd>
       ${
         summary.similarity
-          ? html`<dt>Similarity</dt>
+          ? html`<dt>${SIMILARITY_LABEL}</dt>
               <dd>${similarityText(summary.similarity.jaccard)}</dd>`
           : null
       }
     </dl>
-    <p>${STATES_COMPARE_SUMMARY_NOTE} ${summary.similarity ? SIMILARITY_NOTE : ''}</p>`
+    <p>
+      ${STATES_COMPARE_SUMMARY_NOTE}
+      ${summary.similarity ? `${STATES_COMPARE_BASIS_NOTE} ${SIMILARITY_NOTE}` : ''}
+    </p>`
 
   const links = html`<p>
     ${
@@ -1113,13 +1183,13 @@ export function statesComparePage(
   </p>`
 
   const groupHeading = (g: StatesCompareResponse['groups'][number]) => {
-    const differ = `${String(g.differing)} of ${String(g.allRows)} ${g.allRows === 1 ? 'code differs' : 'codes differ'}${g.continued ? ', continued' : ''}`
+    const differ = `${statesCompareGroupDiffText(g.differing, g.allRows)}${g.continued ? ', continued' : ''}`
     return g.slug
       ? html`<a href="/compare/${g.slug}">${g.label}</a> (${differ})`
       : html`${g.label} (${differ})`
   }
   const rowHeading = (r: StatesCompareResponse['groups'][number]['rows'][number]) =>
-    `${r.display}${!data.query.diff && r.differs ? ' (differs)' : ''}`
+    `${r.display}${!data.query.diff && r.differs ? ` (${STATES_COMPARE_DIFFERS.toLowerCase()})` : ''}`
 
   const table =
     data.groups.length === 0
@@ -1146,7 +1216,7 @@ export function statesComparePage(
                   (r) =>
                     html`<tr>
                       <th scope="row">${rowHeading(r)}</th>
-                      <td>${drillDescription(r)}</td>
+                      <td>${describedText(r, nameOf)}</td>
                       ${r.cells.map((cell) => html`<td>${drillCellWords(cell)}</td>`)}
                     </tr>`,
                 )}
@@ -1198,7 +1268,7 @@ export function statesCompareNotFoundPage(
   return {
     status: 404,
     title: pageTitles.statesCompareNotFound,
-    description: 'A comparison names 2 to 4 states with a list.',
+    description: `${STATES_COMPARE_NOT_FOUND_TEXT} /compare/states/ga-vs-ne.`,
     path,
     canonical: `${origin}${path}`,
     noindex: true,
@@ -1206,7 +1276,7 @@ export function statesCompareNotFoundPage(
     body: html`<h1>Comparison not found</h1>
       ${compareTabsHtml(path)}
       <p>
-        ${reason} A comparison names 2 to 4 states with a list, like
+        ${reason} ${STATES_COMPARE_NOT_FOUND_TEXT}
         <a href="/compare/states/ga-vs-ne">/compare/states/ga-vs-ne</a>.
         <a href="/compare/states">Choose states to compare</a>
       </p>`,
@@ -1359,7 +1429,9 @@ export async function renderInto(indexHtml: string, parts: PageParts): Promise<s
     })
     .on('div#app', {
       element(el) {
-        el.setInnerContent(navHtml(parts.path).value + parts.body.value, { html: true })
+        el.setInnerContent(navHtml(parts.path).value + parts.body.value + footerHtml().value, {
+          html: true,
+        })
       },
     })
     .transform(new Response(indexHtml))

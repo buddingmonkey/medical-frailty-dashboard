@@ -3,8 +3,11 @@ import {
   formatCount,
   pageTitles,
   parseStatesPair,
+  SIMILARITY_LABEL,
   similarityText,
   SIMILARITY_NOTE,
+  STATES_COMPARE_BASIS_NOTE,
+  STATES_COMPARE_NOT_FOUND_TEXT,
   statesCompareAllLabel,
   statesCompareCaption,
   statesCompareCsvPath,
@@ -26,6 +29,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import CompareTabs from '../../../components/compare/CompareTabs.vue'
 import StatesCompareTable from '../../../components/compare/StatesCompareTable.vue'
 import StatesPicker from '../../../components/compare/StatesPicker.vue'
+import StatusLegend from '../../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../../lib/api'
 import { usePageTitle } from '../../../lib/page-title'
 import { useStatesCompare } from '../../../lib/public-states-compare'
@@ -79,7 +83,7 @@ function open(next: string[]) {
       <h1 class="font-display text-4xl font-medium text-heading">Comparison not found</h1>
       <CompareTabs />
       <p class="max-w-prose">
-        A comparison names 2 to 4 states with a list, like
+        {{ STATES_COMPARE_NOT_FOUND_TEXT }}
         <RouterLink to="/compare/states/ga-vs-ne">/compare/states/ga-vs-ne</RouterLink>.
         <RouterLink to="/compare/states">Choose states to compare</RouterLink>
       </p>
@@ -145,7 +149,7 @@ function open(next: string[]) {
               v-if="data.summary.similarity"
               class="rounded-lg border border-border bg-surface p-3"
             >
-              <dt class="text-sm text-muted-foreground">Similarity</dt>
+              <dt class="text-sm text-muted-foreground">{{ SIMILARITY_LABEL }}</dt>
               <dd class="text-2xl font-semibold tabular-nums">
                 {{ similarityText(data.summary.similarity.jaccard) }}
               </dd>
@@ -153,7 +157,9 @@ function open(next: string[]) {
           </dl>
           <p class="max-w-prose text-sm text-muted-foreground">
             {{ STATES_COMPARE_SUMMARY_NOTE }}
-            <template v-if="data.summary.similarity">{{ SIMILARITY_NOTE }}</template>
+            <template v-if="data.summary.similarity"
+              >{{ STATES_COMPARE_BASIS_NOTE }} {{ SIMILARITY_NOTE }}</template
+            >
           </p>
         </section>
 
@@ -204,6 +210,7 @@ function open(next: string[]) {
               Next page
             </button>
           </nav>
+          <StatusLegend />
         </div>
       </template>
     </template>

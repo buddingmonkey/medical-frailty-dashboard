@@ -19,25 +19,32 @@ export const COMPARE_TABS_LABEL = 'Compare views'
 // The words of the tab pages that are new with the tabs, for the Vue pages and the Worker's
 // HTML. On the legal review list (docs/status.md).
 
-export const CATEGORIES_HEADING = 'Categories for comparing states'
+export const CATEGORIES_HEADING = 'Comparison categories'
 
 export const CATEGORIES_INTRO =
-  'Each category groups related diagnosis and service codes, under its federal category in the ' +
-  'law. Choose a category to see its codes and how many states list each one.'
+  'These comparison categories are this site’s own grouping, built so that every state’s list ' +
+  'can be measured the same way. They are not a state’s or CMS’s categories. Most are built ' +
+  'from AHRQ’s CCSR diagnosis groups; a state’s own category can also be mapped to one, which ' +
+  'brings in its other codes, such as service codes. Each is filed under a federal category. ' +
+  'Choose one to see its codes and how many states include each.'
+
+/** The link text to AHRQ's CCSR page (`CCSR_URL`). */
+export const CCSR_LINK_TEXT = 'About the CCSR (AHRQ)'
 
 export const CATEGORIES_DESCRIPTION =
-  'Every category this site compares state medical frailty code lists by, grouped under the ' +
-  'federal categories in H.R.1.'
+  'Every comparison category this site measures state medical frailty code lists by, grouped ' +
+  'under the federal categories in H.R.1.'
 
 export const MAP_DESCRIPTION =
-  'A map of the US for one category at a time: the share of the category’s codes that each ' +
-  'state’s medical frailty list includes.'
+  'A map of the US for one comparison category at a time: the share of the category’s ' +
+  'diagnosis codes that each state’s medical frailty code list includes.'
 
 export const STATES_LANDING_HEADING = 'States side by side'
 
 export const STATES_LANDING_INTRO =
   'Compare the lists of 2 to 4 states code by code. Start from your state to see the states ' +
-  'whose lists are most like it, or choose the states yourself.'
+  'whose lists are most like it, or choose the states yourself. Only states with a list on ' +
+  'this site can be chosen.'
 
 export const STATES_LANDING_DESCRIPTION =
   'Compare the medical frailty code lists of 2 to 4 states side by side.'

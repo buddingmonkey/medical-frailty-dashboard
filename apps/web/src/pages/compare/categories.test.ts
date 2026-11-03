@@ -47,7 +47,7 @@ describe('categories page', () => {
 
     const heading = screen.getByRole('heading', {
       level: 1,
-      name: 'Categories for comparing states',
+      name: 'Comparison categories',
     })
     // The tabs sit under the heading.
     const tabs = screen.getByRole('navigation', { name: 'Compare views' })
@@ -67,7 +67,7 @@ describe('categories page', () => {
     const medical = screen.getByRole('region', { name: 'Serious or complex medical condition' })
     expect(within(medical).getByRole('link', { name: 'Kidney failure' })).toBeTruthy()
     expect(within(medical).getByText('End-stage.')).toBeTruthy()
-    expect(document.title).toMatch(/^Categories for comparing states \| /)
+    expect(document.title).toMatch(/^Comparison categories \| /)
   })
 
   it('says so when no category is published yet', async () => {

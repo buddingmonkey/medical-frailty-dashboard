@@ -137,7 +137,7 @@ describe('tileMapTiles', () => {
       shade: 'mid',
       notReviewed: false,
       href: '/compare/psychoses?focus=MT',
-      label: 'Montana, Psychoses: 33% of the category’s codes',
+      label: 'Montana, Psychoses: 33% of the category’s diagnosis codes',
       row: 2,
       col: 2,
     })
@@ -146,14 +146,14 @@ describe('tileMapTiles', () => {
       text: '100%',
       shade: 'high',
       notReviewed: true,
-      label: 'Montana, Alcohol: 100% of the codes any state lists, not reviewed',
+      label: 'Montana, Alcohol: 100% of the entries any state lists, not yet reviewed',
     })
   })
 
-  it('a state with a list but nothing in the category: “none”, hatched, still a link', () => {
+  it('a state with a list but nothing in the category: “None”, hatched, still a link', () => {
     const ne = tileMapTiles(data, psychoses).find((t) => t.id === 'NE')
     expect(ne).toMatchObject({
-      text: 'none',
+      text: 'None',
       tableText: 'None listed',
       shade: 'none',
       href: '/compare/psychoses?focus=NE',
@@ -186,8 +186,10 @@ describe('tileMapCaption', () => {
     const [psychoses, alcohol] = data.categories
     if (!psychoses || !alcohol) throw new Error('fixture')
     expect(tileMapCaption(psychoses)).toBe(
-      'Psychoses: share of the category’s codes that each state lists',
+      'Psychoses: share of the category’s diagnosis codes that each state’s list includes',
     )
-    expect(tileMapCaption(alcohol)).toBe('Alcohol: each state’s share of the codes any state lists')
+    expect(tileMapCaption(alcohol)).toBe(
+      'Alcohol: each state’s share of the entries any state lists',
+    )
   })
 })

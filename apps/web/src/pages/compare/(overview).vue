@@ -5,6 +5,10 @@ import {
   overviewOrderAnnouncement,
   overviewOrderFromQuery,
   overviewOrderQuery,
+  OVERVIEW_CAPTION,
+  OVERVIEW_HEADING,
+  OVERVIEW_INTRO,
+  OVERVIEW_OVERALL_ORDER,
   overviewReadingNotes,
   pageTitles,
 } from '@mfcd/shared'
@@ -17,7 +21,7 @@ import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicOverview } from '../../lib/public-overview'
 
-// Which states cover what (roadmap M5 step 5): the overview matrix at /compare. The code table
+// The overview matrix (roadmap M5 step 5) at /compare. The code table
 // that lived here until this step is at /compare/codes; old links redirect (and the Worker
 // answers them with a 301).
 
@@ -57,19 +61,15 @@ const orderChoice = computed({
   },
 })
 
-const caption = 'Share of each category’s codes that each state lists'
+const caption = OVERVIEW_CAPTION
 </script>
 
 <template>
   <article class="space-y-6">
     <header class="space-y-3">
-      <h1 class="font-display text-4xl font-medium text-heading">Which states cover what</h1>
+      <h1 class="font-display text-4xl font-medium text-heading">{{ OVERVIEW_HEADING }}</h1>
       <CompareTabs />
-      <p class="max-w-prose">
-        Each row is a state; each column is a category, grouped under its federal category in the
-        law. A number is the share of the category’s codes that the state lists. Select a number to
-        see the category’s codes with that state in focus.
-      </p>
+      <p class="max-w-prose">{{ OVERVIEW_INTRO }}</p>
     </header>
 
     <p v-if="overview.error.value" role="alert" class="text-danger">
@@ -88,7 +88,7 @@ const caption = 'Share of each category’s codes that each state lists'
             class="rounded border border-input-border bg-background px-2 py-1.5"
           >
             <option value="name">Name</option>
-            <option value="overall">Overall coverage</option>
+            <option value="overall">{{ OVERVIEW_OVERALL_ORDER }}</option>
             <option value="similar">Similar states together</option>
             <option v-if="order.by === 'category'" value="column">The column you sorted</option>
           </select>

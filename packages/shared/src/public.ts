@@ -65,10 +65,25 @@ export type PublicStateSummary = z.infer<typeof publicStateSummarySchema>
 
 /** The words above a state's category table, in the Vue page and the server-rendered HTML. */
 export const stateCategoriesIntro = (stateName: string): string =>
-  `How each of ${stateName}’s own categories fits the federal categories in the law. A code ` +
-  'counts under the federal category of each category we compare states by that it falls in; ' +
-  'a code in none of them follows a mapping of the state’s category. A mapping that is not yet ' +
-  'confirmed is our best guess and has not been reviewed by our team.'
+  `How ${stateName}’s own categories line up with the five federal categories in the law. ` +
+  'This site gives each entry the federal category of the comparison category its code falls ' +
+  'in; a code in no comparison category takes the federal category mapped to the state’s own ' +
+  'category. “Not yet reviewed” means this site suggested the mapping automatically and nobody ' +
+  'has checked it yet.'
+
+/** A state category row's review status (the "Review status" column). */
+export const reviewStatusText = (confirmed: boolean): string =>
+  confirmed ? 'Reviewed' : 'Not yet reviewed (automatic suggestion)'
+
+/** On the home card when some of a state's mappings are not reviewed. */
+export const MAPPINGS_NOT_REVIEWED_NOTE =
+  'This site has not yet reviewed how all of this state’s categories fit the federal ones, so ' +
+  'some of the federal counts above come from automatic suggestions.'
+
+/** What an entry is: under the state counts on the home, states and state pages. */
+export const ENTRY_DEFINITION =
+  'An entry is one line of a state’s list: a single code, or a group of codes written with a ' +
+  'wildcard or a range.'
 
 /** Under the federal counts when an entry counts under more than one federal category. */
 export const FEDERAL_OVERLAP_NOTE =
@@ -169,6 +184,62 @@ export const SITE_NAME = 'Medical Frailty Coding Dashboard'
 /** The site covers the 50 states and DC (project lead, 2026-11-01). */
 export const STATES_AND_DC = 51
 
+/** `4 of the 50 states and DC have a list on this site.` */
+export const statesWithListText = (n: number): string =>
+  `${formatCount(n)} of the 50 states and DC have a list on this site.`
+
+/** The home page's introduction, in the Vue page and the server-rendered HTML. */
+export const HOME_INTRO =
+  'Under H.R.1 (Pub. L. 119-21), Medicaid members who are medically frail are excluded from the ' +
+  'new community engagement (work) requirements. States are publishing lists of the diagnosis ' +
+  'and service codes they use to identify medically frail members. This site puts those lists ' +
+  'side by side so you can compare them. It does not decide anyone’s eligibility.'
+
+/** The footer of every page, in the Vue app and the server-rendered HTML. */
+export const FOOTER_TEXT =
+  'Every code comes from a state’s own published documents, linked on each state’s page. This ' +
+  'site is not a state or federal source and does not determine anyone’s eligibility; check ' +
+  'the state’s document before relying on a code. No patient data.'
+
+/** The state pages' status line for a state without a list on this site. */
+export function noListText(stateName: string, announced: boolean): string {
+  return announced
+    ? `${stateName} has announced a medical frailty code list; this site has not added it yet.`
+    : `This site knows of no published medical frailty code list for ${stateName}.`
+}
+
+/** The captions of the state page's count tables. */
+export const STATE_COUNT_CAPTIONS = {
+  system: 'Entries by code system',
+  federal: 'Entries by federal category',
+  rule: 'Entries by the state’s rule on whether a code is enough by itself',
+} as const
+
+/** The state category table's last two headings and the link in each row. */
+export const REVIEW_STATUS_HEADING = 'Review status'
+export const COMPARE_THESE_CODES = 'Compare these codes'
+
+/** The date a state put on its list, for the tables and cards. */
+export const SOURCE_DATE_HEADING = 'Date on the state’s document'
+export const NO_SOURCE_DATE = 'No date on the document'
+/** When the list was added to (or last changed on) this site. */
+export const ADDED_HEADING = 'Added to this site'
+
+/** The source list's line: `PDF · state's date … · retrieved by this site …`. */
+export function sourceDetailsText(s: {
+  fileType: string
+  publisherDate: string | null
+  retrievedAt: string
+}): string {
+  return [
+    s.fileType.toUpperCase(),
+    s.publisherDate ? `state’s date ${formatDay(s.publisherDate)}` : null,
+    `retrieved by this site ${formatDay(s.retrievedAt)}`,
+  ]
+    .filter((part) => part !== null)
+    .join(' · ')
+}
+
 /** Status words for people, not the database: "published" means published on this site. */
 export const stateStatusLabels: Record<StateStatus, string> = {
   published: 'List on this site',
@@ -190,13 +261,13 @@ export function formatDay(day: string): string {
 
 /** Page titles, the same in the browser tab and the server-rendered HTML. */
 export const pageTitles = {
-  home: `${SITE_NAME}: compare state Medicaid frailty code lists`,
+  home: `${SITE_NAME}: compare state Medicaid medical frailty code lists`,
   state: (name: string) => `${name} medical frailty codes | ${SITE_NAME}`,
   notFound: `State not found | ${SITE_NAME}`,
-  compare: `Compare states by category | ${SITE_NAME}`,
-  overview: `Which states cover what | ${SITE_NAME}`,
-  categories: `Categories for comparing states | ${SITE_NAME}`,
-  map: `One category across the country | ${SITE_NAME}`,
+  compare: `Compare single codes | ${SITE_NAME}`,
+  overview: `How much of each category each state lists | ${SITE_NAME}`,
+  categories: `Comparison categories | ${SITE_NAME}`,
+  map: `One category, every state | ${SITE_NAME}`,
   statesLanding: `States side by side | ${SITE_NAME}`,
   drillDown: (label: string) => `${label} codes by state | ${SITE_NAME}`,
   categoryNotFound: `Category not found | ${SITE_NAME}`,
@@ -214,6 +285,7 @@ export const siteNav = [
   { label: 'Home', path: '/', section: false },
   { label: 'States', path: '/states', section: true },
   { label: 'Compare', path: '/compare', section: true },
+  { label: 'Search', path: '/search', section: false },
 ] as const
 
 /** The nav entry a path belongs to, or null. */

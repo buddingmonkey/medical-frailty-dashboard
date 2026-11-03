@@ -64,7 +64,9 @@ describe('home page', () => {
 
     await renderRoute('/')
 
-    const map = await screen.findByRole('group', { name: 'Map of state frailty code lists' })
+    const map = await screen.findByRole('group', {
+      name: 'Map of state medical frailty code lists',
+    })
     const ga = within(map).getByRole('link', { name: 'Georgia: list on this site, 6,047 entries' })
     expect(ga.getAttribute('href')).toBe('/states/ga')
     expect(
@@ -73,14 +75,16 @@ describe('home page', () => {
     expect(within(map).getByRole('link', { name: 'Alabama: no list yet' })).toBeTruthy()
     // States the API did not send are still drawn (the 50 states and DC).
     expect(within(map).getAllByRole('link')).toHaveLength(51)
-    expect(screen.getByText('1 of 51 states and DC have a list on this site.')).toBeTruthy()
+    expect(screen.getByText('1 of the 50 states and DC have a list on this site.')).toBeTruthy()
   })
 
   it('shows a state’s counts when it gets keyboard focus', async () => {
     serve([alabama, georgia, montana])
     const user = userEvent.setup()
     await renderRoute('/')
-    const map = await screen.findByRole('group', { name: 'Map of state frailty code lists' })
+    const map = await screen.findByRole('group', {
+      name: 'Map of state medical frailty code lists',
+    })
     const ga = within(map).getByRole('link', { name: /^Georgia/ })
 
     while (document.activeElement !== ga) await user.tab()
@@ -90,10 +94,10 @@ describe('home page', () => {
     expect(card.textContent).toContain('ICD-10-CM6,000')
     expect(card.textContent).toContain('HCPCS Level II47')
     expect(card.textContent).toContain('Substance use disorder47')
-    expect(card.textContent).toContain('Unclassified6,000')
+    expect(card.textContent).toContain('Not yet classified6,000')
     expect(card.textContent).toContain('September 15, 2026')
     expect(card.textContent).toContain(
-      'Our team has not yet confirmed how this state’s categories fit',
+      'This site has not yet reviewed how all of this state’s categories fit',
     )
     expect(card.textContent).not.toContain(FEDERAL_OVERLAP_NOTE)
     expect(
@@ -108,7 +112,9 @@ describe('home page', () => {
     serve([{ ...georgia, published: { ...p, byFederalCategory } }])
     const user = userEvent.setup()
     await renderRoute('/')
-    const map = await screen.findByRole('group', { name: 'Map of state frailty code lists' })
+    const map = await screen.findByRole('group', {
+      name: 'Map of state medical frailty code lists',
+    })
     const ga = within(map).getByRole('link', { name: /^Georgia/ })
     while (document.activeElement !== ga) await user.tab()
     expect(screen.getByRole('region', { name: 'Georgia' }).textContent).toContain(
@@ -124,8 +130,10 @@ describe('home page', () => {
     await user.click(await screen.findByRole('button', { name: 'Table' }))
 
     expect(screen.getByRole('button', { name: 'Table' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.queryByRole('group', { name: 'Map of state frailty code lists' })).toBeNull()
-    const table = screen.getByRole('table', { name: 'State frailty code lists' })
+    expect(
+      screen.queryByRole('group', { name: 'Map of state medical frailty code lists' }),
+    ).toBeNull()
+    const table = screen.getByRole('table', { name: 'State medical frailty code lists' })
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows.map((r) => r.querySelector('th')?.textContent.trim())).toEqual([
       'Alabama',
@@ -167,7 +175,7 @@ describe('home page and the tile map', () => {
     serve([georgia])
     await renderRoute('/')
 
-    await screen.findByText('1 of 51 states and DC have a list on this site.')
+    await screen.findByText('1 of the 50 states and DC have a list on this site.')
     const link = screen.getByRole('link', { name: TILE_MAP_HOME_LINK })
     expect(link.getAttribute('href')).toBe('/compare/map')
     expect(screen.queryByRole('heading', { name: TILE_MAP_HEADING })).toBeNull()

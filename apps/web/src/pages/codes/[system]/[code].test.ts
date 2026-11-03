@@ -124,7 +124,7 @@ describe('/codes/:system/:code', () => {
     )
     expect(row.textContent).toContain('Georgia’s text')
     expect(row.textContent).toContain('Tier 1')
-    expect(row.textContent).toContain('Qualifies alone (inferred)')
+    expect(row.textContent).toContain('Enough by itself (inferred)')
     expect(row.textContent).toContain('Behavioral Health')
     const source = within(row).getByRole('link', { name: /Georgia list/ })
     expect(source.getAttribute('href')).toBe('https://example.gov/GA.pdf')
@@ -157,7 +157,7 @@ describe('/codes/:system/:code', () => {
     await renderRoute('/codes/icd-10-cm/F20.0')
     const table = await screen.findByRole('table', { name: 'Listed' })
     expect(within(table).queryByRole('columnheader', { name: 'Rule' })).toBeNull()
-    expect(table.textContent).not.toContain('Qualifies alone')
+    expect(table.textContent).not.toContain('Enough by itself')
   })
 
   it('says CPT text is the state’s own when there is no official description', async () => {
@@ -172,7 +172,7 @@ describe('/codes/:system/:code', () => {
       },
     })
     await renderRoute('/codes/cpt/99213')
-    expect(await screen.findByText(/each state published/)).toBeTruthy()
+    expect(await screen.findByText(/the text it published/)).toBeTruthy()
   })
 
   it('says it is loading until the code arrives', async () => {

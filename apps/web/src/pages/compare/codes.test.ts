@@ -188,7 +188,7 @@ describe('compare page', () => {
     await renderRoute('/compare/codes')
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Compare states by category' }),
+      await screen.findByRole('heading', { level: 1, name: 'Compare single codes' }),
     ).toBeTruthy()
     expect(screen.getByText(/pick a category and at least one state/i)).toBeTruthy()
     expect(screen.queryByRole('table')).toBeNull()
@@ -198,7 +198,7 @@ describe('compare page', () => {
   it('offers only states that have a list', async () => {
     await renderRoute('/compare/codes')
 
-    const states = await screen.findByRole('group', { name: 'States' })
+    const states = await screen.findByRole('group', { name: 'States to compare' })
     await within(states).findByRole('checkbox', { name: 'Georgia' })
     expect(within(states).getAllByRole('checkbox')).toHaveLength(2)
     expect(within(states).getByRole('checkbox', { name: 'Montana' })).toBeTruthy()
@@ -213,7 +213,9 @@ describe('compare page', () => {
     await user.click(await screen.findByRole('checkbox', { name: 'Montana' }))
     await user.click(screen.getByRole('checkbox', { name: 'Georgia' }))
     await user.selectOptions(screen.getByLabelText('Code system'), 'icd10cm')
-    await user.click(screen.getByRole('checkbox', { name: /only codes that qualify alone/i }))
+    await user.click(
+      screen.getByRole('checkbox', { name: /only codes that are enough by themselves/i }),
+    )
 
     await waitFor(() => {
       expect(router.currentRoute.value.fullPath).toBe(
@@ -245,12 +247,12 @@ describe('compare page', () => {
     expect(desc?.textContent).toContain('Paranoid schizophrenia')
     expect(ga?.textContent).toContain('Listed')
     expect(ga?.textContent).toContain('Attachment A')
-    expect(ga?.textContent).toContain('Qualifies alone')
+    expect(ga?.textContent).toContain('Enough by itself')
     expect(mt?.textContent).toContain('Covered by F20.*')
-    expect(mt?.textContent).toContain('Needs another code (inferred)')
-    expect(mt?.textContent).toContain('Filed under SMI')
+    expect(mt?.textContent).toContain('Needs another code or documentation (inferred)')
+    expect(mt?.textContent).toContain('State’s category: SMI')
 
-    expect(within(cpt).getAllByRole('cell')[0]?.textContent).toContain('Montana’s text')
+    expect(within(cpt).getAllByRole('cell')[0]?.textContent).toContain('As published by Montana')
     expect(within(cpt).getAllByRole('cell')[1]?.textContent).toContain('Not listed')
     expect(within(f10).getAllByRole('cell')[2]?.textContent).toContain('3 narrower codes listed')
   })
@@ -261,7 +263,9 @@ describe('compare page', () => {
 
     expect(await screen.findByText('230 codes, page 1 of 3')).toBeTruthy()
     expect(
-      screen.getByRole('link', { name: /download all 230 rows \(csv\)/i }).getAttribute('href'),
+      screen
+        .getByRole('link', { name: /download this table \(csv, 230 rows\)/i })
+        .getAttribute('href'),
     ).toBe('/compare/codes.csv?states=GA%2CMT&category=sud')
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Previous page' }).disabled).toBe(
       true,
@@ -320,6 +324,8 @@ describe('compare page', () => {
     )
     await renderRoute('/compare/codes?states=ZZ&category=sud')
 
-    expect((await screen.findByRole('alert')).textContent).toContain('Unknown state: ZZ')
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'This comparison link is not valid.',
+    )
   })
 })

@@ -1,6 +1,9 @@
 import {
   FEDERAL_OVERLAP_NOTE,
+  FOOTER_TEXT,
+  HOME_INTRO,
   OVERVIEW_DESCRIPTION,
+  STATUTE_URL,
   pageTitles,
   stateCategoriesIntro,
   TILE_MAP_HEADING,
@@ -153,7 +156,7 @@ describe('GET /states/:slug (server-rendered)', () => {
 
     expect(res.status).toBe(200)
     const app = appHtml(await res.text())
-    expect(app).toContain('Montana has announced a list of medical frailty codes')
+    expect(app).toContain('Montana has announced a medical frailty code list')
   })
 
   it('redirects upper case to the lowercase address', async () => {
@@ -200,7 +203,12 @@ describe('GET / (server-rendered)', () => {
     const app = appHtml(html)
     expect(app).toContain('<a href="/states/ga">Georgia</a>')
     expect(app).toContain('List on this site')
-    expect(app).toContain('1 of 51 states and DC have a list on this site.')
+    expect(app).toContain('1 of the 50 states and DC have a list on this site.')
+    // The plain-language pass (M6 step 3b): the intro, the law, and the Vue footer's words.
+    expect(app).toContain(`<p>${HOME_INTRO}</p>`)
+    expect(app).toContain(`<a href="${STATUTE_URL}" rel="noopener noreferrer external">`)
+    expect(app).toMatch(/<footer>\s*<p>[^<]*No patient data\.<\/p>/)
+    expect(app).toContain(FOOTER_TEXT)
     expect(jsonLd(html)[0]).toMatchObject({
       '@type': 'WebSite',
       url: 'http://frailty.example.org/',
@@ -239,7 +247,7 @@ describe('GET /compare/map (server-rendered tile map)', () => {
 
     // The default is the first category by federal order: serious mental illness.
     expect(app).toMatch(
-      /<caption>\s*Serious mental illness: share of the category’s codes that each state lists\s*<\/caption>/,
+      /<caption>\s*Serious mental illness: share of the category’s diagnosis codes that each state’s list includes\s*<\/caption>/,
     )
     const table = app.slice(app.search(/<caption>\s*Serious mental illness:/))
     const rows = [...table.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) =>
@@ -249,7 +257,7 @@ describe('GET /compare/map (server-rendered tile map)', () => {
     expect(rows).toHaveLength(52)
     expect(rows[1]).toContain('Alabama')
     expect(rows).toContain(
-      '<th scope="row"><a href="/states/ga">Georgia</a></th> <td><a href="/compare/serious-mental-illness?focus=GA">50%</a> (not reviewed)</td>',
+      '<th scope="row"><a href="/states/ga">Georgia</a></th> <td><a href="/compare/serious-mental-illness?focus=GA">50%</a> (not yet reviewed)</td>',
     )
     expect(rows).toContain(
       '<th scope="row"><a href="/states/mt">Montana</a></th> <td><a href="/compare/serious-mental-illness?focus=MT">100%</a></td>',
@@ -340,7 +348,7 @@ describe('GET /compare/codes (server-rendered, noindex)', () => {
     expect(html).toContain(`<title>${pageTitles.compare}</title>`)
     expect(html).toContain('<meta name="robots" content="noindex" />')
     expect(html).toMatch(/<link rel="canonical" href="https?:\/\/[^"]+\/compare\/codes" \/>/)
-    expect(html).toContain('<h1>Compare states by category</h1>')
+    expect(html).toContain('<h1>Compare single codes</h1>')
     expect(html).toContain('<th scope="col"><a href="/states/ga">Georgia</a></th>')
     expect(html).toContain('<th scope="col"><a href="/states/ne">Nebraska</a></th>')
     // GA's F codes count as SUD by the chapter override; Nebraska has no list.
@@ -359,7 +367,7 @@ describe('GET /compare/codes (server-rendered, noindex)', () => {
 
   it('says what was wrong with a bad selection', async () => {
     const html = await (await get('/compare/codes?states=ZZ&category=sud')).text()
-    expect(html).toContain('Unknown state: ZZ')
+    expect(html).toContain('No state has the code ZZ. Pick a category and states to compare.')
   })
 })
 
@@ -379,7 +387,7 @@ describe('GET /compare/codes.csv', () => {
     )
     expect(lines).toHaveLength(3)
     expect(lines[1]).toBe(
-      'ICD-10-CM,F10.*,,,Listed,F10.*,,Needs another code,The state says so,Mental health,Substance use disorder,No list on this site,,,,,,',
+      'ICD-10-CM,F10.*,,,Listed,F10.*,,Needs another code or documentation,Stated by the state,Mental health,Substance use disorder,No list on this site,,,,,,',
     )
   })
 
@@ -404,6 +412,7 @@ describe('main navigation in the server-rendered HTML', () => {
         ['Home', '/'],
         ['States', '/states'],
         ['Compare', '/compare'],
+        ['Search', '/search'],
       ] as const) {
         const mark =
           label !== current ? '' : path === href ? ' aria-current="page"' : ' aria-current="true"'
@@ -455,9 +464,9 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
 
   it('renders the whole matrix as a real table: federal groups, categories, numbers in words', async () => {
     const app = appHtml(await (await get('/compare')).text())
-    expect(app).toContain('<h1>Which states cover what</h1>')
+    expect(app).toContain('<h1>How much of each category each state lists</h1>')
     expect(app).toMatch(
-      /<caption>\s*Share of each category’s codes that each state lists\s*<\/caption>/,
+      /<caption>\s*Share of each category’s diagnosis codes that each state’s list includes\s*<\/caption>/,
     )
     // Two header rows: the federal parents (in federal order), then the categories.
     expect(app).toContain('<th scope="col" rowspan="2">State</th>')
@@ -465,7 +474,7 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     expect(app).toContain(
       '<th scope="colgroup" colspan="1">Physical, intellectual or developmental disability</th>',
     )
-    expect(app).toContain('<th scope="col" rowspan="2">Overall</th>')
+    expect(app).toContain('<th scope="col" rowspan="2">Overall (average)</th>')
     expect(app.indexOf('Serious mental illness')).toBeLessThan(app.indexOf('Equipment'))
     expect(app.indexOf('Equipment')).toBeLessThan(app.indexOf('Kidney failure'))
     // A category without a full code list is marked.
@@ -482,7 +491,7 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
       (m[1] ?? '').replace(/\s+/g, ' ').trim(),
     )
     expect(cells).toEqual([
-      '<a href="/compare/serious-mental-illness?focus=GA">50%</a> (not reviewed)',
+      '<a href="/compare/serious-mental-illness?focus=GA">50%</a> (not yet reviewed)',
       '<a href="/compare/equipment?focus=GA">100%</a>',
       '<a href="/compare/kidney-failure?focus=GA">0%</a>',
       '50%',
@@ -512,7 +521,9 @@ describe('GET /compare (server-rendered overview, indexed)', () => {
     expect(app.indexOf('/states/ga"')).toBeLessThan(app.indexOf('/states/la"'))
 
     const overall = appHtml(await (await get('/compare?order=overall&dir=asc')).text())
-    expect(overall).toContain('<th scope="col" rowspan="2" aria-sort="ascending">Overall</th>')
+    expect(overall).toContain(
+      '<th scope="col" rowspan="2" aria-sort="ascending">Overall (average)</th>',
+    )
   })
 
   it('state page: says a code can count under more than one federal category', async () => {
@@ -568,13 +579,13 @@ describe('GET /compare/:slug (server-rendered drill-down)', () => {
     expect(app).toContain('Disabling mental disorder')
     expect(app).toContain('TST001')
     expect(app).toContain('Agency for Healthcare Research and Quality')
-    expect(app).toMatch(/<caption>\s*Serious mental illness: codes by how many states list them/)
+    expect(app).toMatch(/<caption>\s*Serious mental illness: codes by how many states include them/)
     // Group rows, then code rows with counts and rules in words.
     expect(app).toMatch(
-      /<th scope="rowgroup"[^>]*>F20<\/th>\s*<td>Code F20<\/td>\s*<td>2 of 2 list any<\/td>/,
+      /<th scope="rowgroup"[^>]*>F20<\/th>\s*<td>Code F20<\/td>\s*<td>2 of 2 include any<\/td>/,
     )
     expect(app).toMatch(
-      /<th scope="row">F20\.0<\/th>\s*<td>Code F200<\/td>\s*<td>2 of 2 states<\/td>\s*<td>Qualifies alone 2/,
+      /<th scope="row">F20\.0<\/th>\s*<td>Code F200<\/td>\s*<td>2 of 2 states<\/td>\s*<td>Enough by itself: 2 states/,
     )
     expect(app.indexOf('>F20<')).toBeLessThan(app.indexOf('>F31<'))
     // Links: back to the overview, the code table for the federal parent, the CSV, details.
@@ -587,7 +598,7 @@ describe('GET /compare/:slug (server-rendered drill-down)', () => {
     // Without a universe: the note says why codes no state lists cannot be shown.
     const equipment = appHtml(await (await get('/compare/equipment')).text())
     expect(equipment).toContain(
-      'No full code list for this category, so only codes some state lists are shown.',
+      'This category has no reference list, so only codes some state includes are shown.',
     )
   })
 

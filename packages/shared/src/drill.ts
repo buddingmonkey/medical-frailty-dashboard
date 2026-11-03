@@ -31,9 +31,9 @@ export type DrillShow = (typeof drillShows)[number]
 
 export const drillShowLabels: Record<DrillShow, string> = {
   all: 'All codes',
-  everyone: 'Listed by every state',
-  gaps: 'Gaps (under half)',
-  one: 'Only one state',
+  everyone: 'Included by every state with a list',
+  gaps: 'Included by fewer than half',
+  one: 'Included by one state only',
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -354,18 +354,60 @@ export const CCSR_CITATION =
   'Clinical Classifications Software Refined (CCSR) for ICD-10-CM Diagnoses, v2026.1. ' +
   'Healthcare Cost and Utilization Project (HCUP). Agency for Healthcare Research and Quality.'
 
+/** AHRQ's page for the CCSR, the "learn more" link wherever CCSR groups are named. */
+export const CCSR_URL = 'https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp'
+
+/** Under the header: what makes a comparison category (the site's own grouping). */
+export const DRILL_ABOUT =
+  'A comparison category: this site’s own grouping of codes, so that every state’s list can be ' +
+  'measured the same way.'
+
+/** The `<details>` summary over the category's CCSR groups. */
+export const drillCcsrHeading = (n: number): string =>
+  `Diagnosis groups this category is built from (${formatCount(n)} CCSR ${n === 1 ? 'group' : 'groups'})`
+
+/** The table's caption. */
+export const drillCaption = (label: string): string =>
+  `${label}: codes by how many states include them`
+
+/** Column headings of the drill-down table. */
+export const DRILL_COUNT_HEADING = 'States that include it'
+export const DRILL_RULES_HEADING = 'State rules'
+
+/** Above the table: what the counts count, and what a group is. */
+export const DRILL_COUNT_NOTE =
+  'A state includes a code when its list has the code itself or a wildcard or range that ' +
+  'covers it. The second number is the number of states with a list on this site. Codes are ' +
+  'grouped by their first 3 characters (ICD-10-CM) or by code system.'
+
 export const drillCountText = (n: number, m: number): string =>
   `${formatCount(n)} of ${formatCount(m)} ${m === 1 ? 'state' : 'states'}`
 
 export const drillGroupCountText = (n: number, m: number): string =>
-  `${formatCount(n)} of ${formatCount(m)} list any`
+  `${formatCount(n)} of ${formatCount(m)} include any`
+
+/** The details panel's count line: `Included by 3 of 4 states with a list.` */
+export const drillDetailCountText = (n: number, m: number): string =>
+  `Included by ${drillCountText(n, m)} with a list.`
 
 export function drillRuleText(rule: DrillRule): string {
   const inferred = rule.inferred > 0 ? ` (${formatCount(rule.inferred)} inferred)` : ''
-  return `${qualificationLabels[rule.qualification]} ${formatCount(rule.count)}${inferred}`
+  const states = `${formatCount(rule.count)} ${rule.count === 1 ? 'state' : 'states'}`
+  return `${qualificationLabels[rule.qualification]}: ${states}${inferred}`
 }
 
-export const DRILL_NOBODY = 'No state lists it'
+export const DRILL_NOBODY = 'No state includes it'
+
+/** The checkbox that adds the category's codes no state includes. */
+export const DRILL_UNIVERSE_LABEL = 'Also show codes no state includes'
+
+/** The details panel's placeholder. */
+export const DRILL_DETAILS_PLACEHOLDER =
+  'Choose “Details” on a code to see which states include it, how (listed or covered), and ' +
+  'whether it is enough by itself.'
+
+/** In the details panel, under "Not listed". */
+export const DRILL_NOT_LISTED_NOTE = 'States with a list that do not include it'
 
 export function drillRulesText(rules: readonly DrillRule[]): string {
   return rules.length === 0 ? DRILL_NOBODY : rules.map(drillRuleText).join('; ')
@@ -377,11 +419,11 @@ export function drillFiledUnder(match: Pick<DrillMatch, 'stateCategory' | 'state
   return stateCategoryName(match.stateCategory, match.stateSubcategory)
 }
 
-/** Beside "Include codes no state lists": what the full list is, or why there is none. */
+/** Beside the universe checkbox: what the reference list is, or why there is none. */
 export function drillUniverseNote(universeSize: number): string {
   return universeSize > 0
-    ? `Full code list: the ${formatCount(universeSize)} billable ICD-10-CM codes in the category’s CCSR groups.`
-    : 'No full code list for this category, so only codes some state lists are shown.'
+    ? `This category’s reference list has ${formatCount(universeSize)} billable ICD-10-CM codes (from its CCSR groups); turn this on to see the ones no state includes.`
+    : 'This category has no reference list, so only codes some state includes are shown.'
 }
 
 /** Rules in badge order, as the API builds them from counts. */
@@ -402,9 +444,9 @@ export function drillStatusText(
   >,
 ): string {
   const parts = [
-    `${formatCount(data.states.length)} ${data.states.length === 1 ? 'state' : 'states'} with lists.`,
+    `${formatCount(data.states.length)} ${data.states.length === 1 ? 'state has' : 'states have'} a list on this site.`,
     `${formatCount(data.totalRows)} ${data.totalRows === 1 ? 'code' : 'codes'} in ${formatCount(data.totalGroups)} ${data.totalGroups === 1 ? 'group' : 'groups'}${data.pageCount > 1 ? `, page ${String(data.page)} of ${String(data.pageCount)}` : ''}.`,
   ]
-  if (data.query.all) parts.push('Including codes no state lists.')
+  if (data.query.all) parts.push('Codes no state includes are shown too.')
   return parts.join(' ')
 }

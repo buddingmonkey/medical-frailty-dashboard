@@ -161,7 +161,10 @@ describe('GET /api/public/states-compare', () => {
         'E0602: exact unknown | not_listed | not_listed',
       ],
       ['Kidney failure 0/0/1 1/1', 'N18.6: not_listed | not_listed | exact standalone'],
-      ['Not in a unified category 0/0/1 1/1', 'Z99.2: not_listed | not_listed | exact standalone'],
+      [
+        'Not in any comparison category 0/0/1 1/1',
+        'Z99.2: not_listed | not_listed | exact standalone',
+      ],
     ])
     expect(body.groups.at(-1)).toMatchObject({ key: 'none', slug: null })
   })

@@ -205,7 +205,7 @@ export type StatesCompareResponse = z.infer<typeof statesCompareResponseSchema>
 // ---------------------------------------------------------------------------------------------
 // Words
 
-export const STATES_COMPARE_NONE_LABEL = 'Not in a unified category'
+export const STATES_COMPARE_NONE_LABEL = 'Not in any comparison category'
 
 /** `Georgia vs Louisiana vs Montana`. */
 export const statesCompareNames = (names: readonly string[]): string => names.join(' vs ')
@@ -218,9 +218,13 @@ export const similarityText = (jaccard: number): string => jaccard.toFixed(2)
 
 /** What the similarity measures, beside the number. */
 export const SIMILARITY_NOTE =
-  'Similarity is the share of codes the two lists have in common (Jaccard index, 0 to 1): ' +
-  'every billable ICD-10-CM code either state lists or covers with a wildcard or range, plus ' +
-  'their other entries, counted once each.'
+  'Similarity is the share of codes the two lists have in common, from 0 (nothing shared) to 1 ' +
+  '(identical). It compares every billable ICD-10-CM code each list includes (listed, or ' +
+  'covered by a wildcard or range) plus each list’s other entries, each counted once. (This is ' +
+  'the Jaccard index: shared codes divided by all codes in either list.)'
+
+/** The similarity tile's label. */
+export const SIMILARITY_LABEL = 'Similarity (0–1)'
 
 /** Says a chosen state has no list, so nothing is compared. */
 export function statesCompareNoListText(names: readonly string[]): string {
@@ -251,6 +255,18 @@ export const statesCompareGroupCountText = (n: number): string =>
 export const compareWithText = (stateName: string, n: number): string =>
   `Compare ${stateName} with ${String(n)} ${n === 1 ? 'state' : 'states'}`
 
+/** The comparison's state pickers; the last two are optional. */
+export const STATES_PICKER_LABELS = [
+  'First state',
+  'Second state',
+  'Third state (optional)',
+  'Fourth state (optional)',
+] as const
+
+/** The not-found page's explanation, before its example link. */
+export const STATES_COMPARE_NOT_FOUND_TEXT =
+  'A comparison address names 2 to 4 states that have a list on this site, like'
+
 /** How many states the similar-states list lets a reader add to the state itself. */
 export const SIMILAR_PICK_MAX = STATES_COMPARE_MAX - 1
 
@@ -264,17 +280,30 @@ function andList(names: readonly string[]): string {
 export const statesCompareCaption = (names: readonly string[], diff: boolean): string =>
   diff ? `Codes where ${andList(names)} differ` : `Every code of ${andList(names)}`
 
-/** Summary labels: codes only one state lists or covers, and codes they all do. */
-export const statesCompareOnlyLabel = (name: string): string => `Only ${name}`
-export const statesCompareAllLabel = (n: number): string => (n === 2 ? 'Both' : `All ${String(n)}`)
+/** Summary labels: codes only one state includes (lists or covers), and codes they all do. */
+export const statesCompareOnlyLabel = (name: string): string => `Only ${name} includes`
+export const statesCompareAllLabel = (n: number): string =>
+  n === 2 ? 'Both include' : `All ${String(n)} include`
 
 /** What the summary counts. */
 export const STATES_COMPARE_SUMMARY_NOTE =
-  'Each code here is one entry from the chosen lists: a single code, a wildcard or a range. ' +
-  'A state counts a code when it lists it or covers it with a broader entry.'
+  'These counts are entries from the chosen lists (a single code, a wildcard or a range each). ' +
+  'A state includes an entry when its list has it or covers it with a wildcard or range.'
+
+/** After the summary note when a similarity is shown: the two bases differ. */
+export const STATES_COMPARE_BASIS_NOTE =
+  'Similarity compares the expanded ICD-10-CM codes, so it is on a different basis from the ' +
+  'counts.'
 
 /** The intro under the heading. */
 export const STATES_COMPARE_INTRO =
-  'Where these states’ medical frailty code lists differ, grouped by the same categories as the ' +
-  'overview. A code differs when some of the states list or cover it and others do not, or ' +
-  'when all of them do under different rules.'
+  'Where these states’ medical frailty code lists differ, grouped by the same comparison ' +
+  'categories as the overview. A code differs when some of these states include it (listed, or ' +
+  'covered by a wildcard or range) and others do not, or when all include it but with ' +
+  'different rules on whether it is enough by itself. When a state does not say whether a code ' +
+  'is enough by itself, that is not treated as a difference.'
+
+/** The row mark and the group count when codes differ. */
+export const STATES_COMPARE_DIFFERS = 'Differs'
+export const statesCompareGroupDiffText = (differing: number, all: number): string =>
+  `${formatCount(differing)} of ${formatCount(all)} ${all === 1 ? 'code differs' : 'codes differ'}`

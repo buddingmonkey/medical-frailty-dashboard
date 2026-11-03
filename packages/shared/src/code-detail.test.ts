@@ -47,7 +47,7 @@ describe('codeDetailGroups', () => {
     for (const status of compareStatuses) {
       expect(codeDetailStatusHelp[status]).toMatch(/^[A-Z].*\.$/)
     }
-    expect(CODE_DETAIL_CONFIRMED.heading).toBe('Confirmed')
+    expect(CODE_DETAIL_CONFIRMED.heading).toBe('Included')
   })
 })
 
@@ -78,13 +78,13 @@ describe('show_qualification', () => {
 describe('wording', () => {
   it('titles the page by the code', () => {
     expect(codeDetailTitle('F20.0')).toBe(
-      'F20.0: which states list it | Medical Frailty Coding Dashboard',
+      'F20.0: which states include it | Medical Frailty Coding Dashboard',
     )
   })
 
   it('says where the description comes from, and that CPT text is the states’ own', () => {
     expect(codeDetailDescriptionNote('icd10cm', true)).toMatch(/CMS/)
-    expect(codeDetailDescriptionNote('cpt', false)).toMatch(/each state published/)
+    expect(codeDetailDescriptionNote('cpt', false)).toMatch(/the text it published/)
   })
 })
 
