@@ -96,11 +96,13 @@ interface CallOptions {
   /** Raw body, sent as is (instead of `body`). */
   rawBody?: string | Uint8Array<ArrayBuffer>
   vars?: Partial<Env>
+  /** Extra request headers, e.g. CF-Connecting-IP. */
+  headers?: Record<string, string>
 }
 
 /** Calls the app with a configured Access setup; `vars` overrides any binding. */
 export function call(path: string, options: CallOptions = {}): Promise<Response> {
-  const headers = new Headers()
+  const headers = new Headers(options.headers)
   if (options.token) headers.set('Cf-Access-Jwt-Assertion', options.token)
   const host = options.host ?? 'frailty.example.com'
   const method = options.method ?? 'GET'

@@ -44,6 +44,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # wrangler.jsonc holds placeholder D1 ids; the real one comes from the GitHub environment
+      # (scripts/d1-ids.ts, docs/deployment.md).
+      - name: Set the D1 database id
+        env:
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+          TARGET: ${{ inputs.environment }}
+        run: |
+          test -n "$D1_DATABASE_ID" || {
+            echo "::error::Set D1_DATABASE_ID in the $TARGET environment"
+            exit 1
+          }
+          node scripts/d1-ids.ts "--$TARGET" "$D1_DATABASE_ID"
+
       - run: pnpm install --frozen-lockfile
 
       # Downloads the pinned CMS and AHRQ CCSR files and checks their SHA-256.

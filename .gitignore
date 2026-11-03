@@ -166,3 +166,5 @@ blob-report/
 
 # Builder worktrees (Agent isolation: "worktree"; .claude/agents/builder.md)
 .claude/worktrees/
+# wrangler.jsonc with the D1 ids from apps/api/.env.cloudflare (scripts/d1-ids.ts)
+apps/api/wrangler.local-ids.jsonc

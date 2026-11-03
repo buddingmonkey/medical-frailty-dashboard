@@ -16,6 +16,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { localConfigArgs } from './d1-ids.ts'
+
 /**
  * Columns too long for one statement, written in pieces after the rows (`appendSql`). Their
  * tables are copied from `d1 execute --json` rows instead of `d1 export`.
@@ -165,8 +167,18 @@ const redact = (text: string) =>
     .replace(/https:\/\/\S+/g, '<url>')
     .slice(-800)
 
+/**
+ * The D1 ids (scripts/d1-ids.ts): CI wrote them into wrangler.jsonc; on a laptop they come from
+ * apps/api/.env.cloudflare through a gitignored copy of the config.
+ */
+let configArgs: string[] | undefined
+function idsConfig(): string[] {
+  configArgs ??= process.env['GITHUB_ACTIONS'] === 'true' ? [] : localConfigArgs().args
+  return configArgs
+}
+
 function wrangler(args: string[]): string {
-  const r = spawnSync('pnpm', ['exec', 'wrangler', ...args], {
+  const r = spawnSync('pnpm', ['exec', 'wrangler', ...args, ...idsConfig()], {
     cwd: apiDir,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
