@@ -163,3 +163,6 @@ vite.config.ts.timestamp-*
 playwright-report/
 test-results/
 blob-report/
+
+# Builder worktrees (Agent isolation: "worktree"; .claude/agents/builder.md)
+.claude/worktrees/
