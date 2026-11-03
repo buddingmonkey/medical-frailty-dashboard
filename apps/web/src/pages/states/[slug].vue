@@ -24,6 +24,10 @@ import {
   sourceDetailsText,
   STATE_COUNT_CAPTIONS,
   stateCategoriesIntro,
+  learnMore,
+  REPORT_LIST_LINK_TEXT,
+  REPORT_PROBLEM_URL,
+  reportListText,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
@@ -33,6 +37,7 @@ import SimilarStates from '../../components/states/SimilarStates.vue'
 import { ApiError } from '../../lib/api'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicState } from '../../lib/public-states'
+import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
 // One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
 // the federal ones, the states with the most similar lists (M5 step 7), the source documents,
@@ -117,6 +122,10 @@ function categoryName(category: string, subcategory: string) {
 
     <section v-if="!published" class="max-w-prose">
       <p class="text-lg">{{ noListText(state.name, state.status === 'announced') }}</p>
+      <p class="mt-3">
+        {{ reportListText(state.name) }}
+        <AboutLinkView :link="{ text: REPORT_LIST_LINK_TEXT, href: REPORT_PROBLEM_URL }" />
+      </p>
     </section>
 
     <template v-else>
@@ -188,6 +197,7 @@ function categoryName(category: string, subcategory: string) {
         </h2>
         <p class="max-w-prose">
           {{ stateCategoriesIntro(state.name) }}
+          <AboutLinkView :link="learnMore.stateCategories" />
         </p>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -270,6 +280,7 @@ function categoryName(category: string, subcategory: string) {
             >
           </li>
         </ul>
+        <p class="max-w-prose"><AboutLinkView :link="learnMore.downloads" /></p>
       </section>
 
       <section aria-labelledby="versions-heading" class="space-y-4">

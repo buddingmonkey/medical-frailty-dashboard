@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { COMPARE_LEGEND_HEADING, compareLegend } from '@mfcd/shared'
+import { COMPARE_LEGEND_HEADING, compareLegend, learnMore } from '@mfcd/shared'
 import { useId } from 'vue'
+import AboutLinkView from '../about/AboutLinkView.vue'
 
 // What each cell word and the badges mean (M6 step 3b): under every code table (single codes,
 // a category's codes, states side by side). Wording in packages/shared/src/compare.ts.
@@ -17,5 +18,6 @@ const headingId = useId()
         <dd class="inline">{{ ' ' }}{{ item.text }}</dd>
       </div>
     </dl>
+    <p><AboutLinkView :link="learnMore.badges" /></p>
   </section>
 </template>

@@ -1,5 +1,10 @@
 import {
+  aboutPage,
+  accessibilityPage,
   codeSystemLabels,
+  disclaimerPage,
+  infoPages,
+  privacyPage,
   codeUrlPath,
   COMPARE_INVALID_LINK,
   compareUnknownStatesText,
@@ -55,6 +60,7 @@ import {
   statesPage,
 } from '../seo/pages'
 import { codeNotFoundPage, codePage, searchPage } from '../seo/code-page'
+import { infoPageParts } from '../seo/info-page'
 import type { AppEnv } from '../types'
 
 // Public pages rendered on the server (roadmap M3 step 4; docs/seo.md), the state downloads and
@@ -91,7 +97,14 @@ async function sendPage(c: Context<AppEnv>, parts: PageParts) {
   // The header too, for crawlers that read headers before markup (M6 step 5). While the site
   // is private, the site gate replaces it with `noindex, nofollow` on every response.
   if (parts.noindex) c.header('X-Robots-Tag', 'noindex')
-  return c.html(await renderInto(await indexHtml(c), parts), parts.status)
+  // The footer's "Data last updated" (M8 step 4): from the page's own query when it has it
+  // (the state summaries, a code page), else one small aggregate over the published versions.
+  // Only on a cache miss: the page cache sits in front of this.
+  const dataUpdatedAt =
+    parts.dataUpdatedAt !== undefined
+      ? parts.dataUpdatedAt
+      : await listsUpdatedAt(createDb(c.env.DB))
+  return c.html(await renderInto(await indexHtml(c), { ...parts, dataUpdatedAt }), parts.status)
 }
 
 const safeDecode = (path: string) => {
@@ -182,6 +195,15 @@ export const pagesRoute = new Hono<AppEnv>()
     const { items } = await publicSummaries(createDb(c.env.DB))
     return sendPage(c, statesPage(items, origin(c)))
   })
+  // About/methodology, disclaimer, privacy, accessibility (roadmap M8 step 4): fixed words.
+  .get(aboutPage.path, pageCache, async (c) => sendPage(c, infoPageParts(aboutPage, origin(c))))
+  .get(disclaimerPage.path, pageCache, async (c) =>
+    sendPage(c, infoPageParts(disclaimerPage, origin(c))),
+  )
+  .get(privacyPage.path, pageCache, async (c) => sendPage(c, infoPageParts(privacyPage, origin(c))))
+  .get(accessibilityPage.path, pageCache, async (c) =>
+    sendPage(c, infoPageParts(accessibilityPage, origin(c))),
+  )
   // Search runs in the browser; the server sends its heading and `noindex` (M6 step 5).
   .get('/search', pageCache, async (c) => sendPage(c, searchPage(origin(c))))
   // One code's page (roadmap M6 step 5), from the API's loader: there is one matcher.
@@ -496,6 +518,8 @@ export const pagesRoute = new Hono<AppEnv>()
         return url(`${base}/compare/${u.slug}`, newest !== undefined && newest > day ? newest : day)
       }),
       ...items.map((s) => url(`${base}/states/${s.slug}`, s.published?.updatedAt?.slice(0, 10))),
+      // About/methodology and the policy pages: fixed words, so no lastmod.
+      ...infoPages.map((page) => url(`${base}${page.path}`)),
       '</urlset>',
       '',
     ].join('\n')
