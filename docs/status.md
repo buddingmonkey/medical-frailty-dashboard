@@ -243,6 +243,7 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
   Categories (`/compare/categories`, new), Map (`/compare/map`, new; the only place for the tile map since 2026-11-03, when the project lead moved it off home; old `/?category=` links get a 301 there), States side
   by side (`/compare/states`, new, with "States like mine") and Single codes. Matrix column
   labels link to their category. `categories` and `map` are reserved slugs.
+- **M6 step 1 done** (branch `m6-step1-search`): `GET /api/public/codes/search` (code prefix or words; state and system filters; `listedBy`), `ref_codes_fts` over the CMS text (migration 0012, backfilled in the migration), query schema in `packages/shared/src/search.ts`.
 - **M6 step 3 done** (branch `m6-step3-code-detail`): `/codes/<system>/<code>` (SPA) and `GET /api/public/codes/:system/:code`: every state grouped by status, "Confirmed" (listed, covered) first, each group with one sentence of help; listed states show the entry as published, the state's text, category, tier, rule and source. Matching reuses the drill-down SQL. The API reads `app_meta.show_qualification` (first route to do so). Drill-down codes link to their page.
 - **51-state seed** on preview (PR #66): 4 real states (300 entries each), 40 synthetic lists,
   4 announced, 3 none.
