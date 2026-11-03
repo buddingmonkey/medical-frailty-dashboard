@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { type AiComplete, claudeComplete } from './ai/claude'
 import type { GetJwks } from './auth/access'
 import { adminWriteGuard } from './middleware/admin-write-guard'
+import { environmentBanner } from './middleware/environment-banner'
 import { publicCache } from './middleware/public-cache'
 import { publicGetOnly } from './middleware/public-get-only'
 import { requireAdmin } from './middleware/require-admin'
@@ -41,6 +42,7 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   const app = new Hono<AppEnv>()
 
   app.use(securityHeaders)
+  app.use(environmentBanner)
   app.use(siteGate(getJwks))
 
   app.route('/robots.txt', robots)
