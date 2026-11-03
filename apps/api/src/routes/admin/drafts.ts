@@ -27,6 +27,7 @@ import { type Context, Hono } from 'hono'
 import { auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
 import { bumpDataVersion } from '../../db/meta'
+import { recomputePlacements } from '../../db/placement'
 import { createDb, type Db } from '../../db/client'
 import {
   categoryMappings,
@@ -550,6 +551,8 @@ export const draftsRoute = new Hono<AppEnv>()
         },
       }),
     ])
+    // Right after the batch: where the new list counts among the unified categories.
+    await recomputePlacements(db, { stateIds: [stateId] })
     return c.json(publishResponseSchema.parse({ ok: true, backupKey }))
   })
 

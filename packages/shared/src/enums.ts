@@ -113,6 +113,11 @@ export const unifiedStatuses = ['draft', 'published', 'retired'] as const
 export const unifiedStatusSchema = z.enum(unifiedStatuses)
 export type UnifiedStatus = z.infer<typeof unifiedStatusSchema>
 
+/** Why an entry counts under a unified category: an approved mapping names it, or its CCSR group. */
+export const placementBases = ['mapping', 'by_code'] as const
+export const placementBasisSchema = z.enum(placementBases)
+export type PlacementBasis = z.infer<typeof placementBasisSchema>
+
 /** Mappings are never deleted: a change marks the old row `superseded`. */
 export const unifiedMappingStatuses = ['proposed', 'approved', 'superseded'] as const
 export const unifiedMappingStatusSchema = z.enum(unifiedMappingStatuses)

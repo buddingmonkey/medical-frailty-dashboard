@@ -112,6 +112,56 @@ default (none when that is `XXX000`, "unacceptable principal diagnosis": 10,843 
 - The universe of a CCSR group (above) is every `ref_codes` ICD-10-CM code whose lookup includes
   the group.
 
+### Coverage summary (M5 step 4)
+
+Public pages must not place thousands of entries in Worker JavaScript (the Free plan allows
+10 ms of CPU per request; D1 time does not count). Admin writes place them once, and public
+routes read the rows with SQL aggregates.
+
+```
+entry_unified     entry_id → entries (ON DELETE CASCADE), unified_id → unified_categories,
+                  basis ('mapping'|'by_code'), reviewed (0/1)
+                  PK (entry_id, unified_id); WITHOUT ROWID, no other index
+unified_universe  unified_id → unified_categories (ON DELETE CASCADE), code_norm
+                  PK (unified_id, code_norm); WITHOUT ROWID, no other index
+```
+
+- **Placements** (`entry_unified`, `apps/api/src/db/placement.ts`): rows exist only for entries of
+  **published** versions, in **published** unified categories, by `unifiedOf()`. An entry's CCSR
+  groups are `ccsrGroupsCovered` (codes, headers, wildcards, ranges), read with the same helper as
+  the mapping screen (`apps/api/src/db/ccsr.ts`).
+- **Recomputed** right after: a publish or rollback (that state); a mapping approval (that
+  state; a proposal changes nothing); creating a published category with CCSR groups, or changing a
+  non-draft category's CCSR set or status (every state with a list). Only the difference is
+  written (deleted and upserted rows, 1,000 per statement as one JSON parameter), in one batch,
+  plus a second `data_version` bump when anything changed, so a page cached between the
+  route's batch and the recompute is never read again. Nebraska (8,182 entries) takes about
+  0.1 s locally, writes included.
+- **Universe** (`unified_universe`): every **billable** ICD-10-CM code of the current release
+  (`ref_codes`, `valid_to` NULL) whose CCSR groups, by the longest-prefix rule, meet the
+  category's set. Written in SQL (`INSERT … SELECT`, only rows that change) in the same batch
+  as the CCSR set; kept for drafts too (admin previews), never shown for them. The
+  schizophrenia, depression and bipolar groups (MBD001–MBD003) give 158 codes. A new CCSR or
+  ICD-10-CM release does not rewrite universes yet (open question).
+- No index on `entry_unified.unified_id`: every read goes from entries to placements (the
+  primary key), and unified categories are never deleted.
+
+**Coverage** (`GET /api/public/overview`), per state and published unified category:
+
+- **Entries**: the state's published entries placed in the category (a code, wildcard or range
+  each). **Qualifying alone**: those marked `standalone`, and their share of the entries.
+- **Universe categories** (some CCSR group, so a universe): **covered** is the number of universe
+  codes the placed ICD-10-CM entries cover, by `entryCovers`: an exact code covers itself (and
+  its children when `includes_children = 1`), a prefix every code that starts with it, a
+  wildcard range every code whose leading characters fall between its ends, any other range the
+  codes of the same length between its ends. **Share** = covered / universe size. Entries in
+  other code systems count as entries but cover no universe code.
+- **Other categories** (no CCSR group): **covered** is the state's distinct entries in the
+  category (spelled as `comparePatternKey`, so `F10` with children equals `F10*`), and
+  **share** = that over the distinct entries of every state together.
+- **Reviewed**: every placement in the cell is reviewed (false when the state has none).
+- States without a list have no cells.
+
 ## Tables (D1 / SQLite)
 
 ```
@@ -151,6 +201,8 @@ ref_ccsr_categories ccsr_category (PK, 'MBD001'), description, body_system, rele
 ref_ccsr            code_norm (ICD-10-CM code or prefix), ccsr_category, is_default (0/1), release
                     PK (code_norm, ccsr_category); WITHOUT ROWID, no extra index; stored by prefix
                     ("CCSR reference data" above)
+entry_unified       entry_id, unified_id, basis, reviewed      (placements; "Coverage summary")
+unified_universe    unified_id, code_norm                       (universes; "Coverage summary")
 
 condition_groups    id, slug, name                          ("Malignant neoplasm", "ESRD / dialysis", ...)
 condition_members   id, group_id, code_system, match_kind, code_norm, range_end_norm

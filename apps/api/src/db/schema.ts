@@ -14,6 +14,7 @@ import {
   mappingMethods,
   mappingRelations,
   matchKinds,
+  placementBases,
   qualificationBases,
   qualifications,
   stateStatuses,
@@ -372,6 +373,50 @@ export const unifiedMappings = sqliteTable(
       sql`${t.status} <> 'approved' OR (${t.reviewedBy} IS NOT NULL AND ${t.reviewedAt} IS NOT NULL)`,
     ),
   ],
+)
+
+/**
+ * Where each entry of a **published** version counts among the **published** unified categories
+ * (`unifiedOf`, recomputed by src/db/placement.ts after publish, rollback, mapping approval and
+ * category changes). Public pages read it instead of placing entries per request. `WITHOUT
+ * ROWID` with no other index (one D1 write per row; reads go by entry): added by hand in
+ * migrations/0009_entry_unified.sql and guarded by src/db/schema.test.ts.
+ */
+export const entryUnified = sqliteTable(
+  'entry_unified',
+  {
+    entryId: integer('entry_id')
+      .notNull()
+      .references(() => entries.id, { onDelete: 'cascade' }),
+    unifiedId: integer('unified_id')
+      .notNull()
+      .references(() => unifiedCategories.id),
+    /** `mapping`: an approved mapping names the category. `by_code`: placed by CCSR group. */
+    basis: text('basis', { enum: placementBases }).notNull(),
+    /** 1: an admin approved the placement (an approved mapping or an approved by_code row). */
+    reviewed: integer('reviewed').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.unifiedId] }),
+    check('entry_unified_basis_check', oneOf(t.basis, placementBases)),
+    check('entry_unified_reviewed_check', isBoolean(t.reviewed)),
+  ],
+)
+
+/**
+ * A unified category's universe: every billable ICD-10-CM code of the current release
+ * (`ref_codes`) whose CCSR groups (longest-prefix rule) meet the category's. Rewritten when the
+ * category's CCSR set changes. `WITHOUT ROWID`, no other index, like entry_unified.
+ */
+export const unifiedUniverse = sqliteTable(
+  'unified_universe',
+  {
+    unifiedId: integer('unified_id')
+      .notNull()
+      .references(() => unifiedCategories.id, { onDelete: 'cascade' }),
+    codeNorm: text('code_norm').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.unifiedId, t.codeNorm] })],
 )
 
 // ---------------------------------------------------------------------------------------------

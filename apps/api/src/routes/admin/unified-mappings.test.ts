@@ -240,17 +240,19 @@ describe('/api/admin/states/:stateId/unified-mappings', () => {
   })
 
   it('approving supersedes the approved and proposed rows, sets reviewed_by/at, bumps data_version', async () => {
+    // Each approval bumps twice: its own batch, then once more when placements change
+    // (src/db/placement.ts). A proposal changes nothing public.
     await send('PUT', PATH, { ...key, approve: true, targets: [target(smi)] })
-    expect(await dataVersion()).toBe('1')
+    expect(await dataVersion()).toBe('2')
     await send('PUT', PATH, { ...key, approve: false, targets: [target(mood)] })
-    expect(await dataVersion()).toBe('1')
+    expect(await dataVersion()).toBe('2')
     const res = await send('PUT', PATH, { ...key, approve: true, byCode: true }, SECOND)
     expect(unifiedMappingSaveResponseSchema.parse(await res.json())).toEqual({
       ok: true,
       status: 'approved',
       review: 'Reviewed by one admin',
     })
-    expect(await dataVersion()).toBe('2')
+    expect(await dataVersion()).toBe('4')
     const rows = await allRows()
     const last = rows[2]
     expect(rows.map((r) => [r.unifiedId, r.relation, r.status, r.supersededBy])).toEqual([
@@ -297,7 +299,8 @@ describe('/api/admin/states/:stateId/unified-mappings', () => {
       [smi, 'approved', null, ADMIN, SECOND],
       [mood, 'approved', null, ADMIN, SECOND],
     ])
-    expect(await dataVersion()).toBe('2')
+    // Two approvals, each bumping for itself and for the placements it moved.
+    expect(await dataVersion()).toBe('4')
     const audit = auditListResponseSchema.parse(
       await (await send('GET', '/api/admin/audit')).json(),
     )
@@ -305,7 +308,7 @@ describe('/api/admin/states/:stateId/unified-mappings', () => {
     // Nothing left to approve.
     const again = await send('POST', `${PATH}/approve`, key)
     expect(again.status).toBe(409)
-    expect(await dataVersion()).toBe('2')
+    expect(await dataVersion()).toBe('4')
   })
 
   it('refuses bad bodies, unknown targets and categories not in the published list', async () => {
