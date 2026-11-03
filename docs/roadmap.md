@@ -124,8 +124,8 @@ the public pages say who reviewed it and when.
    suggestion, relation, basis, confidence, rationale and citation; approve (one admin,
    labelled); every change in the audit log and a `data_version` bump.
 4. **Coverage summary.** Computed after publish and mapping changes: per state × unified
-   category (codes listed, universe, share qualifying alone) and per state pair (similarity on
-   expanded codes). `GET /api/public/overview`. **Check:** the Free plan's CPU limit holds on
+   category (codes listed, universe, share qualifying alone). `GET /api/public/overview`.
+   (Per-state-pair similarity moved to step 7, where it is used.) **Check:** the Free plan's CPU limit holds on
    preview (the numbers are read, not computed, per request).
 5. **Overview matrix** (`/compare`): states × unified categories grouped by federal category;
    sort by any column, overall, or "similar states together"; each cell a number and a shade;
@@ -137,7 +137,8 @@ the public pages say who reviewed it and when.
    (ICD-10-CM through its CCSR groups and `ref_codes`), show every code in it, so codes no
    state lists appear with 0 of N; elsewhere the page says only listed codes are shown. The M4
    table stays as the leaf view and the CSV.
-7. **Compare 2–4 states** and **states like mine**: only the differences, grouped by unified
+7. **Compare 2–4 states** and **states like mine** (with per-state-pair similarity, computed in
+   D1 after placements change): only the differences, grouped by unified
    category, with shared and only-in counts and similarity; a ranked "most similar states"
    list on each state page that opens the comparison.
 8. **Tile map**: one unified category across all states, equal tiles with abbreviation and

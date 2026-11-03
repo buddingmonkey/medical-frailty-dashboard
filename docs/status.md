@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-02 (M5 step 3)_
+_Last updated: 2026-11-02 (M5 step 4)_
 
 ## Where things stand
 
@@ -196,6 +196,9 @@ _Last updated: 2026-11-02 (M5 step 3)_
 - **M5 step 3 done** (branch `m5-step3-admin-unified`): `/admin/unified` and `/admin/mappings`
   with their APIs; mappings superseded, never deleted; one admin may approve. Open: should a
   never-published draft be retirable (refused now)?
+- **M5 step 4 done** (branch `m5-step4-coverage`): placements (`entry_unified`), universes,
+  `GET /api/public/overview` (SQL aggregates). A remap of a large state costs ~8k D1 writes; a new
+  reference release does not rebuild placements yet.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
