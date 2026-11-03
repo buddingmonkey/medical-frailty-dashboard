@@ -11,6 +11,7 @@ import {
   OVERVIEW_OVERALL_ORDER,
   overviewReadingNotes,
   pageTitles,
+  learnMore,
 } from '@mfcd/shared'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -20,6 +21,7 @@ import CoverageLegend from '../../components/compare/CoverageLegend.vue'
 import OverviewMatrix from '../../components/compare/OverviewMatrix.vue'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicOverview } from '../../lib/public-overview'
+import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
 // The overview matrix (roadmap M5 step 5) at /compare. The code table
 // that lived here until this step is at /compare/codes; old links redirect (and the Worker
@@ -110,6 +112,7 @@ const caption = OVERVIEW_CAPTION
           Reading this table
         </h2>
         <p v-for="note in overviewReadingNotes" :key="note">{{ note }}</p>
+        <p><AboutLinkView :link="learnMore.overview" /></p>
       </section>
     </template>
   </article>

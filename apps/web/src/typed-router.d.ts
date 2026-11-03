@@ -45,6 +45,20 @@ declare module 'vue-router/auto-routes' {
       { missingPath: ParamValue<false> },
       | never
     >,
+    '/about': RouteRecordInfo<
+      '/about',
+      '/about',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/accessibility': RouteRecordInfo<
+      '/accessibility',
+      '/accessibility',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/admin': RouteRecordInfo<
       '/admin',
       '/admin',
@@ -219,6 +233,20 @@ declare module 'vue-router/auto-routes' {
       { pair: ParamValue<false> },
       | never
     >,
+    '/disclaimer': RouteRecordInfo<
+      '/disclaimer',
+      '/disclaimer',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/privacy': RouteRecordInfo<
+      '/privacy',
+      '/privacy',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/search': RouteRecordInfo<
       '/search',
       '/search',
@@ -268,6 +296,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'missingPath'
+    }
+    'src/pages/about.vue': {
+      routes:
+        | '/about'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/accessibility.vue': {
+      routes:
+        | '/accessibility'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/admin.vue': {
       routes:
@@ -466,6 +510,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'pair'
+    }
+    'src/pages/disclaimer.vue': {
+      routes:
+        | '/disclaimer'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/privacy.vue': {
+      routes:
+        | '/privacy'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/search.vue': {
       routes:

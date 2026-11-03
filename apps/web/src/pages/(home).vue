@@ -9,6 +9,7 @@ import {
   STATUTE_URL,
   statesWithListText,
   TILE_MAP_HOME_LINK,
+  learnMore,
 } from '@mfcd/shared'
 import { computed, onMounted, ref } from 'vue'
 
@@ -17,6 +18,7 @@ import StateSummaryCard from '../components/home/StateSummaryCard.vue'
 import StateTable from '../components/home/StateTable.vue'
 import { usePageTitle } from '../lib/page-title'
 import { usePublicStates } from '../lib/public-states'
+import AboutLinkView from '../components/about/AboutLinkView.vue'
 
 // The tile map lived here until the project lead moved it to the Map tab (2026-11-03). Old
 // shared links (`/?category=<slug>`) follow it there; the Worker answers them with a 301.
@@ -63,7 +65,9 @@ const legend = [
       <h1 class="font-display text-4xl font-medium text-balance text-heading">
         Compare medical frailty codes by state
       </h1>
-      <p class="text-lg text-foreground">{{ HOME_INTRO }}</p>
+      <p class="text-lg text-foreground">
+        {{ HOME_INTRO }} <AboutLinkView :link="learnMore.home" />
+      </p>
       <p>
         <a :href="STATUTE_URL" rel="noopener noreferrer external" class="text-link">{{
           STATUTE_LINK_TEXT

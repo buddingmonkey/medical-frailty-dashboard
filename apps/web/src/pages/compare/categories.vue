@@ -9,6 +9,7 @@ import {
   pageTitles,
   STATUTE_LINK_TEXT,
   STATUTE_URL,
+  learnMore,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -16,6 +17,7 @@ import { RouterLink } from 'vue-router'
 import CompareTabs from '../../components/compare/CompareTabs.vue'
 import { usePageTitle } from '../../lib/page-title'
 import { usePublicOverview } from '../../lib/public-overview'
+import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
 // The Categories tab (project lead, 2026-11-02): every published unified category under its
 // federal category, each linking to its page (`/compare/<slug>`). The overview's data, which
@@ -32,7 +34,9 @@ const groups = computed(() => overviewCategoryGroups(overview.data.value?.catego
     <header class="space-y-3">
       <h1 class="font-display text-4xl font-medium text-heading">{{ CATEGORIES_HEADING }}</h1>
       <CompareTabs />
-      <p class="max-w-prose">{{ CATEGORIES_INTRO }}</p>
+      <p class="max-w-prose">
+        {{ CATEGORIES_INTRO }} <AboutLinkView :link="learnMore.categories" />
+      </p>
       <p class="flex flex-wrap gap-x-4 text-sm">
         <a :href="CCSR_URL" rel="noopener noreferrer external" class="text-link">{{
           CCSR_LINK_TEXT

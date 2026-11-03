@@ -119,6 +119,18 @@ document, date and locator; CPT only with the state's own text. Like codes in th
 - Code tables in the HTML (single codes, drill-down, states side by side) link each single code
   to its page.
 
+**Built in M8 step 4** for `/about` (About and methodology), `/disclaimer`, `/privacy` and
+`/accessibility`: indexed, canonical the bare path, in `/sitemaps/pages.xml` (no `lastmod`: the
+words are fixed). The words are data in `packages/shared/src/about.ts` (headings, paragraphs,
+lists, links), rendered by the Vue `InfoPageView` and by `seo/info-page.ts`; no HTML strings.
+About's sections have stable anchors other pages link to ("learn more" links, `learnMore`):
+`#what-this-is`, `#sources`, `#matching`, `#like-codes`, `#badges`, `#categories`, `#review`,
+`#coverage`, `#similarity`, `#downloads`, `#court-rulings`, `#cpt`, `#report`. Every
+server-rendered page's footer now has the links (About, Disclaimer, Privacy, Accessibility,
+Source code, Report a problem), "Data last updated <day>" (the newest published list's
+`content_updated_at`: from the state summaries on pages that read them, else one aggregate,
+`listsUpdatedAt`, on a cache miss) and the short AMA notice. `e2e/about.spec.ts` opens each page.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 

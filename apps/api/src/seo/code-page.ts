@@ -1,4 +1,5 @@
 import {
+  learnMore,
   CODE_DETAIL_CONFIRMED,
   CODE_DETAIL_NO_DESCRIPTION,
   CODE_DETAIL_NOT_FOUND,
@@ -118,7 +119,7 @@ function likeCodesHtml(detail: CodeDetailResponse): Html | null {
   const seen = new Set<string>()
   return html`<section aria-labelledby="like-codes-heading">
     <h2 id="like-codes-heading">${LIKE_CODES.heading}</h2>
-    <p>${LIKE_CODES.help}</p>
+    <p>${LIKE_CODES.help} <a href="${learnMore.likeCodes.href}">${learnMore.likeCodes.text}</a></p>
     <p>${likeCodeGroupsText((detail.conditionGroups ?? []).map((g) => g.name))}</p>
     <p>${LIKE_CODES.note}</p>
     <table>
@@ -229,6 +230,7 @@ export function codePage(
     canonical: url,
     noindex: !codeDetailIndexed(detail.states),
     jsonLd: [codeJsonLd(detail, url, title, description, updatedAt)],
+    dataUpdatedAt: updatedAt,
     body: html`<p><a href="/search">${SEARCH_PAGE.heading}</a></p>
       <article>
         <p>${codeSystemLabels[code.codeSystem]}</p>

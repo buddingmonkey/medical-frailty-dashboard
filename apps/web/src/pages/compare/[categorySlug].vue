@@ -23,6 +23,7 @@ import {
   federalCategoryClauseText,
   federalCategoryInfo,
   pageTitles,
+  learnMore,
 } from '@mfcd/shared'
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -34,6 +35,7 @@ import StatusLegend from '../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../lib/api'
 import { usePageTitle } from '../../lib/page-title'
 import { useDrill, useDrillDetail } from '../../lib/public-drill'
+import AboutLinkView from '../../components/about/AboutLinkView.vue'
 
 // The category drill-down (roadmap M5 step 6): one comparison (unified) category's codes,
 // grouped and ranked by how many states include them. The URL holds every choice (show, system, all, focus, page,
@@ -140,6 +142,7 @@ const codeTablePath = computed(() => {
           <RouterLink to="/compare/categories" class="text-link"
             >See every comparison category</RouterLink
           >
+          · <AboutLinkView :link="learnMore.categories" />
         </p>
         <p class="max-w-prose text-sm text-muted-foreground">
           Federal category: {{ federalCategoryInfo[category.federalCategory].label

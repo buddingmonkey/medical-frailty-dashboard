@@ -7,9 +7,11 @@ import {
   likeCodeGroupsText,
   likeCodeMoreText,
   stateCategoryName,
+  learnMore,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import AboutLinkView from '../about/AboutLinkView.vue'
 
 // Like codes on the code detail page (roadmap M6 step 4; docs/data-model.md, "Like codes"):
 // states that do not list the code but list a code in another code system in the same condition
@@ -47,7 +49,7 @@ const byState = computed(() =>
       <h2 id="like-codes-heading" class="font-display text-2xl font-medium text-heading">
         {{ LIKE_CODES.heading }}
       </h2>
-      <p>{{ LIKE_CODES.help }}</p>
+      <p>{{ LIKE_CODES.help }} <AboutLinkView :link="learnMore.likeCodes" /></p>
       <p class="text-sm">{{ likeCodeGroupsText(groups.map((g) => g.name)) }}</p>
       <p class="text-sm text-muted-foreground">{{ LIKE_CODES.note }}</p>
     </div>
