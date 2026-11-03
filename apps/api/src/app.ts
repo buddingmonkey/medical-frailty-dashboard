@@ -11,6 +11,7 @@ import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
 import { aiCleanupRoute } from './routes/admin/ai-cleanup'
 import { audit } from './routes/admin/audit'
+import { backupRoute } from './routes/admin/backup'
 import { categoriesRoute } from './routes/admin/categories'
 import { coverageRoute } from './routes/admin/coverage'
 import { columnProfilesRoute } from './routes/admin/column-profiles'
@@ -77,6 +78,7 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.use('/admin/*', adminOnly)
   app.route('/api/admin/whoami', whoami)
   app.route('/api/admin/audit', audit)
+  app.route('/api/admin/backup', backupRoute)
   app.route('/api/admin/watch', watch)
   app.route('/api/admin/states', adminStates)
   app.route('/api/admin/states', categoriesRoute)

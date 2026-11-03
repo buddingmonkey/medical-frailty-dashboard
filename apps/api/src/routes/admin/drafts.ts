@@ -271,7 +271,7 @@ export const draftsRoute = new Hono<AppEnv>()
   .post('/', async (c) => {
     const body = draftCreateSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid draft' }, 400)
-    const { stateId, label } = body.data
+    const { stateId, label, fromBackup } = body.data
     const db = createDb(c.env.DB)
     const [state] = await db.select({ id: states.id }).from(states).where(eq(states.id, stateId))
     if (!state) return c.json({ error: 'Unknown state' }, 400)
@@ -287,11 +287,21 @@ export const draftsRoute = new Hono<AppEnv>()
       })
       .returning(summaryColumns)
     if (!created) return c.json({ error: 'Could not create the draft' }, 500)
+    // Restore path 2: "draft created from backup <file date>, state X, version N".
     await auditInsert(db, {
       actorEmail: actorOf(c),
-      action: 'draft.create',
+      action: fromBackup ? 'draft.restore' : 'draft.create',
       target: `version:${String(created.id)}`,
-      details: { stateId, versionNo: created.versionNo },
+      details: fromBackup
+        ? {
+            stateId,
+            versionNo: created.versionNo,
+            backupWrittenAt: fromBackup.writtenAt,
+            backupEnvironment: fromBackup.environment,
+            backupFormat: fromBackup.format,
+            backupVersionNo: fromBackup.versionNo,
+          }
+        : { stateId, versionNo: created.versionNo },
     })
     return c.json({ item: draftSummarySchema.parse(created) }, 201)
   })

@@ -86,6 +86,14 @@ unless the Access application bypasses that path.)
   `Content-Disposition: attachment`, under a random key. It is never served inline from our
   origin. Public source links point at the state's own URL.
 - Size limits are in `docs/ingestion.md`.
+- **Backups** (`/admin/restore`): the full download holds `audit_log`, so admin email
+  addresses (Access identities). They stay in, because the file is admin-only (the route is
+  under `/api/admin`); keep the file private. It holds no tokens, headers or secrets (a test
+  checks), no source files and no R2 keys. An imported backup is read only in the browser:
+  50 MB file limit, a zip must hold exactly one top-level `.json` entry, and inflating stops
+  as soon as the JSON passes 50 MB (declared or actual size), so a zip bomb cannot fill the
+  tab. Its entries go to a draft through the normal draft API; nothing writes published
+  rows directly.
 - CSV exports prefix cells that start with `= + - @` with `'` to stop formula injection.
 
 ## AI cleanup

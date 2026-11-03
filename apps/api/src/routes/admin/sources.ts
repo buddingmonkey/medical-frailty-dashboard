@@ -1,5 +1,6 @@
 import {
   idParamSchema,
+  isRestoredSourceKey,
   type SourceDocument,
   sha256Hex,
   sniffMatches,
@@ -156,6 +157,9 @@ export const sources = new Hono<AppEnv>()
       .select()
       .from(sourceDocuments)
       .where(eq(sourceDocuments.id, id.data))
+    if (row && isRestoredSourceKey(row.r2Key)) {
+      return c.json({ error: 'Restored from a backup: the file is not available.' }, 404)
+    }
     const object = row ? await c.env.FILES.get(row.r2Key) : null
     if (!row || !object) return c.json({ error: 'Not found' }, 404)
 

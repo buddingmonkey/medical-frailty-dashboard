@@ -250,24 +250,45 @@ with a gold test-site banner (`apps/api/src/middleware/environment-banner.ts`).
 
 | Backup | How | Kept |
 | --- | --- | --- |
-| Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`: version row, sources, parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | 20 per state (pruning not built yet) |
+| Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`, **format 1**: version row, sources (metadata, SHA-256, and since M7 step 1 file type and size), parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | 20 per state (pruning not built yet) |
 | Weekly full dump | Worker Cron Trigger (Sunday) → JSON of every table to R2 `backups/weekly/` | 12 weeks |
 | Before each production deploy | CI records the D1 Time Travel bookmark (`wrangler d1 time-travel info`) in the deploy log, then migrates. Not `wrangler d1 export`: it refuses databases with virtual tables, and `entries_fts` is one (user, 2026-11-01) | 7 days (Time Travel window) |
-| Manual download | Admin page "Download backup" → `GET /api/admin/backup` streams JSON to the admin's computer | Your computer |
+| Manual download | Admin → **Backup and restore** → "Download backup" → `GET /api/admin/backup` streams `frailty-backup-<env>-<UTC timestamp>.zip`: one deflated JSON file (**format 2**) with `format`, `writtenAt`, `environment`, `migration` (last applied), `dataVersion`, `notes`, every state-data table (`BACKUP_TABLES` in `packages/shared/src/backup.ts`) and `"complete": true` last. Written table by table, 500 rows per query (keyset on rowid), through a streaming zip (fflate); never whole in memory (`apps/api/src/db/backup-dump.ts`). Built in M7 step 1 | Your computer |
 | Point in time | D1 Time Travel (`wrangler d1 time-travel restore`) | 7 days free / 30 days paid |
 
 Restore paths, from smallest to largest:
 
 1. **One state wrong:** admin → state → versions → roll back (no backup needed).
-2. **A state's history lost:** admin → import backup JSON for that state → goes through the
-   normal draft → checks → publish flow.
+2. **A state's history lost:** admin → **Backup and restore** (`/admin/restore`) → pick a
+   full download (`.zip`) or a per-publish backup (`.json`, from R2). The browser reads it
+   (zod, `packages/shared/src/backup.ts`), shows what it holds, and the admin picks one state
+   and one version. Its entries go to a **new draft** through the normal draft API (the same
+   `validateDraftEntry` re-parse), then the normal checks → publish flow with all its guards.
+   Each cited source is reused when the state still has a file with the same SHA-256;
+   otherwise its title, URL and date are stored with no file (R2 key `restored/…`; its
+   download answers 404 "file not available"), and the state page still cites it. The
+   state's category mappings, chapter overrides and column profiles are replaced from a full
+   backup only if the admin ticks the box, after a diff. Limits: 50 MB file and 50 MB of JSON
+   inside a zip (checked while inflating), one `.json` entry per zip, 400,000 entries per
+   version, formats 1 and 2 only. Audit: `backup.download`, `source.restore`,
+   `draft.restore` (backup date, environment, version), `mappings.restore`.
 3. **Whole database bad:** `wrangler d1 time-travel restore frailty-prod --timestamp=<before>`,
    (or `--bookmark=<from the deploy log>`), or rebuild a new D1 from the latest weekly JSON
    dump. `wrangler d1 export` works only after dropping `entries_fts` and `ref_codes_fts`.
    Afterwards, recreate both from 0001 and 0012, run
    `INSERT INTO entries_fts(entries_fts) VALUES ('rebuild')`, and run 0012's backfill `INSERT`.
 
-Test restore path 2 in E2E, and do a path 3 drill on the preview database once before launch.
+**Left out of the full backup** (also in its `notes`): reference tables (`ref_codes`,
+`ref_ccsr`, `ref_ccsr_categories`: reload from the pinned files), derived tables
+(`entry_unified`, `unified_universe`, `state_similarity`: Rebuild coverage recreates them), and
+the FTS tables (`entries_fts`, `ref_codes_fts`). A test fails when a new table is in neither
+list. Source files are not in it, nor their R2 keys (the weekly dump may keep the keys).
+
+**Measured on the local 51-state seed** (2026-11-03, `wrangler dev`): 13,735 rows (12,153
+entries), 13,740 rows read in 44 queries, 5.4 MB of JSON, a 237 kB zip, about 0.3 s.
+
+Restore path 2 has an E2E test (`apps/web/e2e/admin-restore.admin.spec.ts`). Do a path 3
+drill on the preview database once before launch.
 
 ## Going live
 
