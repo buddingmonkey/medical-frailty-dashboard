@@ -205,6 +205,36 @@ nearest-neighbour seriation on the share vectors (squared distance), starting fr
 overall, ties by overall then name; states without a list always come last, by name. A cell is
 marked "not reviewed" when it has entries and not every placement is reviewed.
 
+### Drill-down (M5 step 6)
+
+`/compare/<slug>` shows one published unified category's codes (`apps/api/src/db/public-drill.ts`,
+helpers in `packages/shared/src/drill.ts`):
+
+- **Rows**: every distinct entry placed in the category (`entry_unified`), spelled as
+  `comparePatternKey` (so a wildcard or range is its own row), plus, with "Include codes no
+  state lists" (`all=1`, only when the category has a universe), every universe code that is
+  not a row yet. Such a code shows its real count: 0 when no state lists or covers it, more when
+  a state's wildcard or range covers it.
+- **Count** ("37 of 44 states"): states **with a list** whose whole published list has an
+  entry that lists the row exactly or covers it, by "Matching across states" (the M4 rules: a
+  wildcard row is covered only by a wildcard or range containing all of it; narrower codes do
+  not count). Each state counts once, with the entry M4 would show (listed before covered, then
+  the rule that qualifies most on its own); "their rules" counts those entries per
+  qualification, with how many are inferred.
+- **Groups**: the ICD-10-CM 3-character category of the row's first code (`F31.*–F32.*` goes
+  under F31), other code systems one group each. A group's "N of M list any" counts states
+  listing or covering any of its rows, whatever the filter. Groups by that count, then code
+  system and key; rows by count, then code system, code, kind and range end
+  (`compareDrillGroups`, `compareDrillRows`).
+- **Filters**: everyone (count = M, M > 0), gaps (count < M / 2), only one state (count = 1);
+  a code system. A group shows when the filter keeps one of its rows.
+- **Pages**: a page holds the groups that start within its first 250 rows (a group is never
+  split), so a page has about 250 rows.
+- **In SQL**: each row's covering entries are found per prefix of the code in the published
+  wildcards (read once, then looked up; joining all entries per prefix made SQLite scan every
+  published entry and took 3 s for cancer), the few ranges checked directly, exact keys by
+  index. The Worker shapes one page only.
+
 ## Tables (D1 / SQLite)
 
 ```

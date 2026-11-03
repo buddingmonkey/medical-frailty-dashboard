@@ -2,6 +2,7 @@ import {
   codeSystemLabels,
   compareCellText,
   compareQuerySchema,
+  drillQueryFromRecord,
   federalCategoriesText,
   isCodeTableQuery,
   qualificationBasisLabels,
@@ -9,16 +10,21 @@ import {
   SITE_NAME,
   toCsv,
 } from '@mfcd/shared'
+import { asc, eq } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
 import { publicCompare } from '../db/public-compare'
+import { publicDrill, publicDrillCsv, publicDrillDetail } from '../db/public-drill'
 import { publicOverview } from '../db/public-overview'
 import { publicStateDetail, publishedEntriesForDownload } from '../db/public-state'
 import { publicSummaries } from '../db/public-summary'
+import { unifiedCategories } from '../db/schema'
 import { cachePublic, publicCache } from '../middleware/public-cache'
 import {
+  categoryNotFoundPage,
   comparePage,
+  drillPage,
   downloadName,
   homePage,
   notFoundPage,
@@ -187,8 +193,64 @@ export const pagesRoute = new Hono<AppEnv>()
       'content-disposition': `attachment; filename="${name}"`,
     })
   })
+  .get('/compare/:slug/codes.csv', publicCache, async (c) => {
+    const slug = c.req.param('slug')
+    const data = await publicDrillCsv(
+      createDb(c.env.DB),
+      slug,
+      drillQueryFromRecord(c.req.queries()),
+    )
+    if (!data) return c.json({ error: 'Not found' }, 404)
+    const csv = toCsv([
+      [
+        'code_system',
+        'code',
+        'description',
+        'description_source',
+        'group',
+        'states_listing',
+        'states_with_list',
+        ...data.states.map((s) => s.id),
+      ],
+      ...data.rows.map((row) => [
+        codeSystemLabels[row.codeSystem],
+        row.display,
+        row.description,
+        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        row.codeSystem === 'icd10cm' ? row.codeNorm.slice(0, 3) : codeSystemLabels[row.codeSystem],
+        String(row.count),
+        String(data.states.length),
+        ...row.cells.map((cell) => compareCellText(cell)),
+      ]),
+    ])
+    return c.body(csv, 200, {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': `attachment; filename="${data.category.slug}-codes-by-state.csv"`,
+    })
+  })
+  .get('/compare/:slug', pageCache, async (c) => {
+    const db = createDb(c.env.DB)
+    const slug = c.req.param('slug')
+    const query = drillQueryFromRecord(c.req.queries())
+    const dataVersion = c.get('dataVersion') ?? 0
+    const [data, detail] = await Promise.all([
+      publicDrill(db, slug, query, { dataVersion }),
+      query.code === null ? null : publicDrillDetail(db, slug, query.code, dataVersion),
+    ])
+    if (!data) return sendPage(c, categoryNotFoundPage(origin(c), c.req.path))
+    const hasQuery = new URL(c.req.url).search !== ''
+    return sendPage(c, drillPage(data, query, detail, origin(c), hasQuery))
+  })
   .get('/sitemap.xml', publicCache, async (c) => {
-    const { items } = await publicSummaries(createDb(c.env.DB))
+    const db = createDb(c.env.DB)
+    const [{ items }, categories] = await Promise.all([
+      publicSummaries(db),
+      db
+        .select({ slug: unifiedCategories.slug, updatedAt: unifiedCategories.updatedAt })
+        .from(unifiedCategories)
+        .where(eq(unifiedCategories.status, 'published'))
+        .orderBy(asc(unifiedCategories.sortOrder), asc(unifiedCategories.slug)),
+    ])
     const base = origin(c)
     const days = items.flatMap((s) =>
       s.published?.updatedAt ? [s.published.updatedAt.slice(0, 10)] : [],
@@ -202,6 +264,11 @@ export const pagesRoute = new Hono<AppEnv>()
       url(`${base}/`, newest),
       url(`${base}/states`, newest),
       url(`${base}/compare`, newest),
+      // A category page changes with its own edits and with any state's list.
+      ...categories.map((u) => {
+        const day = u.updatedAt.slice(0, 10)
+        return url(`${base}/compare/${u.slug}`, newest !== undefined && newest > day ? newest : day)
+      }),
       ...items.map((s) => url(`${base}/states/${s.slug}`, s.published?.updatedAt?.slice(0, 10))),
       '</urlset>',
       '',

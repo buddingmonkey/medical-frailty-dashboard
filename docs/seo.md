@@ -56,6 +56,18 @@ same numbers and words as the Vue page from `packages/shared/src/overview.ts`) a
 defaults left out), so a shared link keeps it; the HTML rows follow it and the sorted column
 carries `aria-sort`. The canonical stays the bare `/compare`.
 
+**Built in M5 step 6** for `/compare/<slug>`, the category drill-down of each **published**
+unified category: title "<label> codes by state | …", description from the category's
+definition (cut at 300 characters), canonical the bare `/compare/<slug>`. The bare page is
+indexed and in the sitemap; **any query** (`show`, `system`, `all`, `focus`, `page`, `code`)
+is a view of it and says `noindex` (the canonical stays bare). The HTML carries the category,
+its CCSR groups with AHRQ's citation, a GET form for the filters (works without JavaScript),
+one page of groups as a real table with every group expanded (a `tbody` per group, its header
+`th scope="rowgroup"`), a Details link per row (`?code=…#code-details`) that renders the
+details below the table, and links to the CSV (`/compare/<slug>/codes.csv`) and to the code
+table of the federal parent. A draft, retired or unknown slug answers a 404 page with
+`noindex`. `e2e/drill-down.spec.ts` reads it with JavaScript off.
+
 Full Vue server-side rendering was considered and rejected: more work, and it ties the front
 end to the Worker.
 
@@ -105,7 +117,9 @@ accurately than scraped tables.
   every code page that at least one state lists, each with `lastmod`. Split into a sitemap
   index if it passes 50,000 URLs.
 - Built in M3 step 4 for the home page and the 51 state pages; URLs use the request's own
-  origin. Code pages join it in M6.
+  origin. `/compare` joined in M5 step 5, every published category drill-down
+  (`/compare/<slug>`, `lastmod` the newer of the category's last edit and the newest state
+  list) in M5 step 6. Code pages join it in M6.
 - At launch, add `Sitemap: https://<final-domain>/sitemap.xml` to the public `robots.txt`.
 
 ### 7. llms.txt (M8)
