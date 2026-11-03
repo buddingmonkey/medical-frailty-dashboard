@@ -12,16 +12,20 @@ to the state's document. **Never include patient or member information.**
 
 ### Setup
 
-New to this? Follow [`docs/getting-started.md`](docs/getting-started.md) first. On Windows,
-use WSL: the scripts need Linux. Outside contributors fork the repo and open a pull request
-from the fork; `main` is protected.
+New to this? Follow [`docs/getting-started.md`](docs/getting-started.md) first. Windows
+(PowerShell), macOS and Linux all work; WSL is optional. Outside contributors fork the repo and
+open a pull request from the fork; `main` is protected.
 
 You need Node 26 (see `.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`).
 
-```bash
+The same commands work in PowerShell, cmd and bash:
+
+```text
 pnpm install
-pnpm db:migrate:local && pnpm db:ref:local && pnpm db:seed:local   # local database
-pnpm dev                                                            # http://localhost:8787
+pnpm db:migrate:local   # local database: tables
+pnpm db:ref:local       # CMS reference codes, about a minute
+pnpm db:seed:local      # sample state lists
+pnpm dev                # http://localhost:8787
 ```
 
 After `pnpm dev` starts, open Admin, Unified categories (`/admin/unified`) and press

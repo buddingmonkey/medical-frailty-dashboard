@@ -15,11 +15,10 @@
 //
 // Load it with `pnpm db:seed:local` or `pnpm db:seed:preview` (scripts/seed.ts), then press
 // Rebuild coverage (Admin → Unified categories). Runs directly on Node 26 (type stripping).
-import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
+import { runPnpm } from './lib/run.ts'
 import { finishSql, insertSql, parseWranglerJson, sqlString, statesSql } from './copy-state-data.ts'
 import {
   assignStatuses,
@@ -274,8 +273,7 @@ export const SEED_FILE = join(apiDir, 'seed', 'seed.sql')
 
 function query(from: 'preview' | 'production', sql: string): Record<string, unknown>[] {
   const target = from === 'preview' ? ['frailty-preview', '--env', 'preview'] : ['frailty-prod']
-  const r = spawnSync(
-    'pnpm',
+  const r = runPnpm(
     ['exec', 'wrangler', 'd1', 'execute', ...target, '--remote', '--json', '--command', sql],
     {
       cwd: apiDir,
@@ -509,7 +507,7 @@ function main() {
   )
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   try {
     main()
   } catch (error) {

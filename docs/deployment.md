@@ -324,11 +324,14 @@ can be tried on preview on any day.
 
 Trigger the cron locally:
 
-```bash
+```text
 pnpm --filter @mfcd/web build
 pnpm cf dev --test-scheduled --port 8791 --var ENVIRONMENT:development
 curl "http://localhost:8791/__scheduled?cron=0+7+*+*+SUN"
 ```
+
+In Windows PowerShell, type `curl.exe` (plain `curl` there is another command), or open the
+link in a browser.
 
 **Measured on the local 51-state seed** (2026-11-03): the dump read 13,778 rows in 44 queries,
 wrote 5.4 MB of JSON as a 237 kB zip, in about 0.2 s wall time; the other three parts took

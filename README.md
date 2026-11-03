@@ -62,7 +62,7 @@ This project is being built by a small team with the help of an AI coding assist
 things wrong, so other organizations can learn from it:
 
 - [`docs/devlog/`](docs/devlog/README.md): session-by-session development log
-- [`docs/getting-started.md`](docs/getting-started.md): first-time setup for people who have never used a terminal (GitHub, Windows WSL, Claude Code, the site on your computer)
+- [`docs/getting-started.md`](docs/getting-started.md): first-time setup for people who have never used a terminal (GitHub, Windows, macOS or Linux, Claude Code, the site on your computer)
 - [`docs/playbook.md`](docs/playbook.md): how to make a change and send it as a pull request, for less-technical builders
 
 ## Documentation
@@ -85,13 +85,17 @@ things wrong, so other organizations can learn from it:
 
 **New to terminals, Git or Claude Code?** Start with
 [`docs/getting-started.md`](docs/getting-started.md), then [`docs/playbook.md`](docs/playbook.md).
-Windows needs WSL: the project's scripts need Linux.
+Windows (PowerShell), macOS and Linux all work; WSL is optional.
 
 Already comfortable? You need Node 26 (`.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`).
 
-```bash
+The same commands work in PowerShell, cmd and bash:
+
+```text
 pnpm install
-pnpm db:migrate:local && pnpm db:ref:local && pnpm db:seed:local   # local database, ~1.5 min
+pnpm db:migrate:local   # local database (these three take about 1.5 min)
+pnpm db:ref:local
+pnpm db:seed:local
 pnpm dev          # the whole site on http://localhost:8787
 pnpm check        # format, lint, types, unit, component and API tests, plus db-drift, refdata and scripts
 pnpm --filter @mfcd/web exec playwright install --with-deps chromium   # once, for pnpm check:full
