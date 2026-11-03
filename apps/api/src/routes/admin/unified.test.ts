@@ -11,11 +11,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb } from '../../db/client'
 import {
   appMeta,
+  refCcsr,
   refCcsrCategories,
+  refCodes,
   states,
   unifiedCategories,
   unifiedCcsr,
   unifiedMappings,
+  unifiedUniverse,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
@@ -199,6 +202,44 @@ describe('/api/admin/unified', () => {
     expect((await to('published')).status).toBe(200)
     expect(await dataVersion()).toBe('4')
     expect((await audits()).map((a) => a.action)).toContain('unified.update')
+  })
+
+  it('builds the full code list on publish for a draft seeded without one (migration 0011)', async () => {
+    await db.insert(refCodes).values({
+      codeSystem: 'icd10cm',
+      codeNorm: 'F200',
+      description: 'Code F200',
+      billable: 1,
+      validFrom: '2026-10-01',
+    })
+    await db
+      .insert(refCcsr)
+      .values({ codeNorm: 'F200', ccsrCategory: 'TST001', isDefault: 1, release: 'test' })
+    const [seeded] = await db
+      .insert(unifiedCategories)
+      .values({
+        slug: 'serious-mental-illness',
+        label: 'Serious mental illness',
+        definition: 'Seeded draft.',
+        federalCategory: 'disabling_mental_disorder',
+        createdBy: 'migration 0011',
+        updatedBy: 'migration 0011',
+      })
+      .returning()
+    if (!seeded) throw new Error('insert failed')
+    await db.insert(unifiedCcsr).values({ unifiedId: seeded.id, ccsrCategory: 'TST001' })
+
+    const res = await send('PUT', `/api/admin/unified/${String(seeded.id)}`, {
+      ...body,
+      ccsr: ['TST001'],
+      status: 'published',
+    })
+    expect(res.status).toBe(200)
+    const universe = await db
+      .select()
+      .from(unifiedUniverse)
+      .where(eq(unifiedUniverse.unifiedId, seeded.id))
+    expect(universe.map((u) => u.codeNorm)).toEqual(['F200'])
   })
 
   it('retires a draft that was never published, without touching public pages', async () => {

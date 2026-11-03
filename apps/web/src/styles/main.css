@@ -62,7 +62,7 @@
   --color-on-cover-low: #0c2a59;
   --color-cover-none: #f0f2f5;
   --color-cover-none-line: #b9c2cf;
-  --color-cover-nolist: #e3e8ef;
+  --color-cover-nolist: #e8e8e6;
 
   /* Open-licensed (SIL OFL) fonts, self-hosted from npm (Fontsource). */
   --font-display: 'Jost Variable', 'Futura', 'Avenir Next', ui-sans-serif, sans-serif;
@@ -116,7 +116,7 @@
     --color-on-cover-low: #e6ebf2;
     --color-cover-none: #12213a;
     --color-cover-none-line: #3a4c6a;
-    --color-cover-nolist: #1a2840;
+    --color-cover-nolist: #2e3036;
   }
 }
 
@@ -160,7 +160,7 @@
   --color-on-cover-low: #e6ebf2;
   --color-cover-none: #12213a;
   --color-cover-none-line: #3a4c6a;
-  --color-cover-nolist: #1a2840;
+  --color-cover-nolist: #2e3036;
 }
 
 /* `dark:` variant for the rare case a token is not enough; matches both ways of being dark. */
