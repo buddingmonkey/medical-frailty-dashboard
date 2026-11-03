@@ -76,6 +76,12 @@ import {
   statesCompareSearchParams,
   statesCompareSummaryText,
   statesCompareTitle,
+  TILE_MAP_HEADING,
+  TILE_MAP_INTRO,
+  TILE_MAP_NOT_REVIEWED_NOTE,
+  tileMapCaption,
+  tileMapCategory,
+  tileMapTiles,
 } from '@mfcd/shared'
 
 import { Html, html, jsonLdScript } from './html'
@@ -151,7 +157,68 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
   }
 }
 
-export function homePage(items: readonly PublicStateSummary[], origin: string): PageParts {
+/**
+ * The home page's "One category across the country" (roadmap M5 step 8) for crawlers: the
+ * category in the URL (the first by default) as a plain table of every state and DC by name,
+ * not the visual grid, and the picker as a GET form. Nothing when no category is published.
+ */
+function tileMapSection(
+  overview: PublicOverviewResponse,
+  query: Readonly<Record<string, string>>,
+): Html | null {
+  const category = tileMapCategory(overview.categories, query)
+  if (!category) return null
+  const tiles = tileMapTiles(overview, category)
+  return html`<h2>${TILE_MAP_HEADING}</h2>
+    <p>${TILE_MAP_INTRO}</p>
+    <form method="get" action="/">
+      <p>
+        <label for="tile-category">Category</label>
+        <select id="tile-category" name="category">
+          ${overviewCategoryGroups(overview.categories).map(
+            (g) =>
+              html`<optgroup label="${g.label}">
+                ${g.categories.map((c) =>
+                  c.id === category.id
+                    ? html`<option value="${c.slug}" selected>${c.label}</option>`
+                    : html`<option value="${c.slug}">${c.label}</option>`,
+                )}
+              </optgroup>`,
+          )}
+        </select>
+        <button type="submit">Show</button>
+      </p>
+    </form>
+    <table>
+      <caption>
+        ${tileMapCaption(category)}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">State</th>
+          <th scope="col">${category.label}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tiles.map((t) => {
+          const value = t.href ? html`<a href="${t.href}">${t.tableText}</a>` : t.tableText
+          const note = t.notReviewed ? ` (${OVERVIEW_NOT_REVIEWED})` : ''
+          return html`<tr>
+            <th scope="row"><a href="/states/${t.slug}">${t.name}</a></th>
+            <td>${value}${note}</td>
+          </tr>`
+        })}
+      </tbody>
+    </table>
+    ${tiles.some((t) => t.notReviewed) ? html`<p>${TILE_MAP_NOT_REVIEWED_NOTE}</p>` : null}`
+}
+
+export function homePage(
+  items: readonly PublicStateSummary[],
+  origin: string,
+  overview: PublicOverviewResponse | null = null,
+  query: Readonly<Record<string, string>> = {},
+): PageParts {
   const withList = items.filter((s) => s.published !== null).length
   const url = `${origin}/`
   return {
@@ -178,7 +245,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
       </p>
       <h2>States</h2>
       <p>${withList} of ${STATES_AND_DC} states and DC have a list on this site.</p>
-      ${stateListTable(items)}`,
+      ${stateListTable(items)} ${overview ? tileMapSection(overview, query) : null}`,
   }
 }
 

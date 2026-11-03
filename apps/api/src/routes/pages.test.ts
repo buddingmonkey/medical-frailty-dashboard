@@ -203,6 +203,47 @@ describe('GET / (server-rendered)', () => {
       '@type': 'WebSite',
       url: 'http://frailty.example.org/',
     })
+    // No published category yet: no tile map section.
+    expect(app).not.toContain('One category across the country')
+  })
+
+  it('renders the tile map’s category as a table, with a picker that works without JavaScript', async () => {
+    await seedOverview()
+    const app = appHtml(await (await get('/')).text())
+
+    expect(app).toContain('<h2>One category across the country</h2>')
+    // The picker: a GET form, categories under their federal parent, the default selected.
+    expect(app).toContain('<form method="get" action="/">')
+    expect(app).toMatch(
+      /<optgroup label="Disabling mental disorder">\s*<option value="serious-mental-illness" selected>Serious mental illness<\/option>/,
+    )
+    expect(app).toContain('<option value="equipment">Equipment</option>')
+
+    // The default is the first category by federal order: serious mental illness.
+    expect(app).toMatch(
+      /<caption>\s*Serious mental illness: share of the category’s codes that each state lists\s*<\/caption>/,
+    )
+    const table = app.slice(app.search(/<caption>\s*Serious mental illness:/))
+    const rows = [...table.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) =>
+      (m[1] ?? '').replace(/\s+/g, ' ').trim(),
+    )
+    // A header row, then every state and DC by name, also those not in the database.
+    expect(rows).toHaveLength(52)
+    expect(rows[1]).toContain('Alabama')
+    expect(rows).toContain(
+      '<th scope="row"><a href="/states/ga">Georgia</a></th> <td><a href="/compare/serious-mental-illness?focus=GA">50%</a> (not reviewed)</td>',
+    )
+    expect(rows).toContain(
+      '<th scope="row"><a href="/states/mt">Montana</a></th> <td><a href="/compare/serious-mental-illness?focus=MT">100%</a></td>',
+    )
+    expect(rows).toContain(
+      '<th scope="row"><a href="/states/la">Louisiana</a></th> <td>No list on this site yet</td>',
+    )
+
+    // A shared link's category; Georgia lists no kidney code.
+    const kidney = appHtml(await (await get('/?category=kidney-failure')).text())
+    expect(kidney).toContain('<option value="kidney-failure" selected>Kidney failure</option>')
+    expect(kidney).toContain('<a href="/compare/kidney-failure?focus=GA">None listed</a>')
   })
 })
 

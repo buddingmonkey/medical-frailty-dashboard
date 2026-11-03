@@ -119,8 +119,13 @@ function compareQueryOf(c: Context<AppEnv>) {
 
 export const pagesRoute = new Hono<AppEnv>()
   .get('/', pageCache, async (c) => {
-    const { items } = await publicSummaries(createDb(c.env.DB))
-    return sendPage(c, homePage(items, origin(c)))
+    const db = createDb(c.env.DB)
+    // The tile map reads the overview (SQL aggregates); the page is cached on data_version.
+    const [{ items }, overview] = await Promise.all([
+      publicSummaries(db),
+      publicOverview(db, c.get('dataVersion') ?? 0),
+    ])
+    return sendPage(c, homePage(items, origin(c), overview, c.req.query()))
   })
   .get('/states', pageCache, async (c) => {
     const { items } = await publicSummaries(createDb(c.env.DB))
