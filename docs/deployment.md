@@ -125,6 +125,42 @@ for the same approval as a production deploy, and never runs at the same time as
 that environment. Preview can also be loaded locally with
 `pnpm --filter @mfcd/reference-data load --env preview`; production cannot.
 
+### Preview data
+
+Production holds the real lists, and admins edit them there. Preview is for checking that the
+software works, so it holds seed data (project lead, 2026-11-02).
+
+The four states were first loaded on preview (M2 step 11). A one-time manual workflow,
+**Copy state data** (`.github/workflows/copy-state-data.yml`, `scripts/copy-state-data.ts`),
+moves them to production. It also waits for the production approval.
+
+- **What it refuses:** it copies only into an empty target, so it stops if any copied table
+  already has rows. It also stops if the unified category ids or slugs differ between the two
+  databases.
+- **What it copies:**
+  - the R2 source files, each checked by SHA-256;
+  - the state tables: sources, versions, parts, entries, mappings, similarity and audit;
+  - the states' list columns;
+  - a `data_version` bump and one `data.copy` audit row.
+- **What it checks:** afterwards, it compares row counts and the search index.
+- **Dry run:** `node scripts/copy-state-data.ts --to local --persist-to <dir>` copies into a
+  fresh local D1. Apply migrations to `<dir>` first. Production is a target only inside
+  GitHub Actions.
+- **Measured:** 52 s for 25,173 entries (2026-11-02). The local copy matched preview on row
+  counts, check-report length, entry checksums and states.
+
+**What we learned from the copy:**
+
+- `wrangler d1 export --table <name>` works on a database that has `entries_fts`. Only a
+  whole-database export refuses it.
+- An export prints a signed download link that stays valid for an hour, and the rows hold admin
+  emails. The script therefore never prints wrangler's output.
+- A check report can be 717 KB, but a D1 statement holds about 100 KB at most. So
+  `dataset_versions` is copied from query rows instead of the export, and the report is
+  written back in 20,000-character pieces.
+- A `run:` step only gets `pipefail` when it sets `shell: bash`. Without it, `| tee` hides a
+  failure.
+
 - The deploy job uses the environment's own Cloudflare API token (see "GitHub environments").
 - **Never edit a migration after a remote database has applied it** (from M1 step 6 on). Until
   then, M1 regenerated `0000_init` twice (no remote D1 had applied it).

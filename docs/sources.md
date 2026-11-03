@@ -52,6 +52,8 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   [work requirements page](https://ldh.la.gov/Medicaid/work-requirements) links only notices,
   flyers, a fact sheet and a glossary (latest 2026-08-27). Source URL of our PDF: unknown.
   Parse the PDF; request the .xlsx from LDH if parsing proves unreliable.
+- **How we got it:** by email from Louisiana's Medicaid agency (project lead, 2026-11-02). It
+  is not on a public page, so the site cites the document and has no source link.
 - Columns: `Category | Sub-Category | Group | Code Designation | Description | Code`. The code
   is the **last** column.
 - Categories: SMI, SUD, IDD, Cancer, Severe diabetes, Severe neurological, Infectious

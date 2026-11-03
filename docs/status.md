@@ -215,6 +215,10 @@ _Last updated: 2026-11-02 (M5 review follow-ups)_
 - **M5 review** (project lead, 2026-11-02): 19 starter unified categories seeded as drafts
   (migration 0011); the two rules stay as built and go to the legal list; the "no list" shade is a
   neutral grey in both themes; `v0.5.0` approved.
+- **Preview data** (project lead, 2026-11-02): production holds the real lists and admins edit
+  them there. Preview becomes a test site with seed data and a banner. **Step 1 done** (branch
+  `prod-state-copy`): the **Copy state data** workflow copies preview's four states to an empty
+  production, after the production approval. Steps 2–4 are next: rebuild coverage, seed, banner.
 - **Preview data, step 2 done** (branch `coverage-rebuild`): **Rebuild coverage** on Admin →
   Unified categories (`POST /api/admin/coverage/rebuild`) rebuilds full code lists, placements and
   similarity from the base rows. For seed data loaded as SQL and for a new CCSR or ICD-10-CM release.
