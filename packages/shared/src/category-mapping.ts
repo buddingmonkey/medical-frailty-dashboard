@@ -65,25 +65,23 @@ export function federalCategoryList(text: string | null): FederalCategory[] {
 }
 
 /** A federal category an admin can choose: every one except "unmapped". */
-const chosenCategory = z.enum(federalCategories).exclude(['unmapped'])
-const label = z.string().max(200)
+export const chosenCategory = z.enum(federalCategories).exclude(['unmapped'])
+export type ChosenFederalCategory = z.infer<typeof chosenCategory>
+export const categoryLabel = z.string().max(200)
 
-/** Body of `PUT /api/admin/states/:stateId/categories`: confirmed (manual) mappings. */
+/** Body of `PUT /api/admin/states/:stateId/categories`: stored mappings to confirm (manual). */
 export const categoryMappingSaveSchema = z.object({
   items: z
     .array(
       z.object({
-        stateCategory: label,
-        stateSubcategory: label,
+        stateCategory: categoryLabel,
+        stateSubcategory: categoryLabel,
         federalCategory: chosenCategory,
       }),
     )
     .min(1)
     .max(200),
 })
-
-/** Body of `PUT /api/admin/states/:stateId/chapters/:chapter`; null removes the override. */
-export const chapterOverrideSaveSchema = z.object({ federalCategory: chosenCategory.nullable() })
 
 const mappingInfo = z.object({
   federalCategory: z.enum(federalCategories),
