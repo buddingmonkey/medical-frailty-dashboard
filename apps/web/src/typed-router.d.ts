@@ -161,9 +161,30 @@ declare module 'vue-router/auto-routes' {
       { categorySlug: ParamValue<false> },
       | never
     >,
+    '/compare/categories': RouteRecordInfo<
+      '/compare/categories',
+      '/compare/categories',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/compare/codes': RouteRecordInfo<
       '/compare/codes',
       '/compare/codes',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/compare/map': RouteRecordInfo<
+      '/compare/map',
+      '/compare/map',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/compare/states/': RouteRecordInfo<
+      '/compare/states/',
+      '/compare/states',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -350,9 +371,33 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | 'categorySlug'
     }
+    'src/pages/compare/categories.vue': {
+      routes:
+        | '/compare/categories'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/compare/codes.vue': {
       routes:
         | '/compare/codes'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/compare/map.vue': {
+      routes:
+        | '/compare/map'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/compare/states/index.vue': {
+      routes:
+        | '/compare/states/'
       views:
         | never
       pathParamNames:

@@ -23,6 +23,7 @@ import {
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+import CompareTabs from '../../../components/compare/CompareTabs.vue'
 import StatesCompareTable from '../../../components/compare/StatesCompareTable.vue'
 import StatesPicker from '../../../components/compare/StatesPicker.vue'
 import { ApiError } from '../../../lib/api'
@@ -74,29 +75,35 @@ function open(next: string[]) {
 
 <template>
   <article class="space-y-6">
-    <p><RouterLink to="/compare">Overview of every state</RouterLink></p>
-
     <template v-if="notFound">
       <h1 class="font-display text-4xl font-medium text-heading">Comparison not found</h1>
+      <CompareTabs />
       <p class="max-w-prose">
         A comparison names 2 to 4 states with a list, like
         <RouterLink to="/compare/states/ga-vs-ne">/compare/states/ga-vs-ne</RouterLink>.
-        <RouterLink to="/states">See all states</RouterLink>
+        <RouterLink to="/compare/states">Choose states to compare</RouterLink>
       </p>
     </template>
 
-    <p v-else-if="compare.error.value" role="alert" class="text-danger">
-      The comparison could not be loaded. Please try again later.
-    </p>
+    <template v-else-if="compare.error.value">
+      <CompareTabs />
+      <p role="alert" class="text-danger">
+        The comparison could not be loaded. Please try again later.
+      </p>
+    </template>
 
-    <p v-else-if="!data" class="text-muted-foreground">Loading…</p>
+    <template v-else-if="!data">
+      <CompareTabs />
+      <p class="text-muted-foreground">Loading…</p>
+    </template>
 
     <template v-else>
-      <header class="max-w-prose space-y-3">
+      <header class="space-y-3">
         <h1 class="font-display text-4xl font-medium text-heading">
           {{ statesCompareNames(names) }}
         </h1>
-        <p>{{ STATES_COMPARE_INTRO }}</p>
+        <CompareTabs />
+        <p class="max-w-prose">{{ STATES_COMPARE_INTRO }}</p>
       </header>
 
       <StatesPicker

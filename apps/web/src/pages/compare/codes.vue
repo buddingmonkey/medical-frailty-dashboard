@@ -8,8 +8,9 @@ import {
   pageTitles,
 } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
+import CompareTabs from '../../components/compare/CompareTabs.vue'
 import CompareControls from '../../components/compare/CompareControls.vue'
 import CompareTable from '../../components/compare/CompareTable.vue'
 import { ApiError } from '../../lib/api'
@@ -92,10 +93,10 @@ const csvHref = computed(() => {
 
 <template>
   <article class="space-y-8">
-    <header class="max-w-prose space-y-3">
-      <p><RouterLink to="/compare">Overview of every state</RouterLink></p>
+    <header class="space-y-3">
       <h1 class="font-display text-4xl font-medium text-heading">Compare states by category</h1>
-      <p>
+      <CompareTabs />
+      <p class="max-w-prose">
         Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
         least one of them lists in that category; each column shows what that state’s whole list
         says about it.

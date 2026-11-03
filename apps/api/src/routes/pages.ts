@@ -29,11 +29,13 @@ import { publicSummaries } from '../db/public-summary'
 import { unifiedCategories } from '../db/schema'
 import { cachePublic, publicCache } from '../middleware/public-cache'
 import {
+  categoriesPage,
   categoryNotFoundPage,
   comparePage,
   drillPage,
   downloadName,
   homePage,
+  mapPage,
   notFoundPage,
   overviewPage,
   type PageParts,
@@ -41,6 +43,7 @@ import {
   statePage,
   statesComparePage,
   statesCompareNotFoundPage,
+  statesLandingPage,
   statesPage,
 } from '../seo/pages'
 import type { AppEnv } from '../types'
@@ -140,6 +143,16 @@ export const pagesRoute = new Hono<AppEnv>()
     return sendPage(c, overviewPage(data, origin(c), c.req.query()))
   })
   .get('/compare.csv', async (c, next) => codeTableRedirect(c, '/compare/codes.csv') ?? next())
+  // The compare tabs (project lead, 2026-11-02). Before `/compare/:slug`; both slugs are
+  // reserved. Each reads the overview, cached on data_version.
+  .get('/compare/categories', pageCache, async (c) => {
+    const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
+    return sendPage(c, categoriesPage(data, origin(c)))
+  })
+  .get('/compare/map', pageCache, async (c) => {
+    const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
+    return sendPage(c, mapPage(data, origin(c), c.req.query()))
+  })
   .get('/compare/codes', pageCache, async (c) => {
     const parsed = compareQueryOf(c)
     if (parsed === null) return sendPage(c, comparePage(origin(c), null))
@@ -209,7 +222,9 @@ export const pagesRoute = new Hono<AppEnv>()
   })
   // Compare 2–4 states (roadmap M5 step 7). Before `/compare/:slug…`, which `states` would
   // otherwise reach as a category slug (it is reserved).
-  .get('/compare/states', async (c) => {
+  .get('/compare/states', async (c, next) => {
+    // Without `?states=`, the States side by side landing (below, cached).
+    if (c.req.queries('states') === undefined) return next()
     // The pickers' GET form without JavaScript: `?states=ga&states=mt` → the comparison.
     const picked = [
       ...new Set(
@@ -226,6 +241,16 @@ export const pagesRoute = new Hono<AppEnv>()
       )
     }
     return c.redirect(statesComparePath(picked.map((s) => s.toUpperCase())), 302)
+  })
+  .get('/compare/states', pageCache, async (c) => {
+    // `?state=ga`: that state's most similar states. Anything else shows the landing alone.
+    const db = createDb(c.env.DB)
+    const slug = (c.req.query('state') ?? '').trim().toLowerCase()
+    const [{ items }, own] = await Promise.all([
+      publicSummaries(db),
+      /^[a-z]{2}$/.test(slug) ? publicStateDetail(db, slug, c.get('dataVersion') ?? 0) : null,
+    ])
+    return sendPage(c, statesLandingPage(items, own, origin(c)))
   })
   .get('/compare/states/:pair/codes.csv', publicCache, async (c) => {
     const ids = parseStatesPair(c.req.param('pair'))
@@ -355,6 +380,9 @@ export const pagesRoute = new Hono<AppEnv>()
       url(`${base}/`, newest),
       url(`${base}/states`, newest),
       url(`${base}/compare`, newest),
+      // The compare tabs that are indexed (`/compare/states` is not; docs/seo.md).
+      url(`${base}/compare/categories`, newest),
+      url(`${base}/compare/map`, newest),
       // A category page changes with its own edits and with any state's list.
       ...categories.map((u) => {
         const day = u.updatedAt.slice(0, 10)

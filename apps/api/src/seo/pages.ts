@@ -1,6 +1,12 @@
 import {
+  CATEGORIES_DESCRIPTION,
+  CATEGORIES_HEADING,
+  CATEGORIES_INTRO,
   type CodeSystem,
   codeSystemLabels,
+  COMPARE_TABS_LABEL,
+  compareTabMark,
+  compareTabs,
   compareCellText,
   compareFiledUnder,
   compareQualificationText,
@@ -32,6 +38,7 @@ import {
   federalCountsOverlap,
   formatCount,
   formatDay,
+  MAP_DESCRIPTION,
   OVERVIEW_DESCRIPTION,
   OVERVIEW_NO_LIST,
   OVERVIEW_NOT_REVIEWED,
@@ -76,6 +83,12 @@ import {
   statesCompareSearchParams,
   statesCompareSummaryText,
   statesCompareTitle,
+  STATES_LANDING_DESCRIPTION,
+  STATES_LANDING_HEADING,
+  STATES_LANDING_INTRO,
+  STATES_LANDING_OWN_HEADING,
+  STATES_LANDING_OWN_LABEL,
+  STATES_LANDING_PICK_HEADING,
   TILE_MAP_HEADING,
   TILE_MAP_INTRO,
   TILE_MAP_NOT_REVIEWED_NOTE,
@@ -158,20 +171,20 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
 }
 
 /**
- * The home page's "One category across the country" (roadmap M5 step 8) for crawlers: the
- * category in the URL (the first by default) as a plain table of every state and DC by name,
- * not the visual grid, and the picker as a GET form. Nothing when no category is published.
+ * "One category across the country" (roadmap M5 step 8) for crawlers, on the home page and the
+ * Map tab (`/compare/map`): the category in the URL (the first by default) as a plain table of
+ * every state and DC by name, not the visual grid, and the picker as a GET form to `action`.
+ * Nothing when no category is published.
  */
-function tileMapSection(
+function tileMapTable(
   overview: PublicOverviewResponse,
   query: Readonly<Record<string, string>>,
+  action: string,
 ): Html | null {
   const category = tileMapCategory(overview.categories, query)
   if (!category) return null
   const tiles = tileMapTiles(overview, category)
-  return html`<h2>${TILE_MAP_HEADING}</h2>
-    <p>${TILE_MAP_INTRO}</p>
-    <form method="get" action="/">
+  return html`<form method="get" action="${action}">
       <p>
         <label for="tile-category">Category</label>
         <select id="tile-category" name="category">
@@ -211,6 +224,81 @@ function tileMapSection(
       </tbody>
     </table>
     ${tiles.some((t) => t.notReviewed) ? html`<p>${TILE_MAP_NOT_REVIEWED_NOTE}</p>` : null}`
+}
+
+/** The home page's tile map section; nothing when no category is published. */
+function tileMapSection(
+  overview: PublicOverviewResponse,
+  query: Readonly<Record<string, string>>,
+): Html | null {
+  const table = tileMapTable(overview, query, '/')
+  if (!table) return null
+  return html`<h2>${TILE_MAP_HEADING}</h2>
+    <p>${TILE_MAP_INTRO}</p>
+    ${table}`
+}
+
+/**
+ * `/compare/map`, the Map tab: the home page's tile map as a page of its own. Indexed, canonical
+ * to the bare page, like the home page whose `?category=` it shares.
+ */
+export function mapPage(
+  overview: PublicOverviewResponse,
+  origin: string,
+  query: Readonly<Record<string, string>> = {},
+): PageParts {
+  const path = '/compare/map'
+  return {
+    status: 200,
+    title: pageTitles.map,
+    description: MAP_DESCRIPTION,
+    path,
+    canonical: `${origin}${path}`,
+    noindex: false,
+    jsonLd: [],
+    body: html`<h1>${TILE_MAP_HEADING}</h1>
+      ${compareTabsHtml(path)}
+      <p>${TILE_MAP_INTRO}</p>
+      ${tileMapTable(overview, query, path) ?? html`<p>No categories are published yet.</p>`}`,
+  }
+}
+
+/**
+ * `/compare/categories`, the Categories tab: every published unified category under its federal
+ * category, each linking to its page, with its definition. Indexed and in the sitemap.
+ */
+export function categoriesPage(overview: PublicOverviewResponse, origin: string): PageParts {
+  const path = '/compare/categories'
+  const groups = overviewCategoryGroups(overview.categories)
+  return {
+    status: 200,
+    title: pageTitles.categories,
+    description: CATEGORIES_DESCRIPTION,
+    path,
+    canonical: `${origin}${path}`,
+    noindex: false,
+    jsonLd: [],
+    body: html`<h1>${CATEGORIES_HEADING}</h1>
+      ${compareTabsHtml(path)}
+      <p>${CATEGORIES_INTRO}</p>
+      ${
+        groups.length === 0
+          ? html`<p>No categories are published yet.</p>`
+          : groups.map(
+              (g) =>
+                html`<h2>${g.label}</h2>
+                  <ul>
+                    ${g.categories.map(
+                      (c) =>
+                        html`<li>
+                          <a href="/compare/${c.slug}">${c.label}</a>
+                          ${c.definition ? html`<p>${c.definition}</p>` : null}
+                        </li>`,
+                    )}
+                  </ul>`,
+            )
+      }`,
+  }
 }
 
 export function homePage(
@@ -493,8 +581,8 @@ export function comparePage(
   origin: string,
   view: { query: CompareQuery; result: CompareResult } | { error: string } | null,
 ): PageParts {
-  const intro = html`<p><a href="/compare">Overview of every state</a></p>
-    <h1>Compare states by category</h1>
+  const intro = html`<h1>Compare states by category</h1>
+    ${compareTabsHtml('/compare/codes')}
     <p>
       Pick a category and the states to compare. Each row is a code, a wildcard or a range that at
       least one of them lists in that category; each column shows what that state’s whole list says
@@ -592,7 +680,12 @@ export function overviewPage(
     return new Html(`<th ${attributes}${sort}>`)
   }
 
+  /** A column's label; † marks a category without a full code list. */
+  const headerLabel = (c: PublicOverviewResponse['categories'][number]) =>
+    c.coverageBasis === 'union' ? `${c.label} †` : c.label
+
   const intro = html`<h1>Which states cover what</h1>
+    ${compareTabsHtml('/compare')}
     <p>
       Each row is a state; each column is a category, grouped under its federal category in the law.
       A number is the share of the category’s codes that the state lists. Select a number to see the
@@ -617,7 +710,7 @@ export function overviewPage(
               ${categories.map(
                 (c) =>
                   html`${headerOpen(c.id, 'scope="col"')}
-                    ${c.coverageBasis === 'union' ? `${c.label} †` : c.label}
+                    <a href="/compare/${c.slug}">${headerLabel(c)}</a>
                   </th>`,
               )}
             </tr>
@@ -660,8 +753,7 @@ export function overviewPage(
       <p>
         Shades:
         ${(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]).join('; ')}.
-      </p>
-      <p>To compare single codes, use the <a href="/compare/codes">code table</a>.</p>`,
+      </p>`,
   }
 }
 
@@ -753,8 +845,8 @@ export function drillPage(
   const caption = `${category.label}: codes by how many states list them`
   const total = data.states.length
 
-  const about = html`<p><a href="/compare">Overview of every state</a></p>
-    <h1>${category.label}</h1>
+  const about = html`<h1>${category.label}</h1>
+    ${compareTabsHtml(path)}
     <p>Federal category: ${federalCategoryInfo[category.federalCategory].label}.</p>
     <p>${category.definition}</p>
     ${category.includes ? html`<p>Includes: ${category.includes}</p>` : null}
@@ -929,18 +1021,21 @@ export function drillPage(
 }
 
 /** The comparison's pickers as a GET form (`/compare/states?states=…` redirects). */
-function statesPickerForm(data: StatesCompareResponse): Html {
+function statesPickerForm(
+  choices: readonly { slug: string; name: string }[],
+  currentSlugs: readonly string[] = [],
+): Html {
   const labels = ['First state', 'Second state', 'Third state', 'Fourth state']
   return html`<form method="get" action="/compare/states">
     <fieldset>
       <legend>States to compare</legend>
       ${labels.slice(0, STATES_COMPARE_MAX).map((label, i) => {
-        const current = data.states[i]?.slug
+        const current = currentSlugs[i]
         return html`<p>
           <label for="states-picker-${i}">${label}</label>
           <select id="states-picker-${i}" name="states">
             <option value="">${i < STATES_COMPARE_MIN ? 'Choose a state' : 'None'}</option>
-            ${data.choices.map((c) =>
+            ${choices.map((c) =>
               c.slug === current
                 ? html`<option value="${c.slug}" selected>${c.name}</option>`
                 : html`<option value="${c.slug}">${c.name}</option>`,
@@ -980,10 +1075,13 @@ export function statesComparePage(
         )}, ${String(summary.all)} listed by ${data.states.length === 2 ? 'both' : 'all'}.`
     : statesCompareNoListText(noList.map((s) => s.name))
 
-  const head = html`<p><a href="/compare">Overview of every state</a></p>
-    <h1>${statesCompareNames(names)}</h1>
+  const head = html`<h1>${statesCompareNames(names)}</h1>
+    ${compareTabsHtml(path)}
     <p>${STATES_COMPARE_INTRO}</p>
-    ${statesPickerForm(data)}`
+    ${statesPickerForm(
+      data.choices,
+      data.states.map((s) => s.slug),
+    )}`
 
   if (!summary) {
     return {
@@ -1121,11 +1219,62 @@ export function statesCompareNotFoundPage(
     noindex: true,
     jsonLd: [],
     body: html`<h1>Comparison not found</h1>
+      ${compareTabsHtml(path)}
       <p>
         ${reason} A comparison names 2 to 4 states with a list, like
         <a href="/compare/states/ga-vs-ne">/compare/states/ga-vs-ne</a>.
-        <a href="/states">See all states</a>
+        <a href="/compare/states">Choose states to compare</a>
       </p>`,
+  }
+}
+
+/**
+ * `/compare/states`, the States side by side tab: "Your state" as a GET form (`?state=ga`
+ * shows its most similar states, the state page's section) and the comparison's pickers as a
+ * GET form (`?states=…` redirects to the comparison). Never indexed, like the comparisons: it
+ * holds no facts of its own, and `?state=` repeats the state page's (docs/seo.md).
+ */
+export function statesLandingPage(
+  items: readonly PublicStateSummary[],
+  own: PublicStateDetail | null,
+  origin: string,
+): PageParts {
+  const path = '/compare/states'
+  const choices = items.filter((s) => s.published !== null)
+  const ownSlug = own?.state.published ? own.state.slug : null
+  const ownForm = html`<form method="get" action="${path}">
+    <p>
+      <label for="own-state">${STATES_LANDING_OWN_LABEL}</label>
+      <select id="own-state" name="state">
+        <option value="">Choose a state</option>
+        ${choices.map((s) =>
+          s.slug === ownSlug
+            ? html`<option value="${s.slug}" selected>${s.name}</option>`
+            : html`<option value="${s.slug}">${s.name}</option>`,
+        )}
+      </select>
+      <button type="submit">Show similar states</button>
+    </p>
+  </form>`
+  const pickers =
+    choices.length < STATES_COMPARE_MIN
+      ? html`<p>Fewer than 2 states have a list on this site yet.</p>`
+      : html`<h2>${STATES_LANDING_OWN_HEADING}</h2>
+          ${ownForm} ${own && ownSlug ? similarSection(own.state, own.similar) : null}
+          <h2>${STATES_LANDING_PICK_HEADING}</h2>
+          ${statesPickerForm(choices)}`
+  return {
+    status: 200,
+    title: pageTitles.statesLanding,
+    description: STATES_LANDING_DESCRIPTION,
+    path,
+    canonical: `${origin}${path}`,
+    noindex: true,
+    jsonLd: [],
+    body: html`<h1>${STATES_LANDING_HEADING}</h1>
+      ${compareTabsHtml(path)}
+      <p>${STATES_LANDING_INTRO}</p>
+      ${pickers}`,
   }
 }
 
@@ -1139,9 +1288,10 @@ export function categoryNotFoundPage(origin: string, path: string): PageParts {
     noindex: true,
     jsonLd: [],
     body: html`<h1>Category not found</h1>
+      ${compareTabsHtml(path)}
       <p>
         There is no published category at this address.
-        <a href="/compare">See every category</a>
+        <a href="/compare/categories">See every category</a>
       </p>`,
   }
 }
@@ -1170,6 +1320,20 @@ export function navHtml(path: string): Html {
         return mark === ''
           ? html`<li><a href="${item.path}">${item.label}</a></li>`
           : html`<li><a href="${item.path}" aria-current="${mark}">${item.label}</a></li>`
+      })}
+    </ul>
+  </nav>`
+}
+
+/** The compare tabs (`compareTabs`), the same links as the Vue tab row, under each heading. */
+export function compareTabsHtml(path: string): Html {
+  return html`<nav aria-label="${COMPARE_TABS_LABEL}">
+    <ul>
+      ${compareTabs.map((tab) => {
+        const mark = compareTabMark(tab.path, path)
+        return mark === null
+          ? html`<li><a href="${tab.path}">${tab.label}</a></li>`
+          : html`<li><a href="${tab.path}" aria-current="${mark}">${tab.label}</a></li>`
       })}
     </ul>
   </nav>`

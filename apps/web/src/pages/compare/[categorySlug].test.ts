@@ -217,9 +217,6 @@ describe('category drill-down', () => {
     expect(screen.getByText(/Schizophrenia, bipolar disorder\./)).toBeTruthy()
     expect(screen.getByText(/MBD001/)).toBeTruthy()
     expect(screen.getByText(/Agency for Healthcare Research and Quality/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Overview of every state' }).getAttribute('href')).toBe(
-      '/compare',
-    )
     expect(screen.getByRole('link', { name: /Compare single codes/ }).getAttribute('href')).toBe(
       '/compare/codes?states=GA%2CLA%2CMT&category=disabling_mental_disorder',
     )

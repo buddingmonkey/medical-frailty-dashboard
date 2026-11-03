@@ -59,6 +59,7 @@ function category(id: number, fields: Partial<OverviewCategory> = {}): OverviewC
     id,
     slug: `cat-${String(id)}`,
     label: `Category ${String(id)}`,
+    definition: '',
     federalCategory: 'sud',
     sortOrder: 1,
     coverageBasis: 'universe',

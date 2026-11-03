@@ -246,6 +246,14 @@ describe('unified schemas', () => {
     expect(unifiedCategorySaveSchema.safeParse({ ...category, slug: 'codes-x' }).success).toBe(true)
   })
 
+  it('reserves the compare tabs: categories, map and states', () => {
+    for (const slug of ['categories', 'map', 'states']) {
+      expect(isReservedUnifiedSlug(slug)).toBe(true)
+      expect(unifiedCategorySaveSchema.safeParse({ ...category, slug }).success).toBe(false)
+    }
+    expect(isReservedUnifiedSlug('map-reading')).toBe(false)
+  })
+
   const mapping = {
     stateCategory: 'Serious Mental Illness',
     stateSubcategory: '',

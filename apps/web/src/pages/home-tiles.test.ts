@@ -39,6 +39,7 @@ const overview: PublicOverviewResponse = {
       id: 2,
       slug: 'alcohol-use',
       label: 'Alcohol use',
+      definition: '',
       federalCategory: 'sud',
       sortOrder: 1,
       coverageBasis: 'union',
@@ -48,6 +49,7 @@ const overview: PublicOverviewResponse = {
       id: 1,
       slug: 'psychoses',
       label: 'Psychoses',
+      definition: '',
       federalCategory: 'disabling_mental_disorder',
       sortOrder: 1,
       coverageBasis: 'universe',
@@ -179,5 +181,42 @@ describe('tile map on the home page', () => {
     })
     await screen.findByText('0 of 51 states and DC have a list on this site.')
     expect(screen.queryByRole('heading', { name: 'One category across the country' })).toBeNull()
+  })
+})
+
+describe('tile map on its own page, the Map tab', () => {
+  it('shows the same map under its own heading, with the compare tabs', async () => {
+    await renderRoute('/compare/map')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'One category across the country' }),
+    ).toBeTruthy()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Compare views' }))
+        .getByRole('link', { name: 'Map' })
+        .getAttribute('aria-current'),
+    ).toBe('page')
+    const map = await screen.findByRole('group', { name: ALCOHOL_MAP })
+    expect(within(map).getAllByRole('listitem')).toHaveLength(51)
+    expect(document.title).toMatch(/^One category across the country \| /)
+  })
+
+  it('keeps the category in its own URL', async () => {
+    const user = userEvent.setup()
+    const { router } = await renderRoute('/compare/map')
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Category' }), 'psychoses')
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/compare/map?category=psychoses')
+    })
+    expect(await screen.findByRole('group', { name: PSYCHOSES_MAP })).toBeTruthy()
+  })
+
+  it('says so when no category is published', async () => {
+    server.use(
+      http.get('/api/public/overview', () =>
+        HttpResponse.json({ ...overview, categories: [], states: [] }),
+      ),
+    )
+    await renderRoute('/compare/map')
+    expect(await screen.findByText('No categories are published yet.')).toBeTruthy()
   })
 })
