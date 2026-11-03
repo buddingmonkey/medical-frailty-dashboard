@@ -172,6 +172,9 @@ HCPCS description, not only listed codes (project lead). **Built 2026-11-03** (P
 2. Weekly cron backup + draft cleanup.
 3. Remap screen polish: bulk remap, see affected entries before saving.
 
+The backup download is a zip (project lead, 2026-11-03). **Built 2026-11-03** (PRs #80–#82; see
+`docs/devlog/2026-11-03-m7-admin.md`).
+
 ## M8 Hardening and launch
 
 Launch gate (user, 2026-11-01): **at least 2 states with every category mapping confirmed**,

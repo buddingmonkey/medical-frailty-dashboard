@@ -77,6 +77,8 @@ literacy, little or no coding.
 | 2026-11-03 | While two builders wrote code, the project lead asked two more AI agents to review the site's text, as a state Medicaid employee would read it, and the contributor guide, as someone who has never used a terminal would. The text review found that "covers" and "qualifies" read like eligibility decisions. Both reviews became steps of the same milestone | Ask a reviewer to read as one specific reader; "is this clear?" finds less than "could a Medicaid analyst misread this?" | `devlog/2026-11-03-m6-code-search.md` |
 | 2026-11-03 | The builder that reworded the site could not run the browser tests, because another builder was using their ports. At the merge, 11 failed. All 11 were old wording in the tests, not broken pages, and the browser's own page snapshot showed the new names | A green run that skipped a test layer is not green; the person who merges runs everything once | same |
 | 2026-11-03 | The project lead noticed the home map "bouncing" on hover. The cause was a chain: each state's summary had a different height, the page grew and shrank, the browser moved the scroll, and the mouse landed on another state. The new test fails without the fix, in all 4 cases | Describe what you see, even when it sounds odd; "bounces at the frame rate" pointed straight at a feedback loop | same |
+| 2026-11-03 | A builder that couldn't run its own browser test handed over a restore test that failed. The restore itself worked; the test looked for codes on a page that only shows counts. The reviewer read the page snapshot and pointed the test at the state's data download instead | When a test fails, first ask whether the test or the feature is wrong; a snapshot of the page answers it | `devlog/2026-11-03-m7-admin.md` |
+| 2026-11-03 | The weekly backup worked in every test, but the builder checked the platform's limits anyway: a free-plan scheduled job gets 10 ms of CPU, and the backup needs up to 160 ms. On the free plan it would have failed every Sunday without a trace | Check the free tier's limits for scheduled jobs too, not only for web requests | same |
 
 ## Numbers to collect
 
@@ -147,6 +149,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | Map off home (2026-11-03) | 07:09–07:25 | not measured | Workers Paid | The project lead saw the 51-state preview and moved the tile map to the Map tab; one builder, 6 min |
 | **M5 total** (2026-11-02) | **≈ 4.5 h** (15:59–20:40) | not measured | $5/month | 10 PRs (#47–#56); 1,023 Vitest + 52 e2e; three category levels, CCSR, five views; 8 builder agents |
 | **M6 total** (2026-11-03) | **≈ 2.2 h** (10:31–12:40) | not measured | Workers Paid | 8 PRs (#69–#76); 1,365 Vitest + 64 e2e; code search over 107k reference codes, code pages for crawlers, like codes, a plain-language pass, contributor docs, a map fix; 7 builders + 2 reviewer agents, up to 3 at once |
+| **M7 total** (2026-11-03) | **≈ 1.3 h** (13:34–14:55) | not measured | Workers Paid (the weekly dump needs it) | 3 PRs (#80–#82); 1,452 Vitest + 69 e2e; bulk remap with a preview, zip backup and restore, weekly cron with cleanup; 3 builders, 2 review rounds |
 
 ## Assets to capture for slides
 

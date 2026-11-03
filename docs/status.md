@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-03 (M6 complete)_
+_Last updated: 2026-11-03 (M7 complete)_
 
 ## Where things stand
 
@@ -322,6 +322,18 @@ _Last updated: 2026-11-03 (M6 complete)_
   Migration `0015_draft_updated_at` adds `dataset_versions.updated_at` (nullable, backfilled).
   The dump costs 65–160 ms CPU on the seed: **it needs Workers Paid** (Free allows 10 ms per
   Cron Trigger; `docs/deployment.md`, "Weekly maintenance").
+- **M7 is complete** (PRs #80–#82, 2026-11-03, 13:34–14:55 CST). Hard stop for the project
+  lead's review. Built: bulk remap with a preview (`/admin/categories`), backup download as a
+  zip and restore path 2 (`/admin/restore`), and a weekly cron: dump, prunes, draft cleanup
+  (migration 0015). **For the review:**
+  - Tag `v0.8.0`? It applies 0015 on production and turns on the Sunday cron there.
+  - Try "Run maintenance now" on preview (Backup and restore page). It writes a weekly dump
+    to R2 and deletes only drafts idle for 30 days or more; preview has none that old.
+  - **The weekly dump needs Workers Paid** (65–160 ms of CPU; a Free cron gets 10 ms). On a
+    downgrade, drop the dump from the cron or move it to a Workflow (`docs/deployment.md`).
+  - Backup decisions taken by the lead (main session): the download leaves out R2 keys and the
+    weekly dump keeps them; 50 MB import cap; a restored mapping keeps its original mapper,
+    and the audit row names who restored it.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
