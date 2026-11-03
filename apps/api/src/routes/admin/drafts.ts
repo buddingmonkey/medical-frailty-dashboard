@@ -207,6 +207,7 @@ const rowCountUpdate = (db: Db, versionId: number) =>
       rowCount: sql`(SELECT count(*) FROM entries WHERE version_id = ${versionId})`,
       // Rows changed: the stored report no longer describes them.
       checkReportJson: null,
+      updatedAt: new Date().toISOString(),
     })
     .where(and(eq(datasetVersions.id, versionId), eq(datasetVersions.status, 'draft')))
 
@@ -439,7 +440,7 @@ export const draftsRoute = new Hono<AppEnv>()
     if (version.status === 'draft') {
       await db
         .update(datasetVersions)
-        .set({ checkReportJson: JSON.stringify(result) })
+        .set({ checkReportJson: JSON.stringify(result), updatedAt: new Date().toISOString() })
         .where(and(eq(datasetVersions.id, version.id), eq(datasetVersions.status, 'draft')))
     }
     return c.json(result)
@@ -579,7 +580,7 @@ export const draftsRoute = new Hono<AppEnv>()
     await db.batch([
       db
         .update(datasetVersions)
-        .set({ status: 'discarded' })
+        .set({ status: 'discarded', updatedAt: new Date().toISOString() })
         .where(and(eq(datasetVersions.id, version.id), eq(datasetVersions.status, 'draft'))),
       auditInsert(db, {
         actorEmail: actorOf(c),

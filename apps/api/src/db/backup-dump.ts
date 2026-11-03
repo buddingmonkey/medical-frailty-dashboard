@@ -8,7 +8,7 @@ import * as schema from './schema'
 // The full backup (docs/deployment.md, "Backups and restore"): every state-data table as one
 // JSON document, written table by table in pages, so neither the Worker nor the caller ever
 // holds more than one page. Used by `GET /api/admin/backup` (a Response stream) and, from M7
-// step 2, the weekly cron (an R2 multipart upload): both pass their own `write`.
+// step 2, the weekly cron (src/maintenance, buffered then one R2 put): both pass their own `write`.
 
 /** Rows per query. Keyset on rowid, one bound parameter, so D1's 100-parameter limit is far. */
 export const DUMP_PAGE_ROWS = 500

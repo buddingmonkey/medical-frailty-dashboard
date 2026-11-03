@@ -120,6 +120,7 @@ function fakeApi() {
   server.use(
     http.get('/api/admin/whoami', () => HttpResponse.json({ email: 'admin@example.org' })),
     http.get('/api/admin/watch', () => HttpResponse.json({ items: [] })),
+    http.get('/api/admin/maintenance', () => HttpResponse.json({ last: null, weekly: [] })),
     http.get('/api/admin/states', () =>
       HttpResponse.json({ items: [{ id: 'MT', name: 'Montana', status: 'published' }] }),
     ),

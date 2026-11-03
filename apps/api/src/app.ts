@@ -17,6 +17,7 @@ import { coverageRoute } from './routes/admin/coverage'
 import { columnProfilesRoute } from './routes/admin/column-profiles'
 import { conditionGroupsRoute } from './routes/admin/condition-groups'
 import { draftsRoute } from './routes/admin/drafts'
+import { maintenanceRoute, weeklyBackupRoute } from './routes/admin/maintenance'
 import { refCodesRoute } from './routes/admin/ref-codes'
 import { sources } from './routes/admin/sources'
 import { ccsrCategoriesRoute, unifiedRoute } from './routes/admin/unified'
@@ -78,7 +79,9 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.use('/admin/*', adminOnly)
   app.route('/api/admin/whoami', whoami)
   app.route('/api/admin/audit', audit)
+  app.route('/api/admin/backup/weekly', weeklyBackupRoute)
   app.route('/api/admin/backup', backupRoute)
+  app.route('/api/admin/maintenance', maintenanceRoute)
   app.route('/api/admin/watch', watch)
   app.route('/api/admin/states', adminStates)
   app.route('/api/admin/states', categoriesRoute)

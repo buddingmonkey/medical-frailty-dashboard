@@ -89,7 +89,10 @@ unless the Access application bypasses that path.)
 - **Backups** (`/admin/restore`): the full download holds `audit_log`, so admin email
   addresses (Access identities). They stay in, because the file is admin-only (the route is
   under `/api/admin`); keep the file private. It holds no tokens, headers or secrets (a test
-  checks), no source files and no R2 keys. An imported backup is read only in the browser:
+  checks), no source files and no R2 keys. The **weekly dump** (M7 step 2) is the one exception:
+  it stays in R2 and keeps `source_documents.r2_key` so restore path 3 finds the files; its
+  download (`GET /api/admin/backup/weekly/:date`, strict date, audited) is admin-only like the
+  rest, and a key alone gives no access (R2 has no public URL here). An imported backup is read only in the browser:
   50 MB file limit, a zip must hold exactly one top-level `.json` entry, and inflating stops
   as soon as the JSON passes 50 MB (declared or actual size), so a zip bomb cannot fill the
   tab. Its entries go to a draft through the normal draft API; nothing writes published
