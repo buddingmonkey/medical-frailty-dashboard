@@ -115,7 +115,7 @@ describe('site basics in every server-rendered public page', () => {
       expect(metaContent(head, 'property', 'og:type')).toBe('website')
       expect(metaContent(head, 'property', 'og:title')).toBeTruthy()
       expect(metaContent(head, 'property', 'og:description')).toBeTruthy()
-      expect(metaContent(head, 'property', 'og:url')).toMatch(new RegExp(`^${ORIGIN}/`))
+      expect(metaContent(head, 'property', 'og:url')?.startsWith(`${ORIGIN}/`)).toBe(true)
       expect(metaContent(head, 'property', 'og:image')).toBe(`${ORIGIN}${SHARE_IMAGE.path}`)
       expect(metaContent(head, 'property', 'og:image:width')).toBe('1200')
       expect(metaContent(head, 'property', 'og:image:height')).toBe('630')
