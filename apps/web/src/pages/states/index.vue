@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ENTRY_DEFINITION, pageTitles, statesWithListText } from '@mfcd/shared'
+import { ENTRY_DEFINITION, pageTitles, statesWithListText, pageDescriptions } from '@mfcd/shared'
 import { computed } from 'vue'
 
 import StateTable from '../../components/home/StateTable.vue'
-import { usePageTitle } from '../../lib/page-title'
+import { usePageMeta } from '../../lib/page-meta'
 import { usePublicStates } from '../../lib/public-states'
 
 // Every state and DC in one table: the "States" link in the main navigation.
 
-usePageTitle(pageTitles.states)
+usePageMeta({ title: pageTitles.states, description: pageDescriptions.states })
 const { data, isPending, isError } = usePublicStates()
 const withList = computed(() => data.value?.items.filter((s) => s.published !== null).length ?? 0)
 </script>

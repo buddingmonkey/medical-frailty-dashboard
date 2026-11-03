@@ -17,14 +17,14 @@ import SearchFilters from '../components/search/SearchFilters.vue'
 import SearchResultItem from '../components/search/SearchResultItem.vue'
 import { useCodeSearch } from '../composables/useCodeSearch'
 import { ApiError } from '../lib/api'
-import { usePageTitle } from '../lib/page-title'
+import { usePageMeta } from '../lib/page-meta'
 import { usePublicStates } from '../lib/public-states'
 
 // Code search (roadmap M6 step 2). The URL holds the search (`?q=&states=&system=`), so a link
 // shows the same results and Back works. Typing writes the URL with `replace` after a pause;
 // a filter change writes it at once with `push`. The results follow the URL.
 
-usePageTitle(SEARCH_PAGE.title)
+usePageMeta({ title: SEARCH_PAGE.title, description: SEARCH_PAGE.intro })
 
 // Search result pages are not for search engines (docs/seo.md). The SPA fallback serves this
 // page, so the tag is added here.

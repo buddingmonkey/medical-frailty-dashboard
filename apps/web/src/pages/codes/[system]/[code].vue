@@ -13,6 +13,7 @@ import {
   codeSystemLabels,
   formatDay,
   stateCategoryName,
+  codeDetailMetaDescription,
 } from '@mfcd/shared'
 import { computed, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -21,7 +22,7 @@ import LikeCodes from '../../../components/codes/LikeCodes.vue'
 import QualificationBadge from '../../../components/compare/QualificationBadge.vue'
 import { useCodeDetail } from '../../../composables/useCodeDetail'
 import { ApiError } from '../../../lib/api'
-import { usePageTitle } from '../../../lib/page-title'
+import { usePageMeta } from '../../../lib/page-meta'
 
 // One code's page (roadmap M6 step 3): the code and its official description, then every state
 // grouped by status, included first. Wording lives in packages/shared/src/code-detail.ts.
@@ -41,11 +42,14 @@ watch(data, (d) => {
 })
 
 const notFound = computed(() => error.value instanceof ApiError && error.value.status === 404)
-usePageTitle(() =>
+usePageMeta(() =>
   notFound.value
-    ? CODE_DETAIL_NOT_FOUND.title
+    ? { title: CODE_DETAIL_NOT_FOUND.title, description: CODE_DETAIL_NOT_FOUND.body }
     : data.value
-      ? codeDetailPageTitle(data.value.code, data.value.states)
+      ? {
+          title: codeDetailPageTitle(data.value.code, data.value.states),
+          description: codeDetailMetaDescription(data.value.code, data.value.states),
+        }
       : null,
 )
 /** One plain sentence per state with a list (the server HTML shows the same). */

@@ -23,6 +23,8 @@ import {
   statesCompareSummaryText,
   statesCompareTitle,
   learnMore,
+  STATES_COMPARE_NOT_FOUND_DESCRIPTION,
+  statesCompareDescription,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -32,7 +34,7 @@ import StatesCompareTable from '../../../components/compare/StatesCompareTable.v
 import StatesPicker from '../../../components/compare/StatesPicker.vue'
 import StatusLegend from '../../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../../lib/api'
-import { usePageTitle } from '../../../lib/page-title'
+import { usePageMeta } from '../../../lib/page-meta'
 import { useStatesCompare } from '../../../lib/public-states-compare'
 import AboutLinkView from '../../../components/about/AboutLinkView.vue'
 
@@ -58,11 +60,17 @@ const notFound = computed(
     (compare.error.value instanceof ApiError && compare.error.value.status === 404),
 )
 const names = computed(() => data.value?.states.map((s) => s.name) ?? [])
-usePageTitle(() =>
+usePageMeta(() =>
   notFound.value
-    ? pageTitles.statesCompareNotFound
+    ? {
+        title: pageTitles.statesCompareNotFound,
+        description: STATES_COMPARE_NOT_FOUND_DESCRIPTION,
+      }
     : data.value
-      ? statesCompareTitle(names.value)
+      ? {
+          title: statesCompareTitle(names.value),
+          description: statesCompareDescription(data.value),
+        }
       : null,
 )
 
