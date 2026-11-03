@@ -80,6 +80,9 @@ export const MAPPINGS_NOT_REVIEWED_NOTE =
   'This site has not yet reviewed how all of this state’s categories fit the federal ones, so ' +
   'some of the federal counts above come from automatic suggestions.'
 
+/** In the home map's card cell when no state is active (no hover or focus yet, and no list). */
+export const MAP_CARD_PLACEHOLDER = 'Point at a state on the map, or tab to it, to see its list.'
+
 /** What an entry is: under the state counts on the home, states and state pages. */
 export const ENTRY_DEFINITION =
   'An entry is one line of a state’s list: a single code, or a group of codes written with a ' +
