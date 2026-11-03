@@ -1,9 +1,11 @@
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
+import { fileURLToPath } from 'node:url'
+
 import { defineProject } from 'vitest/config'
 
 // API tests run inside workerd with the bindings from wrangler.jsonc, on a local D1 with every
 // migration in ./migrations applied (src/test/apply-migrations.ts).
-const migrations = await readD1Migrations(new URL('./migrations', import.meta.url).pathname)
+const migrations = await readD1Migrations(fileURLToPath(new URL('./migrations', import.meta.url)))
 
 export default defineProject({
   plugins: [
