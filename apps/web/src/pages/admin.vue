@@ -37,6 +37,7 @@ const sections = [
   { to: '/admin/mappings', label: 'Mappings' },
   { to: '/admin/condition-groups', label: 'Condition groups' },
   { to: '/admin/guide', label: 'Guide' },
+  { to: '/admin/launch-readiness', label: 'Launch readiness' },
   { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },
 ] as const
