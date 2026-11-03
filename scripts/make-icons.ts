@@ -8,7 +8,6 @@
 // checks they still match). Runs directly on Node 26 (type stripping).
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 /** Token values from main.css: --color-primary (light), --color-header (dark), --color-highlight. */
 export const COLORS = {
@@ -137,4 +136,4 @@ async function main() {
   )
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) await main()
+if (import.meta.main) await main()
