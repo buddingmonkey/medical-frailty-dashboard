@@ -17,6 +17,7 @@ import {
 import { asc, eq, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { codeGroups, likeCodes } from './public-code-like'
 import { narrowerCount, shared } from './public-drill'
 import { appMeta, states } from './schema'
 
@@ -24,7 +25,8 @@ import { appMeta, states } from './schema'
 // words (docs/data-model.md, "Matching across states"). The matching is the drill-down's SQL
 // (`shared` in public-drill.ts) with the code as its one row, so there is one matcher. Four
 // queries: the states, the setting, the CMS text, and the matching entries with their sources;
-// plus one for narrower codes under the code. Only published versions are read.
+// plus one for narrower codes under the code. Only published versions are read. Like codes
+// (step 4, public-code-like.ts) add the code's condition groups and, when needed, one more.
 
 /** Systems with CMS text in `ref_codes` (public domain). Never CPT. */
 const cmsSystems: readonly CodeSystem[] = ['icd10cm', 'hcpcs']
@@ -65,7 +67,7 @@ export async function publicCode(
   const one = sql`SELECT ${system} AS sys, 'exact' AS kind, ${codeNorm} AS norm,
     NULL AS end_norm, 0 AS wild`
 
-  const [stateRows, setting, cms, matches, narrower] = await Promise.all([
+  const [stateRows, setting, cms, matches, narrower, groups] = await Promise.all([
     db
       .select({
         id: states.id,
@@ -97,6 +99,7 @@ export async function publicCode(
       SELECT p.state_id, ${narrowerCount('w', 'p.vid')} AS n
       FROM pub p CROSS JOIN wide w
       WHERE NOT EXISTS (SELECT 1 FROM best b WHERE b.state_id = p.state_id)`),
+    codeGroups(db, system, codeNorm),
   ])
 
   const description = cms[0]?.description ?? null
@@ -157,6 +160,14 @@ export async function publicCode(
       : { ...base, status: 'not_listed' }
   }
 
+  const statesOut = stateRows.map(toState)
+  const like = await likeCodes(
+    db,
+    system,
+    groups,
+    statesOut.filter((s) => s.status === 'not_listed' || s.status === 'narrower').map((s) => s.id),
+  )
+
   return codeDetailResponseSchema.parse({
     dataVersion,
     code: {
@@ -167,6 +178,7 @@ export async function publicCode(
       description,
     },
     showQualification: show,
-    states: stateRows.map(toState),
+    conditionGroups: groups.map((g) => ({ slug: g.slug, name: g.name })),
+    states: statesOut.map((s) => ({ ...s, likeCodes: like.get(s.id) ?? [] })),
   })
 }

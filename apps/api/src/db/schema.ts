@@ -8,6 +8,7 @@
 // `state_subcategory` is '' rather than NULL so unique keys work (SQLite treats NULLs as distinct).
 import {
   codeSystems,
+  conditionGroupStatuses,
   federalCategories,
   mappingBases,
   mappingConfidences,
@@ -527,11 +528,23 @@ export const refCcsr = sqliteTable(
   ],
 )
 
-export const conditionGroups = sqliteTable('condition_groups', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  slug: text('slug').notNull().unique(),
-  name: text('name').notNull(),
-})
+export const conditionGroups = sqliteTable(
+  'condition_groups',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    slug: text('slug').notNull().unique(),
+    name: text('name').notNull(),
+    /** What the group means, in a sentence or two. */
+    definition: text('definition').notNull().default(''),
+    /** Where its members come from: code set headings, ICD-10-CM blocks, a state's category. */
+    sources: text('sources').notNull().default(''),
+    /** Only published groups give like codes on public pages. */
+    status: text('status', { enum: conditionGroupStatuses }).notNull().default('draft'),
+    updatedBy: text('updated_by').notNull().default(''),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [check('condition_groups_status_check', oneOf(t.status, conditionGroupStatuses))],
+)
 
 /** A code, prefix or range in one code system that belongs to a condition group. */
 export const conditionMembers = sqliteTable(

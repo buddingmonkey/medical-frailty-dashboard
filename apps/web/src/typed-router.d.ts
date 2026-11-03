@@ -53,6 +53,7 @@ declare module 'vue-router/auto-routes' {
       | '/admin/(overview)'
       | '/admin/audit'
       | '/admin/categories'
+      | '/admin/condition-groups'
       | '/admin/drafts/(list)'
       | '/admin/drafts/[versionId]'
       | '/admin/guide'
@@ -80,6 +81,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/categories': RouteRecordInfo<
       '/admin/categories',
       '/admin/categories',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/condition-groups': RouteRecordInfo<
+      '/admin/condition-groups',
+      '/admin/condition-groups',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -252,6 +260,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin/(overview)'
         | '/admin/audit'
         | '/admin/categories'
+        | '/admin/condition-groups'
         | '/admin/drafts/(list)'
         | '/admin/drafts/[versionId]'
         | '/admin/guide'
@@ -285,6 +294,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/categories.vue': {
       routes:
         | '/admin/categories'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/condition-groups.vue': {
+      routes:
+        | '/admin/condition-groups'
       views:
         | never
       pathParamNames:

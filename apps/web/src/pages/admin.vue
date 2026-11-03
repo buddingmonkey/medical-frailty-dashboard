@@ -34,6 +34,7 @@ const sections = [
   { to: '/admin/categories', label: 'Categories' },
   { to: '/admin/unified', label: 'Unified categories' },
   { to: '/admin/mappings', label: 'Mappings' },
+  { to: '/admin/condition-groups', label: 'Condition groups' },
   { to: '/admin/guide', label: 'Guide' },
   { to: '/admin/watch', label: 'Watch dates' },
   { to: '/admin/audit', label: 'Audit log' },

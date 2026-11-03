@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { type CompareStatus, compareStatuses, compareStatusLabels } from './compare'
+import { conditionGroupRefSchema, likeCodeMatchSchema } from './condition-groups'
 import {
   type CodeSystem,
   codeSystemSchema,
@@ -15,9 +16,8 @@ import { SITE_NAME } from './public'
 // The code detail page (roadmap M6 step 3; docs/data-model.md, "Matching across states"): one
 // code, and every state's status for it in the M4 words (`compareStatusLabels`). The wording
 // below is provisional and on the legal team's list (docs/status.md); change it here, never in
-// components. Step 4 adds a `like` status ("like codes" in another code system, by condition
-// group): it goes after `narrower` in `codeDetailStatuses`, with its help text and the
-// matching codes on each state.
+// components. Like codes (step 4) are not a status: they sit beside it, in `likeCodes`
+// (condition-groups.ts), so a like match never reads as a confirmed one.
 
 // ---------------------------------------------------------------------------------------------
 // Site setting: which qualification badges to show (docs/data-model.md, "Provisional")
@@ -44,7 +44,7 @@ export function visibleRule(
 // ---------------------------------------------------------------------------------------------
 // Response of `GET /api/public/codes/:system/:code`
 
-/** Statuses in page order. Step 4 inserts `like` after `narrower`. */
+/** Statuses in page order. */
 export const codeDetailStatuses = compareStatuses
 export type CodeDetailStatus = CompareStatus
 
@@ -84,6 +84,8 @@ export const codeDetailStateSchema = z.object({
   narrowerCount: z.number().int().min(0),
   /** For `exact` and `covered`: every entry that lists or covers the code, listed first. */
   entries: z.array(codeDetailEntrySchema),
+  /** For `not_listed` and `narrower`: codes in another code system in the code's groups. */
+  likeCodes: z.array(likeCodeMatchSchema).optional(),
 })
 export type CodeDetailState = z.infer<typeof codeDetailStateSchema>
 
@@ -99,6 +101,8 @@ export const codeDetailResponseSchema = z.object({
     description: z.string().nullable(),
   }),
   showQualification: z.enum(showQualificationSettings),
+  /** The published condition groups the code is in (like codes). */
+  conditionGroups: z.array(conditionGroupRefSchema).optional(),
   /** Every state and DC, by name. */
   states: z.array(codeDetailStateSchema),
 })
