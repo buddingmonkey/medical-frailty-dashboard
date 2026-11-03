@@ -36,7 +36,9 @@ is settled (project lead, 2026-11-02):
 
 ## Commands
 
-```bash
+The same in PowerShell, cmd and bash:
+
+```text
 pnpm db:ref:local                                         # build, then load into local D1 (~20 s)
 pnpm --filter @mfcd/reference-data build                  # download (cached in .cache/), parse, write dist/*.sql
 pnpm --filter @mfcd/reference-data load --local           # apply the chunks local D1 lacks

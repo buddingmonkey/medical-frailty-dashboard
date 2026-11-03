@@ -61,7 +61,7 @@ them, but you are responsible for your change:
 Follow [`getting-started.md`](getting-started.md) once. It covers, one step at a time:
 
 1. A GitHub account and a Claude plan or API key.
-2. On Windows, WSL (needed: the project's scripts need Linux).
+2. A terminal: PowerShell on Windows (no WSL or Linux needed), Terminal on macOS and Linux.
 3. Git, the GitHub command line (`gh`), Node.js 26, pnpm 12.16.1, Claude Code and an editor.
 4. Your own copy of the project (a fork), the packages, the local database and the site
    running at http://localhost:8787.
@@ -73,7 +73,7 @@ You are ready when `pnpm dev` shows the site in your browser and `claude` answer
 
 ### Start it
 
-1. Open a terminal (on Windows, the Ubuntu window).
+1. Open a terminal (on Windows, Terminal or PowerShell).
 2. Go to the project folder: `cd ~/medical-frailty-dashboard`
 3. Type `claude` and press Enter.
 
@@ -119,12 +119,12 @@ Press Esc to say no.
 
 **Say no, or ask "why?" first:**
 
-- Anything with `sudo`, `rm -rf`, `--force` or `git reset --hard`.
+- Anything with `sudo`, `rm -rf`, `Remove-Item -Recurse`, `--force` or `git reset --hard`.
 - Anything with `deploy`, `preview`, `pnpm cf` or `wrangler` on its own. These reach the real
   hosting. They fail without the project's keys, and you never need them.
 - Installing a new package (`pnpm add`). Ask why it is needed and what it costs.
 - Editing files outside the project folder, `CLAUDE.md`, `.github/` or `.claude/`.
-- Anything that downloads and runs a script (`curl ... | bash`).
+- Anything that downloads and runs a script (`curl ... | bash`, `irm ... | iex`).
 - Any command you do not understand. Ask: "What does this command do, in plain words?"
 
 If you choose an option such as "don't ask again", Claude Code stops asking for that command.
@@ -321,10 +321,10 @@ _(Setup steps, costs and time to be added when the project reaches launch.)_
 
 | Word | Meaning |
 | --- | --- |
-| Terminal | A window where you type commands. On Windows, use the Ubuntu (WSL) window |
+| Terminal | A window where you type commands. On Windows, Terminal or PowerShell |
 | Command | A line you type in the terminal and run with Enter |
-| WSL | Windows Subsystem for Linux: a Linux system inside Windows. This project needs it on Windows |
-| Folder, project folder | Where the files are. For this project: `~/medical-frailty-dashboard` (`~` is your home folder) |
+| WSL | Windows Subsystem for Linux: a Linux system inside Windows. Optional: the project runs on Windows without it |
+| Folder, project folder | Where the files are. For this project: `~/medical-frailty-dashboard` (`~` is your home folder; on Windows, `C:\Users\yourname`) |
 | Git | The tool that keeps the history of every file |
 | GitHub | The website that hosts the project's files and pull requests |
 | `gh` | GitHub's command-line tool |

@@ -2,9 +2,9 @@
 // row in that database with apps/api/seed/seed.sql (scripts/make-seed.ts; docs/deployment.md,
 // "Preview data"), then says to press Rebuild coverage. Never production: production holds the
 // real lists. Runs directly on Node 26 (type stripping).
-import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+
+import { runNode, runPnpm } from './lib/run.ts'
 
 const root = join(import.meta.dirname, '..')
 
@@ -25,13 +25,13 @@ export function seedCommand(argv: readonly string[], file: string): string[] {
   return ['d1', 'execute', 'DB', '--local', ...persist, '--file', file]
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   try {
     const args = seedCommand(process.argv.slice(2), join(root, 'apps', 'api', 'seed', 'seed.sql'))
     // Preview through scripts/cf.ts (this repo's own Cloudflare token); local needs none.
     const r = args.includes('--remote')
-      ? spawnSync('node', [join(root, 'scripts', 'cf.ts'), ...args], { stdio: 'inherit' })
-      : spawnSync('pnpm', ['exec', 'wrangler', ...args], {
+      ? runNode([join(root, 'scripts', 'cf.ts'), ...args], { stdio: 'inherit' })
+      : runPnpm(['exec', 'wrangler', ...args], {
           cwd: join(root, 'apps', 'api'),
           stdio: 'inherit',
         })

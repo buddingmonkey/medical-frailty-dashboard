@@ -12,7 +12,6 @@
 // The ids are identifiers, not secrets. Runs directly on Node 26 (type stripping).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseArgs, parseEnv } from 'node:util'
 
 export const PLACEHOLDER_IDS = {
@@ -70,7 +69,7 @@ export function localConfigArgs(): { args: string[]; ids: D1Ids } {
   return { args: ['--config', LOCAL_CONFIG], ids }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   try {
     if (process.env['GITHUB_ACTIONS'] !== 'true') {
       throw new Error(

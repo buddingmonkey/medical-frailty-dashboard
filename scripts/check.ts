@@ -1,8 +1,9 @@
 // `pnpm check` / `pnpm check:full`: run every check, print one line per stage, keep full logs
 // in .logs/latest/<stage>.log. Runs directly on Node 26 (type stripping), no build step.
-import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+
+import { runPnpm } from './lib/run.ts'
 
 interface Stage {
   name: string
@@ -51,7 +52,7 @@ let failed = 0
 
 for (const stage of stages) {
   const started = performance.now()
-  const result = spawnSync('pnpm', stage.args, {
+  const result = runPnpm(stage.args, {
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', CI: process.env['CI'] ?? '' },
     maxBuffer: 64 * 1024 * 1024,

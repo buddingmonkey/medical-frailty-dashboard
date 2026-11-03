@@ -54,6 +54,13 @@
   (`scripts/db-drift.ts`) runs `drizzle-kit generate` and fails if it writes a file, i.e. the
   schema changed without a migration; the new migration is left in place to review. It keeps going after a
   failure so one run shows everything, and each failing line names its log file.
+- **Windows, macOS and Linux** (project lead, 2026-11-03: no WSL needed). Every script runs
+  `pnpm` and `node` through `scripts/lib/run.ts`, never a bare `spawnSync('pnpm', ...)`: on
+  Windows `pnpm` is often `pnpm.cmd`, which Node runs only through cmd.exe, and cmd.exe cannot
+  quote every string (SQL, `%VAR%`) safely. `package.json` scripts use only what cmd.exe also
+  understands: `&&`, double quotes, no `FOO=bar cmd`, no `rm -rf`. Test platform logic with an
+  injected platform (`scripts/lib/run.test.ts`, `scripts/dev-stop.test.ts`), since the tests
+  themselves run on Linux; the `check-windows` CI job runs `pnpm check` on Windows.
 
 ### Access and site-gate tests (M0 step 5)
 
@@ -83,7 +90,9 @@ Planned for the seed lists: `fixtures/<state>/` holds, for each seed file:
 
 ## Running
 
-```bash
+Same commands in PowerShell, cmd and bash:
+
+```text
 pnpm check                    # everything except e2e, one summary line per stage
 pnpm db:drift                 # only the schema-vs-migrations check
 pnpm test codes               # tests whose file matches "codes" (no `--`: it disables the filter)
@@ -108,11 +117,12 @@ are covered by behavior tests (no number target).
 | Job | What it runs |
 | --- | --- |
 | `check` | `pnpm install --frozen-lockfile`, Playwright Chromium (cached by Playwright version), `pnpm check:full`. On failure, uploads `.logs/latest/` and the Playwright report as the `check-logs` artifact (kept 7 days) |
+| `check-windows` | `pnpm install --frozen-lockfile` and `pnpm check` (no e2e) on `windows-latest`, so the scripts keep working without Linux. Not a required check |
 | `audit` | `pnpm audit --prod --audit-level high` |
 | `gitleaks` | Secret scan over the full git history |
 | CodeQL | GitHub's default setup (no workflow file), JavaScript/TypeScript and Actions |
 
-All four must pass before a PR can merge (`docs/security.md`, ruleset). A push to `main`
+`check`, `audit`, `gitleaks` and CodeQL must pass before a PR can merge (`docs/security.md`, ruleset). A push to `main`
 also deploys the preview Worker and smoke-tests it; a `v*` tag does the same for production
 after approval (`deploy-preview`, `deploy-production`; `docs/deployment.md`). The deployed
 Playwright smoke spec arrives with real pages (M3).

@@ -1,10 +1,11 @@
 // `pnpm db:drift`: fails when apps/api/src/db/schema.ts has changes that no migration covers.
 // It runs `drizzle-kit generate`; if that writes a new file, the schema drifted. The new
 // migration is left in place to review and commit (docs/testing.md, "Database").
-import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+
+import { runPnpm } from './lib/run.ts'
 
 const apiDir = join(import.meta.dirname, '..', 'apps', 'api')
 const migrationsDir = join(apiDir, 'migrations')
@@ -22,7 +23,7 @@ function snapshot(): Map<string, string> {
 }
 
 const before = snapshot()
-const result = spawnSync('pnpm', ['exec', 'drizzle-kit', 'generate'], {
+const result = runPnpm(['exec', 'drizzle-kit', 'generate'], {
   cwd: apiDir,
   encoding: 'utf8',
 })

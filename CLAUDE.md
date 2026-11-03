@@ -70,7 +70,7 @@ Read the doc that matches the task. Do not load all of them.
 
 | Read this | When you need |
 | --- | --- |
-| [docs/getting-started.md](docs/getting-started.md) | First-time setup for non-technical contributors: accounts, WSL, installs, fork, local site |
+| [docs/getting-started.md](docs/getting-started.md) | First-time setup for non-technical contributors: accounts, installs (Windows, macOS, Linux), fork, local site |
 | [docs/status.md](docs/status.md) | **Read first.** Where things stand, open questions, how the user likes to work |
 | [docs/roadmap.md](docs/roadmap.md) | Milestones and steps, with acceptance checks |
 | [docs/MedicalFrailtyCode-design-wiki.md](docs/MedicalFrailtyCode-design-wiki.md) | Product goals, users and features (the user's spec) |

@@ -1,6 +1,6 @@
 import { defineProject } from 'vitest/config'
 
-// Tests for the repo's own Node scripts (scripts/*.ts).
+// Tests for the repo's own Node scripts (scripts/**/*.ts).
 export default defineProject({
-  test: { name: 'scripts', environment: 'node', include: ['*.test.ts'] },
+  test: { name: 'scripts', environment: 'node', include: ['*.test.ts', 'lib/*.test.ts'] },
 })
