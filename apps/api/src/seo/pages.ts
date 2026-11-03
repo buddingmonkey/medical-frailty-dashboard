@@ -1,5 +1,14 @@
 import {
   ADDED_HEADING,
+  AMA_NOTICE_SHORT,
+  dataLastUpdated,
+  dataUpdatedText,
+  FOOTER_NAV_LABEL,
+  footerLinks,
+  learnMore,
+  REPORT_LIST_LINK_TEXT,
+  REPORT_PROBLEM_URL,
+  reportListText,
   CATEGORIES_DESCRIPTION,
   CATEGORIES_HEADING,
   CATEGORIES_INTRO,
@@ -145,6 +154,7 @@ import {
 } from '@mfcd/shared'
 
 import { Html, html, jsonLdScript } from './html'
+import { linkHtml } from './info-page'
 
 // The content of each public page as plain semantic HTML, for crawlers that do not run
 // JavaScript (docs/seo.md). Vue replaces it when it mounts. Wording and numbers come from the
@@ -161,6 +171,16 @@ export interface PageParts {
   noindex: boolean
   jsonLd: unknown[]
   body: Html
+  /**
+   * The newest published list's last update (ISO) for the footer's "Data last updated", when
+   * the page's own query already has it. Left out, `sendPage` reads it (`listsUpdatedAt`).
+   */
+  dataUpdatedAt?: string | null
+}
+
+/** A "learn more" link to a section of About (`learnMore`). */
+function learnMoreHtml(link: { text: string; href: string }): Html {
+  return html`<a href="${link.href}">${link.text}</a>`
 }
 
 const HOME_DESCRIPTION =
@@ -173,11 +193,18 @@ function statuteLink(): Html {
     (${STATUTE_CITATION})`
 }
 
-/** The footer of every page, the same words as the Vue `SiteFooter`. */
-export function footerHtml(): Html {
+/** The footer of every page, the same words and links as the Vue `SiteFooter`. */
+export function footerHtml(dataUpdatedAt: string | null): Html {
   return html`<footer>
+    <nav aria-label="${FOOTER_NAV_LABEL}">
+      <ul>
+        ${footerLinks.map((link) => html`<li>${linkHtml(link)}</li>`)}
+      </ul>
+    </nav>
+    ${dataUpdatedAt ? html`<p>${dataUpdatedText(dataUpdatedAt)}</p>` : null}
     <p>${FOOTER_TEXT}</p>
     <p>${statuteLink()}</p>
+    <p>${AMA_NOTICE_SHORT}</p>
   </footer>`
 }
 
@@ -190,7 +217,8 @@ function legendHtml(): Html {
           html`<dt>${item.term}</dt>
             <dd>${item.text}</dd>`,
       )}
-    </dl>`
+    </dl>
+    <p>${learnMoreHtml(learnMore.badges)}</p>`
 }
 
 /** A description and, when it is the state's own text, the state that published it. */
@@ -250,6 +278,7 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
     canonical: `${origin}/states`,
     noindex: false,
     jsonLd: [],
+    dataUpdatedAt: dataLastUpdated(items),
     body: html`<h1>All states</h1>
       <p>${statesWithListText(withList)} Choose a state to see its list, sources and history.</p>
       <p>${ENTRY_DEFINITION}</p>
@@ -355,7 +384,7 @@ export function categoriesPage(overview: PublicOverviewResponse, origin: string)
     jsonLd: [],
     body: html`<h1>${CATEGORIES_HEADING}</h1>
       ${compareTabsHtml(path)}
-      <p>${CATEGORIES_INTRO}</p>
+      <p>${CATEGORIES_INTRO} ${learnMoreHtml(learnMore.categories)}</p>
       <p>
         <a href="${CCSR_URL}" rel="noopener noreferrer external">${CCSR_LINK_TEXT}</a>
         <a href="${STATUTE_URL}" rel="noopener noreferrer external">${STATUTE_LINK_TEXT}</a>
@@ -391,6 +420,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
     path: '/',
     canonical: url,
     noindex: false,
+    dataUpdatedAt: dataLastUpdated(items),
     jsonLd: [
       {
         '@context': 'https://schema.org',
@@ -401,7 +431,7 @@ export function homePage(items: readonly PublicStateSummary[], origin: string): 
       },
     ],
     body: html`<h1>Compare medical frailty codes by state</h1>
-      <p>${HOME_INTRO}</p>
+      <p>${HOME_INTRO} ${learnMoreHtml(learnMore.home)}</p>
       <p>${statuteLink()}</p>
       <h2>States</h2>
       <p>${statesWithListText(withList)}</p>
@@ -507,7 +537,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
         ${federalCountsOverlap(p) ? html`<p>${FEDERAL_OVERLAP_NOTE}</p>` : null}
         ${countTable(STATE_COUNT_CAPTIONS.rule, p.byQualification, (k: Qualification) => qualificationLabels[k])}
         <h2>Categories</h2>
-        <p>${stateCategoriesIntro(state.name)}</p>
+        <p>${stateCategoriesIntro(state.name)} ${learnMoreHtml(learnMore.stateCategories)}</p>
         <table>
           <caption>
             ${state.name}’s categories
@@ -548,6 +578,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
           <li><a href="/states/${state.slug}/codes.csv">${state.name} codes (CSV)</a></li>
           <li><a href="/states/${state.slug}/codes.json">${state.name} codes (JSON)</a></li>
         </ul>
+        <p>${learnMoreHtml(learnMore.downloads)}</p>
         <h2>Version history</h2>
         <table>
           <caption>
@@ -585,7 +616,16 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
     jsonLd,
     body: html`<p><a href="/states">All states</a></p>
       <h1>${state.name}</h1>
-      ${sentences.map((s) => html`<p>${s}</p>`)} ${listed} ${notes}`,
+      ${sentences.map((s) => html`<p>${s}</p>`)}
+      ${
+        p
+          ? null
+          : html`<p>
+              ${reportListText(state.name)}
+              ${linkHtml({ text: REPORT_LIST_LINK_TEXT, href: REPORT_PROBLEM_URL })}
+            </p>`
+      }
+      ${listed} ${notes}`,
   }
 }
 
@@ -599,7 +639,7 @@ function similarSection(
   similar: readonly SimilarState[],
 ): Html {
   return html`<h2>States with the most similar lists</h2>
-    <p>${SIMILARITY_NOTE}</p>
+    <p>${SIMILARITY_NOTE} ${learnMoreHtml(learnMore.similarity)}</p>
     ${
       similar.length === 0
         ? html`<p>No other state has a list to compare with yet.</p>`
@@ -804,6 +844,7 @@ export function overviewPage(
     body: html`${intro} ${table}
       <h2>Reading this table</h2>
       ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
+      <p>${learnMoreHtml(learnMore.overview)}</p>
       <p>
         Shades:
         ${[...(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]), OVERVIEW_NO_LIST].join('; ')}.
@@ -896,7 +937,10 @@ export function drillPage(
 
   const about = html`<h1>${category.label}</h1>
     ${compareTabsHtml(path)}
-    <p>${DRILL_ABOUT} <a href="/compare/categories">See every comparison category</a></p>
+    <p>
+      ${DRILL_ABOUT} <a href="/compare/categories">See every comparison category</a> ·
+      ${learnMoreHtml(learnMore.categories)}
+    </p>
     <p>
       Federal category:
       ${federalCategoryInfo[category.federalCategory].label}.${clause ? ` ${clause}` : ''}
@@ -1176,6 +1220,7 @@ export function statesComparePage(
     <p>
       ${STATES_COMPARE_SUMMARY_NOTE}
       ${summary.similarity ? `${STATES_COMPARE_BASIS_NOTE} ${SIMILARITY_NOTE}` : ''}
+      ${summary.similarity ? learnMoreHtml(learnMore.similarity) : null}
     </p>`
 
   const links = html`<p>
@@ -1331,6 +1376,7 @@ export function statesLandingPage(
     canonical: `${origin}${path}`,
     noindex: true,
     jsonLd: [],
+    dataUpdatedAt: dataLastUpdated(items),
     body: html`<h1>${STATES_LANDING_HEADING}</h1>
       ${compareTabsHtml(path)}
       <p>${STATES_LANDING_INTRO}</p>
@@ -1434,9 +1480,12 @@ export async function renderInto(indexHtml: string, parts: PageParts): Promise<s
     })
     .on('div#app', {
       element(el) {
-        el.setInnerContent(navHtml(parts.path).value + parts.body.value + footerHtml().value, {
-          html: true,
-        })
+        el.setInnerContent(
+          navHtml(parts.path).value +
+            parts.body.value +
+            footerHtml(parts.dataUpdatedAt ?? null).value,
+          { html: true },
+        )
       },
     })
     .transform(new Response(indexHtml))

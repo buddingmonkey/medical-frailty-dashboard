@@ -2,8 +2,10 @@ import {
   codeSystems,
   FEDERAL_OVERLAP_NOTE,
   federalCategories,
+  learnMore,
   type PublicStateDetail,
   qualifications,
+  REPORT_PROBLEM_URL,
   zeroCounts,
 } from '@mfcd/shared'
 import { screen, waitFor, within } from '@testing-library/vue'
@@ -209,6 +211,10 @@ describe('/states/:slug', () => {
       '/states/ga/codes.json',
     )
     expect(document.title).toBe('Georgia medical frailty codes | Medical Frailty Coding Dashboard')
+    // Learn-more links to About (M8 step 4).
+    for (const link of [learnMore.stateCategories, learnMore.downloads, learnMore.similarity]) {
+      expect(screen.getByRole('link', { name: link.text }).getAttribute('href')).toBe(link.href)
+    }
 
     expect(screen.getByText('two').tagName).toBe('STRONG')
   })
@@ -236,6 +242,12 @@ describe('/states/:slug', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Montana' })).toBeTruthy()
     expect(screen.getByText(/Montana has announced a medical frailty code list/)).toBeTruthy()
     expect(screen.queryByRole('table')).toBeNull()
+    expect(
+      screen.getByText(/Know of a published medical frailty code list for Montana\?/),
+    ).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Tell us on GitHub' }).getAttribute('href')).toBe(
+      REPORT_PROBLEM_URL,
+    )
   })
 
   it('shows a not-found message for an unknown state', async () => {

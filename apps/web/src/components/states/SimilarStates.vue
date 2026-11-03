@@ -6,9 +6,11 @@ import {
   type SimilarState,
   similarityText,
   statesComparePath,
+  learnMore,
 } from '@mfcd/shared'
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import AboutLinkView from '../about/AboutLinkView.vue'
 
 // "States with the most similar lists" on a state page (roadmap M5 step 7): the most similar
 // states by pair similarity, a link to compare with each one, and checkboxes to compare with up
@@ -53,7 +55,9 @@ const percent = (jaccard: number) => Math.round(jaccard * 100)
     <h2 id="similar-heading" class="font-display text-2xl font-medium text-heading">
       States with the most similar lists
     </h2>
-    <p class="max-w-prose text-sm text-muted-foreground">{{ SIMILARITY_NOTE }}</p>
+    <p class="max-w-prose text-sm text-muted-foreground">
+      {{ SIMILARITY_NOTE }} <AboutLinkView :link="learnMore.similarity" />
+    </p>
     <p v-if="similar.length === 0" class="max-w-prose">
       No other state has a list to compare with yet.
     </p>

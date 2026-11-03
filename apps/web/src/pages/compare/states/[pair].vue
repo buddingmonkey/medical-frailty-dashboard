@@ -22,6 +22,7 @@ import {
   STATES_COMPARE_SUMMARY_NOTE,
   statesCompareSummaryText,
   statesCompareTitle,
+  learnMore,
 } from '@mfcd/shared'
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -33,6 +34,7 @@ import StatusLegend from '../../../components/compare/StatusLegend.vue'
 import { ApiError } from '../../../lib/api'
 import { usePageTitle } from '../../../lib/page-title'
 import { useStatesCompare } from '../../../lib/public-states-compare'
+import AboutLinkView from '../../../components/about/AboutLinkView.vue'
 
 // Compare 2–4 states (roadmap M5 step 7): `/compare/states/ga-vs-mt`. The path holds the states
 // in column order; the query holds "Show only differences" (`diff=0` turns it off) and the page.
@@ -158,8 +160,9 @@ function open(next: string[]) {
           <p class="max-w-prose text-sm text-muted-foreground">
             {{ STATES_COMPARE_SUMMARY_NOTE }}
             <template v-if="data.summary.similarity"
-              >{{ STATES_COMPARE_BASIS_NOTE }} {{ SIMILARITY_NOTE }}</template
-            >
+              >{{ STATES_COMPARE_BASIS_NOTE }} {{ SIMILARITY_NOTE }}
+              <AboutLinkView :link="learnMore.similarity"
+            /></template>
           </p>
         </section>
 

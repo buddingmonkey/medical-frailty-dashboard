@@ -205,9 +205,9 @@ describe('GET / (server-rendered)', () => {
     expect(app).toContain('List on this site')
     expect(app).toContain('1 of the 50 states and DC have a list on this site.')
     // The plain-language pass (M6 step 3b): the intro, the law, and the Vue footer's words.
-    expect(app).toContain(`<p>${HOME_INTRO}</p>`)
+    expect(app).toContain(`<p>${HOME_INTRO} <a href="/about#matching">`)
     expect(app).toContain(`<a href="${STATUTE_URL}" rel="noopener noreferrer external">`)
-    expect(app).toMatch(/<footer>\s*<p>[^<]*No patient data\.<\/p>/)
+    expect(app).toMatch(/<footer>[\s\S]*<p>[^<]*No patient data\.<\/p>/)
     expect(app).toContain(FOOTER_TEXT)
     expect(jsonLd(html)[0]).toMatchObject({
       '@type': 'WebSite',
