@@ -4,7 +4,7 @@
 #
 # Per-environment settings live in the GitHub environment, not in the repo:
 #   secrets   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET
-#   variables ACCESS_TEAM_DOMAIN, ACCESS_AUD, SITE_URL
+#   variables ACCESS_TEAM_DOMAIN, ACCESS_AUD, SITE_URL, D1_DATABASE_ID
 name: Deploy
 
 on:
@@ -51,6 +51,18 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
+      # wrangler.jsonc holds placeholder D1 ids; the real one comes from the GitHub environment
+      # (scripts/d1-ids.ts, docs/deployment.md).
+      - name: Set the D1 database id
+        env:
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+        run: |
+          test -n "$D1_DATABASE_ID" || {
+            echo "::error::Set D1_DATABASE_ID in the $TARGET environment"
+            exit 1
+          }
+          node scripts/d1-ids.ts "--$TARGET" "$D1_DATABASE_ID"
 
       - run: pnpm install --frozen-lockfile
 

@@ -47,6 +47,22 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # wrangler.jsonc holds placeholder D1 ids (scripts/d1-ids.ts). Production's comes from this
+      # environment's D1_DATABASE_ID; preview's is looked up by name, since a job sees only one
+      # environment's variables.
+      - name: Set the D1 database ids
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$D1_DATABASE_ID" || { echo "::error::Set D1_DATABASE_ID in the production environment"; exit 1; }
+          preview=$(pnpm --filter @mfcd/api exec wrangler d1 list --json | sed -n '/^\[/,$p' \
+            | jq -er '.[] | select(.name == "frailty-preview") | .uuid') \
+            || { echo "::error::No D1 database named frailty-preview in this account"; exit 1; }
+          node scripts/d1-ids.ts --production "$D1_DATABASE_ID" --preview "$preview"
+
       # The script prints counts, state codes and the D1 bookmark only: never rows, wrangler's
       # output or the export's signed download link.
       - name: Copy

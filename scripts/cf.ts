@@ -4,9 +4,15 @@
 //
 // Production deploys happen only from CI (CLAUDE.md), so this refuses any command that
 // deploys or rolls back without `--env preview`.
+//
+// The D1 ids are not in wrangler.jsonc (scripts/d1-ids.ts): this passes a gitignored copy with
+// the ids from apps/api/.env.cloudflare (D1_PREVIEW_DATABASE_ID, optional
+// D1_PRODUCTION_DATABASE_ID), unless the command names its own --config.
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+
+import { localConfigArgs } from './d1-ids.ts'
 
 const apiDir = join(import.meta.dirname, '..', 'apps', 'api')
 const envFile = join(apiDir, '.env.cloudflare')
@@ -44,5 +50,18 @@ if (!existsSync(envFile)) {
 }
 process.loadEnvFile(envFile)
 
-const result = spawnSync('pnpm', ['exec', 'wrangler', ...args], { cwd: apiDir, stdio: 'inherit' })
+const ownConfig = args.some((a) => ['--config', '-c'].includes(a) || /^(--config|-c)=/.test(a))
+const config = ownConfig ? { args: [], ids: {} } : localConfigArgs()
+if (!ownConfig && targetsPreview(args) && config.ids.preview === undefined) {
+  console.error(
+    'Missing D1_PREVIEW_DATABASE_ID in apps/api/.env.cloudflare: the preview D1 id is not in ' +
+      'wrangler.jsonc (docs/deployment.md, "Local Cloudflare access").',
+  )
+  process.exit(1)
+}
+
+const result = spawnSync('pnpm', ['exec', 'wrangler', ...args, ...config.args], {
+  cwd: apiDir,
+  stdio: 'inherit',
+})
 process.exitCode = result.status ?? 1

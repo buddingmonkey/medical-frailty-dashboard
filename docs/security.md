@@ -149,8 +149,21 @@ X-Frame-Options: DENY
 ## Abuse and cost controls
 
 - Public responses cached at the edge (see `docs/architecture.md`, "Caching").
-- A Workers Rate Limiting binding on public API routes (e.g. 120 requests/min per IP) and on
-  search.
+- Workers Rate Limiting bindings on the public API (`apps/api/src/middleware/rate-limit.ts`),
+  keyed on the client IP (`CF-Connecting-IP`): `PUBLIC_RATE_LIMITER`, 120 requests per 60 s, on
+  `/api/public/*`, and the stricter `SEARCH_RATE_LIMITER`, 30 per 60 s, on
+  `/api/public/codes/search` instead. Over the limit: `429 {"error":"Too many requests"}` with
+  `Retry-After: 60`. The IP is never logged. Limits are counted per Cloudflare location and are
+  approximate ([docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/));
+  the binding has no charge of its own on Workers Paid and works on workers.dev. A request
+  without `CF-Connecting-IP` (only possible locally) shares one fallback key. Local Workers
+  (`ENVIRONMENT` `development` or `test`: `pnpm dev`, e2e, Vitest) skip the limits; any other
+  value applies them.
+- **Not limited:** admin routes (`/admin*`, `/api/admin/*`: Cloudflare Access and the JWT check
+  stand in front of them) and the server-rendered HTML pages, `robots.txt` and static files
+  (edge caching absorbs repeat requests, and the pages read little from D1). Many people behind
+  one office or mobile IP share a limit, so raise the numbers in `wrangler.jsonc` if real users
+  report 429s.
 - Cloudflare free WAF managed rules and Bot Fight Mode on once a custom domain exists.
 - A billing notification in the Cloudflare dashboard.
 
