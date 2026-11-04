@@ -17,7 +17,7 @@ export type CompareTab = (typeof compareTabs)[number]
 export const COMPARE_TABS_LABEL = 'Compare views'
 
 // The words of the tab pages that are new with the tabs, for the Vue pages and the Worker's
-// HTML. On the legal review list (docs/status.md).
+// HTML. On the legal review list (docs/legal-review.md, Part 2).
 
 export const CATEGORIES_HEADING = 'Comparison categories'
 

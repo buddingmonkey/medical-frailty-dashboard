@@ -47,7 +47,7 @@ import { TILE_MAP_HEADING, TILE_MAP_INTRO, TILE_MAP_NONE } from './tile-map'
 
 // The plain-language pass (M6 step 3b): public words say what the data is (what a state's list
 // includes), never that a code "covers" a member or that a member "qualifies"; every number
-// says what it counts. On the legal review list (docs/status.md).
+// says what it counts. On the legal review list (docs/legal-review.md, Part 2).
 
 describe('public wording', () => {
   it('describes the state’s rule, not a member’s eligibility', () => {

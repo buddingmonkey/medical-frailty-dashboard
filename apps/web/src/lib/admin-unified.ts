@@ -6,7 +6,7 @@ import {
 } from '@mfcd/shared'
 
 // Words for the unified category admin pages (roadmap M5 step 3). The match words are on the
-// legal team's review list (docs/status.md); admin pages only for now.
+// legal team's review list (docs/legal-review.md); admin pages only for now.
 
 export const unifiedStatusLabels: Record<UnifiedStatus, string> = {
   draft: 'Draft',

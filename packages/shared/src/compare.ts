@@ -545,7 +545,7 @@ export function compareSubject(
 
 // ---------------------------------------------------------------------------------------------
 // Words of the single-code page (`/compare/codes`) and the legend every code table shows
-// (M6 step 3b). On the legal review list (docs/status.md).
+// (M6 step 3b). On the legal review list (docs/legal-review.md, Part 2).
 
 export const COMPARE_HEADING = 'Compare single codes'
 
