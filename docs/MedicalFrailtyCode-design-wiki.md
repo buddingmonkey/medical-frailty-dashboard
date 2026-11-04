@@ -1,41 +1,41 @@
 # What is this site?
 
-TL;DR a way to compare Medicaid coding used to designate medical frailty between different US States.
+This site compares the Medicaid codes that US states use to designate medical frailty.
 
-In the Big Beautiful Bill there is a requirement that people must work to qualify for Medicaid. There are exceptions to that rule. One of those exceptions is that people who are medically frail do not need to meet the work requirements. The bill has some specification for what qualifies for medically frail, but leaves a lot to the states to implement the specifics of frailty.
+H.R.1 (Pub. L. 119-21) requires many people to meet work requirements to qualify for Medicaid. One exemption covers people who are medically frail. The law gives some specification of what counts as medically frail, but leaves the specifics to the states.
 
-The states are now releasing their criteria for what qualifies for frailty. These break down into various medicaid coding that is the prerequisite to qualify as medically frail. Each state has a different set of codes, and possibly types of codes (e.g. ICD-10 codes, these are diagnoses, like cancer diagnosis, and HCPCS or CPT codes, service codes, like chemotherapy or radiation). They are all delivered in different formats. Some online, some in spreadsheets, and some in large PDF Files.
+States are now publishing their criteria. These criteria reduce to Medicaid codes that serve as the prerequisite for qualifying as medically frail. Each state uses a different set of codes, and sometimes different types of codes. ICD-10 codes are diagnoses, such as a cancer diagnosis. HCPCS and CPT codes are service codes, such as those for chemotherapy or radiation. States publish their lists in different formats: some online, some in spreadsheets, and some in large PDF files.
 
-This site’s goal is to take the disparate information and create a way to compare data between different states. The primary users of this site will be state Medicaid Directors (and their employees), providers or their associations, and healthcare advocates.
+The site's goal is to take this disparate information and make it comparable across states. Its primary users are state Medicaid directors and their staff, providers and provider associations, and healthcare advocates.
 
 # Technology
 
-- Typescript
+- TypeScript
 
 ## Frontend
 
-- VueJS  
-- TailwindCSS  
-- Vite \+ Vite Unit Testing  
+- Vue
+- Tailwind CSS
+- Vite and Vite unit testing
 - Playwright
 
 ## Backend
 
-- Relational DB (your choice)  
-- NodeJS
+- Relational database (implementer's choice)
+- Node.js
 
 # Features
 
-- Data ingestion after deployment including PDF, Excel Spreadsheet, or unformatted JSON.  
-  - All of these should be unformatted and if the cleanup cannot be automated the site should refer the user to use AI to perform the cleanup  
-- Home Page \- Full country overview. US State Map with overviews for each state when highlighted. These should include \# of codes, type of codes, and any other important misc information  
-- Comparison by type  
-  - The user selects the type of code and a state and a list of codes with number and name is displayed. The user can select as many states as they may like to have each state compared  
-  - The bill specifies some types of codes, but there are more codes used by states than the bill lists. The ingestion should make a best attempt at matching the codes, and create a place where an administrator can remap the types if the automatic matching is not correct.  
-- Code search  
-  - The user can search by code number or name (and filter by state) to find a specific code. When selected the user can see all the states that are confirmed to implement the same code.  
-    - They can also see if there is a “like” code for a state that uses a different type of coding  
-- Admin  
-  - Protected admin panel that is ideally logged into via a Google account (but we can make an account if we need to)  
-  - Ingestion page and type mapping are behind the admin page  
-  - Also a way to manually backup the database to the admin computer is here
+- **Data ingestion after deployment.** Accepts PDF, Excel spreadsheet or unformatted JSON.
+  - All input is treated as unformatted. If cleanup cannot be automated, the site refers the user to an AI tool to perform it.
+- **Home page.** A full country overview with a US state map. Highlighting a state shows an overview that includes the number of codes, the types of codes and any other important information.
+- **Comparison by type.**
+  - The user selects a code type and a state, and the site lists the codes with number and name. The user can select as many states as they like to compare.
+  - The law specifies some code types, but states use more types than the law lists. Ingestion makes a best attempt at matching codes to types. An administrator can remap the types where the automatic match is wrong.
+- **Code search.**
+  - The user can search by code number or name, and filter by state, to find a specific code. Selecting a code shows all the states confirmed to use it.
+  - The user can also see whether a state has a "like" code of a different code type.
+- **Admin.**
+  - A protected admin panel, ideally signed into with a Google account (a separate account can be created if needed).
+  - Ingestion and type mapping are behind the admin panel.
+  - The admin panel also provides a way to back up the database manually to the administrator's computer.
