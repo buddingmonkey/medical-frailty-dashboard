@@ -235,8 +235,12 @@ accurately than scraped tables.
   (`display: browser`; the site is linked pages, not an app) and `og-image.png` (1200×630).
   `node scripts/make-icons.ts` writes all of them with `sharp`; they are committed, so builds
   never run it. `scripts/make-icons.test.ts` checks the committed files match the generator,
-  the sizes and the design tokens. The mark: a navy (`--color-primary`) rounded square with a
-  three-line list, white lines with gold (`--color-highlight`) bullets. No CCF name or logo.
+  the sizes and the design tokens. The mark (2026-11-04, from an image the project lead made):
+  two list cards side by side, navy (`--color-primary`) and steel blue (`#3f6fa3`), overlapping;
+  the overlap is gold (`--color-highlight`) with a white check, for the codes both lists share.
+  The favicon (SVG and 32 px) drops the list lines and thickens the check so it reads at 16 px;
+  the Apple icon puts the mark on white; the share image is white with navy text. No CCF name or
+  logo.
 - **Head tags on every page.** `apps/web/index.html` links the icons (SVG, then the 32 px PNG),
   the Apple touch icon, the manifest and `theme-color` for light (`#0c2a59`) and dark
   (`#031b3f`, the dark header). The Worker's `headTags` (`apps/api/src/seo/pages.ts`) drops

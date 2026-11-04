@@ -3,7 +3,15 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { COLORS, manifest, markSvg, PNG_ICONS, SHARE_IMAGE_FILE, SITE_NAME } from './make-icons.ts'
+import {
+  COLORS,
+  faviconSvg,
+  manifest,
+  markSvg,
+  PNG_ICONS,
+  SHARE_IMAGE_FILE,
+  SITE_NAME,
+} from './make-icons.ts'
 
 // The committed icons, manifest and share image (roadmap M8 step 4) match the generator and the
 // design tokens. Rerun `node scripts/make-icons.ts` when one of these fails.
@@ -21,7 +29,7 @@ function pngSize(file: string): { width: number; height: number } {
 
 describe('site icons and share image', () => {
   it('commits the favicon and manifest the generator writes', () => {
-    expect(read('favicon.svg').toString('utf8')).toBe(markSvg())
+    expect(read('favicon.svg').toString('utf8')).toBe(faviconSvg())
     expect(read('site.webmanifest').toString('utf8')).toBe(manifest())
   })
 
