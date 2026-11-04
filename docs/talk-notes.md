@@ -34,6 +34,8 @@ literacy, little or no coding.
 
 | Date | Moment | Lesson | Devlog |
 | --- | --- | --- | --- |
+| 2026-11-03 | A new Windows CI job found three bugs nobody could see on Linux (`D:\D:\` paths, slash direction, slow runners) | Test on the platforms your contributors use | `devlog/2026-11-03-m8-hardening.md` |
+| 2026-11-03 | The project lead found Georgia's source page; the posted files were byte-identical to what we had loaded | Hash your sources so you can prove it | same |
 | 2026-11-01 | Profiling the real PDFs found code formats the spec never mentioned | Give the AI real data early | `devlog/2026-11-01-planning.md` |
 | 2026-11-01 | A pasted explanation of Louisiana's "Code Designation" contradicted the data; the AI caught it | Verify claims against data, whoever made them | same |
 | 2026-11-01 | The project lead's reading of a court ruling was only partly right; a research agent found the opinion, and the main session double-checked the agent | Ask for primary sources; check the checker | same |
@@ -150,6 +152,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | **M5 total** (2026-11-02) | **≈ 4.5 h** (15:59–20:40) | not measured | $5/month | 10 PRs (#47–#56); 1,023 Vitest + 52 e2e; three category levels, CCSR, five views; 8 builder agents |
 | **M6 total** (2026-11-03) | **≈ 2.2 h** (10:31–12:40) | not measured | Workers Paid | 8 PRs (#69–#76); 1,365 Vitest + 64 e2e; code search over 107k reference codes, code pages for crawlers, like codes, a plain-language pass, contributor docs, a map fix; 7 builders + 2 reviewer agents, up to 3 at once |
 | **M7 total** (2026-11-03) | **≈ 1.3 h** (13:34–14:55) | not measured | Workers Paid (the weekly dump needs it) | 3 PRs (#80–#82); 1,452 Vitest + 69 e2e; bulk remap with a preview, zip backup and restore, weekly cron with cleanup; 3 builders, 2 review rounds |
+| **M8 steps 1–4, 6, 7** (2026-11-03) | **≈ 4 h** (15:16–19:20) | not measured | Workers Paid (rate limiting no extra charge) | 10 PRs (#85–#94); 1,683 Vitest + 271 e2e; launch gate page, About/methodology, icons and share image, Lighthouse 69 → 97, axe on 100 combinations, rate limits, cross-platform scripts with a Windows CI job; 8 builders + 1 security review agent |
 
 ## Assets to capture for slides
 
