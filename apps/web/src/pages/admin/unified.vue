@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import {
   ccsrCategoryListResponseSchema,
+  coverageRebuildProgressText,
+  type CoverageRebuildRequest,
+  type CoverageRebuildResponse,
   coverageRebuildResponseSchema,
+  type CoverageRebuildStep,
+  coverageRebuildStepLabels,
+  coverageRebuildStepSchema,
   federalCategories,
   federalCategoryInfo,
   type UnifiedCategoryBody,
@@ -69,10 +75,35 @@ const save = useMutation({
 })
 
 // Rebuild coverage (docs/deployment.md, "Preview data"): after seed data, or a new CCSR or
-// ICD-10-CM release. Each step writes only what changed.
+// ICD-10-CM release. Each unit writes only what changed. The API does a few seconds of work per
+// call and answers with progress and a cursor; this calls again until it is done.
+const progress = ref<CoverageRebuildResponse['progress'] | null>(null)
+/** The step the call in flight works on: the next one once a step's units are all done. */
+const currentStep = computed<CoverageRebuildStep>(() => {
+  const p = progress.value
+  if (!p) return 'universe'
+  if (p.completed < p.total) return p.step
+  const steps = coverageRebuildStepSchema.options
+  return steps[steps.indexOf(p.step) + 1] ?? p.step
+})
 const rebuild = useMutation({
-  mutationFn: () =>
-    sendJson('POST', '/api/admin/coverage/rebuild', {}, coverageRebuildResponseSchema),
+  mutationFn: async () => {
+    progress.value = null
+    let body: CoverageRebuildRequest = {}
+    let ms = 0
+    for (;;) {
+      const r = await sendJson(
+        'POST',
+        '/api/admin/coverage/rebuild',
+        body,
+        coverageRebuildResponseSchema,
+      )
+      ms += r.ms
+      progress.value = r.progress
+      if (r.done || !r.next) return { ...r, ms }
+      body = { cursor: r.next }
+    }
+  },
   onSuccess: async () => {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'unified'] })
   },
@@ -199,9 +230,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       >
         {{ rebuild.isPending.value ? 'Rebuilding…' : 'Rebuild coverage' }}
       </button>
+      <p v-if="rebuild.isPending.value && progress" role="status">
+        {{ coverageRebuildProgressText(progress) }}
+      </p>
       <p v-if="rebuilt" role="status">{{ rebuilt }}</p>
       <p v-if="rebuild.error.value" role="alert" class="text-danger">
-        Could not rebuild: {{ rebuild.error.value.message }}
+        Could not rebuild ({{ coverageRebuildStepLabels[currentStep] }}):
+        {{ rebuild.error.value.message }}
       </p>
     </section>
   </section>

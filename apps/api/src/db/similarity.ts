@@ -17,8 +17,12 @@ import { bumpDataVersion } from './meta'
 // that order, as in the drill-down (src/db/public-drill.ts); left to itself SQLite scanned
 // `ref_codes` and looked up every entry of every version per code.
 
-/** States in scope: every pair, or the pairs of these states (after their publish or rollback). */
-export type SimilarityScope = { stateIds: readonly string[] } | 'all'
+/**
+ * States in scope: every pair, the pairs of these states (after their publish or rollback), or
+ * the pairs of one state with each state after it (`pairsAfter`: Rebuild coverage does every
+ * pair this way, one state per statement, so no statement is heavy).
+ */
+export type SimilarityScope = { stateIds: readonly string[] } | { pairsAfter: string } | 'all'
 
 export interface SimilarityResult {
   /** Rows written (new or changed) and deleted. */
@@ -84,6 +88,8 @@ export const similaritySetsCtes = sql.raw(`
  */
 function pairFilter(scope: SimilarityScope): SQL {
   if (scope === 'all') return sql`o.state_id > x.state_id`
+  if ('pairsAfter' in scope)
+    return sql`x.state_id = ${scope.pairsAfter} AND o.state_id > x.state_id`
   const ids = sql`(SELECT value FROM json_each(${JSON.stringify(scope.stateIds)}))`
   return sql`x.state_id IN ${ids} AND o.state_id <> x.state_id
     AND (o.state_id NOT IN ${ids} OR o.state_id > x.state_id)`
@@ -151,7 +157,7 @@ export async function recomputeSimilarity(
   console.log(
     JSON.stringify({
       event: 'similarity.recompute',
-      scope: scope === 'all' ? 'all' : scope.stateIds,
+      scope: scope === 'all' || 'pairsAfter' in scope ? scope : scope.stateIds,
       ...result,
     }),
   )

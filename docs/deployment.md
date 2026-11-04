@@ -265,7 +265,12 @@ To load it:
    and watch items stay. The script refuses any target except local and preview.
 2. Press **Rebuild coverage** (Admin → Unified categories,
    `POST /api/admin/coverage/rebuild`). Seed SQL leaves the full code lists, placements and
-   similarity empty, and the rebuild fills them.
+   similarity empty, and the rebuild fills them. It works in small units (one category's full
+   list, one state's placements, one state's pairs), about 5 s of them per request, and the page
+   calls again until done, showing "Rebuilding… full code lists: 7 of 19 categories". A failed
+   request keeps the units before it; pressing the button again is safe, because each unit
+   writes only what changed. One D1 batch for all of it hit D1's CPU limit on preview
+   (2026-11-04; `src/routes/admin/coverage.ts`).
 
 Measured locally (2026-11-02), on 12,153 entries (1,200 real, 10,953 synthetic; 2.8 MB):
 

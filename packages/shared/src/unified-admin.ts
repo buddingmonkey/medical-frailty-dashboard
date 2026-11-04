@@ -91,19 +91,75 @@ export const unifiedSaveResponseSchema = z.object({
 })
 
 /**
- * Body of `POST /api/admin/coverage/rebuild`: the derived tables' sizes after the rebuild
- * (docs/deployment.md, "Preview data").
+ * The rebuild's steps, in order: each category's full code list, then each state's
+ * placements, then each state's pair similarity (it reads the placements' codes).
+ */
+export const coverageRebuildStepSchema = z.enum(['universe', 'placements', 'similarity'])
+
+export type CoverageRebuildStep = z.infer<typeof coverageRebuildStepSchema>
+
+/** Where the next call starts: after this unit (a category id, or a state id) of `step`. */
+export const coverageRebuildCursorSchema = z
+  .object({ step: coverageRebuildStepSchema, after: z.string().min(1).max(64) })
+  .strict()
+
+export type CoverageRebuildCursor = z.infer<typeof coverageRebuildCursorSchema>
+
+/**
+ * Body of `POST /api/admin/coverage/rebuild`. The first call sends `{}`; each later call sends
+ * the `next` cursor of the last answer. `budgetMs` (tests) caps the work per call: 0 does one
+ * unit.
+ */
+export const coverageRebuildRequestSchema = z
+  .object({
+    cursor: coverageRebuildCursorSchema.optional(),
+    budgetMs: z.number().int().min(0).max(60_000).optional(),
+  })
+  .strict()
+
+export type CoverageRebuildRequest = z.infer<typeof coverageRebuildRequestSchema>
+
+/**
+ * Answer of `POST /api/admin/coverage/rebuild` (docs/deployment.md, "Preview data"): how far
+ * the rebuild got, and the derived tables' sizes now. Until `done`, call again with `next`.
  */
 export const coverageRebuildResponseSchema = z.object({
-  /** Unified categories (not retired) whose full code list was rebuilt. */
+  done: z.boolean(),
+  next: coverageRebuildCursorSchema.nullable(),
+  /** The step of the last unit done, with its units done and in all. */
+  progress: z.object({
+    step: coverageRebuildStepSchema,
+    completed: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  }),
+  /** Unified categories (not retired) whose full code list is rebuilt. */
   categories: z.number().int().nonnegative(),
   universeCodes: z.number().int().nonnegative(),
   placements: z.number().int().nonnegative(),
   similarPairs: z.number().int().nonnegative(),
+  /** This call's wall time. */
   ms: z.number().nonnegative(),
 })
 
 export type CoverageRebuildResponse = z.infer<typeof coverageRebuildResponseSchema>
+
+/** Each step in admin text. */
+export const coverageRebuildStepLabels: Record<CoverageRebuildStep, string> = {
+  universe: 'full code lists',
+  placements: 'placements',
+  similarity: 'state similarity',
+}
+
+const coverageRebuildUnits: Record<CoverageRebuildStep, string> = {
+  universe: 'categories',
+  placements: 'states',
+  similarity: 'states',
+}
+
+/** "Rebuilding… full code lists: 7 of 19 categories". */
+export function coverageRebuildProgressText(progress: CoverageRebuildResponse['progress']): string {
+  return `Rebuilding… ${coverageRebuildStepLabels[progress.step]}: ${String(progress.completed)} of ${String(progress.total)} ${coverageRebuildUnits[progress.step]}`
+}
 
 /** Body of `GET /api/admin/ccsr-categories`. */
 export const ccsrCategoryListResponseSchema = z.object({

@@ -234,16 +234,22 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
 export function universeStatements(db: Db, unifiedId: SQL) {
   // The codes: candidates in each ICD-10-CM category (3 characters) where a ref_ccsr key has one
   // of the groups; each candidate's own groups are those of its longest key (3 to 7 characters).
+  //
+  // CROSS JOIN keeps `cats` outside, so each category reads its own range of `ref_codes` by
+  // primary key, and MATERIALIZED computes `hits` once for `best` and `codes`. Without them
+  // SQLite scanned every ICD-10-CM code per row of `cats` and ran `hits` again per row of `best`:
+  // on preview (full reference data) one category read 62M rows in 17.7 s, and Rebuild coverage
+  // hit D1's CPU limit; with them, 101k rows in 0.04 s (2026-11-04).
   const codes = sql`
     groups AS (SELECT ccsr_category FROM unified_ccsr WHERE unified_id = ${unifiedId}),
     cats AS (
       SELECT DISTINCT substr(code_norm, 1, 3) AS cat FROM ref_ccsr
       WHERE ccsr_category IN (SELECT ccsr_category FROM groups)
     ),
-    hits AS (
+    hits AS MATERIALIZED (
       SELECT c.code_norm AS code, length(r.code_norm) AS len, r.ccsr_category AS grp
       FROM cats
-      JOIN ref_codes c
+      CROSS JOIN ref_codes c
         ON c.code_system = 'icd10cm' AND c.code_norm >= cats.cat AND c.code_norm < cats.cat || '~'
       JOIN ref_ccsr r ON r.code_norm IN (
         substr(c.code_norm, 1, 3), substr(c.code_norm, 1, 4), substr(c.code_norm, 1, 5),
@@ -268,5 +274,5 @@ export function universeStatements(db: Db, unifiedId: SQL) {
       .insert(unifiedUniverse)
       .select(sql`WITH ${codes} SELECT ${unifiedId}, code FROM codes WHERE true`)
       .onConflictDoNothing(),
-  ]
+  ] as const
 }
