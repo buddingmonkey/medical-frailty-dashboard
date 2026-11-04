@@ -5,9 +5,10 @@
 //
 // The mark is our own (not a CCF logo; drawn 2026-11-04 from an image the project lead made):
 // two list cards side by side, overlapping; the overlap is gold with a white check, for the
-// codes both lists share. favicon.svg and favicon-32.png use a simpler version (no list lines,
-// a thicker check) that still reads at 16 px. Colours are the design tokens in apps/web/src/styles/main.css (the test
-// checks they still match). Runs directly on Node 26 (type stripping).
+// codes both lists share. favicon.svg and favicon-32.png use a simpler version (two thick list
+// lines per card on the 16 px pixel grid, a thicker check) that still reads at 16 px. The header
+// logo (logo-header.svg) adds a white outline so the navy card shows on the navy header. Colours
+// are the design tokens in apps/web/src/styles/main.css (the test checks they still match). Runs directly on Node 26 (type stripping).
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -29,13 +30,16 @@ export const TAGLINE =
 
 /**
  * The mark's shapes, in the coordinates of the source image (1932 px square), without the <svg>
- * wrapper (reused in the share image). `simple` drops the list lines and thickens the check.
+ * wrapper (reused in the share image). `simple` uses fewer, thicker list lines and a thicker check.
  */
 function markShapes(simple = false): string {
-  const bar = (x: number, y: number) =>
-    `<rect x="${String(x)}" y="${String(y)}" width="237" height="60" rx="12" fill="${COLORS.white}"/>`
+  const bar = (x: number, y: number, w = 237, h = 60, rx = 12) =>
+    `<rect x="${String(x)}" y="${String(y)}" width="${String(w)}" height="${String(h)}" rx="${String(rx)}" fill="${COLORS.white}"/>`
+  // Simple: each line is one pixel tall at 16 px (83 units) and sits on that pixel grid
+  // (origin 301), so it stays sharp at 16 and 32 px.
   const lines = simple
-    ? ''
+    ? [467, 633].map((y) => bar(467, y, 249, 83, 20)).join('') +
+      [633, 799].map((y) => bar(1215, y, 250, 83, 20)).join('')
     : [448, 557].map((y) => bar(439, y)).join('') +
       [581, 690, 800].map((y) => bar(1256, y)).join('')
   const check = simple
@@ -64,6 +68,19 @@ export function markSvg(simple = false): string {
 
 /** apps/web/public/favicon.svg: the simple mark. No <style>, so it renders the same under any CSP. */
 export const faviconSvg = (): string => markSvg(true)
+
+/**
+ * apps/web/public/logo-header.svg: the simple mark with a white outline around both cards, so
+ * the navy card shows on the navy header (App.vue). A wider frame leaves room for the outline.
+ */
+export function headerLogoSvg(): string {
+  const outline = (x: number, y: number) =>
+    `<rect x="${String(x)}" y="${String(y)}" width="817" height="1127" rx="78" fill="${COLORS.white}" stroke="${COLORS.white}" stroke-width="88"/>`
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="251 251 1430 1430">` +
+    `${outline(343, 322)}${outline(773, 483)}${markShapes(true)}</svg>\n`
+  )
+}
 
 /** The Apple icon: the full mark on a white square (iOS rounds the corners itself). */
 export function appleSvg(): string {
@@ -145,6 +162,7 @@ async function main() {
   const { default: sharp } = await import('sharp')
   const out = join(import.meta.dirname, '..', 'apps', 'web', 'public')
   writeFileSync(join(out, 'favicon.svg'), faviconSvg())
+  writeFileSync(join(out, 'logo-header.svg'), headerLogoSvg())
   writeFileSync(join(out, 'site.webmanifest'), manifest())
   for (const { file, size } of PNG_ICONS) {
     // Small sizes use the simple mark; the Apple icon gets a white square behind the mark.
@@ -158,7 +176,7 @@ async function main() {
     .png({ compressionLevel: 9 })
     .toFile(join(out, SHARE_IMAGE_FILE))
   console.log(
-    `Wrote favicon.svg, site.webmanifest, ${String(PNG_ICONS.length)} icons and ${SHARE_IMAGE_FILE}.`,
+    `Wrote favicon.svg, logo-header.svg, site.webmanifest, ${String(PNG_ICONS.length)} icons and ${SHARE_IMAGE_FILE}.`,
   )
 }
 

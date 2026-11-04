@@ -238,7 +238,9 @@ accurately than scraped tables.
   the sizes and the design tokens. The mark (2026-11-04, from an image the project lead made):
   two list cards side by side, navy (`--color-primary`) and steel blue (`#3f6fa3`), overlapping;
   the overlap is gold (`--color-highlight`) with a white check, for the codes both lists share.
-  The favicon (SVG and 32 px) drops the list lines and thickens the check so it reads at 16 px;
+  The favicon (SVG and 32 px) uses two thick list lines per card on the 16 px pixel grid and a
+  thicker check, so it reads at 16 px; the header shows that version with a white outline
+  (`logo-header.svg`) so the navy card shows on the navy header;
   the Apple icon puts the mark on white; the share image is white with navy text. No CCF name or
   logo.
 - **Head tags on every page.** `apps/web/index.html` links the icons (SVG, then the 32 px PNG),

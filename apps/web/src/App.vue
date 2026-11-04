@@ -18,8 +18,10 @@ import ThemeMenu from './components/ThemeMenu.vue'
     <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-5 pb-3">
       <RouterLink
         to="/"
-        class="mr-auto font-display text-2xl font-medium text-on-header no-underline"
+        class="mr-auto flex items-center gap-3 font-display text-2xl font-medium text-on-header no-underline"
       >
+        <!-- Decorative: the link's text names it. scripts/make-icons.ts draws it. -->
+        <img src="/logo-header.svg" alt="" width="40" height="40" class="size-10 shrink-0" />
         Medical Frailty Coding Dashboard
       </RouterLink>
       <SiteNav />

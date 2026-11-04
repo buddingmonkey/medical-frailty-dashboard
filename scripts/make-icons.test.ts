@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   COLORS,
+  headerLogoSvg,
   faviconSvg,
   manifest,
   markSvg,
@@ -30,6 +31,7 @@ function pngSize(file: string): { width: number; height: number } {
 describe('site icons and share image', () => {
   it('commits the favicon and manifest the generator writes', () => {
     expect(read('favicon.svg').toString('utf8')).toBe(faviconSvg())
+    expect(read('logo-header.svg').toString('utf8')).toBe(headerLogoSvg())
     expect(read('site.webmanifest').toString('utf8')).toBe(manifest())
   })
 
