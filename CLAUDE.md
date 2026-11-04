@@ -78,6 +78,7 @@ Read the doc that matches the task. Do not load all of them.
 | [docs/data-model.md](docs/data-model.md) | Tables, code normalization, wildcards/ranges, categories, "like" codes, glossary |
 | [docs/ingestion.md](docs/ingestion.md) | Upload, parse, review, map and publish flow; parser adapters; AI cleanup |
 | [docs/sources.md](docs/sources.md) | Each state's source documents, format quirks and category list |
+| [docs/legal-review.md](docs/legal-review.md) | Wording and rules waiting for the legal team (add new provisional text here) |
 | [docs/add-state-source.md](docs/add-state-source.md) | Adding or updating a state's list through the admin screens, step by step |
 | [docs/security.md](docs/security.md) | Threat model, Access setup, pre-launch gate, headers, upload safety |
 | [docs/seo.md](docs/seo.md) | SEO and GEO rules: server-rendered HTML, URLs, structured data, sitemap, crawlers |
