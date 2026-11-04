@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type WatchCreate, type WatchItem, watchCreateSchema, watchKinds } from '@mfcd/shared'
-import { reactive, ref, useId } from 'vue'
+import { computed, reactive, ref, useId } from 'vue'
 
 import { watchKindLabels } from '../../lib/admin-watch'
 
@@ -37,7 +37,16 @@ const fieldLabels: Record<string, string> = {
   repeatDays: 'Repeat every (days)',
 }
 
-const problems = ref<string[]>([])
+/** Fields that failed the last Save; each is marked aria-invalid and points at the message. */
+const invalid = ref<ReadonlySet<string>>(new Set())
+const problems = computed(() => [...invalid.value].map((field) => fieldLabels[field] ?? field))
+const problemsId = `${id}-problems`
+/** aria-invalid and aria-describedby for a field (M8 step 2). */
+function fieldState(field: string) {
+  return invalid.value.has(field)
+    ? { 'aria-invalid': 'true' as const, 'aria-describedby': problemsId }
+    : {}
+}
 
 function submit() {
   const result = watchCreateSchema.safeParse({
@@ -51,11 +60,10 @@ function submit() {
     repeatDays: draft.repeatDays.trim() === '' ? null : Number(draft.repeatDays),
   })
   if (!result.success) {
-    const fields = new Set(result.error.issues.map((issue) => String(issue.path[0])))
-    problems.value = [...fields].map((field) => fieldLabels[field] ?? field)
+    invalid.value = new Set(result.error.issues.map((issue) => String(issue.path[0])))
     return
   }
-  problems.value = []
+  invalid.value = new Set()
   emit('save', result.data)
 }
 
@@ -69,19 +77,30 @@ const inputClass =
       {{ item ? 'Edit item' : 'Add an item' }}
     </h3>
 
-    <div v-if="problems.length > 0" role="alert" class="text-danger">
+    <div v-if="problems.length > 0" :id="problemsId" role="alert" class="text-danger">
       Fix these fields: {{ problems.join(', ') }}.
     </div>
 
     <div>
       <label :for="`${id}-title`" class="font-medium">Title</label>
-      <input :id="`${id}-title`" v-model="draft.title" type="text" :class="inputClass" />
+      <input
+        :id="`${id}-title`"
+        v-model="draft.title"
+        type="text"
+        :class="inputClass"
+        v-bind="fieldState('title')"
+      />
     </div>
 
     <div class="flex flex-wrap gap-4">
       <div>
         <label :for="`${id}-kind`" class="font-medium">Kind</label>
-        <select :id="`${id}-kind`" v-model="draft.kind" :class="inputClass">
+        <select
+          :id="`${id}-kind`"
+          v-model="draft.kind"
+          :class="inputClass"
+          v-bind="fieldState('kind')"
+        >
           <option v-for="kind in watchKinds" :key="kind" :value="kind">
             {{ watchKindLabels[kind] }}
           </option>
@@ -89,7 +108,13 @@ const inputClass =
       </div>
       <div>
         <label :for="`${id}-due`" class="font-medium">Due date</label>
-        <input :id="`${id}-due`" v-model="draft.dueDate" type="date" :class="inputClass" />
+        <input
+          :id="`${id}-due`"
+          v-model="draft.dueDate"
+          type="date"
+          :class="inputClass"
+          v-bind="fieldState('dueDate')"
+        />
       </div>
       <div>
         <label :for="`${id}-repeat`" class="font-medium">Repeat every (days)</label>
@@ -99,6 +124,7 @@ const inputClass =
           type="text"
           inputmode="numeric"
           :class="inputClass"
+          v-bind="fieldState('repeatDays')"
         />
       </div>
     </div>
@@ -110,7 +136,13 @@ const inputClass =
 
     <div>
       <label :for="`${id}-why`" class="font-medium">Why it matters</label>
-      <textarea :id="`${id}-why`" v-model="draft.whyMd" rows="3" :class="inputClass" />
+      <textarea
+        :id="`${id}-why`"
+        v-model="draft.whyMd"
+        rows="3"
+        :class="inputClass"
+        v-bind="fieldState('whyMd')"
+      />
     </div>
 
     <fieldset class="space-y-2">
@@ -125,6 +157,7 @@ const inputClass =
             v-model="link.label"
             type="text"
             :class="inputClass"
+            v-bind="fieldState('links')"
           />
         </div>
         <div class="min-w-64 flex-1">
@@ -134,6 +167,7 @@ const inputClass =
             v-model="link.url"
             type="url"
             :class="inputClass"
+            v-bind="fieldState('links')"
           />
         </div>
         <button

@@ -9,6 +9,9 @@ import { createApp } from 'vue'
 
 import App from './App.vue'
 import { queryClient } from './lib/query-client'
+import { installRouteFocus } from './lib/route-focus'
 import { router } from './router'
+
+installRouteFocus(router)
 
 createApp(App).use(router).use(VueQueryPlugin, { queryClient }).mount('#app')

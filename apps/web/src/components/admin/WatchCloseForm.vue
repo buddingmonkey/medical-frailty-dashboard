@@ -21,7 +21,7 @@ function submit() {
 
 <template>
   <form class="mt-3 space-y-3 rounded border border-border p-3" novalidate @submit.prevent="submit">
-    <p v-if="problem" role="alert" class="text-danger">
+    <p v-if="problem" :id="`${id}-problem`" role="alert" class="text-danger">
       Write a resolution note: what happened, and how you checked.
     </p>
     <fieldset class="flex gap-4">
@@ -40,6 +40,8 @@ function submit() {
         :id="`${id}-note`"
         v-model="note"
         rows="2"
+        :aria-invalid="problem ? 'true' : undefined"
+        :aria-describedby="problem ? `${id}-problem` : undefined"
         class="mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground"
       />
     </div>

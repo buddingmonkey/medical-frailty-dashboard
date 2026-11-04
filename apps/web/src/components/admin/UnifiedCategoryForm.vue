@@ -71,7 +71,24 @@ const fieldLabels: Record<string, string> = {
   sortOrder: 'Sort order',
   ccsr: 'CCSR groups',
 }
-const problems = ref<string[]>([])
+/** Fields that failed the last Save; each is marked aria-invalid and points at the message. */
+const invalid = ref<ReadonlySet<string>>(new Set())
+const problems = computed(() =>
+  Object.keys(fieldLabels)
+    .filter((f) => invalid.value.has(f))
+    .map((f) => fieldLabels[f] ?? f),
+)
+const problemsId = `${id}-problems`
+/** aria-invalid, and aria-describedby with the message first (M8 step 2). */
+function fieldState(field: string, help?: string) {
+  const describedBy = [invalid.value.has(field) ? problemsId : '', help ?? '']
+    .filter((x) => x !== '')
+    .join(' ')
+  return {
+    'aria-invalid': invalid.value.has(field) ? ('true' as const) : undefined,
+    'aria-describedby': describedBy === '' ? undefined : describedBy,
+  }
+}
 
 function submit() {
   const blankToNull = (s: string) => (s.trim() === '' ? null : s)
@@ -87,13 +104,10 @@ function submit() {
     ccsr: draft.ccsr,
   })
   if (!result.success) {
-    const fields = new Set(result.error.issues.map((issue) => String(issue.path[0])))
-    problems.value = Object.keys(fieldLabels)
-      .filter((f) => fields.has(f))
-      .map((f) => fieldLabels[f] ?? f)
+    invalid.value = new Set(result.error.issues.map((issue) => String(issue.path[0])))
     return
   }
-  problems.value = []
+  invalid.value = new Set()
   emit('save', result.data)
 }
 
@@ -110,7 +124,12 @@ const inputClass =
   >
     <h3 class="font-display text-xl font-medium text-heading">{{ title }}</h3>
 
-    <div v-if="problems.length > 0 || serverError" role="alert" class="space-y-1 text-danger">
+    <div
+      v-if="problems.length > 0 || serverError"
+      :id="problemsId"
+      role="alert"
+      class="space-y-1 text-danger"
+    >
       <p v-if="problems.length > 0">Fix these fields: {{ problems.join(', ') }}.</p>
       <p v-if="serverError">Could not save: {{ serverError }}</p>
     </div>
@@ -118,7 +137,13 @@ const inputClass =
     <div class="grid gap-4 md:grid-cols-2">
       <div>
         <label :for="`${id}-label`" class="font-medium">Label</label>
-        <input :id="`${id}-label`" v-model="draft.label" type="text" :class="inputClass" />
+        <input
+          :id="`${id}-label`"
+          v-model="draft.label"
+          type="text"
+          :class="inputClass"
+          v-bind="fieldState('label')"
+        />
       </div>
       <div>
         <label :for="`${id}-slug`" class="font-medium"
@@ -129,7 +154,7 @@ const inputClass =
           v-model="draft.slug"
           type="text"
           :class="inputClass"
-          :aria-describedby="`${id}-slug-help`"
+          v-bind="fieldState('slug', `${id}-slug-help`)"
           @input="slugEdited = true"
         />
         <p :id="`${id}-slug-help`" class="mt-1 text-sm text-muted-foreground">
@@ -140,23 +165,46 @@ const inputClass =
 
     <div>
       <label :for="`${id}-definition`" class="font-medium">Definition</label>
-      <textarea :id="`${id}-definition`" v-model="draft.definition" rows="3" :class="inputClass" />
+      <textarea
+        :id="`${id}-definition`"
+        v-model="draft.definition"
+        rows="3"
+        :class="inputClass"
+        v-bind="fieldState('definition')"
+      />
     </div>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
         <label :for="`${id}-includes`" class="font-medium">Includes</label>
-        <textarea :id="`${id}-includes`" v-model="draft.includes" rows="2" :class="inputClass" />
+        <textarea
+          :id="`${id}-includes`"
+          v-model="draft.includes"
+          rows="2"
+          :class="inputClass"
+          v-bind="fieldState('includes')"
+        />
       </div>
       <div>
         <label :for="`${id}-excludes`" class="font-medium">Excludes</label>
-        <textarea :id="`${id}-excludes`" v-model="draft.excludes" rows="2" :class="inputClass" />
+        <textarea
+          :id="`${id}-excludes`"
+          v-model="draft.excludes"
+          rows="2"
+          :class="inputClass"
+          v-bind="fieldState('excludes')"
+        />
       </div>
     </div>
 
     <div class="flex flex-wrap gap-4">
       <div>
         <label :for="`${id}-parent`" class="font-medium">Federal parent</label>
-        <select :id="`${id}-parent`" v-model="draft.federalCategory" :class="inputClass">
+        <select
+          :id="`${id}-parent`"
+          v-model="draft.federalCategory"
+          :class="inputClass"
+          v-bind="fieldState('federalCategory')"
+        >
           <option value="" disabled>Choose</option>
           <option v-for="p in parents" :key="p" :value="p">
             {{ federalCategoryInfo[p].label }}
@@ -165,7 +213,12 @@ const inputClass =
       </div>
       <div>
         <label :for="`${id}-status`" class="font-medium">Status</label>
-        <select :id="`${id}-status`" v-model="draft.status" :class="inputClass">
+        <select
+          :id="`${id}-status`"
+          v-model="draft.status"
+          :class="inputClass"
+          v-bind="fieldState('status')"
+        >
           <option v-for="s in statuses" :key="s" :value="s">{{ unifiedStatusLabels[s] }}</option>
         </select>
       </div>
@@ -177,6 +230,7 @@ const inputClass =
           type="text"
           inputmode="numeric"
           :class="inputClass"
+          v-bind="fieldState('sortOrder')"
         />
       </div>
     </div>

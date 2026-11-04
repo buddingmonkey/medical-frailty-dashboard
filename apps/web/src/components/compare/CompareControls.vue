@@ -110,11 +110,11 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
     </fieldset>
 
     <div class="flex flex-wrap gap-4">
-      <div v-if="selection.mode === 'federal'" class="flex flex-col gap-1">
+      <div v-if="selection.mode === 'federal'" class="flex max-w-full flex-col gap-1">
         <label for="compare-federal" class="text-sm font-semibold">Federal category</label>
         <select
           id="compare-federal"
-          class="rounded border border-input-border bg-background px-2 py-1.5"
+          class="max-w-full rounded border border-input-border bg-background px-2 py-1.5"
           :value="selection.category"
           @change="update({ category: valueOf($event) as CompareSelection['category'] })"
         >
@@ -133,11 +133,11 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
       </div>
 
       <template v-else>
-        <div class="flex flex-col gap-1">
+        <div class="flex max-w-full flex-col gap-1">
           <label for="compare-own-state" class="text-sm font-semibold">State</label>
           <select
             id="compare-own-state"
-            class="rounded border border-input-border bg-background px-2 py-1.5"
+            class="max-w-full rounded border border-input-border bg-background px-2 py-1.5"
             :value="selection.ownState"
             @change="update({ ownState: valueOf($event), ownCategory: null, ownSubcategory: '' })"
           >
@@ -145,11 +145,11 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
             <option v-for="s in withList" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
-        <div class="flex flex-col gap-1">
+        <div class="flex max-w-full flex-col gap-1">
           <label for="compare-own-category" class="text-sm font-semibold">Category</label>
           <select
             id="compare-own-category"
-            class="rounded border border-input-border bg-background px-2 py-1.5"
+            class="max-w-full rounded border border-input-border bg-background px-2 py-1.5"
             :value="ownCategoryValue"
             :disabled="selection.ownState === ''"
             @change="chooseOwnCategory(valueOf($event))"
@@ -162,11 +162,11 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
         </div>
       </template>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex max-w-full flex-col gap-1">
         <label for="compare-system" class="text-sm font-semibold">Code system</label>
         <select
           id="compare-system"
-          class="rounded border border-input-border bg-background px-2 py-1.5"
+          class="max-w-full rounded border border-input-border bg-background px-2 py-1.5"
           :value="selection.system"
           @change="update({ system: valueOf($event) as CompareSelection['system'] })"
         >

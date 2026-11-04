@@ -203,6 +203,13 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }
+
+  /* Targets that only a script or the skip link focuses (main, a page's h1 after a route
+     change; M8 step 2) are not controls: no ring around the whole page or heading. */
+  main[tabindex='-1']:focus,
+  h1[tabindex='-1']:focus {
+    outline: none;
+  }
 }
 
 /* "None listed" in the overview matrix (M5 step 5): a hatch, so it differs from the lightest

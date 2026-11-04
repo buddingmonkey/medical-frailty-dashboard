@@ -196,6 +196,11 @@ describe('/admin/watch', () => {
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toContain('Title')
     expect(alert.textContent).toContain('Links')
+    // The fields themselves say they are wrong and point at the message (M8 step 2).
+    const title = screen.getByLabelText('Title')
+    expect(title.getAttribute('aria-invalid')).toBe('true')
+    expect(title.getAttribute('aria-describedby')).toBe(alert.id)
+    expect(screen.getByLabelText('Why it matters').getAttribute('aria-invalid')).toBeNull()
     expect(api.posts).toEqual([])
   })
 
@@ -230,7 +235,11 @@ describe('/admin/watch', () => {
     await user.click(await screen.findByRole('button', { name: 'Close Downgrade Cloudflare' }))
     await user.click(screen.getByRole('button', { name: 'Close item' }))
 
-    expect((await screen.findByRole('alert')).textContent).toContain('Write a resolution note')
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('Write a resolution note')
+    const note = screen.getByLabelText('Resolution note')
+    expect(note.getAttribute('aria-invalid')).toBe('true')
+    expect(note.getAttribute('aria-describedby')).toBe(alert.id)
     expect(api.puts).toEqual([])
 
     await user.click(screen.getByLabelText('Dismissed'))
