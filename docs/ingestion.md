@@ -36,8 +36,8 @@ validates them again.
 8. **Publish** with the confirmation the checks ask for.
 9. **Category mapping.** Publishing stores an automatic federal guess for each new state
    category (below); the admin confirms it on `/admin/categories` and maps the category to
-   comparison (unified) categories on `/admin/mappings`. Unmapped categories do not block
-   publishing; they show as "Not yet classified".
+   comparison (unified) categories on `/admin/mappings`. Until confirmed, a federal mapping
+   shows as "Not yet classified" and an unapproved comparison mapping as "Not yet reviewed".
 
 ## Review
 

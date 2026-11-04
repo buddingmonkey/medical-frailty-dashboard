@@ -1,19 +1,19 @@
 # Medical Frailty Coding Dashboard
 
-Compare the medical codes each US state uses to decide who is **"medically frail"** and so
-exempt from the new Medicaid work requirements.
+Compare the medical codes each US state uses to identify Medicaid members who may be
+**"medically frail"**, and so excluded from the new Medicaid work requirements.
 
-> **Status: in development, not yet public.** The real state lists are loaded, but the site
+> **Status: in development, not yet public.** The lists of four states (GA, LA, MT, NE) are loaded, but the site
 > stays behind a sign-in until the launch checks pass. [`docs/status.md`](docs/status.md) says
 > where things stand.
 
 ## Why this exists
 
-H.R.1 (2025) requires many adults on Medicaid to meet work or "community engagement"
-requirements starting January 1, 2027. People who are medically frail are exempt. Each state
-defines frailty with its own list of codes: diagnosis codes (ICD-10-CM), procedure codes (CPT)
+H.R.1 (Pub. L. 119-21, §71119, 2025) requires many adults on Medicaid to meet work or "community engagement"
+requirements starting January 1, 2027. People who are medically frail are excluded. Each state
+publishes its own list of codes it uses to identify medically frail members: diagnosis codes (ICD-10-CM), procedure codes (CPT)
 and service and supply codes (HCPCS), among others. Each state also publishes its list in its
-own format: spreadsheets, web pages, or PDFs that run to hundreds of pages.
+own format: spreadsheets, web pages or PDFs that run to hundreds of pages.
 
 That makes simple questions hard to answer:
 
@@ -29,6 +29,7 @@ own documents.
 - State Medicaid directors and their staff
 - Health care providers and provider associations
 - Health care advocates and legal aid organizations
+- Policy researchers and journalists
 
 ## What it does
 
@@ -40,7 +41,7 @@ own documents.
 - **Code pages:** one page per code, with each state's answer in a plain sentence and a link to
   the state's document.
 - **Downloads:** each state's list as CSV or JSON.
-- **Admin tools** (sign-in required): load new or updated state lists from PDF, Excel or JSON,
+- **Admin tools** (sign-in required): load new or updated state lists from PDF, Excel, CSV or JSON,
   with checks that stop a wrong file; fix category mappings; roll back; back up; and track
   legal and policy deadlines.
 
@@ -51,7 +52,7 @@ own documents.
 - **This site is not legal or medical advice and is not an official source.** It does not
   decide anyone's eligibility. Check with the state Medicaid agency.
 - The site holds **no patient or member data**, and is designed never to hold any.
-- CPT® codes and descriptions are copyright the American Medical Association. The site shows
+- CPT® codes and descriptions are © American Medical Association. The site shows
   CPT descriptions only as each state published them, with a citation. ICD-10-CM and HCPCS
   Level II are in the public domain.
 

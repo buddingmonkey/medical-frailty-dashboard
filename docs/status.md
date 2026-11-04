@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-04. M0–M7 done. M8 steps 1–4, 6 and 7 done; steps 5 (usability gate)
+_Last updated: 2026-11-04. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
 and 8 (go live) wait for the project lead. Production runs `v0.9.0`; `v0.9.1` (new site mark)
 is being released 2026-11-04._
 
@@ -83,6 +83,8 @@ Open items, with the date each was raised. Close them here when done.
   proposed outline #848f9e / #6b7f9e (2026-11-03).
 - **SEO:** run the Rich Results Test and the bot-settings checklist (`docs/seo.md`).
 - **Other machines:** add `D1_PREVIEW_DATABASE_ID` to their `apps/api/.env.cloudflare`.
+- **Run getting-started.md on a fresh machine:** steps 5, 8 and 14 (GitHub, Claude Code
+  sign-in) were never run; the Windows CI job covers only the scripts (2026-11-03).
 - **Try "Run maintenance now"** on preview (Backup and restore page; 2026-11-03).
 - **Watch dates:** close the 2026-11-30 Workers downgrade item in `/admin/watch`; the project
   lead stays on Workers Paid.

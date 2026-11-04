@@ -354,7 +354,6 @@ against a local production build served by `wrangler dev` with the e2e seed (Mon
 
 ## Cost
 
-The Worker renders every public page, so crawler requests count toward the free 100,000
-Worker requests a day. The HTML cache keeps D1 reads low, but not Worker requests. If crawlers
-push past the free tier, switch to **Workers Paid ($5/month)**, as `docs/deployment.md` already
-plans. Watch the Cloudflare usage notification after launch.
+The Worker renders every public page, so crawler requests count as Worker requests. The HTML cache keeps D1 reads low, but not Worker requests. The account is
+on **Workers Paid**, which includes 10M requests a month. Watch the Cloudflare usage notification
+after launch.

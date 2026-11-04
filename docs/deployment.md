@@ -1,6 +1,6 @@
 # Deployment
 
-Goal: keep running costs near $0. The account is on Workers Paid ($5/month) since 2026-11-01;
+Goal: keep running costs near $0. The account has been on Workers Paid ($5/month) since 2026-11-01;
 everything else fits the free allowances. The limits below were checked in 2026-11; see the
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
 [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) and
@@ -142,16 +142,16 @@ pass your own). Only the two `D1_*` keys are read for this.
 | Domain (optional) | — | ~$10/year at Cloudflare Registrar (at cost) |
 | Claude API (optional) | — | Pay per token, only when the admin clicks the AI cleanup button. Set a spend limit. **Estimate, not measured:** with `claude-opus-5-5` ($4 in / $20 out per million tokens, 2026-10) Nebraska's 295 pages ≈ 0.2M tokens in and ≈ 0.25M out ≈ **$5–6 per full file**; a cheaper model via `AI_MODEL` is the project lead's call. Measure the first real run and write it here |
 
-**Current: $5/month** for Workers Paid, which the project lead keeps (2026-11-02; the weekly
-dump needs it), plus ~$10/year if a domain is bought. Everything else fits the free
+**Current: $5/month** for Workers Paid, which the project lead kept on 2026-11-02; since M7 the
+weekly dump needs it (see "Weekly maintenance"), plus ~$10/year if a domain is bought. Everything else fits the free
 allowances. Size estimate: 50 states ×
 ~5,000 entries ≈ 250k rows ≈ well under 500 MB in D1. A full re-ingest of one large state
-(≈ 6,000 rows plus FTS and index writes) fits inside the daily write quota. Load a few states
-per day if bulk-seeding many.
+(≈ 6,000 rows plus FTS and index writes) fits inside the daily write quota. On Free: load a few
+states per day if bulk-seeding many.
 
 **Reference codes** (`ref_codes`, 107,173 rows of ICD-10-CM and HCPCS) are larger than one
 day's free write quota, which preview and production share. The loader works in chunks and
-resumes, so the first load takes about **two days per database** at $0; later updates load
+resumes, so on Free the first load takes about **two days per database**; later updates load
 only changed codes (`packages/reference-data/README.md`). Entries carry three indexes plus the
 FTS index. **Measured on preview (2026-11-02, `wrangler d1 insights`): 4.3 rows written per
 entry** (109,486 rows written for 25,338 entries). GA's 6,173 entries ≈ 27k writes, NE's 8,183 ≈

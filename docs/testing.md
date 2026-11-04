@@ -118,7 +118,7 @@ the state PDFs in a folder as `ga-a.pdf`, `ga-b.pdf`, `la.pdf`, `mt.pdf`, `ne.pd
 `PDF_SOURCE_DIR=<folder> pnpm test pdf-pages.make` (skipped otherwise). `fixtures/make-pdf.ts`
 writes small PDFs for tests of the pdf.js side, in Vitest and e2e.
 
-**Seed data:** `apps/web/e2e/fixtures/public-seed.sql` (a small Montana list) and
+**Seed data:** `apps/web/e2e/fixtures/public-seed.sql` (a small Montana list and a synthetic three-entry Nebraska list) and
 `admin-seed.sql` seed the e2e databases. `apps/api/seed/seed.sql`, written by
 `pnpm db:seed:make` from production's published lists, is the local and preview seed
 (`docs/deployment.md`, "Preview data").

@@ -606,5 +606,5 @@ admin write query filters by `state_id` or `version_id`.
   README, "CCSR licence and citation"). On the legal team's list.
 - **CPT** descriptors are © American Medical Association. We do **not** keep a CPT reference
   table. We show `description_published` exactly as the state printed it, always with a link to
-  the state's source document, and the footer carries the AMA CPT notice. The user should get
+  the state's source document, and the footer carries the AMA CPT notice. The project lead should get
   this approach checked before launch (`docs/legal-review.md`, item 6).

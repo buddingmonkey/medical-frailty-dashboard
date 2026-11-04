@@ -80,7 +80,7 @@ backed up and stays one click away under **Versions → Restore**.
 ## 7. Map to comparison categories (Admin → Mappings)
 
 Choose the state. Each of its categories needs one or more comparison categories (called
-"unified categories" in the admin pages). The page suggests them from the CCSR groups of the
+"unified categories" in the admin pages). The page suggests them from the CCSR groups (AHRQ's grouping of diagnosis codes) of the
 state's diagnosis codes. Check the suggestion, save, and approve. Until a category is approved,
 the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
 readiness) needs every category of at least 2 states approved.

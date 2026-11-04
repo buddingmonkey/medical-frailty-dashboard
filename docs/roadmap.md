@@ -6,7 +6,7 @@ milestone is done when every step's acceptance check passes and `pnpm check:full
 numbers (`docs/devlog/README.md`), add any lessons to `docs/playbook.md`, and add to the running
 totals in `docs/talk-notes.md`.
 
-**Done:** M0–M7, and M8 steps 1–4, 6 and 7. **Open:** M8 steps 5 and 8, which wait for the
+**Done:** M0–M7, and M8 steps 1–4, 6 and 7 (except the restore drill). **Open:** M8 steps 5 and 8, which wait for the
 project lead. The steps below are kept as the record of what each milestone set out to do;
 `docs/status.md` lists the PRs and devlog entries.
 
