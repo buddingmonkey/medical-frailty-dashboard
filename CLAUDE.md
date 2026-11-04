@@ -5,8 +5,8 @@ A public site that compares the code lists US states use to mark Medicaid member
 front end, a TypeScript API on Cloudflare Workers, D1 (SQLite) for data, R2 for source files.
 All data is public state policy. There is no patient data, and there never will be.
 
-> **Status: M5 done; preview holds seed data, production the real lists.** Every command below
-> works. `docs/status.md` says what exists.
+> **Status: M8 under way; the site is private until go-live.** Preview holds seed data,
+> production the real lists. `docs/status.md` says what exists and what is open.
 
 ## Commands
 
@@ -20,7 +20,7 @@ pnpm e2e              # Playwright against a local build with seeded D1
 pnpm db:generate      # after editing apps/api/src/db/schema.ts: write a migration, then review it
 pnpm db:migrate:local # apply D1 migrations to the local database
 pnpm db:ref:local     # load the CMS reference codes (ICD-10-CM, HCPCS) into local D1, about a minute
-pnpm db:seed:local    # replace local state data with the seed (120 real entries per state), then Rebuild coverage
+pnpm db:seed:local    # replace local state data with the seed (51 states, 4 of them real), then Rebuild coverage
 pnpm db:seed:preview  # the same on preview (never production; it holds the real lists)
 pnpm format           # prettier --write
 pnpm deploy:preview   # deploy to the preview Worker (always behind Cloudflare Access)
@@ -80,6 +80,7 @@ Read the doc that matches the task. Do not load all of them.
 | [docs/sources.md](docs/sources.md) | Each state's source documents, format quirks and category list |
 | [docs/legal-review.md](docs/legal-review.md) | Wording and rules waiting for the legal team (add new provisional text here) |
 | [docs/add-state-source.md](docs/add-state-source.md) | Adding or updating a state's list through the admin screens, step by step |
+| [docs/legal-review.md](docs/legal-review.md) | Every provisional public string and rule, for the legal team; add new wording items here |
 | [docs/security.md](docs/security.md) | Threat model, Access setup, pre-launch gate, headers, upload safety |
 | [docs/seo.md](docs/seo.md) | SEO and GEO rules: server-rendered HTML, URLs, structured data, sitemap, crawlers |
 | [docs/testing.md](docs/testing.md) | Test layers, tools, fixtures, how to add and run tests |

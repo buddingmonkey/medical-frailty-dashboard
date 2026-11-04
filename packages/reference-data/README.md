@@ -62,8 +62,8 @@ production together). The full set is 173,935 rows (107,173 `ref_codes`, 66,762 
   (`ref_codes_chunk:<name>`), so `load` skips what is already there and stops before its row
   budget (`--max-rows`, default 80,000).
 - The first remote load takes **two to three days per database**. Run `load` again after 00:00 UTC.
-- Or pay for Workers Paid ($5/month) while loading. The project lead did this for one month on
-  2026-11-01 (downgrade watch date in `docs/status.md`); the loader works the same either way.
+- On Workers Paid ($5/month) one run loads everything. The account has been on it since
+  2026-11-01 (`docs/status.md`, "Workers plan"); the loader works the same either way.
 
 ## Updating
 

@@ -12,7 +12,7 @@ validates them again.
                      │  sha256 recorded)                         ▼                    ▼
                      │                                  auto-clean fails? ──► AI cleanup (optional)
                      ▼
-6. Send rows to a draft version (chunks of ≤ 500) ─► 7. Checks + diff ─► 8. Map categories ─► 9. Publish
+6. Send rows to a draft version (chunks of ≤ 500) ─► 7. Checks + diff ─► 8. Publish ─► 9. Map categories
 ```
 
 1. **Pick the state** and say whether this **replaces** the whole list (the normal case) or
@@ -33,9 +33,11 @@ validates them again.
 6. **Send to a draft.** Rows are posted in chunks so each request stays well under Workers
    CPU limits.
 7. **Checks and diff** (next section).
-8. **Category mapping.** New state categories get an automatic guess (below). The admin
-   confirms them. Unmapped categories do not block publishing; they show as "Unclassified".
-9. **Publish** with the confirmation the checks ask for.
+8. **Publish** with the confirmation the checks ask for.
+9. **Category mapping.** Publishing stores an automatic federal guess for each new state
+   category (below); the admin confirms it on `/admin/categories` and maps the category to
+   comparison (unified) categories on `/admin/mappings`. Unmapped categories do not block
+   publishing; they show as "Not yet classified".
 
 ## Review
 
@@ -289,10 +291,10 @@ prompt per part and streams the answer back. Costs: pay per token. Before
 enabling, set a monthly spend limit in the Anthropic Console and record the measured cost of
 one large file (e.g. Nebraska's 295 pages) in this doc. The model ID is a Worker variable, so it
 can change without a deploy. Check the `claude-api` skill for the current model and pricing
-when building this.
+before turning it on.
 
 ## Seed states
 
-The first data load (roadmap M2) uses the four files in `docs/sources.md`. Each one gets a
-small fixture excerpt in `fixtures/<state>/` with its expected normalized output, so parser
-changes are tested against real layouts.
+The first data load (roadmap M2) used the four files in `docs/sources.md`. Parser tests run
+on text-run snapshots of real pages from each file (`apps/web/src/ingest/fixtures/`,
+`docs/testing.md`, "Fixtures"), so parser changes are tested against real layouts.

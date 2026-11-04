@@ -34,8 +34,6 @@ literacy, little or no coding.
 
 | Date | Moment | Lesson | Devlog |
 | --- | --- | --- | --- |
-| 2026-11-03 | A new Windows CI job found three bugs nobody could see on Linux (`D:\D:\` paths, slash direction, slow runners) | Test on the platforms your contributors use | `devlog/2026-11-03-m8-hardening.md` |
-| 2026-11-03 | The project lead found Georgia's source page; the posted files were byte-identical to what we had loaded | Hash your sources so you can prove it | same |
 | 2026-11-01 | Profiling the real PDFs found code formats the spec never mentioned | Give the AI real data early | `devlog/2026-11-01-planning.md` |
 | 2026-11-01 | A pasted explanation of Louisiana's "Code Designation" contradicted the data; the AI caught it | Verify claims against data, whoever made them | same |
 | 2026-11-01 | The project lead's reading of a court ruling was only partly right; a research agent found the opinion, and the main session double-checked the agent | Ask for primary sources; check the checker | same |
@@ -81,6 +79,8 @@ literacy, little or no coding.
 | 2026-11-03 | The project lead noticed the home map "bouncing" on hover. The cause was a chain: each state's summary had a different height, the page grew and shrank, the browser moved the scroll, and the mouse landed on another state. The new test fails without the fix, in all 4 cases | Describe what you see, even when it sounds odd; "bounces at the frame rate" pointed straight at a feedback loop | same |
 | 2026-11-03 | A builder that couldn't run its own browser test handed over a restore test that failed. The restore itself worked; the test looked for codes on a page that only shows counts. The reviewer read the page snapshot and pointed the test at the state's data download instead | When a test fails, first ask whether the test or the feature is wrong; a snapshot of the page answers it | `devlog/2026-11-03-m7-admin.md` |
 | 2026-11-03 | The weekly backup worked in every test, but the builder checked the platform's limits anyway: a free-plan scheduled job gets 10 ms of CPU, and the backup needs up to 160 ms. On the free plan it would have failed every Sunday without a trace | Check the free tier's limits for scheduled jobs too, not only for web requests | same |
+| 2026-11-03 | A new Windows CI job found three bugs nobody could see on Linux (`D:\D:\` paths, slash direction, slow runners) | Test on the platforms your contributors use | `devlog/2026-11-03-m8-hardening.md` |
+| 2026-11-03 | The project lead found Georgia's source page; the posted files were byte-identical to what we had loaded | Hash your sources so you can prove it | same |
 
 ## Numbers to collect
 

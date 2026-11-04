@@ -39,8 +39,8 @@ Plus two of our own:
 
 6. `state_specific`: the state uses a category that does not fit 1–5 (e.g. LA "Temporary
    disabling", MT Tier 2 "Frailty indicators")
-7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Not yet classified" (until M6
-   step 3b, "Unclassified"); `state_specific` is shown as "State's own category (not in the law)"
+7. `unmapped`: not yet reviewed by an admin. Shown publicly as "Not yet classified";
+   `state_specific` is shown as "State's own category (not in the law)"
 
 **Which federal categories an entry counts under** (M5 step 5b, project lead 2026-11-02:
 "Federal category should be pre mapped. It's the non-federal we have to manage";
@@ -607,4 +607,4 @@ admin write query filters by `state_id` or `version_id`.
 - **CPT** descriptors are © American Medical Association. We do **not** keep a CPT reference
   table. We show `description_published` exactly as the state printed it, always with a link to
   the state's source document, and the footer carries the AMA CPT notice. The user should get
-  this approach checked before launch (open item in `docs/status.md`).
+  this approach checked before launch (`docs/legal-review.md`, item 6).

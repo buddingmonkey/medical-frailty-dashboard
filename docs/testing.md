@@ -118,14 +118,10 @@ the state PDFs in a folder as `ga-a.pdf`, `ga-b.pdf`, `la.pdf`, `mt.pdf`, `ne.pd
 `PDF_SOURCE_DIR=<folder> pnpm test pdf-pages.make` (skipped otherwise). `fixtures/make-pdf.ts`
 writes small PDFs for tests of the pdf.js side, in Vitest and e2e.
 
-Planned for the seed lists: `fixtures/<state>/` holds, for each seed file:
-
-- `excerpt.pdf` or `excerpt.xlsx`: a few pages that cover every quirk in `docs/sources.md`
-  (wrapped descriptions, wildcards, ranges, repeated headers). These are public government
-  documents, so they can live in the public repo; keep each under ~200 KB.
-- `expected.json`: the normalized rows the adapter must produce.
-- `seed.json`: the full normalized list, used by `pnpm db:seed:local` and E2E. Generated once
-  from the real file and reviewed by hand.
+**Seed data:** `apps/web/e2e/fixtures/public-seed.sql` (a small Montana list) and
+`admin-seed.sql` seed the e2e databases. `apps/api/seed/seed.sql`, written by
+`pnpm db:seed:make` from production's published lists, is the local and preview seed
+(`docs/deployment.md`, "Preview data").
 
 ## Running
 

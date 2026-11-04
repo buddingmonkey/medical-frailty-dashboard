@@ -13,7 +13,7 @@ state's source cited.
 | Topic | Decision |
 | --- | --- |
 | Crawlers | All crawlers welcome on public pages, AI crawlers included. Admin pages and `/api/` are disallowed (`apps/api/src/routes/robots.ts`) |
-| Content signals | `Content-Signal: search=yes, ai-input=yes, ai-train=yes` (project lead, 2026-11-01). **Provisional:** pages quote states' CPT descriptions, which are AMA-copyrighted, so the legal team may ask to change `ai-train` (`docs/status.md`) |
+| Content signals | `Content-Signal: search=yes, ai-input=yes, ai-train=yes` (project lead, 2026-11-01). **Provisional:** pages quote states' CPT descriptions, which are AMA-copyrighted, so the legal team may ask to change `ai-train` (`docs/legal-review.md`, item 8) |
 | Rendering | The Worker sends real HTML for every public page (below). Vue takes over in the browser |
 | Domain | Bought in M8, or the site is given to an organization that hosts it on its own domain. Either way, nothing may hard-code the `workers.dev` host |
 
@@ -161,7 +161,7 @@ end to the Worker.
 - Site-wide: `WebSite` and `Organization` on the home page.
 - Validate with Google's Rich Results Test before launch (M8).
 - Built (M3 step 4): `Dataset` on state pages (no `license` yet: the legal team decides what
-  licence the compiled lists carry; `docs/status.md`), `WebSite` on the home page.
+  licence the compiled lists carry; `docs/legal-review.md`, item 1), `WebSite` on the home page.
 - **Built (M8 step 3):** the home page's `WebSite` names this site as `publisher`
   (`Organization`, `siteOrganization` in `seo/pages.ts`). The compare tabs `/compare`,
   `/compare/categories` and `/compare/map` are `CollectionPage`s; a bare category page
@@ -194,7 +194,8 @@ end to the Worker.
   This is already a rule for CPT text (`docs/data-model.md`).
 - "Last updated" date on every page, matching `dateModified` in the JSON-LD and `lastmod`
   in the sitemap.
-- Short "what this means" notes next to badges, linking to the methodology page (M8).
+- Short "what this means" notes next to badges, linking to the methodology page (the "Learn
+  more" links, M8 step 4).
 
 ### 5. Open data downloads (M3)
 
