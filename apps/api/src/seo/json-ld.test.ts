@@ -144,7 +144,7 @@ describe('JSON-LD on each page type', () => {
       // Site URLs are on the request's own origin; off-site ones are the states' documents and
       // the code systems' pages.
       for (const url of urlsIn(node)) {
-        if (url.includes(HOST)) expect(url.startsWith(`${ORIGIN}/`), url).toBe(true)
+        if (new URL(url).host === HOST) expect(url.startsWith(`${ORIGIN}/`), url).toBe(true)
       }
     }
   })

@@ -1,0 +1,2 @@
+# Fake 32-hex Web Analytics token in a test (M8 step 6); replaced by a runtime-built value in the next commit.
+5bb35f76a2284a264df050684dab4cea9012f888:apps/api/src/seo/analytics.test.ts:generic-api-key:12

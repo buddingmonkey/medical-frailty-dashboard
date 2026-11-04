@@ -56,9 +56,9 @@ export function chunkName(file: string): string {
 /** The scripts and style sheets dist/index.html loads on every page, in order. */
 export function initialFiles(indexHtml: string): string[] {
   const out: string[] = []
-  for (const m of indexHtml.matchAll(/<(script|link)\b[^>]*>/g)) {
+  for (const m of indexHtml.matchAll(/<(script|link)\b[^>]*>/gi)) {
     const tag = m[0]
-    const url = /\b(?:src|href)="\/(assets\/[^"]+\.(?:m?js|css))"/.exec(tag)?.[1]
+    const url = /\b(?:src|href)="\/(assets\/[^"]+\.(?:m?js|css))"/i.exec(tag)?.[1]
     if (!url) continue
     if (m[1] === 'link' && !/\brel="(modulepreload|stylesheet)"/.test(tag)) continue
     out.push(url)
