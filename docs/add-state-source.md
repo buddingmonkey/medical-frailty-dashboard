@@ -1,8 +1,8 @@
 # Adding or updating a state's code list
 
-Step by step, written from loading the four seed states (GA, LA, MT, NE) on 2026-11-02
-(`docs/devlog/2026-11-02-m2-step11-seed-run.md`). For admins, and for an AI assistant helping
-one. Nothing here is public until step 8, and every step before it can be undone.
+For admins, and for an AI assistant helping one. Written from loading the four seed states
+(GA, LA, MT, NE) on 2026-11-02 (`docs/devlog/2026-11-02-m2-step11-seed-run.md`). Nothing is
+public until you publish in step 6, and every step before it can be undone.
 
 ## Before you start
 
@@ -77,12 +77,21 @@ this is the second file or table of the same list. Sending the same table again 
 Tick each confirmation, type the state code where asked, and publish. The previous list is
 backed up and stays one click away under **Versions → Restore**.
 
-## 7. Map the categories (Admin → Categories)
+## 7. Map to comparison categories (Admin → Mappings)
 
-Each state category needs a federal category. Publishing stores keyword guesses; **Confirm**
-each one, or "Confirm all guesses" after reading them. For states without categories
-(Georgia, Nebraska) map "(no category)" and use **chapter overrides**. Launch needs every
-mapping confirmed.
+Choose the state. Each of its categories needs one or more comparison categories (called
+"unified categories" in the admin pages). The page suggests them from the CCSR groups of the
+state's diagnosis codes. Check the suggestion, save, and approve. Until a category is approved,
+the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
+readiness) needs every category of at least 2 states approved.
+
+## 8. Check the federal categories (Admin → Categories)
+
+A code's federal category follows its comparison categories. The mapping here is the fallback
+for codes in no comparison category. Publishing stores keyword guesses; **Confirm** each one,
+or "Confirm all guesses" after reading them. For states without categories (Georgia, Nebraska)
+map "(no category)" and use **chapter overrides**. A change that moves published codes shows a
+preview first.
 
 ## If a file will not read
 

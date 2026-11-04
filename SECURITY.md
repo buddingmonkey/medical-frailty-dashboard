@@ -21,8 +21,9 @@ testing, and social engineering.
 ## What the site holds
 
 The site compares the code lists US states publish. It holds **no patient or member data**
-and is designed never to. The admin area is behind Cloudflare Access and checks the Access token
-again in the Worker. See [`docs/security.md`](docs/security.md) for the threat model.
+and is designed never to. The admin area sits behind Cloudflare Access, a sign-in service, and
+the site's own server checks each sign-in token again. See
+[`docs/security.md`](docs/security.md) for the threat model.
 
 ## Supported versions
 

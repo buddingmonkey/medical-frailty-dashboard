@@ -274,11 +274,11 @@ try them on your own computer at http://localhost:8787/admin with the sample dat
 | Admin task | How |
 | --- | --- |
 | Load or update a state's code list | [`add-state-source.md`](add-state-source.md), step by step |
-| Fix a wrong category mapping | Admin → Categories: choose the federal category, Confirm |
+| Fix a wrong category mapping | Comparison categories: Admin → Mappings, choose the state. Federal categories: Admin → Categories, choose the new one, check the preview of what moves, then save |
 | Roll back a bad upload | Admin → Versions → choose the state → Restore an earlier version |
 | Add or close a watch date | Admin → Watch dates |
-| Create a unified category and map states to it | Admin → Unified categories (choose its CCSR groups, publish), then Admin → Mappings for each state (use the suggestion, save and approve) |
-| Download a backup | Not built yet (roadmap M7) |
+| Create a comparison category and map states to it | Admin → Unified categories (choose its CCSR groups, publish), then Admin → Mappings for each state (use the suggestion, save and approve) |
+| Download a backup | Admin → Backup and restore → Download backup |
 
 ### Prompt template: add a public page
 
@@ -359,7 +359,7 @@ _(Setup steps, costs and time to be added when the project reaches launch.)_
 | Port | The number after `localhost:`. Only one program can use a port at a time |
 | Database (D1) | Where the site keeps its data. Locally it is a file on your computer |
 | Migration | A step that creates or changes the database's tables |
-| Seed data | Sample data for testing: real codes, 120 entries per state |
+| Seed data | Sample data for testing: part of four states' real lists, and made-up lists for 40 others |
 | Rebuild coverage | An admin button that recalculates the comparisons after new data |
 | Cloudflare, Worker | The hosting company, and its kind of server program that runs the site |
 | Cloudflare Access | The login in front of the admin pages and the preview site |
@@ -368,4 +368,5 @@ _(Setup steps, costs and time to be added when the project reaches launch.)_
 | `.dev.vars` | A local file for secrets on your computer. Contributors do not need one |
 | Devlog | The project's diary: one entry per working session, in `docs/devlog/` |
 | ICD-10-CM, HCPCS, CPT | Medical code systems: diagnoses, services and supplies, and procedures. CPT text is copyrighted |
-| CCSR | A public grouping of ICD-10-CM codes into categories, used for the unified categories |
+| CCSR | A public grouping of ICD-10-CM codes into categories, from the federal agency AHRQ. The site uses it to suggest comparison categories |
+| Comparison category | A category the site's admins define so different states' lists can be compared. The admin pages call them "unified categories" |
