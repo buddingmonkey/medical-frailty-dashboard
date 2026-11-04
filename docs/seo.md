@@ -162,6 +162,28 @@ end to the Worker.
 - Validate with Google's Rich Results Test before launch (M8).
 - Built (M3 step 4): `Dataset` on state pages (no `license` yet: the legal team decides what
   licence the compiled lists carry; `docs/status.md`), `WebSite` on the home page.
+- **Built (M8 step 3):** the home page's `WebSite` names this site as `publisher`
+  (`Organization`, `siteOrganization` in `seo/pages.ts`). The compare tabs `/compare`,
+  `/compare/categories` and `/compare/map` are `CollectionPage`s; a bare category page
+  (`/compare/<slug>`) is a `Dataset` (the table caption as name, the definition plus "A comparison
+  category: …" as description, since Google wants at least 50 characters, the CSV download as
+  `distribution`); About is an `AboutPage` and the other info pages are `WebPage`s
+  (`pageJsonLd`). Pages that are not indexed (a state with no list, a states comparison, search,
+  a filtered category page) carry none. `apps/api/src/seo/json-ld.test.ts` checks every page
+  type for `@context`, its expected types and their fields (Dataset: name, description of
+  50–5,000 characters, url, creator, each download's format and URL; pages: name, description,
+  url; `DefinedTerm`: `termCode`, url, the set's name), with site URLs on the request's origin.
+- **Rich Results Test (project lead, once on preview).** Preview is behind Access, so Google
+  cannot fetch it: sign in, open each page below, view the page source (Ctrl+U), copy it all
+  and paste it into the **Code** tab of <https://search.google.com/test/rich-results>. Google
+  reports only the types it has rich results for (here `Dataset`); paste the same source into
+  <https://validator.schema.org/> for the rest (`WebSite`, `CollectionPage`, `AboutPage`,
+  `WebPage`, `DefinedTerm`). Expect no errors; a missing `license` warning on `Dataset` is known
+  (legal team). Pages, on the preview host from the `preview` environment's `SITE_URL`:
+  `/` (WebSite), `/states/mt` (Dataset), `/compare/serious-mental-illness` (Dataset),
+  `/compare`, `/compare/categories`, `/compare/map` (CollectionPage),
+  `/codes/icd-10-cm/F20.0` (WebPage with DefinedTerm), `/about` (AboutPage), `/privacy`
+  (WebPage). After launch, run the URL mode on the public host once.
 
 ### 4. Facts that AI can quote correctly (M3–M6)
 
@@ -245,6 +267,19 @@ A short Markdown file at `/llms.txt`: what the site is, how to read a state's st
 the methodology page, every state page and the data downloads. It is an emerging convention,
 not a standard, and costs almost nothing.
 
+**Built (M8 step 3):** `apps/api/src/routes/llms-txt.ts`, in the <https://llmstxt.org> layout:
+`# Medical Frailty Coding Dashboard`, the home description as the `>` summary, the home intro,
+what an entry is and the footer disclaimer, then link lists: **Start here** (About and
+methodology, All states, Search codes), **Compare** (every compare tab with its description,
+then every published category page), **State lists** (each state with a list, with its entry
+count), **Data downloads** (each list's CSV and JSON) and **Optional** (the disclaimer, privacy
+and accessibility pages, the sitemap). Every word and path comes from the shared data the pages
+use (`compareTabs`, `infoPages`, `pageDescriptions`, …), absolute URLs on the request's origin,
+cached like the sitemap (`publicCache`). `apps/api/src/routes/llms-txt.test.ts` fetches every link
+through the Worker (static files answer 404 there) and expects 200. Like `robots.txt`, it is
+readable without signing in while the site is private, and then says only "This site is not
+public yet." with no links (`X-Robots-Tag: noindex, nofollow` still set).
+
 ### 8. Cloudflare settings (step 7 and go-live)
 
 - Keep **Block AI bots** / managed robots.txt **off**, and set AI Crawl Control to allow.
@@ -253,10 +288,62 @@ not a standard, and costs almost nothing.
 - If Bot Fight Mode or the WAF are turned on, confirm verified crawlers are not challenged.
 - No pay-per-crawl.
 
+**What the project lead checks in the dashboard (M8 step 3; nothing changed by code).** Most of
+these settings belong to a zone (a domain), so on the `workers.dev` host there may be nothing to
+set yet; check again when the domain is added (`docs/deployment.md`, "Going live", steps 6 and
+8).
+
+1. **Security → Bots** (zone): **Bot Fight Mode off** until a domain exists and we decide to
+   use it; if it is ever on, verified bots (Googlebot, Bingbot, the AI crawlers) must not be
+   challenged.
+2. **Security → Bots** (zone): **"Block AI bots" off** (the toggle for AI scrapers and
+   crawlers, on by default for new domains).
+3. **AI Crawl Control** (zone): every crawler set to **Allow**, no pay-per-crawl.
+4. **Managed robots.txt off** (Security → Bots, "Instruct AI bot traffic with robots.txt"): we
+   serve our own `robots.txt` with `Content-Signal` (`apps/api/src/routes/robots.ts`), and a
+   managed one would be prepended to it.
+5. After launch, open `/robots.txt` and `/llms.txt` on the public host and check they are ours,
+   unchanged.
+
 ### 9. Speed and accessibility (M8)
 
 Already planned: Lighthouse ≥ 90 on the home page and axe clean in both themes. Both are
 search ranking factors.
+
+**Performance pass (M8 step 3, 2026-11-03).** Lighthouse 13.6.0, mobile (its default throttling),
+against a local production build served by `wrangler dev` with the e2e seed (Montana only):
+
+| Page | Performance | Accessibility | Best practices | SEO |
+| --- | --- | --- | --- | --- |
+| `/` before → after | 69 → 97 | 100 | 96 | 100 |
+| `/states/mt` before → after | 76 → 97 | 100 | 96 | 100 |
+| `/codes/icd-10-cm/F20.0` before → after | 75 → 96 | 100 | 96 | 100 |
+
+- **Cause:** layout shift (CLS 0.44–0.59). Vue mounts with a loading state, so the footer sat
+  near the top and jumped down when the data came; and the swap from the fallback font to
+  Source Sans moved the server-rendered table. **Fixes:** `<main>` is at least a screen tall
+  (`min-h-screen` in `App.vue`), so the footer starts below the fold; the Latin files of Source
+  Sans 3 and Jost are preloaded (`preloadFonts` in `apps/web/vite.config.ts`, after the build
+  names them). CLS is now 0, TBT 60–70 ms, LCP about 2.6 s.
+- Already fine: every route is lazy (file-based routes), so pdf.js, the parser worker and the
+  ingest screen load only on admin pages; fonts use `font-display: swap` and the other subsets
+  load by `unicode-range` only when a page needs them; the only blocking script is the tiny
+  `theme-init.js`, kept so the theme never flashes.
+- **Bundle budget:** `scripts/bundle-budget.ts` (`pnpm budget`), a `pnpm check:full` stage right
+  after the build (so CI runs it on every pull request). It measures gzip and brotli of every
+  script and style sheet in `apps/web/dist` and fails when the first load of every page
+  (`initial`: what `index.html` loads) or a named chunk is over its budget, when any other
+  chunk passes 7,000 B brotli, or when admin-only code (`pdf`, `pdf.worker.min`, `pdf-layout`,
+  `worker`, `ingest`) is in the first load. Budgets are the 2026-11-03 sizes plus about 10%:
+  first load 112.1 KiB brotli / 127.9 KiB gzip (budget 127,000 / 145,000 B). Raise a number
+  in the same pull request as a change that needs it, and say why.
+- **Left for later:** the shared package (`@mfcd/shared`, 57 KiB brotli) is in every page's first
+  load with zod and every admin schema, because module-level `z.object(...)` calls cannot be
+  tree-shaken; Lighthouse counts about 32 KiB of it unused on the home page. Splitting admin
+  schemas into a subpath import (like `@mfcd/shared/us-map`) would cut it. pdf.js is bundled
+  twice (the page's copy and the parser worker's; admin only). Best practices is 96 because of
+  a CSP issue Chrome reports without a URL on `http://localhost` (no violation in the console);
+  re-check on preview over HTTPS.
 
 ## Cost
 

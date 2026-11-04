@@ -50,7 +50,7 @@
   build. Specs fail on any console error (so a CSP violation fails), and run axe in both themes.
   First run on a new machine: `pnpm --filter @mfcd/web exec playwright install chromium`.
 - **`pnpm check`** is `scripts/check.ts`, run directly by Node 26 (type stripping). Stages:
-  format, lint, types, db-drift, unit, refdata, component, api, scripts; `--full` adds build and e2e. `db-drift`
+  format, lint, types, db-drift, unit, refdata, component, api, scripts; `--full` adds build, budget and e2e. `budget` (`scripts/bundle-budget.ts`, also `pnpm budget` after a build) fails when a bundle group grows past its brotli budget (about 10% over the M8 sizes) or admin code reaches the first load. `db-drift`
   (`scripts/db-drift.ts`) runs `drizzle-kit generate` and fails if it writes a file, i.e. the
   schema changed without a migration; the new migration is left in place to review. It keeps going after a
   failure so one run shows everything, and each failing line names its log file.

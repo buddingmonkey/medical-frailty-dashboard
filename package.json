@@ -18,6 +18,7 @@
     "e2e": "pnpm --filter @mfcd/web build && pnpm --filter @mfcd/web e2e",
     "check": "node scripts/check.ts",
     "check:full": "node scripts/check.ts --full",
+    "budget": "node scripts/bundle-budget.ts",
     "cf": "node scripts/cf.ts",
     "db:generate": "pnpm --filter @mfcd/api db:generate",
     "db:migrate:local": "pnpm --filter @mfcd/api db:migrate:local",

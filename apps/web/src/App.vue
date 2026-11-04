@@ -27,7 +27,9 @@ import ThemeMenu from './components/ThemeMenu.vue'
     </div>
   </header>
 
-  <main id="main" class="mx-auto max-w-6xl px-4 py-10">
+  <!-- At least a screen tall, so the footer stays below the fold while a page loads its data
+       instead of jumping down when it arrives (Lighthouse CLS, M8 step 3). -->
+  <main id="main" class="mx-auto min-h-screen max-w-6xl px-4 py-10">
     <RouterView />
   </main>
 

@@ -8,7 +8,7 @@ import { signInRequired } from './responses'
 export const isPublic = (env: Env): boolean => env.SITE_MODE === 'public'
 
 /** The only paths readable without Access while the site is private. */
-const UNGATED_PATHS = new Set(['/robots.txt', '/.well-known/security.txt'])
+const UNGATED_PATHS = new Set(['/robots.txt', '/llms.txt', '/.well-known/security.txt'])
 
 /**
  * Pre-launch gate (docs/architecture.md, "Site gate"). While SITE_MODE is not "public", every
@@ -26,7 +26,8 @@ export const siteGate = (getJwks: GetJwks) =>
     // outside Hono (static assets) does not pick up headers set with c.header().
     c.header('X-Robots-Tag', 'noindex, nofollow')
 
-    // robots.txt says "Disallow: /" and nothing else, and security.txt names only the repo's
+    // robots.txt says "Disallow: /" and nothing else, llms.txt only "not public yet" (llms-txt.ts),
+    // and security.txt names only the repo's
     // public vulnerability-reporting page, so both may be read without signing in.
     if (UNGATED_PATHS.has(c.req.path)) {
       await next()

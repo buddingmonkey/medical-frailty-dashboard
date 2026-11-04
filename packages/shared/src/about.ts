@@ -589,9 +589,11 @@ export const privacyPage: InfoPage = {
       heading: 'Cookies and analytics',
       blocks: [
         p(
-          'The public site sets no cookies. It may use cookieless analytics (counts of page ' +
-            'views, with no cookies and no tracking across sites) to learn which pages people ' +
-            'use. Your light or dark theme choice is kept only in your own browser.',
+          'The public site sets no cookies. It may use Cloudflare Web Analytics to learn which ' +
+            'pages people use: it counts page views and how fast pages load, by page, referring ' +
+            'site, browser and country. It sets no cookies, stores nothing in your browser and ' +
+            'does not track you across sites. Your light or dark theme choice is kept only in ' +
+            'your own browser.',
         ),
       ],
     },

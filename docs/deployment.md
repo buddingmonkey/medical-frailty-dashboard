@@ -57,7 +57,7 @@ Local values go in `apps/api/.dev.vars` (gitignored; `.dev.vars.example` is comm
 | --- | --- | --- |
 | Who can deploy | `main` only | `main` and `v*` tags, after the required reviewer (project lead) approves |
 | Secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | same names, own values |
-| Variables | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL`, `D1_DATABASE_ID` | same names, own values |
+| Variables | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL`, `D1_DATABASE_ID`; optional `CF_BEACON_TOKEN` | same names, own values |
 
 `D1_DATABASE_ID` is the environment's D1 database id (`pnpm cf d1 list`). The ids are not
 secret, but they are not committed: `apps/api/wrangler.jsonc` holds the placeholders
@@ -67,9 +67,52 @@ workflow that touches a remote database (Deploy, Reference data, Copy state data
 checkout. The job stops with an error if the variable is unset. Copy state data runs in
 `production` and looks up preview's id by the name `frailty-preview`.
 
+`CF_BEACON_TOKEN` turns on Cloudflare Web Analytics for that environment (below). Unset means
+analytics off, never a failed deploy.
+
 Each environment has its own CI API token ("Edit Cloudflare Workers" template plus D1 Edit and
 R2 Edit, this account only), so either can be revoked alone. Cloudflare API tokens can be
 limited to an account, not to single Workers, databases or buckets.
+
+### Web Analytics
+
+Cloudflare Web Analytics (roadmap M8 step 6) counts page views and page load times. It is free,
+sets no cookies and stores nothing in the browser, so it needs no consent banner. It needs no
+domain: the "manual setup" works on a `workers.dev` host.
+
+**How it is wired.** The Worker var `CF_BEACON_TOKEN` holds the site token. It is not a secret:
+the token is in every page. `apps/api/wrangler.jsonc` sets it to `""` (off) for local dev and
+tests; the Deploy workflow passes the GitHub environment variable of the same name with
+`wrangler deploy --var CF_BEACON_TOKEN:<token>` when it is set, and stops with an error if it is
+set but is not 32 hex characters. With a token, `apps/api/src/seo/analytics.ts` adds
+`<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "…"}'>`
+to the `<head>` of every public HTML page (the Worker's rendered pages and the SPA shell), and
+the CSP allows `https://static.cloudflareinsights.com` in `script-src` and
+`https://cloudflareinsights.com` (where the beacon posts to `/cdn-cgi/rum`) in `connect-src`.
+Admin pages never get the script, and their CSP stays strict. Tests:
+`apps/api/src/seo/analytics.test.ts`.
+
+**Turning it on (project lead, once per environment):**
+
+1. Cloudflare dashboard, this account: **Analytics & Logs → Web Analytics → Add a site**.
+2. Enter the environment's host name (for example the preview `workers.dev` host from
+   `SITE_URL`, without `https://`) and choose **manual setup** (not the automatic setup, which
+   needs a proxied zone).
+3. Copy the token from the snippet it shows: the value of `"token"` in `data-cf-beacon`
+   (32 hex characters).
+4. GitHub: **Settings → Environments → `preview`** (or `production`) **→ Environment variables
+   → Add variable**, name `CF_BEACON_TOKEN`, value the token.
+5. Deploy: the next push to `main` (preview) or the next release tag (production). Open a public
+   page, check the page source has the beacon script, and wait a few minutes for the first page
+   views in the dashboard.
+
+Preview sits behind Access, so its numbers only count testers. Register production separately:
+the token is tied to its host name.
+
+**When the domain arrives:** the token belongs to the host name it was registered for (an apex
+match, so `www.` and the bare domain share one). Add a new site for the new domain, put its token
+in `CF_BEACON_TOKEN` for `production`, deploy, and delete the old `workers.dev` site in the
+dashboard. To turn analytics off, delete the variable and deploy.
 
 ### Local Cloudflare access
 
@@ -388,7 +431,7 @@ repository without editing code:
    `wrangler.jsonc`; other names need an edit there).
 2. Set up Access and the GitHub environments as above. In each environment set the variables
    `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL` and `D1_DATABASE_ID` (that environment's
-   database id), and the four secrets.
+   database id), and the four secrets. `CF_BEACON_TOKEN` is optional ("Web Analytics" above).
 3. Rate-limit `namespace_id`s (`1001`, `1002`, `2001`, `2002` in `wrangler.jsonc`) only need to be
    unique within the account; change them only if the account already uses them.
 4. Push to `main` (preview deploys, migrations included), load the reference data with the

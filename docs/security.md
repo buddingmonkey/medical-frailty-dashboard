@@ -135,6 +135,14 @@ X-Frame-Options: DENY
   the DOM (CSSOM), which CSP does not block, and Tailwind ships one external stylesheet. The
   placeholder page renders in headless Chrome with no CSP violations. The step 4 browser tests
   will catch any regression.
+- **Cloudflare Web Analytics** (M8 step 6) is the only third-party script, and only while the
+  Worker var `CF_BEACON_TOKEN` holds a site token (`docs/deployment.md`, "Web Analytics"). Then
+  public pages load `https://static.cloudflareinsights.com/beacon.min.js` (an external file with
+  `defer`, no inline script), and their CSP adds `https://static.cloudflareinsights.com` to
+  `script-src` and `https://cloudflareinsights.com` to `connect-src`. Admin pages never load it
+  and keep the CSP above. With no token, every page has the CSP above
+  (`apps/api/src/seo/analytics.test.ts`). The token must be 32 hex characters, or the Worker
+  treats analytics as off, so a bad value can never reach the page's markup.
 - Fonts are self-hosted, so `font-src 'self'` is enough (no Google Fonts).
 - **No inline scripts.** The pre-paint theme script is an external file
   (`apps/web/public/theme-init.js`), so `script-src 'self'` covers it with no hash to maintain.

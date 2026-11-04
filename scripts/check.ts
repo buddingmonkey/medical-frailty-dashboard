@@ -38,6 +38,12 @@ const stages: Stage[] = [
 if (process.argv.includes('--full')) {
   stages.push(
     { name: 'build', args: ['build'] },
+    // Bundle size budget on the fresh build (scripts/bundle-budget.ts; roadmap M8 step 3).
+    {
+      name: 'budget',
+      args: ['budget'],
+      summarize: (log) => /initial load \(\*\): (.+)/.exec(log)?.[1] ?? '',
+    },
     // The build stage above produced apps/web/dist, so run Playwright directly.
     { name: 'e2e', args: ['--filter', '@mfcd/web', 'e2e'], summarize: playwrightSummary },
   )
