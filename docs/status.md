@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-11-03 (M7 complete)_
+_Last updated: 2026-11-03 (M8 steps 1–4, 6, 7 done; steps 5 and 8 wait for the project lead)_
 
 ## Where things stand
 
@@ -337,6 +337,31 @@ _Last updated: 2026-11-03 (M7 complete)_
   - Backup decisions taken by the lead (main session): the download leaves out R2 keys and the
     weekly dump keeps them; 50 MB import cap; a restored mapping keeps its original mapper,
     and the audit row names who restored it.
+- **M8 steps 1–4, 6, 7 done** (PRs #85–#94, 2026-11-03, 15:16–19:20 CST; devlog
+  `2026-11-03-m8-hardening.md`). Hard stop: steps 5 (usability gate) and 8 (go live) need the
+  project lead.
+  - Step 1: `/admin/launch-readiness`. Ready = 0 unmapped, 0 unconfirmed and 0 "Not yet
+    reviewed" on the public page; the data gate needs 2 ready states.
+  - Step 2: axe on 100 page/theme/state combinations, focus to the page `h1` on navigation,
+    landmarks in the Worker HTML, 320 px reflow. Manual NVDA/VoiceOver checklist in
+    `docs/testing.md`.
+  - Step 3: Lighthouse mobile 96–97 performance, 100 accessibility and SEO (local); bundle
+    budget stage in `check:full`; `/llms.txt`; JSON-LD on every indexed page type.
+  - Step 4: `/about` (methodology), `/disclaimer`, `/privacy`, `/accessibility`, footer and
+    learn-more links; icons, manifest, share image, `security.txt`, print styles, page meta.
+  - Step 6: Web Analytics beacon behind `CF_BEACON_TOKEN` (empty = off; public pages only).
+  - Step 7: public rate limits (120/min, search 60/min per IP); D1 ids from the GitHub
+    variable `D1_DATABASE_ID` (set in both environments); security review: no findings.
+    **Restore drill still to do** on preview with the project lead.
+  - Also: Dependabot alerts closed with pnpm overrides; source title/URL/date editable
+    (`PUT /api/admin/sources/:id`); all scripts cross-platform with a `check (windows)` CI job.
+  - **For the project lead:** tag a release when ready (then set GA's two source documents'
+    URL and date on production: DCH public notices page, 2026-07-09); register Web
+    Analytics and set `CF_BEACON_TOKEN` per environment (`docs/deployment.md`); decide
+    whether `check (windows)` is a required check; the map's "no list" fill is 1.23:1 (light)
+    / 1.53:1 (dark) against the page, proposed outline #848f9e / #6b7f9e; run the Rich
+    Results Test and the bot-settings checklist (`docs/seo.md`); add
+    `D1_PREVIEW_DATABASE_ID` to any other machine's `apps/api/.env.cloudflare`.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3 (not 7; see
   `docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
