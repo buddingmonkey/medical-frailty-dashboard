@@ -113,6 +113,20 @@ SELECT id, 9001, 'mapping', 1 FROM entries WHERE version_id = 9001 AND code_norm
 INSERT INTO entry_unified (entry_id, unified_id, basis, reviewed)
 SELECT id, 9002, 'by_code', 0 FROM entries WHERE version_id = 9001 AND code_norm = 'F1020';
 
+-- Like codes (M8 step 2, for the accessibility pass): a published condition group with a HCPCS
+-- code and an ICD-10-CM code, so /codes/hcpcs/E0465 (listed by no state) shows Montana's and
+-- Nebraska's Z99.11 as like codes. E0465's text is CMS's (public domain HCPCS). Fixed id 9001.
+DELETE FROM condition_members WHERE group_id = 9001;
+DELETE FROM condition_groups WHERE id = 9001;
+DELETE FROM ref_codes WHERE code_system = 'hcpcs' AND code_norm = 'E0465';
+INSERT INTO ref_codes (code_system, code_norm, description, valid_from)
+VALUES ('hcpcs', 'E0465', 'Home ventilator, any type, used with invasive interface', 'e2e');
+INSERT INTO condition_groups (id, slug, name, definition, status, updated_by)
+VALUES (9001, 'test-breathing-support', 'Test breathing support', 'Synthetic group for the e2e tests.',
+  'published', 'e2e@localhost');
+INSERT INTO condition_members (group_id, code_system, match_kind, code_norm)
+VALUES (9001, 'hcpcs', 'exact', 'E0465'), (9001, 'icd10cm', 'exact', 'Z9911');
+
 -- A new data_version each run, so pages cached by an earlier run (miniflare keeps its cache in
 -- the persist folder) are never served.
 INSERT INTO app_meta (key, value) VALUES ('data_version', '1')

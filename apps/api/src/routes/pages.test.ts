@@ -420,6 +420,19 @@ describe('main navigation in the server-rendered HTML', () => {
       }
     }
   })
+
+  it('has a skip link, then the nav in a header, then the page in <main> (M8 step 2)', async () => {
+    for (const path of ['/', '/states/ga', '/compare', '/codes/icd-10-cm/F20.0', '/about']) {
+      const app = appHtml(await (await get(path)).text()).replace(/\s+/g, ' ')
+      expect(app, path).toMatch(
+        /^<div id="app"> ?<a href="#main">Skip to main content<\/a> ?<header> ?<nav aria-label="Main">/,
+      )
+      expect(app, path).toMatch(/<\/header> ?<main id="main"> ?/)
+      const main = app.slice(app.indexOf('<main id="main">'), app.indexOf('</main>'))
+      expect(main.match(/<h1[ >]/g), path).toHaveLength(1)
+      expect(app.indexOf('</main>'), path).toBeLessThan(app.indexOf('<footer>'))
+    }
+  })
 })
 
 describe('GET /states (server-rendered)', () => {

@@ -131,6 +131,9 @@ describe('/admin/unified', () => {
     expect(within(form).getByRole('alert').textContent).toContain(
       'Fix these fields: Label, Slug, Definition, Federal parent.',
     )
+    const label = within(form).getByLabelText('Label')
+    expect(label.getAttribute('aria-invalid')).toBe('true')
+    expect(label.getAttribute('aria-describedby')).toBe(within(form).getByRole('alert').id)
     expect(creates).toEqual([])
 
     await user.type(within(form).getByLabelText('Label'), 'Serious mental illness')

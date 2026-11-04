@@ -27,9 +27,10 @@ import ThemeMenu from './components/ThemeMenu.vue'
     </div>
   </header>
 
-  <!-- At least a screen tall, so the footer stays below the fold while a page loads its data
+  <!-- tabindex="-1": the skip link and src/lib/route-focus.ts can move focus here (M8 step 2).
+       At least a screen tall, so the footer stays below the fold while a page loads its data
        instead of jumping down when it arrives (Lighthouse CLS, M8 step 3). -->
-  <main id="main" class="mx-auto min-h-screen max-w-6xl px-4 py-10">
+  <main id="main" tabindex="-1" class="mx-auto min-h-screen max-w-6xl px-4 py-10">
     <RouterView />
   </main>
 

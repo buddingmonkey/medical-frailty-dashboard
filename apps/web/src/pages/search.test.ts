@@ -229,6 +229,23 @@ describe('search page', () => {
     expect(screen.getByRole('status').textContent).toContain('No codes match')
   })
 
+  it('says "Searching…" in the live region while a search loads', async () => {
+    server.use(
+      http.get('/api/public/codes/search', async ({ request }) => {
+        await delay(200)
+        const q = new URL(request.url).searchParams.get('q') ?? ''
+        return HttpResponse.json(response(q, [result()]))
+      }),
+    )
+    await renderRoute('/search?q=F20')
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toContain(SEARCH_PAGE.loading)
+    })
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toContain('1 code found.')
+    })
+  })
+
   it('says when the search fails', async () => {
     server.use(
       http.get('/api/public/codes/search', () =>

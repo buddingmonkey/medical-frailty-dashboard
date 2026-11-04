@@ -9,7 +9,7 @@
 | Component | Vitest + `@testing-library/vue` + MSW | `apps/web/src/**/*.test.ts` | User-visible behavior: pick states, see table, search results, admin review table. Mock the API with MSW, never mock composables |
 | API | Vitest + `@cloudflare/vitest-plugin` | `apps/api/src/**/*.test.ts` | Routes running in workerd with a real local D1 and R2 (Miniflare). Auth middleware, site gate, publish/rollback, per-state write isolation |
 | E2E | Playwright | `apps/web/e2e/` | Main journeys in Chromium against `wrangler dev` with seeded local D1: home map → state, compare, search → code detail, admin ingest → publish → rollback. `*.admin.spec.ts` run in the `admin` project: a second Worker on :8789 in development mode (the localhost bypass signs in `e2e-admin@localhost`) with its own migrated local D1 in `apps/api/.wrangler/e2e-admin` |
-| Accessibility | `@axe-core/playwright` | in E2E specs | No serious/critical axe violations on every public page. State agencies often need Section 508 / WCAG 2.1 AA |
+| Accessibility | `@axe-core/playwright`, Playwright keyboard and accessibility-tree checks | `e2e/a11y*.spec.ts`, `e2e/keyboard.spec.ts`, `e2e/reflow.spec.ts`, plus axe in other specs | Every public and admin page type passes axe at WCAG 2.2 A/AA with no violation of any impact, in both themes (M8 step 2). State agencies often need Section 508 / WCAG 2.1 AA. A person still does the screen reader check below |
 | Deployed smoke | Playwright (small spec) | CI after deploy | Preview: everything returns 401/302 without Access. Production after launch: public pages 200, `/api/admin/*` 401 |
 
 ## Rules
@@ -61,6 +61,45 @@
   understands: `&&`, double quotes, no `FOO=bar cmd`, no `rm -rf`. Test platform logic with an
   injected platform (`scripts/lib/run.test.ts`, `scripts/dev-stop.test.ts`), since the tests
   themselves run on Linux; the `check-windows` CI job runs `pnpm check` on Windows.
+
+### Accessibility (M8 step 2)
+
+- `e2e/a11y.spec.ts`: every public page type (home, states, a state with and without a list,
+  each compare tab, a category, two states side by side, search with results and empty, a code
+  page with and without like codes, the info pages, 404) in light and dark, with `a11yViolations`
+  (`e2e/helpers.ts`: WCAG 2.2 A/AA tags, every impact). Also menus open, the map with a state
+  focused, search loading and failed, and the Worker HTML with every script blocked (axe itself
+  is a script, so `javaScriptEnabled: false` cannot run it). `e2e/a11y.admin.spec.ts` does the
+  same for every admin page, with the in-place forms open.
+- `e2e/keyboard.spec.ts`: the skip link, focus on the new page's `h1` after a route change
+  (`src/lib/route-focus.ts`), a visible focus indicator on every Tab stop and no trap (it tabs
+  through whole pages), Escape on menus, the sort buttons' `aria-sort`, and the four usability
+  tasks of M8 step 5 with the keyboard only.
+- `e2e/a11y-tree.spec.ts`: landmarks, one `h1`, no skipped heading level, named tables with
+  scoped headers, icons hidden or named, every control named, live regions.
+- `e2e/reflow.spec.ts`: no sideways scroll at 320 and 640 px wide; nothing moves under
+  `prefers-reduced-motion: reduce`.
+- Colour contrast of the tokens is checked by hand when a token changes (axe checks the pairs
+  it renders). Every text pair passes 4.5:1 in both themes.
+
+**Manual screen reader check** (before launch and after a big UI change; about 30 minutes).
+NVDA with Firefox or Chrome on Windows, and VoiceOver with Safari on macOS:
+
+1. Home: the skip link is read first; the landmarks list shows banner, Main navigation, main,
+   footer. Arrow through the US map: each state reads its name and status.
+2. Follow a state from the map: the new page's heading ("Montana") is read at once.
+3. State page: heading navigation (H) gives a sensible outline; the counts tables read their
+   caption and row headers (table navigation, Ctrl+Alt+arrows / VO+arrows).
+4. Compare › Overview: sort a column; the new order is announced, and the header reads its
+   sort state. Each cell reads state, category and percentage.
+5. Compare › Single codes: choose a category and two states; the table's badges read their
+   words ("Enough by itself"), not just a colour.
+6. Search: type "schizo"; "Searching…" then "N codes found" is announced without moving focus.
+7. A code page with like codes: "Included" and "Like codes" are separate headed sections, so a
+   like code is never read as a listed one.
+8. Theme menu: opens with Enter, arrows move, Escape closes and focus returns to the button.
+9. With 200% browser zoom and with Windows High Contrast / forced colours: focus rings and
+   the map's focused state stay visible.
 
 ### Access and site-gate tests (M0 step 5)
 

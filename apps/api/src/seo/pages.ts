@@ -1582,9 +1582,14 @@ export async function renderInto(indexHtml: string, parts: PageParts): Promise<s
     })
     .on('div#app', {
       element(el) {
+        // The same landmarks as the Vue app (App.vue): a skip link, the nav in a header, the
+        // page in <main>, then the footer (M8 step 2).
         el.setInnerContent(
-          navHtml(parts.path).value +
+          '<a href="#main">Skip to main content</a><header>' +
+            navHtml(parts.path).value +
+            '</header><main id="main">' +
             parts.body.value +
+            '</main>' +
             footerHtml(parts.dataUpdatedAt ?? null).value,
           { html: true },
         )

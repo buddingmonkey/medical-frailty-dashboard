@@ -105,8 +105,12 @@ const errorText = computed(() => {
   return e instanceof ApiError && e.status === 400 ? SEARCH_PAGE.badFilter : SEARCH_PAGE.error
 })
 
-/** What the live region says: set once the results for a search arrive (WCAG 4.1.3). */
+/**
+ * What the live region says (WCAG 4.1.3): "Searching…" while a search loads, then the count once
+ * its results arrive. Errors have their own alert.
+ */
 const announcement = computed(() => {
+  if (loading.value) return SEARCH_PAGE.loading
   const data = current.value
   if (!data) return ''
   return data.results.length === 0
@@ -144,7 +148,6 @@ const announcement = computed(() => {
       </p>
       <p v-if="!ready" class="text-muted-foreground">{{ SEARCH_PAGE.idle }}</p>
       <p v-else-if="errorText" role="alert" class="text-danger">{{ errorText }}</p>
-      <p v-else-if="loading" class="text-muted-foreground">{{ SEARCH_PAGE.loading }}</p>
       <ol
         v-if="shown && shown.results.length > 0 && !errorText"
         :aria-label="SEARCH_PAGE.resultsLabel"
