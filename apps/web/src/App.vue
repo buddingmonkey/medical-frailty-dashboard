@@ -4,6 +4,10 @@ import { RouterLink, RouterView } from 'vue-router'
 import SiteFooter from './components/SiteFooter.vue'
 import SiteNav from './components/SiteNav.vue'
 import ThemeMenu from './components/ThemeMenu.vue'
+
+// Bound, not a literal src: the Vue compiler turns a literal "/logo-header.svg" into a module
+// import, which the Windows test runner then reads as a file path (file:///logo-header.svg).
+const logoSrc = '/logo-header.svg'
 </script>
 
 <template>
@@ -21,7 +25,7 @@ import ThemeMenu from './components/ThemeMenu.vue'
         class="mr-auto flex items-center gap-3 font-display text-2xl font-medium text-on-header no-underline"
       >
         <!-- Decorative: the link's text names it. scripts/make-icons.ts draws it. -->
-        <img src="/logo-header.svg" alt="" width="40" height="40" class="size-10 shrink-0" />
+        <img :src="logoSrc" alt="" width="40" height="40" class="size-10 shrink-0" />
         Medical Frailty Coding Dashboard
       </RouterLink>
       <SiteNav />
