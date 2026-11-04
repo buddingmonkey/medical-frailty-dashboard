@@ -24,7 +24,8 @@ export default defineProject({
     name: 'api',
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test/apply-migrations.ts'],
-    // Windows CI runners run workerd about 3x slower than Linux; 5 s timed out there.
+    // Windows CI runners run workerd about 3x slower than Linux; the 5 s test and 10 s hook defaults timed out there.
     testTimeout: 20_000,
+    hookTimeout: 30_000,
   },
 })
