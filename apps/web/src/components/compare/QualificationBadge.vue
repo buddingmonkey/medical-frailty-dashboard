@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { qualificationColours } from './qualification-colours'
 
-// The state's own rule for an entry, as a coloured badge (docs/status.md, "Tiers and
+// The state's own rule for an entry, as a coloured badge (docs/legal-review.md, item 2; docs/status.md, "Tiers and
 // qualification"; wording in packages/shared/src/qualification.ts, provisional).
 
 const props = defineProps<{ match: Pick<CompareMatch, 'qualification' | 'qualificationBasis'> }>()

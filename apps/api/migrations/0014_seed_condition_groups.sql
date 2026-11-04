@@ -24,7 +24,7 @@ PRAGMA foreign_keys=ON;--> statement-breakpoint
 CREATE UNIQUE INDEX `condition_groups_slug_unique` ON `condition_groups` (`slug`);--> statement-breakpoint
 -- Part 2, hand-written seed: eight starter groups, all DRAFTS, for admins to check and publish
 -- (Admin -> Condition groups). The groups, names, definitions and members are an AI
--- assistant's first draft (2026-11-03), on the legal review list (docs/status.md). Sources:
+-- assistant's first draft (2026-11-03), on the legal review list (docs/legal-review.md, item 11). Sources:
 --   ICD-10-CM FY2027 chapter and block ranges (CMS, public domain; checked against ref_codes).
 --   HCPCS Level II October 2026 (CMS, public domain): every HCPCS code and range end below
 --     was checked against ref_codes; ranges follow the code set's own sections (J9000-J9999

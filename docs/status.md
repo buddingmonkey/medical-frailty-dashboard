@@ -1,8 +1,8 @@
 # Status
 
 _Last updated: 2026-11-04. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.9.0`; `v0.9.1` (new site mark)
-is being released 2026-11-04._
+and 8 (go live) wait for the project lead. Production runs `v0.9.1` (new site mark,
+live 2026-11-04)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -60,7 +60,7 @@ here.
 | `v0.7.0` | 2026-11-03 | Run 41698090729; migrations 0012–0014 (search index built in 0.9 s). Bookmark: `00000012-00000000-00005118-b846c9731914f1f1a56dc2eefef1c849` |
 | `v0.8.0` | 2026-11-03 | Run 41718101149; migration 0015, Sunday cron on. Bookmark: `00000013-00000000-00005118-ca54835bca6d3b3549bf2d294f885a67` |
 | `v0.9.0` | 2026-11-04 | Run 41791515954; M8 hardening |
-| `v0.9.1` | 2026-11-04 | New site mark (being released) |
+| `v0.9.1` | 2026-11-04 | New site mark (live; run 41921891983) |
 
 ## For the project lead
 

@@ -8,7 +8,7 @@ import { qualificationBasisLabels, qualificationHelp, qualificationLabels } from
 // The About/methodology page, the disclaimer, privacy and accessibility pages, the footer links
 // and the "learn more" links (roadmap M8 step 4). Shared by the Vue pages and the Worker's
 // server-rendered HTML, so both say the same thing. The text is data (paragraphs, lists, links),
-// never HTML. Wording is provisional: the legal team reviews it (docs/status.md).
+// never HTML. Wording is provisional: the legal team reviews it (docs/legal-review.md, Part 2).
 
 /** A link inside text. A link that starts with `https://` leaves the site. */
 export interface AboutLink {

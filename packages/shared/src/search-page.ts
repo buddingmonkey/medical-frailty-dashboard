@@ -4,7 +4,7 @@ import { CODE_SEARCH_MAX_Q, CODE_SEARCH_NOT_LISTED } from './search'
 
 // The search page (roadmap M6 step 2): `/search?q=&states=&system=`. What the URL holds, when
 // the page asks the API, and every word on the page. The wording is provisional and on the legal
-// team's list (docs/status.md); change it here, never in the component.
+// team's list (docs/legal-review.md, Part 2); change it here, never in the component.
 
 /** Fewer characters than this ask nothing: one letter matches too much to be useful. */
 export const SEARCH_MIN_CHARS = 2
