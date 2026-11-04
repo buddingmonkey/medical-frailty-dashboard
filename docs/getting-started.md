@@ -269,7 +269,7 @@ Official page: https://pnpm.io/installation
 
    You should see a version number followed by `(Claude Code)`. If it says
    `command not found`, see [Troubleshooting](#troubleshooting).
-4. You sign in the first time you start it, in step 13.
+4. You sign in the first time you start it, in step 14.
 
 Official page: https://code.claude.com/docs/en/setup. A guide for terminal beginners:
 https://code.claude.com/docs/en/terminal-guide
@@ -349,7 +349,8 @@ account. Do not create `apps/api/.dev.vars` unless a maintainer asks you to.
 ## Step 12. Load the local database
 
 The site needs data. These commands fill a small database on your computer with sample data:
-the real codes, 120 entries per state. Run them in this order.
+part of the real lists of four states, and made-up lists for 40 others. Run them in this
+order.
 
 1. Create the tables:
 

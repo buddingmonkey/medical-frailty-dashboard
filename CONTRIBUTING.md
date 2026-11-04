@@ -4,21 +4,22 @@ Thank you for helping. There are two ways to contribute.
 
 ## Report a data error
 
-If a code, description, category or date does not match a state's document, open a
-[data error issue](../../issues/new?template=data-error.yml) with the state, the code and a link
-to the state's document. **Never include patient or member information.**
+If a code, description, category or date on the site does not match the state's document,
+open a [data error issue](../../issues/new?template=data-error.yml). Give the state, the code
+and a link to the state's document. **Never include patient or member information.**
 
 ## Change the code
 
 ### Setup
 
-New to this? Follow [`docs/getting-started.md`](docs/getting-started.md) first. Windows
-(PowerShell), macOS and Linux all work; WSL is optional. Outside contributors fork the repo and
-open a pull request from the fork; `main` is protected.
+New to this? Follow [`docs/getting-started.md`](docs/getting-started.md) first, then
+[`docs/playbook.md`](docs/playbook.md). Windows (PowerShell), macOS and Linux all work.
 
-You need Node 26 (see `.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`).
+`main` is protected, so outside contributors fork the repo and open a pull request from the
+fork.
 
-The same commands work in PowerShell, cmd and bash:
+You need Node 26 (see `.nvmrc`) and pnpm 12.16.1 (`npm i -g pnpm@12.16.1`). The same commands
+work in PowerShell, cmd and bash:
 
 ```text
 pnpm install
@@ -29,21 +30,21 @@ pnpm dev                # http://localhost:8787
 ```
 
 After `pnpm dev` starts, open Admin, Unified categories (`/admin/unified`) and press
-**Rebuild coverage** once, so Compare and the Map fill in.
+**Rebuild coverage** once, so Compare and the map fill in.
 
 `pnpm dev` runs the site behind its pre-launch gate, signed in as a local admin
-(`dev@localhost`). Copy `apps/api/.dev.vars.example` to `apps/api/.dev.vars` only if you need
-local secrets.
+(`dev@localhost`). You need no secrets. Copy `apps/api/.dev.vars.example` to
+`apps/api/.dev.vars` only if a maintainer asks you to.
 
 ### Workflow
 
 1. Branch from `main`.
-2. **Write the failing test first**, then the code (`docs/testing.md`).
+2. **Write the failing test first**, then the code ([`docs/testing.md`](docs/testing.md)).
 3. Run `pnpm check` after every change. `pnpm check:full` adds the build and browser tests;
    CI runs it on every pull request. To run it yourself, install the test browser once:
    `pnpm --filter @mfcd/web exec playwright install --with-deps chromium`.
 4. Open a pull request. CI must pass (`check`, `audit`, `gitleaks`, CodeQL) before it can be
-   merged; nobody can push to `main` directly.
+   merged. Nobody can push to `main` directly.
 
 ### Rules
 
@@ -60,11 +61,9 @@ These are also in [`CLAUDE.md`](CLAUDE.md), which AI assistants read:
   new, use the previous one.
 - The AI skill folders (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked
   (`docs/architecture.md`, "Agent skills").
+- Docs name roles ("project lead", "a volunteer"), never people.
 
-### Where to start
-
-[`docs/getting-started.md`](docs/getting-started.md) and [`docs/playbook.md`](docs/playbook.md)
-are the guides for newcomers. [`docs/status.md`](docs/status.md) says where things stand; [`docs/roadmap.md`](docs/roadmap.md)
-lists the next steps.
+[`docs/status.md`](docs/status.md) says where things stand, and
+[`docs/roadmap.md`](docs/roadmap.md) lists the next steps.
 
 By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE).

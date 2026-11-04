@@ -1,10 +1,10 @@
 # Deployment
 
-Goal: **$0/month** while traffic is small, with a clear path to $5/month if we outgrow the free
-tier. The limits below were correct when planned (2026-11). Check the
+Goal: keep running costs near $0. The account has been on Workers Paid ($5/month) since 2026-11-01;
+everything else fits the free allowances. The limits below were checked in 2026-11; see the
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
 [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) and
-[R2 pricing](https://developers.cloudflare.com/r2/pricing/) pages during M0.
+[R2 pricing](https://developers.cloudflare.com/r2/pricing/) pages for current numbers.
 
 ## Cloudflare resources
 
@@ -142,25 +142,26 @@ pass your own). Only the two `D1_*` keys are read for this.
 | Domain (optional) | — | ~$10/year at Cloudflare Registrar (at cost) |
 | Claude API (optional) | — | Pay per token, only when the admin clicks the AI cleanup button. Set a spend limit. **Estimate, not measured:** with `claude-opus-5-5` ($4 in / $20 out per million tokens, 2026-10) Nebraska's 295 pages ≈ 0.2M tokens in and ≈ 0.25M out ≈ **$5–6 per full file**; a cheaper model via `AI_MODEL` is the project lead's call. Measure the first real run and write it here |
 
-**Expected: $0/month** (plus ~$10/year if you buy a domain). Size estimate: 50 states ×
+**Current: $5/month** for Workers Paid, which the project lead kept on 2026-11-02; since M7 the
+weekly dump needs it (see "Weekly maintenance"), plus ~$10/year if a domain is bought. Everything else fits the free
+allowances. Size estimate: 50 states ×
 ~5,000 entries ≈ 250k rows ≈ well under 500 MB in D1. A full re-ingest of one large state
-(≈ 6,000 rows plus FTS and index writes) fits inside the daily write quota. Load a few states
-per day if bulk-seeding many.
+(≈ 6,000 rows plus FTS and index writes) fits inside the daily write quota. On Free: load a few
+states per day if bulk-seeding many.
 
 **Reference codes** (`ref_codes`, 107,173 rows of ICD-10-CM and HCPCS) are larger than one
 day's free write quota, which preview and production share. The loader works in chunks and
-resumes, so the first load takes about **two days per database** at $0; later updates load
+resumes, so on Free the first load takes about **two days per database**; later updates load
 only changed codes (`packages/reference-data/README.md`). Entries carry three indexes plus the
 FTS index. **Measured on preview (2026-11-02, `wrangler d1 insights`): 4.3 rows written per
 entry** (109,486 rows written for 25,338 entries). GA's 6,173 entries ≈ 27k writes, NE's 8,183 ≈
-35k, all four seed states ≈ 74k. On Free (from 2026-11-30, 100k writes a day shared by preview
-and production) that is one full load a day; a re-load of a large state the same day can hit
+35k, all four seed states ≈ 74k. On the Free plan (100k writes a day shared by preview and
+production) that is one full load a day; a re-load of a large state the same day can hit
 the limit, and queries then fail until 00:00 UTC. Discarded drafts keep their rows (storage, not
 writes).
 
-Watch for: a publish that writes > 100k rows in one day (free tier), and search traffic that
-misses the cache. Turn on a Cloudflare usage notification. If either becomes a problem, switch
-to Workers Paid ($5/month) rather than re-architecting.
+Watch for search traffic that misses the cache, and keep a Cloudflare usage notification
+on.
 
 ## Environments and CI/CD
 
@@ -394,7 +395,7 @@ kept.
 
 ## Going live
 
-Before launch (M8), with everything below checked off in `docs/status.md`:
+The launch steps (roadmap M8 step 8), in order:
 
 1. Launch gate met (`docs/roadmap.md`, M8): at least 2 states with every category mapping
    confirmed, the usability gate passed, and the disclaimer and CPT notice reviewed.

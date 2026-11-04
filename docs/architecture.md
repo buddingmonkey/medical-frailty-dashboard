@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Language | TypeScript (strict) everywhere | One language, shared types and schemas |
 | Front end | Vue 3 (`<script setup>`), Vue Router, Vite, Tailwind CSS v4 | User's choice |
-| Front-end data | TanStack Query for Vue (server cache); small Pinia store only for UI state if needed | Caching, retries and loading states without hand-written stores |
+| Front-end data | TanStack Query for Vue (server cache); no global store | Caching, retries and loading states without hand-written stores |
 | Map | `d3-geo` + `us-atlas` (Albers USA), run once at build time in `packages/reference-data` (`src/us-map.ts`) into plain SVG paths (`packages/shared/src/us-map.json`, imported as `@mfcd/shared/us-map`). Browser and Worker ship no d3 | Small, no tile server, no API key, fully accessible; the same paths serve the server-rendered page (M3 step 4) |
 | API | [Hono](https://hono.dev) on Cloudflare Workers (`nodejs_compat` on) | Small, typed routes, built for Workers, runs in Node for tests too |
 | Validation | zod schemas in `packages/shared`, used by both the browser and the API | One definition of a valid row |
@@ -23,32 +23,37 @@ compatibility (`nodejs_compat`), not a Node process. Hono keeps the API portable
 leave Cloudflare, the same app runs on Node with `@hono/node-server` and a Postgres/SQLite
 driver behind Drizzle.
 
-## Repo layout (created in M0)
+## Repo layout
 
 ```
 apps/
   web/                 Vue SPA (public pages + /admin pages)
     src/
-      pages/           file-based routes: (home).vue, compare.vue, search.vue, codes/[codeId].vue, admin/*
+      pages/           file-based routes: (home).vue, states/, compare/, codes/, search.vue, about.vue, admin/*
       styles/main.css  Tailwind import + design tokens (@theme), light and dark
-      components/      UI components (StateMap, CodeTable, StatePicker, ...)
-      composables/     useStates, useCompare, useCodeSearch (TanStack Query wrappers)
-      ingest/          browser-side parser adapters (pdf, xlsx, csv, json) -> RawRow[]
-      lib/             api client (typed from packages/shared), formatting
-    e2e/               Playwright specs
+      components/      UI components by area (home, states, compare, codes, search, admin, about)
+      composables/     TanStack Query wrappers (useCodeSearch, useCodeDetail)
+      ingest/          browser-side parser adapters (pdf, xlsx, csv, json) -> RawRow[]; PDF fixtures
+      lib/             api client (typed from packages/shared), per-page query helpers, formatting
+    e2e/               Playwright specs; fixtures/ holds the e2e seed SQL
   api/                 Hono app deployed as the Worker (also serves apps/web/dist as static assets)
     src/
       routes/public/   GET-only public endpoints
       routes/admin/    admin endpoints (Access JWT required)
+      routes/          server-rendered pages, robots.txt, llms.txt, security.txt
+      seo/             HTML rendering and JSON-LD for crawlers
+      auth/            Access JWT verification
       db/              drizzle schema + queries
-      middleware/      access-jwt, site-gate, security-headers, rate-limit, errors
+      middleware/      site-gate, require-admin, admin-write-guard, security-headers, public-cache, rate-limit
+      maintenance/     the weekly Cron Trigger (dump, prunes, draft cleanup)
     migrations/        D1 SQL migrations (drizzle-kit generated, reviewed by hand)
+    seed/seed.sql      preview and local seed (written by pnpm db:seed:make)
     wrangler.jsonc
 packages/
-  shared/              zod schemas, API types, code normalization (pure functions, no I/O)
-  reference-data/      builds ref_codes (ICD-10-CM, HCPCS) from pinned CMS files; resumable loader;
+  shared/              zod schemas, API types, code normalization, public wording (pure functions, no I/O)
+  reference-data/      builds ref_codes (ICD-10-CM, HCPCS) and ref_ccsr from pinned files; resumable loader;
                        builds the US map paths (`pnpm --filter @mfcd/reference-data us-map`)
-fixtures/              small excerpts of real state files + expected normalized output
+scripts/               cross-platform Node scripts behind the pnpm commands (check, seed, cf, dev-stop, ...)
 docs/
 ```
 
@@ -74,7 +79,7 @@ Exact versions live in the root `package.json`; the notes here say why some are 
   parent pulls a patched version by itself. `pnpm audit` is clean.
 - **Drizzle: `drizzle-orm` 0.45.x and `drizzle-kit` 0.31.x**, the stable lines. 1.0 is still
   an RC (2026-11-01); revisit when it is final. drizzle-kit 0.31 pulls the deprecated
-  `@esbuild-kit` loader with an old esbuild, which an override now lifts (below). Migrations: change
+  `@esbuild-kit` loader with an old esbuild, which an override lifts (above). Migrations: change
   `apps/api/src/db/schema.ts`, run `pnpm db:generate`, review the SQL. Virtual tables (FTS5)
   and triggers go in hand-written migrations (`drizzle-kit generate --custom --name <x>`).
 - **`d3-geo` 3.1.1, `topojson-client` 3.1.0, `us-atlas` 3.0.1** (dev only, `packages/reference-data`):
@@ -95,7 +100,6 @@ Exact versions live in the root `package.json`; the notes here say why some are 
 - **Fonts are self-hosted** from Fontsource npm packages (Jost, Source Sans 3, IBM Plex Mono;
   all SIL OFL). No Google Fonts requests, so the CSP can keep `font-src 'self'`. CCF's own
   fonts (Futura PT, Adobe Caslon Pro) are licensed to CCF through Adobe Fonts and cannot be used.
-
 - **Hono 4.13, wrangler 4.156.** `apps/api/worker-configuration.d.ts` is generated by
   `pnpm --filter @mfcd/api cf-types` (`wrangler types --strict-vars=false`) and committed; rerun
   it after editing `wrangler.jsonc`. It replaces `@cloudflare/workers-types` and any hand-written
@@ -105,7 +109,6 @@ Exact versions live in the root `package.json`; the notes here say why some are 
 - **Dev:** `pnpm dev` builds the web app in watch mode and runs `wrangler dev` on :8787 (one
   URL, real headers and CSP). `pnpm --filter @mfcd/web dev` gives hot reload on :5173 and
   proxies `/api` to :8787. `pnpm build` = web build + `wrangler deploy --dry-run`.
-
 - **Testing tools:** Vitest 5.0.5, `@cloudflare/vitest-plugin` 1.4.11 (the renamed
   `vitest-pool-workers`), Testing Library for Vue 8.1, MSW 3, jsdom 30, Playwright 1.64,
   axe-core 4.14. Details in `docs/testing.md`, "Setup".
@@ -117,7 +120,7 @@ Exact versions live in the root `package.json`; the notes here say why some are 
 
 ## Design tokens
 
-Set once in M0 step 2 in `apps/web/src/styles/main.css`; approved palette page:
+In `apps/web/src/styles/main.css` (set in M0 step 2); approved palette page:
 https://claude.ai/artifact/Ky9pvJ3qnF3NBvkLLrDu9F (private to the project lead).
 
 - Colours start from the Georgetown CCF palette (navy, blue, gold, red). The site is **not**
@@ -176,7 +179,7 @@ requests (HTML, JS, CSS, fonts), which is free at admin-only traffic. At go-live
 `/assets/*` files move to direct serving (no Worker run, not counted toward the quota); see
 `docs/deployment.md`, "Going live".
 
-## API shape (first draft)
+## API shape
 
 Public (read only, `GET`, cacheable):
 
