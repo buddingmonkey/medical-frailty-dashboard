@@ -45,9 +45,19 @@ const icd: MatchCols = { ...entryCols('i'), system: "'icd10cm'", children: 'i.ki
  * ICD-10-CM code itself, or the entry's `comparePatternKey` in other systems (which contain a
  * `|`, so they never equal an ICD-10-CM code).
  */
-export const similaritySetsCtes = sql`
+export const similaritySetsCtes = similaritySets()
+
+/**
+ * `similaritySetsCtes` for the states from `from` on only (`pairsAfter`: its pairs are with
+ * later states, so earlier states' sets are never read). On preview (44 states, 2026-11-05) this
+ * cut a middle state's statement from 648k rows read to 404k, and the last one's from about
+ * 420k to 34k; the first state's stays the same.
+ */
+function similaritySets(from?: string) {
+  const later = from === undefined ? sql`` : sql` AND id >= ${from}`
+  return sql`
   pub AS (SELECT id AS state_id, published_version_id AS vid FROM states
-          WHERE published_version_id IS NOT NULL),
+          WHERE published_version_id IS NOT NULL${later}),
   icd AS MATERIALIZED (
     SELECT p.state_id, e.code_norm, e.match_kind, e.range_end_norm,
       coalesce(e.includes_children, 0) AS kids
@@ -66,6 +76,7 @@ export const similaritySetsCtes = sql`
     FROM pub p JOIN entries e ON e.version_id = p.vid WHERE e.code_system <> 'icd10cm'),
   sets AS MATERIALIZED (SELECT state_id, code FROM hits UNION SELECT state_id, code FROM others),
   sizes AS MATERIALIZED (SELECT state_id, count(*) AS n FROM sets GROUP BY state_id)`
+}
 
 /**
  * The pairs to compute: `x` and `o` are states with a list, each unordered pair once; with a
@@ -87,7 +98,9 @@ function pairFilter(scope: SimilarityScope): SQL {
  */
 export function similarityUpsert(scope: SimilarityScope): SQL {
   const filter = pairFilter(scope)
-  return sql`WITH ${similaritySetsCtes},
+  const sets =
+    scope !== 'all' && 'pairsAfter' in scope ? similaritySets(scope.pairsAfter) : similaritySetsCtes
+  return sql`WITH ${sets},
   common AS (
     SELECT x.state_id AS x, o.state_id AS o, count(*) AS n
     FROM sets x CROSS JOIN sets o

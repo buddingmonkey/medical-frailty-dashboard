@@ -20,7 +20,7 @@ import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
 import UnifiedCategoryForm from '../../components/admin/UnifiedCategoryForm.vue'
 import { unifiedStatusClasses, unifiedStatusLabels } from '../../lib/admin-unified'
-import { getJson, sendJson } from '../../lib/api'
+import { ApiError, getJson, sendJson } from '../../lib/api'
 
 // Unified categories (roadmap M5 step 3; docs/data-model.md, "Unified categories (M5)"):
 // admin-curated groups between the federal categories and each state's own.
@@ -75,8 +75,48 @@ const save = useMutation({
 })
 
 // Rebuild coverage (docs/deployment.md, "Preview data"): after seed data, or a new CCSR or
-// ICD-10-CM release. Each unit writes only what changed. The API does a few seconds of work per
-// call and answers with progress and a cursor; this calls again until it is done.
+// ICD-10-CM release. Each unit writes only what changed. The API does a bounded amount of work
+// per call (about 0.5 s of D1 time, src/routes/admin/coverage.ts) and answers with progress and
+// a cursor; this calls again until it is done.
+//
+// D1 limits load over a 10-second window ("Too many resources consumed within a 10 second
+// window", preview 2026-11-05), so the page pauses between calls: at most about 0.5 s of D1 work
+// per 2 s or so, well under the load that failed. 54 calls on preview (19 categories, 51 states,
+// 44 states' pairs), so the pauses add about 80 s. When D1 still answers busy (`retryable`), the
+// page waits longer each time and sends the same cursor again, which is safe because a unit
+// writes only what is still missing; after the last retry it shows the error.
+/** Pause between two calls. */
+const CALL_PAUSE_MS = 1500
+/** Waits before each retry of a call that found the database busy. */
+const RETRY_WAITS_MS = [5000, 10_000, 20_000]
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms)
+  })
+/** True while a busy call waits to be retried. */
+const waitingToRetry = ref(false)
+
+/** One call, retried after a wait while the database is busy. */
+async function rebuildCall(body: CoverageRebuildRequest): Promise<CoverageRebuildResponse> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await sendJson(
+        'POST',
+        '/api/admin/coverage/rebuild',
+        body,
+        coverageRebuildResponseSchema,
+      )
+    } catch (err) {
+      const wait = RETRY_WAITS_MS[attempt]
+      if (!(err instanceof ApiError && err.retryable) || wait === undefined) throw err
+      waitingToRetry.value = true
+      await sleep(wait)
+    } finally {
+      waitingToRetry.value = false
+    }
+  }
+}
+
 const progress = ref<CoverageRebuildResponse['progress'] | null>(null)
 /** The step the call in flight works on: the next one once a step's units are all done. */
 const currentStep = computed<CoverageRebuildStep>(() => {
@@ -92,16 +132,13 @@ const rebuild = useMutation({
     let body: CoverageRebuildRequest = {}
     let ms = 0
     for (;;) {
-      const r = await sendJson(
-        'POST',
-        '/api/admin/coverage/rebuild',
-        body,
-        coverageRebuildResponseSchema,
-      )
+      // `body` changes only after a call succeeds, so a retry resends the last good cursor.
+      const r = await rebuildCall(body)
       ms += r.ms
       progress.value = r.progress
       if (r.done || !r.next) return { ...r, ms }
       body = { cursor: r.next }
+      await sleep(CALL_PAUSE_MS)
     }
   },
   onSuccess: async () => {
@@ -235,6 +272,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       </button>
       <p v-if="rebuild.isPending.value && progress" role="status">
         {{ coverageRebuildProgressText(progress) }}
+      </p>
+      <p v-if="rebuild.isPending.value && waitingToRetry" role="status">
+        Database busy; waiting to retry…
       </p>
       <p v-if="rebuilt" role="status">{{ rebuilt }}</p>
       <p v-if="rebuild.error.value" role="alert" class="text-danger">

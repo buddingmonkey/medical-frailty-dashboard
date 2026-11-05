@@ -70,15 +70,21 @@ const STATEMENTS_PER_BATCH = 4
  * number of states. A failure part way leaves the states and batches before it written; calling
  * it again finishes the job, because only the difference is written.
  */
-export async function recomputePlacements(db: Db, scope: PlacementScope): Promise<RecomputeResult> {
+export async function recomputePlacements(
+  db: Db,
+  scope: PlacementScope,
+  options: { categories?: PlacementCategories } = {},
+): Promise<RecomputeResult> {
   const started = Date.now()
   const stateIds =
     scope === 'all'
       ? (await db.select({ id: states.id }).from(states).orderBy(states.id)).map((s) => s.id)
       : scope.stateIds
+  // Read once for every state in scope, not once per state.
+  const categories = options.categories ?? (await loadPlacementCategories(db))
   const total = { entries: 0, placements: 0, inserted: 0, updated: 0, deleted: 0 }
   for (const stateId of stateIds) {
-    const one = await recomputeState(db, stateId)
+    const one = await recomputeState(db, stateId, categories)
     total.entries += one.entries
     total.placements += one.placements
     total.inserted += one.inserted
@@ -97,13 +103,42 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
   return result
 }
 
+/** Every unified category with its status and CCSR groups, as `unifiedOf` reads them. */
+export type PlacementCategories = UnifiedOfContext['categories']
+
+/**
+ * The categories' part of the placement context: the same for every state, so a caller placing
+ * several states in one request (Rebuild coverage) reads it once and passes it in.
+ */
+export async function loadPlacementCategories(db: Db): Promise<PlacementCategories> {
+  const [categories, groups] = await db.batch([
+    db
+      .select({ id: unifiedCategories.id, status: unifiedCategories.status })
+      .from(unifiedCategories),
+    db.select().from(unifiedCcsr),
+  ])
+  return new Map(
+    categories.map((c) => [
+      c.id,
+      {
+        status: c.status,
+        ccsr: new Set(groups.filter((g) => g.unifiedId === c.id).map((g) => g.ccsrCategory)),
+      },
+    ]),
+  )
+}
+
 /** One state's part of `recomputePlacements`. */
-async function recomputeState(db: Db, stateId: string): Promise<Omit<RecomputeResult, 'ms'>> {
+async function recomputeState(
+  db: Db,
+  stateId: string,
+  ctxCategories: PlacementCategories,
+): Promise<Omit<RecomputeResult, 'ms'>> {
   const stateFilter = (column: SQLiteColumn) => sql`${column} IN ${inList([stateId])}`
 
   // Promise.all, not db.batch: D1 batches return rows as objects, which loses one of two
   // joined columns with the same name (entries.id, states.id).
-  const [published, categories, groups, mappings, existing] = await Promise.all([
+  const [published, mappings, existing] = await Promise.all([
     db
       .select({
         id: entries.id,
@@ -119,10 +154,6 @@ async function recomputeState(db: Db, stateId: string): Promise<Omit<RecomputeRe
       .from(states)
       .innerJoin(entries, eq(entries.versionId, states.publishedVersionId))
       .where(and(isNotNull(states.publishedVersionId), stateFilter(states.id))),
-    db
-      .select({ id: unifiedCategories.id, status: unifiedCategories.status })
-      .from(unifiedCategories),
-    db.select().from(unifiedCcsr),
     db
       .select({
         stateId: unifiedMappings.stateId,
@@ -150,15 +181,6 @@ async function recomputeState(db: Db, stateId: string): Promise<Omit<RecomputeRe
   const index = await loadCcsrIndex(
     db,
     published.filter((e) => e.codeSystem === 'icd10cm'),
-  )
-  const ctxCategories: UnifiedOfContext['categories'] = new Map(
-    categories.map((c) => [
-      c.id,
-      {
-        status: c.status,
-        ccsr: new Set(groups.filter((g) => g.unifiedId === c.id).map((g) => g.ccsrCategory)),
-      },
-    ]),
   )
   const mappingsByKey = new Map<string, UnifiedOfContext['mappings'][number][]>()
   for (const m of mappings) {

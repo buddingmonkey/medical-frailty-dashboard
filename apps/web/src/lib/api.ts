@@ -1,10 +1,15 @@
+import { errorBodySchema } from '@mfcd/shared'
 import type { z } from 'zod'
 
-/** A non-2xx API response. `message` is the API's `error` text when it sent one. */
+/**
+ * A non-2xx API response. `message` is the API's `error` text when it sent one; `retryable` is
+ * true when the API said the database was busy and the same request may work after a wait.
+ */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    readonly retryable = false,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -22,11 +27,10 @@ export async function apiRequest<T>(
   const res = await fetch(url, { ...init, headers })
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
-    const error =
-      typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
-        ? body.error
-        : res.statusText
-    throw new ApiError(res.status, error)
+    const error = errorBodySchema.safeParse(body)
+    throw error.success
+      ? new ApiError(res.status, error.data.error, error.data.retryable === true)
+      : new ApiError(res.status, res.statusText)
   }
   return schema.parse(body)
 }

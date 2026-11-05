@@ -149,6 +149,23 @@ describe('POST /api/admin/coverage/rebuild', () => {
     expect(numbers(after.similarity)).toEqual(numbers(before.similarity))
   })
 
+  it('bounds the work of one call, whatever its time budget', async () => {
+    await db.delete(entryUnified)
+    await db.delete(unifiedUniverse)
+    await db.delete(stateSimilarity)
+
+    // Weights: a category's full list 2, a state's placements 1, a state's pairs 10; at most 10
+    // per call. So the 4 categories and 2 states' placements, then 2 placements (a pairs unit
+    // would pass 10), then one state's pairs per call.
+    const answers = await rebuildAll(60_000)
+    expect(answers.map((a) => [a.progress.step, a.progress.completed, a.progress.total])).toEqual([
+      ['placements', 2, 4],
+      ['placements', 4, 4],
+      ['similarity', 1, 2],
+      ['similarity', 2, 2],
+    ])
+  })
+
   it('changes nothing when run twice', async () => {
     await rebuildAll()
     const once = await derived()

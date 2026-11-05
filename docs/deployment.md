@@ -266,11 +266,19 @@ To load it:
 2. Press **Rebuild coverage** (Admin → Unified categories,
    `POST /api/admin/coverage/rebuild`). Seed SQL leaves the full code lists, placements and
    similarity empty, and the rebuild fills them. It works in small units (one category's full
-   list, one state's placements, one state's pairs), about 5 s of them per request, and the page
-   calls again until done, showing "Rebuilding… full code lists: 7 of 19 categories". A failed
-   request keeps the units before it; pressing the button again is safe, because each unit
-   writes only what changed. One D1 batch for all of it hit D1's CPU limit on preview
-   (2026-11-04; `src/routes/admin/coverage.ts`).
+   list, one state's placements, one state's pairs). Each request does a bounded amount of them
+   (about 0.5 s of D1 time: 5 categories, 10 states' placements or 1 state's pairs, and at most
+   2 s), the page pauses 1.5 s, then calls again until done, showing "Rebuilding… full code
+   lists: 7 of 19 categories". On preview that is about 54 requests and under 2 minutes.
+   - If D1 answers that it is busy or overloaded, the error carries `retryable: true`. The page
+     shows "Database busy; waiting to retry…", waits 5 s, 10 s, then 20 s, and sends the same
+     cursor again. It shows the error only after the third retry fails.
+   - A failed request keeps the units before it; pressing the button again is safe, because each
+     unit writes only what changed.
+   - History: one D1 batch for all of it hit D1's CPU limit on preview (2026-11-04). Then 5 s of
+     units per request hit "D1 DB is overloaded. Too many resources consumed within a 10 second
+     window" (2026-11-05): D1 limits load over a 10-second window, so the work is paced. Unit
+     costs measured on preview are in `src/routes/admin/coverage.ts`.
 
 Measured locally (2026-11-02), on 12,153 entries (1,200 real, 10,953 synthetic; 2.8 MB):
 

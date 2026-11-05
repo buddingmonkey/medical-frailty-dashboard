@@ -17,7 +17,8 @@ export type ServerErrorKind = 'too-long' | 'too-many-values' | 'busy' | 'unknown
  * Sorts an error message by what the admin can do about it. D1 wraps its failures as
  * `D1_ERROR: …`; the texts below are the ones Cloudflare documents or we have seen in the logs.
  * A D1 batch is one transaction, so in every D1 case nothing of the failed statement or batch
- * was saved.
+ * was saved. Work done in several batches (a Rebuild coverage unit, a state's placements) keeps
+ * the batches before it, and redoing it writes only what is still missing.
  */
 export function classifyServerError(message: string): ServerErrorKind {
   if (/CPU time limit|exceeded timeout|was reset/i.test(message)) return 'too-long'
@@ -31,6 +32,8 @@ export function classifyServerError(message: string): ServerErrorKind {
 }
 
 const unfinished = 'Nothing was saved from the unfinished step.'
+/** Busy is retried (by the admin page, or by hand), so it must not promise that nothing saved. */
+const unfinishedRedo = 'Earlier steps are saved; the unfinished one will redo safely.'
 
 const adminErrorTexts: Record<ServerErrorKind, (reference: string) => string> = {
   'too-long': (ref) =>
@@ -38,10 +41,28 @@ const adminErrorTexts: Record<ServerErrorKind, (reference: string) => string> = 
   'too-many-values': (ref) =>
     `This step sent the database more values at once than it accepts. ${unfinished} Trying again will not help; report it with reference ${ref}.`,
   busy: (ref) =>
-    `The database was busy, or the connection to it dropped. ${unfinished} Wait a minute and try again; if it keeps failing, report it with reference ${ref}.`,
+    `The database was busy, or the connection to it dropped. ${unfinishedRedo} Wait a minute and try again; if it keeps failing, report it with reference ${ref}.`,
   unknown: (ref) =>
     `Something went wrong on the server. Try again; if it keeps failing, report it with reference ${ref}.`,
 }
+
+/**
+ * Whether the same request may succeed after a wait: D1 was overloaded or the connection
+ * dropped. D1 counts load over a 10-second window ("Too many resources consumed within a 10
+ * second window", preview 2026-11-05), so waiting lets it recover.
+ */
+export const isRetryableServerError = (kind: ServerErrorKind): boolean => kind === 'busy'
+
+/**
+ * The body of an error answer. `retryable` is set (admin routes only) when the database was
+ * busy: the admin page then waits and sends the same request again (Rebuild coverage).
+ */
+export const errorBodySchema = z.object({
+  error: z.string(),
+  retryable: z.literal(true).optional(),
+})
+
+export type ErrorBody = z.infer<typeof errorBodySchema>
 
 /** The `error` text of a 500 on an admin route. */
 export function adminErrorMessage(kind: ServerErrorKind, reference: string): string {
