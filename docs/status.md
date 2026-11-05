@@ -1,8 +1,8 @@
 # Status
 
-_Last updated: 2026-11-04. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.9.1` (new site mark,
-live 2026-11-04)._
+_Last updated: 2026-11-05. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.9.3` (admin text fixes,
+2026-11-05)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -62,7 +62,9 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.7.0` | 2026-11-03 | Migrations 0012–0014 (search index built in 0.9 s) |
 | `v0.8.0` | 2026-11-03 | Migration 0015, Sunday cron on |
 | `v0.9.0` | 2026-11-04 | M8 hardening |
-| `v0.9.1` | 2026-11-04 | New site mark (live) |
+| `v0.9.1` | 2026-11-04 | New site mark |
+| `v0.9.2` | 2026-11-04 | Paced, resumable Rebuild coverage; pre-launch review fixes |
+| `v0.9.3` | 2026-11-05 | Admin and getting-started text corrected (live) |
 
 ## For the project lead
 
