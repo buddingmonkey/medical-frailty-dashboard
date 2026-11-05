@@ -7,7 +7,7 @@ import type { AppEnv } from '../../types'
 
 // GET /api/public/compare (roadmap M4 step 1): one category's codes, aligned across the
 // selected states, a page at a time. Cached on data_version (publicCache); the cache key is the
-// whole URL, so each selection is its own entry.
+// URL with the compare parameters (middleware/cache-query.ts), so each selection is its own entry.
 
 export const publicCompareRoute = new Hono<AppEnv>().get('/', async (c) => {
   const query = compareQuerySchema.safeParse(c.req.query())

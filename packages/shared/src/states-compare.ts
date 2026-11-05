@@ -41,6 +41,9 @@ export const statesCompareQuerySchema = z.object({
   page: z.preprocess(first, z.coerce.number().int().min(1).max(100_000).default(1)).catch(1),
 })
 
+/** Every parameter of the comparison's options (`/compare/states/ga-vs-la?…`). */
+export const statesCompareQueryKeys = ['diff', 'page'] as const
+
 /** Reads the options from Hono's or Vue Router's query object. */
 export function statesCompareQueryFromRecord(
   query: Readonly<Record<string, unknown>>,

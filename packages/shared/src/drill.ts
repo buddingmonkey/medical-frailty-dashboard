@@ -128,6 +128,9 @@ export const drillQuerySchema = z.object({
   code: z.preprocess(first, patternKeySchema.nullable().default(null)).catch(null),
 })
 
+/** Every parameter of the drill-down's query (`/compare/<slug>?…`). */
+export const drillQueryKeys = ['show', 'system', 'all', 'focus', 'page', 'code'] as const
+
 /** Reads the query from Hono's or Vue Router's query object. */
 export function drillQueryFromRecord(query: Readonly<Record<string, unknown>>): DrillQuery {
   return drillQuerySchema.parse(query)

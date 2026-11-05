@@ -89,15 +89,48 @@ describe('public API rate limits', () => {
     expect(publicLimiter.keys).toEqual([NO_CLIENT_IP_KEY])
   })
 
-  it('leaves admin routes and pages alone', async () => {
+  it('leaves admin routes, the home and states pages, info pages and files alone', async () => {
     publicLimiter.allow = false
     searchLimiter.allow = false
-    for (const path of ['/api/admin/whoami', '/', '/states', '/robots.txt', '/assets/app.js']) {
+    const paths = ['/api/admin/whoami', '/', '/states', '/about', '/robots.txt', '/assets/app.js']
+    for (const path of paths) {
       const res = await get(path, { ip: '203.0.113.7' })
       expect(res.status, path).not.toBe(429)
     }
     expect(publicLimiter.keys).toEqual([])
     expect(searchLimiter.keys).toEqual([])
+  })
+
+  // The pages and downloads that read D1 per query: without a limit they bypass the API's.
+  const limitedPages = [
+    '/compare',
+    '/compare/codes?states=GA,MT&category=sud',
+    '/compare/codes.csv?states=GA,MT&category=sud',
+    '/compare.csv?states=GA',
+    '/compare/states/ga-vs-mt',
+    '/compare/states/ga-vs-mt/codes.csv',
+    '/compare/some-category/codes.csv',
+    '/codes/icd10cm/F20.0',
+    '/states/mt',
+    '/states/mt/codes.csv',
+    '/states/mt/codes.json',
+    '/sitemap.xml',
+    '/sitemaps/codes-9999.xml',
+  ]
+
+  it.each(limitedPages)('answers 429 on %s past the limit', async (path) => {
+    publicLimiter.allow = false
+    const res = await get(path, { ip: '203.0.113.7' })
+    expect(res.status).toBe(429)
+    expect(res.headers.get('retry-after')).toBe(String(RETRY_AFTER_SECONDS))
+    expect(publicLimiter.keys).toEqual(['203.0.113.7'])
+    expect(searchLimiter.keys).toEqual([])
+  })
+
+  it.each(limitedPages)('counts %s once under the limit', async (path) => {
+    const res = await get(path, { ip: '203.0.113.7' })
+    expect(res.status).not.toBe(429)
+    expect(publicLimiter.keys).toEqual(['203.0.113.7'])
   })
 
   it('is off on local Workers (development, test), so e2e runs never trip it', async () => {
