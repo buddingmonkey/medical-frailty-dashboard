@@ -158,7 +158,8 @@ function size(bytes: number): string {
         removes backups beyond the numbers kept. It deletes open drafts with no activity for
         {{ DRAFT_EXPIRY_DAYS }} days, with their source files when no other version uses them. It
         empties drafts discarded more than {{ DRAFT_EXPIRY_DAYS }} days ago. Published and earlier
-        versions are never touched. A new backup replaces any earlier one from the same day (UTC).
+        versions are never touched. Each run deletes at most 20 drafts; any left over go in the next
+        run. A new backup replaces any earlier one from the same day (UTC).
       </p>
       <button
         type="button"

@@ -62,7 +62,7 @@ describe('MaintenancePanel', () => {
     const parts = await screen.findByRole('list', { name: 'Last run, part by part' })
     const items = within(parts).getAllByRole('listitem')
     expect(items).toHaveLength(4)
-    expect(items[0]?.textContent).toContain('Weekly backup')
+    expect(items[0]?.textContent).toContain('Backup saved')
     expect(items[0]?.textContent).toContain('Failed')
     expect(items[0]?.textContent).toContain('R2 is down')
     expect(items[3]?.textContent).toContain('2 drafts deleted')
