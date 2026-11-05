@@ -11,6 +11,7 @@ import { type Context, Hono } from 'hono'
 import { auditInsert } from '../../db/audit'
 import { backupBaseName, createZipWriter, writeFullBackup } from '../../db/backup-dump'
 import { createDb, type Db } from '../../db/client'
+import { chunk, rowsPerInsert } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import {
   categoryMappings,
@@ -28,9 +29,6 @@ import type { AppEnv } from '../../types'
 // routes here only add what that API lacks: the cited source (metadata only, when its file is
 // gone) and, if the admin asks, the state's mappings.
 
-/** D1 binds at most 100 parameters per statement. */
-const D1_MAX_PARAMS = 100
-
 const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
 async function stateExists(db: Db, id: string): Promise<boolean> {
@@ -39,13 +37,7 @@ async function stateExists(db: Db, id: string): Promise<boolean> {
 }
 
 /** Inserts in chunks under D1's parameter limit. */
-function chunked<T extends object>(rows: T[]): T[][] {
-  const columns = Object.keys(rows[0] ?? { x: 0 }).length
-  const per = Math.max(1, Math.floor(D1_MAX_PARAMS / columns))
-  const chunks: T[][] = []
-  for (let i = 0; i < rows.length; i += per) chunks.push(rows.slice(i, i + per))
-  return chunks
-}
+const chunked = <T extends object>(rows: T[]): T[][] => chunk(rows, rowsPerInsert(rows))
 
 export const backupRoute = new Hono<AppEnv>()
   // The full download: streamed, page by page, through a zip writer (never whole in memory).

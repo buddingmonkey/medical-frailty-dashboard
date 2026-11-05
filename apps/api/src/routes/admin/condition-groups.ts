@@ -15,6 +15,7 @@ import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { chunk } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { conditionGroups, conditionMembers } from '../../db/schema'
 import type { AppEnv } from '../../types'
@@ -84,14 +85,9 @@ function replaceMembers(
   members: ConditionMember[],
 ) {
   const groupId = idOf(which)
-  const inserts = []
-  for (let i = 0; i < members.length; i += MEMBERS_PER_INSERT) {
-    inserts.push(
-      db
-        .insert(conditionMembers)
-        .values(members.slice(i, i + MEMBERS_PER_INSERT).map((m) => ({ ...m, groupId }))),
-    )
-  }
+  const inserts = chunk(members, MEMBERS_PER_INSERT).map((part) =>
+    db.insert(conditionMembers).values(part.map((m) => ({ ...m, groupId }))),
+  )
   return [
     ...('id' in which
       ? [db.delete(conditionMembers).where(eq(conditionMembers.groupId, which.id))]

@@ -11,6 +11,7 @@ import {
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { chunk, D1_MAX_PARAMS } from './d1-limits'
 import { unifiedParentsSql } from './federal'
 import { categoryMappings, chapterMappings, entries, refCodes, states } from './schema'
 
@@ -20,9 +21,6 @@ import { categoryMappings, chapterMappings, entries, refCodes, states } from './
 // descriptions from the CMS reference codes (public domain; CPT text only ever comes from a
 // state, docs/data-model.md "Licensing of code text"). Four queries, plus one per 100 rows
 // described.
-
-/** D1 binds at most 100 parameters per query. */
-const CHUNK = 100
 
 export type CompareLoad =
   { ok: true; result: CompareResult } | { ok: false; unknownStates: string[] }
@@ -132,9 +130,7 @@ async function describeFromCms(db: Db, result: CompareResult): Promise<void> {
       .where(inArray(refCodes.codeNorm, chunk))
       // Newest release first; the first one seen wins.
       .orderBy(desc(refCodes.validFrom))
-  const chunks: string[][] = []
-  for (let i = 0; i < norms.length; i += CHUNK) chunks.push(norms.slice(i, i + CHUNK))
-  const [first, ...rest] = chunks.map(select)
+  const [first, ...rest] = chunk(norms, D1_MAX_PARAMS).map(select)
   if (!first) return
   const found = new Map<string, string>()
   for (const r of (await db.batch([first, ...rest])).flat()) {
@@ -160,7 +156,7 @@ async function describeFromStates(db: Db, result: CompareResult): Promise<void> 
   if (norms.length === 0) return
   const ids = result.states.map((s) => s.id)
   // The state ids take up to 51 of the 100 bound parameters.
-  const size = CHUNK - ids.length - 1
+  const size = D1_MAX_PARAMS - ids.length - 1
   const select = (chunk: string[]) =>
     db
       .select({
@@ -181,9 +177,7 @@ async function describeFromStates(db: Db, result: CompareResult): Promise<void> 
           isNotNull(entries.descriptionPublished),
         ),
       )
-  const chunks: string[][] = []
-  for (let i = 0; i < norms.length; i += size) chunks.push(norms.slice(i, i + size))
-  const [first, ...rest] = chunks.map(select)
+  const [first, ...rest] = chunk(norms, size).map(select)
   if (!first) return
   const found = new Map<string, string>()
   for (const r of (await db.batch([first, ...rest])).flat()) {

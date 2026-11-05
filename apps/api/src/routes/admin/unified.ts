@@ -15,6 +15,7 @@ import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { chunk } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements, universeStatements } from '../../db/placement'
 import { refCcsrCategories, unifiedCategories, unifiedCcsr, unifiedMappings } from '../../db/schema'
@@ -74,16 +75,9 @@ function idOf(which: { id: number } | { slug: string }) {
  */
 function replaceCcsr(db: Db, which: { id: number } | { slug: string }, groups: string[]) {
   const unifiedId = idOf(which)
-  const inserts = []
-  for (let i = 0; i < groups.length; i += CCSR_PER_INSERT) {
-    inserts.push(
-      db
-        .insert(unifiedCcsr)
-        .values(
-          groups.slice(i, i + CCSR_PER_INSERT).map((ccsrCategory) => ({ unifiedId, ccsrCategory })),
-        ),
-    )
-  }
+  const inserts = chunk(groups, CCSR_PER_INSERT).map((part) =>
+    db.insert(unifiedCcsr).values(part.map((ccsrCategory) => ({ unifiedId, ccsrCategory }))),
+  )
   return [
     ...('id' in which ? [db.delete(unifiedCcsr).where(eq(unifiedCcsr.unifiedId, which.id))] : []),
     ...inserts,

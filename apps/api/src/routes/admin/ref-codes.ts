@@ -3,11 +3,9 @@ import { inArray } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { createDb } from '../../db/client'
+import { chunk, D1_MAX_PARAMS } from '../../db/d1-limits'
 import { refCodes } from '../../db/schema'
 import type { AppEnv } from '../../types'
-
-/** D1 binds at most 100 parameters per query. */
-const CHUNK = 100
 
 // Mounted behind requireAdmin and adminWriteGuard. A read sent as POST: up to 1,000 codes do
 // not fit in a URL.
@@ -25,9 +23,7 @@ export const refCodesRoute = new Hono<AppEnv>().post('/lookup', async (c) => {
       })
       .from(refCodes)
       .where(inArray(refCodes.codeNorm, chunk))
-  const chunks: string[][] = []
-  for (let i = 0; i < codes.length; i += CHUNK) chunks.push(codes.slice(i, i + CHUNK))
-  const [first, ...rest] = chunks.map(select)
+  const [first, ...rest] = chunk(codes, D1_MAX_PARAMS).map(select)
   if (!first) return c.json({ items: [] })
   const results = await db.batch([first, ...rest])
   const items = results.flat().map((r) => ({

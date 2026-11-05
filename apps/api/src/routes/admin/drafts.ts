@@ -29,6 +29,7 @@ import { backupVersion } from '../../db/backup'
 import { recomputePlacements } from '../../db/placement'
 import { recomputeSimilarity } from '../../db/similarity'
 import { createDb, type Db } from '../../db/client'
+import { chunk, D1_MAX_PARAMS, rowsPerInsert } from '../../db/d1-limits'
 import {
   appMeta,
   auditLog,
@@ -48,10 +49,8 @@ import type { AppEnv } from '../../types'
 // adminWriteGuard. Every write is limited to one draft (`version_id`) whose status is 'draft':
 // published and superseded versions are never changed here.
 
-/** D1 binds at most 100 parameters per statement. */
-const D1_MAX_PARAMS = 100
 /** Codes per ref_codes lookup: D1 binds at most 100 parameters, and the code system is one. */
-const LOOKUP_CHUNK = 99
+const LOOKUP_CHUNK = D1_MAX_PARAMS - 1
 
 const idParam = routeIdSchema
 
@@ -216,11 +215,7 @@ async function knownIcd10cm(db: Db, codes: readonly string[]): Promise<Set<strin
       .select({ codeNorm: refCodes.codeNorm })
       .from(refCodes)
       .where(and(eq(refCodes.codeSystem, 'icd10cm'), inArray(refCodes.codeNorm, chunk)))
-  const queries = []
-  for (let i = 0; i < unique.length; i += LOOKUP_CHUNK) {
-    queries.push(select(unique.slice(i, i + LOOKUP_CHUNK)))
-  }
-  const [first, ...rest] = queries
+  const [first, ...rest] = chunk(unique, LOOKUP_CHUNK).map(select)
   if (!first) return new Set()
   const results = await db.batch([first, ...rest])
   return new Set(results.flat().map((r) => r.codeNorm))
@@ -465,13 +460,9 @@ export const draftsRoute = new Hono<AppEnv>()
     }
 
     const rows = sent.map((e) => entryRow(version.id, sourceDocumentId, part, e))
-    // Every column of a row is one parameter; adding a column must not break the limit.
-    const perInsert = Math.floor(D1_MAX_PARAMS / Object.keys(rows[0] ?? { x: 0 }).length)
-    const inserts = []
-    for (let i = 0; i < rows.length; i += perInsert) {
-      inserts.push(db.insert(entries).values(rows.slice(i, i + perInsert)))
-    }
-    const [first, ...rest] = inserts
+    const [first, ...rest] = chunk(rows, rowsPerInsert(rows)).map((part) =>
+      db.insert(entries).values(part),
+    )
     if (first) await db.batch([first, ...rest, rowCountUpdate(db, version.id)])
     return c.json({ ok: true, stored: (stored?.n ?? 0) + sent.length })
   })
