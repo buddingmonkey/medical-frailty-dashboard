@@ -18,6 +18,7 @@ import { asc, eq, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { codeGroups, likeCodes } from './public-code-like'
+import { patternKeySql, rowCols } from './code-match'
 import { narrowerCount, shared } from './public-drill'
 import { appMeta, states } from './schema'
 
@@ -94,8 +95,8 @@ export async function publicCode(
       ORDER BY c.state_id, c.how, c.qrank, e.code_norm, e.id`),
     // Under the code as if it were a wildcard: the states that neither list nor cover it.
     db.all<{ state_id: string; n: number }>(sql`${shared(one)},
-      wide AS (SELECT sys, 'prefix' AS kind, norm, NULL AS end_norm, 1 AS wild,
-        norm AS last_norm, sys || '|prefix|' || norm AS rk FROM drows)
+      wide0 AS (SELECT sys, 'prefix' AS kind, norm, NULL AS end_norm, 1 AS wild FROM drows),
+      wide AS (SELECT *, norm AS last_norm, ${patternKeySql(rowCols())} AS rk FROM wide0)
       SELECT p.state_id, ${narrowerCount('w', 'p.vid')} AS n
       FROM pub p CROSS JOIN wide w
       WHERE NOT EXISTS (SELECT 1 FROM best b WHERE b.state_id = p.state_id)`),

@@ -15,9 +15,11 @@ import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { chunk } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { conditionGroups, conditionMembers } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf, idParam, notFound } from './request'
 
 // Condition groups for "like" codes (roadmap M6 step 4; docs/data-model.md, "Like codes").
 // Mounted at /api/admin/condition-groups behind requireAdmin and adminWriteGuard. A save sends
@@ -84,14 +86,9 @@ function replaceMembers(
   members: ConditionMember[],
 ) {
   const groupId = idOf(which)
-  const inserts = []
-  for (let i = 0; i < members.length; i += MEMBERS_PER_INSERT) {
-    inserts.push(
-      db
-        .insert(conditionMembers)
-        .values(members.slice(i, i + MEMBERS_PER_INSERT).map((m) => ({ ...m, groupId }))),
-    )
-  }
+  const inserts = chunk(members, MEMBERS_PER_INSERT).map((part) =>
+    db.insert(conditionMembers).values(part.map((m) => ({ ...m, groupId }))),
+  )
   return [
     ...('id' in which
       ? [db.delete(conditionMembers).where(eq(conditionMembers.groupId, which.id))]
@@ -143,7 +140,7 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
     if (!parsed.ok) return c.json({ error: parsed.error }, 400)
     if (await slugTaken(db, slug)) return c.json(slugClash(slug), 409)
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const write = db.batch([
       db
         .insert(conditionGroups)
@@ -179,10 +176,10 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
 
   .put('/:id', async (c) => {
     const db = createDb(c.env.DB)
-    const id = Number(c.req.param('id'))
-    if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'Not found' }, 404)
+    const id = idParam(c)
+    if (id === null) return notFound(c)
     const [current] = await db.select().from(conditionGroups).where(eq(conditionGroups.id, id))
-    if (!current) return c.json({ error: 'Not found' }, 404)
+    if (!current) return notFound(c)
     const body = await readBody(c)
     if (!body) return c.json({ error: 'Invalid condition group' }, 400)
     const slug = body.slug ?? current.slug
@@ -202,7 +199,7 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
     /** [before, after] when a field changed; left out of the audit row otherwise. */
     const diff = (a: string, b: string) => (a === b ? undefined : [a, b])
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const write = db.batch([
       db
         .update(conditionGroups)

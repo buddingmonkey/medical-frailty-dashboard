@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import { stateStatuses, versionStatuses } from './enums'
 
 // Source documents: the state's original files, stored unchanged in R2 as evidence
@@ -54,7 +55,7 @@ export async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string>
   return Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-const stateId = z.string().regex(/^[A-Z]{2}$/)
+const stateId = stateIdSchema
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/)
 /** A query-string value where blank means "not given". */
 const blankToNull = <T extends z.ZodType>(schema: T) =>

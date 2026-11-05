@@ -26,6 +26,15 @@ import {
 import { asc, eq, type SQL, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import {
+  containsSql,
+  coversByPrefixSql,
+  entryCols,
+  patternKeySql,
+  rangeCoversSql,
+  rowColumnsSql,
+  rowCols,
+} from './code-match'
 import { refCcsrCategories, states, unifiedCategories, unifiedCcsr } from './schema'
 
 // The category drill-down (roadmap M5 step 6; docs/data-model.md, "Drill-down"). D1 does the
@@ -36,50 +45,22 @@ import { refCcsrCategories, states, unifiedCategories, unifiedCcsr } from './sch
 // of CPU however many entries the states have.
 
 // ---------------------------------------------------------------------------------------------
-// SQL pieces. `e` stands for any alias of `entries` (or a row with its columns).
-
-/** The row kind of an entry: a code, a wildcard (prefix or code with children), or a range. */
-export const kindOf = (e: string) => `CASE WHEN ${e}.match_kind = 'range' THEN 'range'
-    WHEN ${e}.match_kind = 'prefix' OR ${e}.includes_children = 1 THEN 'prefix' ELSE 'exact' END`
+// SQL pieces. The matching rules are src/db/code-match.ts; `e` stands for any alias of `entries`.
 
 /** `comparePatternKey` of an entry: F10 with children = F10*. */
-export const keyOf = (e: string) => `${e}.code_system || '|' || CASE
-    WHEN ${e}.match_kind = 'range'
-      THEN 'range|' || ${e}.code_norm || '|' || ${e}.range_end_norm || '|'
-           || CASE WHEN ${e}.includes_children = 1 THEN '*' ELSE '' END
-    WHEN ${e}.match_kind = 'prefix' OR ${e}.includes_children = 1 THEN 'prefix|' || ${e}.code_norm
-    ELSE 'exact|' || ${e}.code_norm END`
-
-/** `entryCovers(range entry g, code c)`. */
-export const rangeCovers = (g: string, c: string) => `(CASE WHEN ${g}.includes_children = 1
-    THEN substr(${c}, 1, length(${g}.code_norm)) >= ${g}.code_norm
-         AND substr(${c}, 1, length(${g}.range_end_norm)) <= ${g}.range_end_norm
-    ELSE length(${c}) = length(${g}.code_norm) AND ${c} >= ${g}.code_norm
-         AND ${c} <= ${g}.range_end_norm END)`
+export const keyOf = (e: string) => patternKeySql(entryCols(e))
 
 /**
- * Code `c` lies inside row `r` (a wildcard or range row taken as covering its children): the
- * "narrower" test of the M4 table. A single code has nothing inside it.
- */
-const rowContains = (r: string, c: string) => `(CASE ${r}.kind
-    WHEN 'prefix' THEN substr(${c}, 1, length(${r}.norm)) = ${r}.norm
-    WHEN 'range' THEN CASE WHEN ${r}.wild = 1
-      THEN substr(${c}, 1, length(${r}.norm)) >= ${r}.norm
-           AND substr(${c}, 1, length(${r}.end_norm)) <= ${r}.end_norm
-      ELSE length(${c}) = length(${r}.norm) AND ${c} >= ${r}.norm AND ${c} <= ${r}.end_norm END
-    ELSE 0 END)`
-
-/**
- * Entries of version `vid` inside row `r`, other than the row itself: a range scan of
- * `entries_version_code_idx`.
+ * Entries of version `vid` inside row `r` (`containsSql`), other than the row itself: a range
+ * scan of `entries_version_code_idx`.
  */
 export const narrowerCount = (r: string, vid: string) =>
-  sql.raw(`(SELECT count(*) FROM entries n
-    WHERE n.version_id = ${vid} AND n.code_system = ${r}.sys
-      AND n.code_norm >= ${r}.norm AND n.code_norm < ${r}.last_norm || '~'
-      AND ${rowContains(r, 'n.code_norm')}
-      AND (n.range_end_norm IS NULL OR ${rowContains(r, 'n.range_end_norm')})
-      AND ${keyOf('n')} <> ${r}.rk)`)
+  sql`(SELECT count(*) FROM entries n
+    WHERE n.version_id = ${sql.raw(vid)} AND n.code_system = ${sql.raw(r)}.sys
+      AND n.code_norm >= ${sql.raw(r)}.norm AND n.code_norm < ${sql.raw(r)}.last_norm || '~'
+      AND ${containsSql(rowCols(r), 'n.code_norm')}
+      AND (n.range_end_norm IS NULL OR ${containsSql(rowCols(r), 'n.range_end_norm')})
+      AND ${keyOf('n')} <> ${sql.raw(r)}.rk)`
 
 const qualificationRank = sql.raw(`CASE e.qualification WHEN 'standalone' THEN 0
   WHEN 'needs_support' THEN 1 WHEN 'supporting_only' THEN 2 ELSE 3 END`)
@@ -112,10 +93,7 @@ export function shared(rows0: SQL, pub0?: SQL): SQL {
   rows0 AS (${rows0}),
   drows AS MATERIALIZED (
     SELECT sys, kind, norm, end_norm, wild, coalesce(end_norm, norm) AS last_norm,
-      sys || '|' || CASE kind
-        WHEN 'range' THEN 'range|' || norm || '|' || end_norm || '|'
-                          || CASE WHEN wild = 1 THEN '*' ELSE '' END
-        ELSE kind || '|' || norm END AS rk,
+      ${patternKeySql(rowCols())} AS rk,
       CASE WHEN sys = 'icd10cm' THEN 'icd10cm|' || substr(norm, 1, 3) ELSE sys END AS gk
     FROM rows0),
   ranges AS MATERIALIZED (
@@ -123,16 +101,16 @@ export function shared(rows0: SQL, pub0?: SQL): SQL {
       e.includes_children, ${qualificationRank} AS qrank
     FROM pub p JOIN entries e ON e.version_id = p.vid WHERE e.match_kind = 'range'),
   wilds AS MATERIALIZED (
-    SELECT p.state_id, e.id, e.code_system, e.code_norm, ${sql.raw(keyOf('e'))} AS rk,
+    SELECT p.state_id, e.id, e.code_system, e.code_norm, ${keyOf('e')} AS rk,
       ${qualificationRank} AS qrank
     FROM pub p JOIN entries e ON e.version_id = p.vid
-    WHERE e.match_kind = 'prefix' OR (e.match_kind = 'exact' AND e.includes_children = 1)),
+    WHERE ${coversByPrefixSql(entryCols('e'))}),
   cand AS (
     SELECT r.rk, p.state_id, 0 AS how, e.id AS entry_id, ${qualificationRank} AS qrank
     FROM drows r
     JOIN entries e ON e.code_norm = r.norm AND e.code_system = r.sys
     JOIN pub p ON p.vid = e.version_id
-    WHERE ${sql.raw(keyOf('e'))} = r.rk
+    WHERE ${keyOf('e')} = r.rk
     UNION ALL
     SELECT r.rk, w.state_id, 1, w.id, w.qrank
     FROM drows r
@@ -144,8 +122,9 @@ export function shared(rows0: SQL, pub0?: SQL): SQL {
     UNION ALL
     SELECT r.rk, g.state_id, 1, g.id, g.qrank
     FROM drows r JOIN ranges g ON g.code_system = r.sys
-    WHERE ${sql.raw(rangeCovers('g', 'r.norm'))} AND ${sql.raw(rangeCovers('g', 'r.last_norm'))}
-      AND ${sql.raw(keyOf('g'))} <> r.rk),
+    WHERE ${rangeCoversSql(entryCols('g'), 'r.norm')}
+      AND ${rangeCoversSql(entryCols('g'), 'r.last_norm')}
+      AND ${keyOf('g')} <> r.rk),
   best AS MATERIALIZED (
     SELECT rk, state_id, min(how * 10 + qrank) AS score, entry_id
     FROM cand GROUP BY rk, state_id)`
@@ -153,9 +132,7 @@ export function shared(rows0: SQL, pub0?: SQL): SQL {
 
 /** The rows placed in a category, plus its universe codes when asked. */
 function placedRows(unifiedId: number, withUniverse: boolean): SQL {
-  const placed = sql`SELECT DISTINCT e.code_system AS sys, ${sql.raw(kindOf('e'))} AS kind,
-      e.code_norm AS norm, e.range_end_norm AS end_norm,
-      CASE WHEN e.match_kind = 'prefix' OR e.includes_children = 1 THEN 1 ELSE 0 END AS wild
+  const placed = sql`SELECT DISTINCT ${rowColumnsSql(entryCols('e'))}
     FROM states s
     JOIN entries e ON e.version_id = s.published_version_id
     JOIN entry_unified eu ON eu.entry_id = e.id AND eu.unified_id = ${unifiedId}`
@@ -264,7 +241,7 @@ export const describedSql = sql`
   END AS cms,
   (SELECT p.state_id || char(31) || e.description_published
     FROM pub p JOIN entries e ON e.version_id = p.vid AND e.code_norm = v.norm
-    WHERE e.code_system = v.sys AND ${sql.raw(keyOf('e'))} = v.rk
+    WHERE e.code_system = v.sys AND ${keyOf('e')} = v.rk
       AND trim(coalesce(e.description_published, '')) <> ''
     ORDER BY p.state_id LIMIT 1) AS state_desc`
 

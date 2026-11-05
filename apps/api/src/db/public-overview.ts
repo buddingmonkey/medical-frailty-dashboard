@@ -7,6 +7,7 @@ import {
 import { asc, eq, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { coverBranchesSql, entryCols, patternKeySql } from './code-match'
 import { states, unifiedCategories } from './schema'
 
 // GET /api/public/overview (roadmap M5 step 4; docs/data-model.md, "Coverage summary"): every
@@ -20,53 +21,21 @@ const placed = sql`states s
   JOIN entry_unified eu ON eu.entry_id = e.id`
 
 /** One entry's set of codes, as `comparePatternKey` spells it (F10 with children = F10*). */
-const patternKey = sql`e.code_system || '|' || CASE
-  WHEN e.match_kind = 'range'
-    THEN 'range|' || e.code_norm || '|' || e.range_end_norm || '|'
-         || CASE WHEN e.includes_children = 1 THEN '*' ELSE '' END
-  WHEN e.match_kind = 'prefix' OR e.includes_children = 1 THEN 'prefix|' || e.code_norm
-  ELSE 'exact|' || e.code_norm END`
+export const patternKey = patternKeySql(entryCols('e'))
 
 /**
- * The universe codes each state's placed ICD-10-CM entries cover, by `entryCovers` rules: an
- * exact code covers itself (and its children when `includes_children = 1`), a prefix every code
- * starting with it, a wildcard range every code whose leading characters fall between its ends,
- * any other range the codes of the same length between its ends. Each branch is a primary-key
- * range scan of `unified_universe` ('~' sorts after every letter and digit).
+ * The universe codes each state's placed ICD-10-CM entries cover, by `entryCovers` rules
+ * (`coverBranchesSql`): each branch is a primary-key range scan of `unified_universe`.
  */
-const coveredCodes = sql`
+export const coveredCodes = coverBranchesSql(
+  entryCols('e'),
+  'uu.code_norm',
+  (entryFilter, codeMatch) => sql`
   SELECT s.id AS state_id, eu.unified_id AS unified_id, uu.code_norm AS code
   FROM ${placed}
-  JOIN unified_universe uu ON uu.unified_id = eu.unified_id AND uu.code_norm = e.code_norm
-  WHERE e.code_system = 'icd10cm' AND e.match_kind = 'exact'
-  UNION ALL
-  SELECT s.id, eu.unified_id, uu.code_norm
-  FROM ${placed}
-  JOIN unified_universe uu ON uu.unified_id = eu.unified_id
-    AND uu.code_norm > e.code_norm AND uu.code_norm < e.code_norm || '~'
-  WHERE e.code_system = 'icd10cm' AND e.match_kind = 'exact' AND e.includes_children = 1
-  UNION ALL
-  SELECT s.id, eu.unified_id, uu.code_norm
-  FROM ${placed}
-  JOIN unified_universe uu ON uu.unified_id = eu.unified_id
-    AND uu.code_norm >= e.code_norm AND uu.code_norm < e.code_norm || '~'
-  WHERE e.code_system = 'icd10cm' AND e.match_kind = 'prefix'
-  UNION ALL
-  SELECT s.id, eu.unified_id, uu.code_norm
-  FROM ${placed}
-  JOIN unified_universe uu ON uu.unified_id = eu.unified_id
-    AND uu.code_norm >= e.code_norm AND uu.code_norm < e.range_end_norm || '~'
-    AND substr(uu.code_norm, 1, length(e.code_norm)) >= e.code_norm
-    AND substr(uu.code_norm, 1, length(e.range_end_norm)) <= e.range_end_norm
-  WHERE e.code_system = 'icd10cm' AND e.match_kind = 'range' AND e.includes_children = 1
-  UNION ALL
-  SELECT s.id, eu.unified_id, uu.code_norm
-  FROM ${placed}
-  JOIN unified_universe uu ON uu.unified_id = eu.unified_id
-    AND uu.code_norm >= e.code_norm AND uu.code_norm <= e.range_end_norm
-    AND length(uu.code_norm) = length(e.code_norm)
-  WHERE e.code_system = 'icd10cm' AND e.match_kind = 'range'
-    AND coalesce(e.includes_children, 0) <> 1`
+  JOIN unified_universe uu ON uu.unified_id = eu.unified_id AND ${codeMatch}
+  WHERE e.code_system = 'icd10cm' AND ${entryFilter}`,
+)
 
 interface PlacedRow {
   state_id: string

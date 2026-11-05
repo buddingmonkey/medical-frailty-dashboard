@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import MarkdownView from './MarkdownView.vue'
 
 // Markdown as text nodes (the parser is packages/shared/src/markdown.ts). The Worker's HTML for a
-// state's notes (apps/api/src/seo/pages.ts) writes the same elements and link attributes.
+// state's notes (apps/api/src/seo/pages/state.ts) writes the same elements and link attributes.
 
 describe('MarkdownView', () => {
   it('renders bold, links and lists, and markup as text', () => {

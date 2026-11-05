@@ -17,34 +17,19 @@ import {
   stateCategoriesResponseSchema,
 } from '@mfcd/shared'
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import { unifiedParentsSql } from '../../db/federal'
 import { bumpDataVersion } from '../../db/meta'
-import {
-  categoryMappings,
-  chapterMappings,
-  datasetVersions,
-  entries,
-  states,
-} from '../../db/schema'
+import { categoryMappings, chapterMappings, datasetVersions, entries } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf, findStateParam, notFound } from './request'
 
 // Category mapping screen (roadmap M2 step 9; docs/ingestion.md, "Category auto-mapping").
 // Mounted at /api/admin/states behind requireAdmin and adminWriteGuard. Mappings belong to the
 // state, not a version, so a re-upload keeps them. Every write is limited to one state.
-
-async function findState(db: Db, c: Context<AppEnv>) {
-  const id = c.req.param('stateId') ?? ''
-  if (!/^[A-Z]{2}$/.test(id)) return undefined
-  const [state] = await db
-    .select({ id: states.id, publishedVersionId: states.publishedVersionId })
-    .from(states)
-    .where(eq(states.id, id))
-  return state
-}
 
 /** A mapping change is a change to the public page: move its date and the cache key. */
 function publicChange(db: Db, stateId: string) {
@@ -151,8 +136,8 @@ async function remapPreview(
 export const categoriesRoute = new Hono<AppEnv>()
   .get('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const drafts = await db
       .select({ id: datasetVersions.id })
       .from(datasetVersions)
@@ -296,8 +281,8 @@ export const categoriesRoute = new Hono<AppEnv>()
   // (draft only). Any other change goes through the preview and /remap (M7 step 3): 409.
   .put('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const body = categoryMappingSaveSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid mappings' }, 400)
     const stored = await db
@@ -332,7 +317,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     if (changes) {
       return c.json({ error: 'This changes a federal category. Preview the change first.' }, 409)
     }
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const upserts = body.data.items.map((item) => {
       const values = {
@@ -378,8 +363,8 @@ export const categoriesRoute = new Hono<AppEnv>()
   // Bulk remap, step 1: what the proposed changes would do (read-only; a POST for the body).
   .post('/:stateId/categories/preview', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const body = remapChangesSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid changes' }, 400)
     const { preview } = await remapPreview(db, state, body.data)
@@ -389,8 +374,8 @@ export const categoriesRoute = new Hono<AppEnv>()
   // Bulk remap, step 2: save what was previewed, or 409 when anything changed since.
   .post('/:stateId/categories/remap', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const body = remapSaveSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid changes' }, 400)
     const { token, ...changes } = body.data
@@ -398,7 +383,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     if (preview.token !== token) {
       return c.json({ error: 'The data changed since the preview. Preview again.' }, 409)
     }
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const categoryWrites = changes.categories.map((item) => {
       const values = {

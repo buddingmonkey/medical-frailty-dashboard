@@ -15,13 +15,11 @@ import { recomputeSimilarity } from '../../db/similarity'
 import { datasetVersions, states } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf, notFound, stateParam } from './request'
 
 // Mounted behind requireAdmin and adminWriteGuard. The state picker for uploads and watch
 // items, a state's versions, and rollback.
-const stateIdParam = (c: Context<AppEnv>) => {
-  const id = c.req.param('stateId') ?? ''
-  return /^[A-Z]{2}$/.test(id) ? id : null
-}
+const stateIdParam = (c: Context<AppEnv>) => stateParam(c)
 
 export const adminStates = new Hono<AppEnv>()
   .get('/', async (c) => {
@@ -34,7 +32,7 @@ export const adminStates = new Hono<AppEnv>()
 
   .get('/:stateId/versions', async (c) => {
     const stateId = stateIdParam(c)
-    if (!stateId) return c.json({ error: 'Not found' }, 404)
+    if (!stateId) return notFound(c)
     const items = await createDb(c.env.DB)
       .select({
         id: datasetVersions.id,
@@ -56,7 +54,7 @@ export const adminStates = new Hono<AppEnv>()
   // needed, its rows are still in D1. One batch, every statement limited to this state.
   .post('/:stateId/rollback', async (c) => {
     const stateId = stateIdParam(c)
-    if (!stateId) return c.json({ error: 'Not found' }, 404)
+    if (!stateId) return notFound(c)
     const body = rollbackRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid request' }, 400)
     const db = createDb(c.env.DB)
@@ -64,7 +62,7 @@ export const adminStates = new Hono<AppEnv>()
       .select()
       .from(datasetVersions)
       .where(and(eq(datasetVersions.id, body.data.versionId), eq(datasetVersions.stateId, stateId)))
-    if (!target) return c.json({ error: 'Not found' }, 404)
+    if (!target) return notFound(c)
     if (target.status !== 'superseded') {
       return c.json({ error: 'Only a version that was published before can be restored' }, 409)
     }
@@ -73,7 +71,7 @@ export const adminStates = new Hono<AppEnv>()
       .from(states)
       .where(eq(states.id, stateId))
     const now = new Date().toISOString()
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     await db.batch([
       db
         .update(datasetVersions)

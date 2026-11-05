@@ -54,9 +54,11 @@ export async function publishVersion(
     .returning()
   if (!doc || !version) throw new Error('insert failed')
   await db.insert(versionSources).values({ versionId: version.id, sourceDocumentId: doc.id })
-  await db
-    .insert(entries)
-    .values(rows.map((r) => ({ ...r, versionId: version.id, sourceDocumentId: doc.id })))
+  // One row per statement: drizzle also binds the defaults of columns a row leaves out, so the
+  // first row's keys undercount the parameters and `rowsPerInsert` does not fit.
+  for (const r of rows) {
+    await db.insert(entries).values({ ...r, versionId: version.id, sourceDocumentId: doc.id })
+  }
   if (status === 'published') {
     await db
       .update(states)

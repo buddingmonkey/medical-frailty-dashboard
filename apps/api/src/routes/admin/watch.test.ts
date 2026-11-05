@@ -173,13 +173,13 @@ describe('/api/admin/watch', () => {
     expect((await auditActions()).map((e) => e.action)).toEqual(['watch.close', 'watch.create'])
   })
 
-  it('returns 404 for an unknown id and 400 for a bad one', async () => {
+  it('returns 404 for an unknown or malformed id, as every admin route does', async () => {
     expect(
       (await api('/999', 'PUT', { action: 'close', status: 'done', resolutionMd: 'x' })).status,
     ).toBe(404)
     expect(
       (await api('/abc', 'PUT', { action: 'close', status: 'done', resolutionMd: 'x' })).status,
-    ).toBe(400)
+    ).toBe(404)
   })
 
   it('is refused to a signed-in non-admin', async () => {

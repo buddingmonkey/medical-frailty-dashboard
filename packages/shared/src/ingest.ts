@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import { MAX_CELL_LENGTH } from './codes'
 import {
   type Qualification,
@@ -233,7 +234,7 @@ export function applyMapping(table: RawTable, profile: ColumnProfile): MappingRe
   }
 }
 
-const stateId = z.string().regex(/^[A-Z]{2}$/)
+const stateId = stateIdSchema
 
 /** Body of `PUT /api/admin/column-profiles`. The server computes the header key. */
 export const columnProfileSaveSchema = z

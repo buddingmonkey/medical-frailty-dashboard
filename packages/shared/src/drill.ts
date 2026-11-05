@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import { compareStatuses } from './compare'
 import { formatCount, stateCategoryName } from './public'
 import {
@@ -218,7 +219,6 @@ export function compareDrillGroups(
 // Response: `GET /api/public/categories/:slug` and `…/:slug/detail?code=`
 
 const count = z.number().int().min(0)
-const stateIdSchema = z.string().regex(/^[A-Z]{2}$/)
 
 /** How one state lists a row: the entry that lists or covers it. */
 export const drillMatchSchema = z.object({

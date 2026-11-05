@@ -263,7 +263,7 @@ The public site changes only when the project lead approves a release.
 
 | Task | How |
 | --- | --- |
-| Add a new public page | The loop in section 4 with the prompt template below. Example to copy: the state page (`apps/web/src/pages/states/[slug].vue` and `apps/api/src/seo/pages.ts`) |
+| Add a new public page | The loop in section 4 with the prompt template below. Example to copy: the state page (`apps/web/src/pages/states/[slug].vue` and `apps/api/src/seo/pages/state.ts`) |
 | Add a page with choices (filters, pickers) | Put every choice in the web address and read it back on load. Example to copy: the compare pages (`apps/web/src/pages/compare/`, `apps/web/src/lib/public-compare.ts`) |
 | Fix a word or a typo | The loop in section 4. Say the page and the exact words |
 | Report a wrong code | The [data error form](https://github.com/buddingmonkey/medical-frailty-dashboard/issues/new?template=data-error.yml). No setup needed |

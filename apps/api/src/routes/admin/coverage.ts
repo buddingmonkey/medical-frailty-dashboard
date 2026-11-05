@@ -21,6 +21,7 @@ import {
 } from '../../db/schema'
 import { recomputeSimilarity } from '../../db/similarity'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // "Rebuild coverage" (docs/deployment.md, "Preview data"). Admin writes keep the derived tables
 // current one change at a time; this rebuilds all of them from the base rows: after seed data
@@ -149,7 +150,7 @@ export const coverageRoute = new Hono<AppEnv>().post('/rebuild', async (c) => {
   })
   if (done) {
     await auditInsert(db, {
-      actorEmail: c.var.identity?.email ?? '',
+      actorEmail: actorOf(c),
       action: 'coverage.rebuild',
       target: 'coverage:all',
       details: {

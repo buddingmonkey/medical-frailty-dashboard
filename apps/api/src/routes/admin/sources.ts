@@ -16,14 +16,13 @@ import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
+import { chunk, D1_MAX_PARAMS } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf, notFound } from './request'
 
 type Row = typeof sourceDocuments.$inferSelect
-
-/** D1 binds at most 100 parameters per query (a state can have more source files). */
-const CHUNK = 100
 
 /** Rows plus the versions built from each, for the duplicate warning ("as version N"). */
 async function withVersions(db: Db, rows: Row[]): Promise<SourceDocument[]> {
@@ -39,11 +38,9 @@ async function withVersions(db: Db, rows: Row[]): Promise<SourceDocument[]> {
       .innerJoin(datasetVersions, eq(versionSources.versionId, datasetVersions.id))
       .where(inArray(versionSources.sourceDocumentId, ids))
       .orderBy(datasetVersions.versionNo)
-  const chunks: number[][] = []
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    chunks.push(rows.slice(i, i + CHUNK).map((r) => r.id))
-  }
-  const [first, ...rest] = chunks.map(select)
+  // A state can have more source files than D1 binds parameters.
+  const ids = rows.map((r) => r.id)
+  const [first, ...rest] = chunk(ids, D1_MAX_PARAMS).map(select)
   const links = first ? (await db.batch([first, ...rest])).flat() : []
   // sourceDocumentSchema strips r2Key: the storage key never leaves the Worker.
   return rows.map((row) =>
@@ -114,7 +111,7 @@ export const sources = new Hono<AppEnv>()
       httpMetadata: { contentType: 'application/octet-stream', contentDisposition: 'attachment' },
     })
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     try {
       const [inserted] = await db
         .insert(sourceDocuments)
@@ -157,14 +154,14 @@ export const sources = new Hono<AppEnv>()
   // (published, or superseded in the history) bumps data_version, so cached pages refresh.
   .put('/:id', async (c) => {
     const id = idParamSchema.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = sourceDetailsSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) {
       return c.json({ error: body.error.issues[0]?.message ?? 'Invalid details' }, 400)
     }
     const db = createDb(c.env.DB)
     const [row] = await db.select().from(sourceDocuments).where(eq(sourceDocuments.id, id.data))
-    if (!row) return c.json({ error: 'Not found' }, 404)
+    if (!row) return notFound(c)
 
     const [shown] = await db
       .select({ id: datasetVersions.id })
@@ -185,7 +182,7 @@ export const sources = new Hono<AppEnv>()
       .where(eq(sourceDocuments.id, row.id))
       .returning()
     const audit = auditInsert(db, {
-      actorEmail: c.var.identity?.email ?? '',
+      actorEmail: actorOf(c),
       action: 'source.update',
       target: `source:${String(row.id)}`,
       details: {
@@ -197,14 +194,14 @@ export const sources = new Hono<AppEnv>()
     const [updated] = shown
       ? (await db.batch([update, audit, bumpDataVersion(db)]))[0]
       : (await db.batch([update, audit]))[0]
-    if (!updated) return c.json({ error: 'Not found' }, 404)
+    if (!updated) return notFound(c)
     const [source] = await withVersions(db, [updated])
     return c.json(source)
   })
 
   .get('/:id/file', async (c) => {
     const id = idParamSchema.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const [row] = await createDb(c.env.DB)
       .select()
       .from(sourceDocuments)
@@ -213,7 +210,7 @@ export const sources = new Hono<AppEnv>()
       return c.json({ error: 'Restored from a backup: the file is not available.' }, 404)
     }
     const object = row ? await c.env.FILES.get(row.r2Key) : null
-    if (!row || !object) return c.json({ error: 'Not found' }, 404)
+    if (!row || !object) return notFound(c)
 
     return new Response(object.body, {
       headers: {

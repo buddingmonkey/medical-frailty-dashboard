@@ -9,38 +9,28 @@ import {
   unifiedSuggestion,
 } from '@mfcd/shared'
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { loadCcsrIndex } from '../../db/ccsr'
-import { createDb, type Db } from '../../db/client'
+import { createDb } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements } from '../../db/placement'
 import {
   entries,
   refCcsrCategories,
-  states,
   unifiedCategories,
   unifiedCcsr,
   unifiedMappings,
 } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf, findStateParam, notFound } from './request'
 
 // Mapping screen for unified categories (roadmap M5 step 3; docs/data-model.md, "Unified
 // categories (M5)"). Mounted at /api/admin/states behind requireAdmin and adminWriteGuard.
 // Rows are never deleted: a change marks the current rows `superseded`, pointing at the first
 // new row. One admin may approve, their own proposal included (project lead, 2026-11-02).
-
-async function findState(db: Db, c: Context<AppEnv>) {
-  const id = c.req.param('stateId') ?? ''
-  if (!/^[A-Z]{2}$/.test(id)) return undefined
-  const [state] = await db
-    .select({ id: states.id, publishedVersionId: states.publishedVersionId })
-    .from(states)
-    .where(eq(states.id, id))
-  return state
-}
 
 /** The rows of one state category, matched the way `mappingKey` matches (trimmed, any case). */
 function categoryRows(stateId: string, stateCategory: string, stateSubcategory: string) {
@@ -61,8 +51,8 @@ const review = (status: 'approved' | 'proposed') =>
 export const unifiedMappingsRoute = new Hono<AppEnv>()
   .get('/:stateId/unified-mappings', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const versionId = state.publishedVersionId
     if (versionId === null) return c.json({ categories: [] })
 
@@ -173,8 +163,8 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
 
   .put('/:stateId/unified-mappings', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const parsed = unifiedMappingPutSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ error: 'Invalid mapping' }, 400)
     const body = parsed.data
@@ -208,7 +198,7 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       }
     }
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const status = body.approve ? ('approved' as const) : ('proposed' as const)
     const common = {
@@ -280,8 +270,8 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
 
   .post('/:stateId/unified-mappings/approve', async (c) => {
     const db = createDb(c.env.DB)
-    const state = await findState(db, c)
-    if (!state) return c.json({ error: 'Not found' }, 404)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
     const parsed = unifiedMappingApproveSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ error: 'Invalid mapping' }, 400)
     const { stateCategory, stateSubcategory } = parsed.data
@@ -297,7 +287,7 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       .orderBy(asc(unifiedMappings.id))
     const first = proposed[0]
     if (!first) return c.json({ error: 'There is no proposal to approve' }, 409)
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     await db.batch([
       db
         .update(unifiedMappings)

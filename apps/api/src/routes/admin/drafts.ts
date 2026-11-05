@@ -1,4 +1,5 @@
 import {
+  idParamSchema,
   autoMapCategory,
   type CheckEntry,
   type DraftChecksResponse,
@@ -15,20 +16,20 @@ import {
   publishRequestSchema,
   publishResponseSchema,
   namedStateIdsSchema,
-  routeIdSchema,
   runChecks,
   sha256Hex,
   validateDraftEntry,
   verifyConfirmations,
 } from '@mfcd/shared'
 import { and, asc, count, desc, eq, inArray, min, notInArray, sql } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { type AuditRecord, auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
 import { recomputePlacements } from '../../db/placement'
 import { recomputeSimilarity } from '../../db/similarity'
 import { createDb, type Db } from '../../db/client'
+import { chunk, D1_MAX_PARAMS, rowsPerInsert } from '../../db/d1-limits'
 import {
   appMeta,
   auditLog,
@@ -43,17 +44,16 @@ import {
 } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf, notFound } from './request'
 
 // Draft versions (docs/ingestion.md, steps 6 and 7). Mounted behind requireAdmin and
 // adminWriteGuard. Every write is limited to one draft (`version_id`) whose status is 'draft':
 // published and superseded versions are never changed here.
 
-/** D1 binds at most 100 parameters per statement. */
-const D1_MAX_PARAMS = 100
 /** Codes per ref_codes lookup: D1 binds at most 100 parameters, and the code system is one. */
-const LOOKUP_CHUNK = 99
+const LOOKUP_CHUNK = D1_MAX_PARAMS - 1
 
-const idParam = routeIdSchema
+const idParam = idParamSchema
 
 /** Matches the version only while it is still a draft: one row, or none once published. */
 const isDraft = (versionId: number) =>
@@ -116,8 +116,6 @@ async function findVersion(db: Db, id: number) {
   const [row] = await db.select().from(datasetVersions).where(eq(datasetVersions.id, id))
   return row
 }
-
-const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
 /** Rows of a version as the checks see them. */
 async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
@@ -216,11 +214,7 @@ async function knownIcd10cm(db: Db, codes: readonly string[]): Promise<Set<strin
       .select({ codeNorm: refCodes.codeNorm })
       .from(refCodes)
       .where(and(eq(refCodes.codeSystem, 'icd10cm'), inArray(refCodes.codeNorm, chunk)))
-  const queries = []
-  for (let i = 0; i < unique.length; i += LOOKUP_CHUNK) {
-    queries.push(select(unique.slice(i, i + LOOKUP_CHUNK)))
-  }
-  const [first, ...rest] = queries
+  const [first, ...rest] = chunk(unique, LOOKUP_CHUNK).map(select)
   if (!first) return new Set()
   const results = await db.batch([first, ...rest])
   return new Set(results.flat().map((r) => r.codeNorm))
@@ -357,10 +351,10 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .get('/:id', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     return c.json(
       draftDetailSchema.parse({
         ...draftSummarySchema.parse(version),
@@ -373,12 +367,12 @@ export const draftsRoute = new Hono<AppEnv>()
   .put('/:id/sources/:sourceId', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
     const sourceId = idParam.safeParse(c.req.param('sourceId'))
-    if (!id.success || !sourceId.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success || !sourceId.success) return notFound(c)
     const body = draftSourceSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid source' }, 400)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
     const [doc] = await db
       .select({ stateId: sourceDocuments.stateId, title: sourceDocuments.title })
@@ -427,7 +421,7 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .post('/:id/rows', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = draftRowsRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid rows' }, 400)
     const { sourceDocumentId, part, entries: sent } = body.data
@@ -437,7 +431,7 @@ export const draftsRoute = new Hono<AppEnv>()
     }
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
     const [link] = await db
       .select({ expected: draftParts.expectedEntries })
@@ -465,13 +459,9 @@ export const draftsRoute = new Hono<AppEnv>()
     }
 
     const rows = sent.map((e) => entryRow(version.id, sourceDocumentId, part, e))
-    // Every column of a row is one parameter; adding a column must not break the limit.
-    const perInsert = Math.floor(D1_MAX_PARAMS / Object.keys(rows[0] ?? { x: 0 }).length)
-    const inserts = []
-    for (let i = 0; i < rows.length; i += perInsert) {
-      inserts.push(db.insert(entries).values(rows.slice(i, i + perInsert)))
-    }
-    const [first, ...rest] = inserts
+    const [first, ...rest] = chunk(rows, rowsPerInsert(rows)).map((part) =>
+      db.insert(entries).values(part),
+    )
     if (first) await db.batch([first, ...rest, rowCountUpdate(db, version.id)])
     return c.json({ ok: true, stored: (stored?.n ?? 0) + sent.length })
   })
@@ -479,10 +469,10 @@ export const draftsRoute = new Hono<AppEnv>()
   // Runs the checks and stores the report with the rows' token (publish needs it: step 8).
   .get('/:id/checks', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
 
     const result = await runDraftChecks(db, version)
     if (version.status === 'draft') {
@@ -499,12 +489,12 @@ export const draftsRoute = new Hono<AppEnv>()
   // every statement limited to this state or this version.
   .post('/:id/publish', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = publishRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid request' }, 400)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can be published' }, 409)
 
     const checks = await runDraftChecks(db, version)
@@ -638,10 +628,10 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .post('/:id/discard', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can be discarded' }, 409)
     await db.batch([
       db

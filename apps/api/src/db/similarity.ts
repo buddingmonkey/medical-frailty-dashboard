@@ -1,6 +1,7 @@
 import { isNotNull, type SQL, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { coverBranchesSql, entryCols, type MatchCols, patternKeySql } from './code-match'
 import { bumpDataVersion } from './meta'
 import { states } from './schema'
 
@@ -36,52 +37,35 @@ export interface SimilarityResult {
   ms: number
 }
 
+/** The `icd` CTE below: entries' columns, with `includes_children` read as 0 when NULL. */
+const icd: MatchCols = { ...entryCols('i'), system: "'icd10cm'", children: 'i.kids' }
+
 /**
  * `sets` (state_id, code) for every state with a list, and `sizes` (state_id, n). `code` is the
  * ICD-10-CM code itself, or the entry's `comparePatternKey` in other systems (which contain a
  * `|`, so they never equal an ICD-10-CM code).
  */
-export const similaritySetsCtes = sql.raw(`
+export const similaritySetsCtes = sql`
   pub AS (SELECT id AS state_id, published_version_id AS vid FROM states
           WHERE published_version_id IS NOT NULL),
   icd AS MATERIALIZED (
     SELECT p.state_id, e.code_norm, e.match_kind, e.range_end_norm,
       coalesce(e.includes_children, 0) AS kids
     FROM pub p JOIN entries e ON e.version_id = p.vid WHERE e.code_system = 'icd10cm'),
-  hits AS (
+  hits AS (${coverBranchesSql(
+    icd,
+    'r.code_norm',
+    (entryFilter, codeMatch) => sql`
     SELECT i.state_id, r.code_norm AS code FROM icd i CROSS JOIN ref_codes r
-    WHERE i.match_kind = 'exact' AND i.kids <> 1
-      AND r.code_system = 'icd10cm' AND r.code_norm = i.code_norm
-      AND r.billable = 1 AND r.valid_to IS NULL
-    UNION ALL
-    SELECT i.state_id, r.code_norm FROM icd i CROSS JOIN ref_codes r
-    WHERE (i.match_kind = 'prefix' OR (i.match_kind = 'exact' AND i.kids = 1))
-      AND r.code_system = 'icd10cm' AND r.code_norm >= i.code_norm AND r.code_norm < i.code_norm || '~'
-      AND r.billable = 1 AND r.valid_to IS NULL
-    UNION ALL
-    SELECT i.state_id, r.code_norm FROM icd i CROSS JOIN ref_codes r
-    WHERE i.match_kind = 'range' AND i.kids = 1
-      AND r.code_system = 'icd10cm' AND r.code_norm >= i.code_norm
-      AND r.code_norm < i.range_end_norm || '~'
-      AND substr(r.code_norm, 1, length(i.code_norm)) >= i.code_norm
-      AND substr(r.code_norm, 1, length(i.range_end_norm)) <= i.range_end_norm
-      AND r.billable = 1 AND r.valid_to IS NULL
-    UNION ALL
-    SELECT i.state_id, r.code_norm FROM icd i CROSS JOIN ref_codes r
-    WHERE i.match_kind = 'range' AND i.kids <> 1
-      AND r.code_system = 'icd10cm' AND r.code_norm >= i.code_norm AND r.code_norm <= i.range_end_norm
-      AND length(r.code_norm) = length(i.code_norm)
-      AND r.billable = 1 AND r.valid_to IS NULL),
+    WHERE ${entryFilter}
+      AND r.code_system = 'icd10cm' AND ${codeMatch}
+      AND r.billable = 1 AND r.valid_to IS NULL`,
+  )}),
   others AS (
-    SELECT p.state_id, e.code_system || '|' || CASE
-        WHEN e.match_kind = 'range'
-          THEN 'range|' || e.code_norm || '|' || e.range_end_norm || '|'
-               || CASE WHEN e.includes_children = 1 THEN '*' ELSE '' END
-        WHEN e.match_kind = 'prefix' OR e.includes_children = 1 THEN 'prefix|' || e.code_norm
-        ELSE 'exact|' || e.code_norm END AS code
+    SELECT p.state_id, ${patternKeySql(entryCols('e'))} AS code
     FROM pub p JOIN entries e ON e.version_id = p.vid WHERE e.code_system <> 'icd10cm'),
   sets AS MATERIALIZED (SELECT state_id, code FROM hits UNION SELECT state_id, code FROM others),
-  sizes AS MATERIALIZED (SELECT state_id, count(*) AS n FROM sets GROUP BY state_id)`)
+  sizes AS MATERIALIZED (SELECT state_id, count(*) AS n FROM sets GROUP BY state_id)`
 
 /**
  * The pairs to compute: `x` and `o` are states with a list, each unordered pair once; with a

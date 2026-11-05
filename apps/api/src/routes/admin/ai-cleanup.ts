@@ -11,6 +11,7 @@ import { type AiComplete, type AiCompletion, DEFAULT_AI_MODEL } from '../../ai/c
 import { createDb } from '../../db/client'
 import { auditLog, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf, notFound } from './request'
 
 // Optional Claude API button for AI cleanup (docs/ingestion.md, "AI cleanup";
 // docs/security.md, "AI cleanup"). Mounted behind requireAdmin and adminWriteGuard. Without the
@@ -34,7 +35,7 @@ export function aiCleanupRoute(complete: AiComplete) {
 
     .post('/', async (c) => {
       const apiKey = c.env.ANTHROPIC_API_KEY
-      if (!apiKey) return c.json({ error: 'Not found' }, 404)
+      if (!apiKey) return notFound(c)
       const body = aiCleanupRequestSchema.safeParse(await c.req.json().catch(() => null))
       if (!body.success) return c.json({ error: 'Invalid request' }, 400)
       const db = createDb(c.env.DB)
@@ -61,7 +62,7 @@ export function aiCleanupRoute(complete: AiComplete) {
          RETURNING id`,
       )
         .bind(
-          c.var.identity?.email ?? '',
+          actorOf(c),
           target,
           JSON.stringify({ ...facts, outcome: 'pending' }),
           hourAgo,

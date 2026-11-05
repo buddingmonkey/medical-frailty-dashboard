@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import { drillCellSchema, type DrillCell } from './drill'
 import { codeSystemSchema, matchKindSchema, type Qualification } from './enums'
 import { formatCount, pageTitles } from './public'
@@ -115,7 +116,6 @@ export function statesCompareDiffers(
 // Response: `GET /api/public/states-compare?states=GA,LA&diff=0&page=`
 
 const count = z.number().int().min(0)
-const stateIdSchema = z.string().regex(/^[A-Z]{2}$/)
 
 export const statesCompareStateSchema = z.object({
   id: stateIdSchema,

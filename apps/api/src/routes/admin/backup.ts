@@ -6,11 +6,12 @@ import {
   restoreSourceResponseSchema,
 } from '@mfcd/shared'
 import { and, eq } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { backupBaseName, createZipWriter, writeFullBackup } from '../../db/backup-dump'
 import { createDb, type Db } from '../../db/client'
+import { chunk, rowsPerInsert } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import {
   categoryMappings,
@@ -21,6 +22,7 @@ import {
   states,
 } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf, notFound, stateParam } from './request'
 
 // Backups (docs/deployment.md, "Backups and restore"). Mounted at /api/admin/backup behind
 // requireAdmin and adminWriteGuard. The download is a zip with one JSON file (format 2). Restore
@@ -28,24 +30,13 @@ import type { AppEnv } from '../../types'
 // routes here only add what that API lacks: the cited source (metadata only, when its file is
 // gone) and, if the admin asks, the state's mappings.
 
-/** D1 binds at most 100 parameters per statement. */
-const D1_MAX_PARAMS = 100
-
-const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
-
 async function stateExists(db: Db, id: string): Promise<boolean> {
   const [row] = await db.select({ id: states.id }).from(states).where(eq(states.id, id))
   return row !== undefined
 }
 
 /** Inserts in chunks under D1's parameter limit. */
-function chunked<T extends object>(rows: T[]): T[][] {
-  const columns = Object.keys(rows[0] ?? { x: 0 }).length
-  const per = Math.max(1, Math.floor(D1_MAX_PARAMS / columns))
-  const chunks: T[][] = []
-  for (let i = 0; i < rows.length; i += per) chunks.push(rows.slice(i, i + per))
-  return chunks
-}
+const chunked = <T extends object>(rows: T[]): T[][] => chunk(rows, rowsPerInsert(rows))
 
 export const backupRoute = new Hono<AppEnv>()
   // The full download: streamed, page by page, through a zip writer (never whole in memory).
@@ -178,12 +169,12 @@ export const backupRoute = new Hono<AppEnv>()
 
   // Replaces the state's mappings with the backup's (only when the admin ticked the box).
   .put('/mappings/:stateId', async (c) => {
-    const stateId = c.req.param('stateId')
-    if (!/^[A-Z]{2}$/.test(stateId)) return c.json({ error: 'Not found' }, 404)
+    const stateId = stateParam(c)
+    if (stateId === null) return notFound(c)
     const body = restoreMappingsSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid mappings' }, 400)
     const db = createDb(c.env.DB)
-    if (!(await stateExists(db, stateId))) return c.json({ error: 'Not found' }, 404)
+    if (!(await stateExists(db, stateId))) return notFound(c)
     const {
       categoryMappings: cats,
       chapterMappings: chapters,

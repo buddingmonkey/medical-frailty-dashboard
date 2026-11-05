@@ -12,6 +12,7 @@ import { auditInsert } from '../../db/audit'
 import { createDb } from '../../db/client'
 import { columnProfiles, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Mounted behind requireAdmin and adminWriteGuard.
 export const columnProfilesRoute = new Hono<AppEnv>()
@@ -49,7 +50,7 @@ export const columnProfilesRoute = new Hono<AppEnv>()
     const [state] = await db.select({ id: states.id }).from(states).where(eq(states.id, stateId))
     if (!state) return c.json({ error: 'Unknown state' }, 400)
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const key = headerKey(header)
     const profileJson = JSON.stringify(profile)
     await db.batch([
