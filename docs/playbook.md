@@ -61,7 +61,7 @@ them, but you are responsible for your change:
 Follow [`getting-started.md`](getting-started.md) once. It covers, one step at a time:
 
 1. A GitHub account and a Claude plan or API key.
-2. A terminal: PowerShell on Windows (no WSL or Linux needed), Terminal on macOS and Linux.
+2. A terminal: PowerShell on Windows, Terminal on macOS and Linux.
 3. Git, the GitHub command line (`gh`), Node.js 26, pnpm 12.16.1, Claude Code and an editor.
 4. Your own copy of the project (a fork), the packages, the local database and the site
    running at http://localhost:8787.
@@ -323,7 +323,6 @@ _(Setup steps, costs and time to be added when the project reaches launch.)_
 | --- | --- |
 | Terminal | A window where you type commands. On Windows, Terminal or PowerShell |
 | Command | A line you type in the terminal and run with Enter |
-| WSL | Windows Subsystem for Linux: a Linux system inside Windows. Optional: the project runs on Windows without it |
 | Folder, project folder | Where the files are. For this project: `~/medical-frailty-dashboard` (`~` is your home folder; on Windows, `C:\Users\yourname`) |
 | Git | The tool that keeps the history of every file |
 | GitHub | The website that hosts the project's files and pull requests |
