@@ -20,7 +20,7 @@ import { chunk, D1_MAX_PARAMS } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, notFound } from './request'
 
 type Row = typeof sourceDocuments.$inferSelect
 
@@ -154,14 +154,14 @@ export const sources = new Hono<AppEnv>()
   // (published, or superseded in the history) bumps data_version, so cached pages refresh.
   .put('/:id', async (c) => {
     const id = idParamSchema.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = sourceDetailsSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) {
       return c.json({ error: body.error.issues[0]?.message ?? 'Invalid details' }, 400)
     }
     const db = createDb(c.env.DB)
     const [row] = await db.select().from(sourceDocuments).where(eq(sourceDocuments.id, id.data))
-    if (!row) return c.json({ error: 'Not found' }, 404)
+    if (!row) return notFound(c)
 
     const [shown] = await db
       .select({ id: datasetVersions.id })
@@ -194,14 +194,14 @@ export const sources = new Hono<AppEnv>()
     const [updated] = shown
       ? (await db.batch([update, audit, bumpDataVersion(db)]))[0]
       : (await db.batch([update, audit]))[0]
-    if (!updated) return c.json({ error: 'Not found' }, 404)
+    if (!updated) return notFound(c)
     const [source] = await withVersions(db, [updated])
     return c.json(source)
   })
 
   .get('/:id/file', async (c) => {
     const id = idParamSchema.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const [row] = await createDb(c.env.DB)
       .select()
       .from(sourceDocuments)
@@ -210,7 +210,7 @@ export const sources = new Hono<AppEnv>()
       return c.json({ error: 'Restored from a backup: the file is not available.' }, 404)
     }
     const object = row ? await c.env.FILES.get(row.r2Key) : null
-    if (!row || !object) return c.json({ error: 'Not found' }, 404)
+    if (!row || !object) return notFound(c)
 
     return new Response(object.body, {
       headers: {

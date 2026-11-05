@@ -36,5 +36,11 @@ export const auditListResponseSchema = z.object({
 
 export type AuditListResponse = z.infer<typeof auditListResponseSchema>
 
-/** A numeric row id in a URL path, e.g. `PUT /api/admin/watch/:id`. */
+/**
+ * A numeric row id in a URL path, e.g. `PUT /api/admin/watch/:id`. Every admin route reads its
+ * ids with this, and answers 404 `Not found` to one that fails.
+ */
 export const idParamSchema = z.coerce.number().int().positive()
+
+/** A state's id: its two-letter postal code, uppercase. In URL paths and in bodies. */
+export const stateIdSchema = z.string().regex(/^[A-Z]{2}$/)

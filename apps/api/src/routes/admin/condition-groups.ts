@@ -19,7 +19,7 @@ import { chunk } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { conditionGroups, conditionMembers } from '../../db/schema'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, idParam, notFound } from './request'
 
 // Condition groups for "like" codes (roadmap M6 step 4; docs/data-model.md, "Like codes").
 // Mounted at /api/admin/condition-groups behind requireAdmin and adminWriteGuard. A save sends
@@ -176,10 +176,10 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
 
   .put('/:id', async (c) => {
     const db = createDb(c.env.DB)
-    const id = Number(c.req.param('id'))
-    if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'Not found' }, 404)
+    const id = idParam(c)
+    if (id === null) return notFound(c)
     const [current] = await db.select().from(conditionGroups).where(eq(conditionGroups.id, id))
-    if (!current) return c.json({ error: 'Not found' }, 404)
+    if (!current) return notFound(c)
     const body = await readBody(c)
     if (!body) return c.json({ error: 'Invalid condition group' }, 400)
     const slug = body.slug ?? current.slug

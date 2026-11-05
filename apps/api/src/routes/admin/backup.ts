@@ -22,7 +22,7 @@ import {
   states,
 } from '../../db/schema'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, notFound, stateParam } from './request'
 
 // Backups (docs/deployment.md, "Backups and restore"). Mounted at /api/admin/backup behind
 // requireAdmin and adminWriteGuard. The download is a zip with one JSON file (format 2). Restore
@@ -169,12 +169,12 @@ export const backupRoute = new Hono<AppEnv>()
 
   // Replaces the state's mappings with the backup's (only when the admin ticked the box).
   .put('/mappings/:stateId', async (c) => {
-    const stateId = c.req.param('stateId')
-    if (!/^[A-Z]{2}$/.test(stateId)) return c.json({ error: 'Not found' }, 404)
+    const stateId = stateParam(c)
+    if (stateId === null) return notFound(c)
     const body = restoreMappingsSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid mappings' }, 400)
     const db = createDb(c.env.DB)
-    if (!(await stateExists(db, stateId))) return c.json({ error: 'Not found' }, 404)
+    if (!(await stateExists(db, stateId))) return notFound(c)
     const {
       categoryMappings: cats,
       chapterMappings: chapters,

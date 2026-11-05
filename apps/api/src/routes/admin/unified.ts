@@ -21,7 +21,7 @@ import { recomputePlacements, universeStatements } from '../../db/placement'
 import { refCcsrCategories, unifiedCategories, unifiedCcsr, unifiedMappings } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, idParam, notFound } from './request'
 
 // Unified categories (roadmap M5 step 3; docs/data-model.md, "Unified categories (M5)").
 // Mounted at /api/admin/unified behind requireAdmin and adminWriteGuard.
@@ -205,10 +205,10 @@ export const unifiedRoute = new Hono<AppEnv>()
 
   .put('/:id', async (c) => {
     const db = createDb(c.env.DB)
-    const id = Number(c.req.param('id'))
-    if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'Not found' }, 404)
+    const id = idParam(c)
+    if (id === null) return notFound(c)
     const [current] = await db.select().from(unifiedCategories).where(eq(unifiedCategories.id, id))
-    if (!current) return c.json({ error: 'Not found' }, 404)
+    if (!current) return notFound(c)
     const body = parseBody(await c.req.json().catch(() => null))
     if (!body) return c.json({ error: 'Invalid unified category' }, 400)
     const { ccsr, ...fields } = body

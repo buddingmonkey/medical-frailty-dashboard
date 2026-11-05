@@ -3,6 +3,7 @@
 // and runs the checks. Nothing here touches the published version.
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import type { CheckId, CheckLevel, CheckReport } from './checks'
 import { MAX_CELL_LENGTH, parseCodeCell } from './codes'
 import {
@@ -18,7 +19,7 @@ import type { ReviewFlag, ReviewResult } from './review'
 /** Entries per `POST /api/admin/drafts/:id/rows`: keeps each request well under Workers CPU limits. */
 export const DRAFT_CHUNK = 500
 
-const stateId = z.string().regex(/^[A-Z]{2}$/)
+const stateId = stateIdSchema
 const id = z.number().int().positive()
 const text = (max: number) => z.string().max(max)
 
@@ -61,9 +62,6 @@ export const draftEntrySchema = z.object({
   attributes: entryAttributesSchema,
 })
 export type DraftEntry = z.infer<typeof draftEntrySchema>
-
-/** A numeric id in a route (`/drafts/:id`). */
-export const routeIdSchema = z.coerce.number().int().positive()
 
 /** Query of `GET /api/admin/drafts`. */
 export const draftListQuerySchema = z.object({ stateId })

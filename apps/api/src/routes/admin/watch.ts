@@ -17,7 +17,7 @@ import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import { states, watchItems } from '../../db/schema'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, notFound } from './request'
 
 type Row = typeof watchItems.$inferSelect
 
@@ -96,14 +96,15 @@ export const watch = new Hono<AppEnv>()
 
   .put('/:id', async (c) => {
     const id = idParamSchema.safeParse(c.req.param('id'))
+    if (!id.success) return notFound(c)
     const body = watchUpdateSchema.safeParse(await c.req.json().catch(() => null))
-    if (!id.success || !body.success) return c.json({ error: 'Invalid item' }, 400)
+    if (!body.success) return c.json({ error: 'Invalid item' }, 400)
     const db = createDb(c.env.DB)
     const actor = actorOf(c)
     const target = `watch:${String(id.data)}`
 
     const [current] = await db.select().from(watchItems).where(eq(watchItems.id, id.data))
-    if (!current) return c.json({ error: 'Not found' }, 404)
+    if (!current) return notFound(c)
     if (current.status !== 'open') return c.json({ error: 'Item is already closed' }, 409)
     const isOpen = and(eq(watchItems.id, id.data), eq(watchItems.status, 'open'))
 

@@ -1,4 +1,5 @@
 import {
+  idParamSchema,
   autoMapCategory,
   type CheckEntry,
   type DraftChecksResponse,
@@ -15,7 +16,6 @@ import {
   publishRequestSchema,
   publishResponseSchema,
   namedStateIdsSchema,
-  routeIdSchema,
   runChecks,
   sha256Hex,
   validateDraftEntry,
@@ -44,7 +44,7 @@ import {
 } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, notFound } from './request'
 
 // Draft versions (docs/ingestion.md, steps 6 and 7). Mounted behind requireAdmin and
 // adminWriteGuard. Every write is limited to one draft (`version_id`) whose status is 'draft':
@@ -53,7 +53,7 @@ import { actorOf } from './request'
 /** Codes per ref_codes lookup: D1 binds at most 100 parameters, and the code system is one. */
 const LOOKUP_CHUNK = D1_MAX_PARAMS - 1
 
-const idParam = routeIdSchema
+const idParam = idParamSchema
 
 /** Matches the version only while it is still a draft: one row, or none once published. */
 const isDraft = (versionId: number) =>
@@ -351,10 +351,10 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .get('/:id', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     return c.json(
       draftDetailSchema.parse({
         ...draftSummarySchema.parse(version),
@@ -367,12 +367,12 @@ export const draftsRoute = new Hono<AppEnv>()
   .put('/:id/sources/:sourceId', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
     const sourceId = idParam.safeParse(c.req.param('sourceId'))
-    if (!id.success || !sourceId.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success || !sourceId.success) return notFound(c)
     const body = draftSourceSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid source' }, 400)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
     const [doc] = await db
       .select({ stateId: sourceDocuments.stateId, title: sourceDocuments.title })
@@ -421,7 +421,7 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .post('/:id/rows', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = draftRowsRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid rows' }, 400)
     const { sourceDocumentId, part, entries: sent } = body.data
@@ -431,7 +431,7 @@ export const draftsRoute = new Hono<AppEnv>()
     }
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
     const [link] = await db
       .select({ expected: draftParts.expectedEntries })
@@ -469,10 +469,10 @@ export const draftsRoute = new Hono<AppEnv>()
   // Runs the checks and stores the report with the rows' token (publish needs it: step 8).
   .get('/:id/checks', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
 
     const result = await runDraftChecks(db, version)
     if (version.status === 'draft') {
@@ -489,12 +489,12 @@ export const draftsRoute = new Hono<AppEnv>()
   // every statement limited to this state or this version.
   .post('/:id/publish', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const body = publishRequestSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid request' }, 400)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can be published' }, 409)
 
     const checks = await runDraftChecks(db, version)
@@ -628,10 +628,10 @@ export const draftsRoute = new Hono<AppEnv>()
 
   .post('/:id/discard', async (c) => {
     const id = idParam.safeParse(c.req.param('id'))
-    if (!id.success) return c.json({ error: 'Not found' }, 404)
+    if (!id.success) return notFound(c)
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
-    if (!version) return c.json({ error: 'Not found' }, 404)
+    if (!version) return notFound(c)
     if (version.status !== 'draft') return c.json({ error: 'Only a draft can be discarded' }, 409)
     await db.batch([
       db

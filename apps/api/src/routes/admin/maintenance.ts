@@ -14,7 +14,7 @@ import { createDb } from '../../db/client'
 import { appMeta } from '../../db/schema'
 import { listWeeklyDumps, runMaintenance } from '../../maintenance/maintenance'
 import type { AppEnv } from '../../types'
-import { actorOf } from './request'
+import { actorOf, notFound } from './request'
 
 // Weekly maintenance from /admin/restore (docs/deployment.md, "Backups and restore"). Both are
 // behind requireAdmin and adminWriteGuard (src/app.ts).
@@ -62,9 +62,9 @@ export const maintenanceRoute = new Hono<AppEnv>()
  */
 export const weeklyBackupRoute = new Hono<AppEnv>().get('/:date', async (c) => {
   const date = weeklyDumpDateSchema.safeParse(c.req.param('date'))
-  if (!date.success) return c.json({ error: 'Not found' }, 404)
+  if (!date.success) return notFound(c)
   const object = await c.env.FILES.get(`${WEEKLY_DUMP_PREFIX}${date.data}.zip`)
-  if (!object) return c.json({ error: 'Not found' }, 404)
+  if (!object) return notFound(c)
   const env = c.env.ENVIRONMENT.toLowerCase().replaceAll(/[^a-z0-9-]/g, '') || 'unknown'
   await auditInsert(createDb(c.env.DB), {
     actorEmail: actorOf(c),

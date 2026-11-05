@@ -9,6 +9,7 @@
 import { Unzip, UnzipInflate } from 'fflate'
 import { z } from 'zod'
 
+import { stateIdSchema } from './admin'
 import {
   type DraftEntry,
   draftEntrySchema,
@@ -600,8 +601,6 @@ export function restoredFileType(source: BackupSourceRow): SourceFileType {
 
 // ---------------------------------------------------------------------------------------------
 // API bodies (`/api/admin/backup/*`)
-
-const stateIdSchema = z.string().regex(/^[A-Z]{2}$/)
 
 /**
  * Body of `POST /api/admin/backup/sources`: the source a restored version cites. The API
