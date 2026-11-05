@@ -7,18 +7,17 @@ import {
   weeklyDumpDateSchema,
 } from '@mfcd/shared'
 import { eq } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb } from '../../db/client'
 import { appMeta } from '../../db/schema'
 import { listWeeklyDumps, runMaintenance } from '../../maintenance/maintenance'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Weekly maintenance from /admin/restore (docs/deployment.md, "Backups and restore"). Both are
 // behind requireAdmin and adminWriteGuard (src/app.ts).
-
-const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
 /** The stored last run, or null when the value is not valid JSON or not a run. */
 function lastRun(value: string): MaintenanceRun | null {

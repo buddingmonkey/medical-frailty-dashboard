@@ -22,7 +22,7 @@ import {
   verifyConfirmations,
 } from '@mfcd/shared'
 import { and, asc, count, desc, eq, inArray, min, notInArray, sql } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { type AuditRecord, auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
@@ -44,6 +44,7 @@ import {
 } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Draft versions (docs/ingestion.md, steps 6 and 7). Mounted behind requireAdmin and
 // adminWriteGuard. Every write is limited to one draft (`version_id`) whose status is 'draft':
@@ -115,8 +116,6 @@ async function findVersion(db: Db, id: number) {
   const [row] = await db.select().from(datasetVersions).where(eq(datasetVersions.id, id))
   return row
 }
-
-const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
 /** Rows of a version as the checks see them. */
 async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {

@@ -21,6 +21,7 @@ import { recomputePlacements, universeStatements } from '../../db/placement'
 import { refCcsrCategories, unifiedCategories, unifiedCcsr, unifiedMappings } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Unified categories (roadmap M5 step 3; docs/data-model.md, "Unified categories (M5)").
 // Mounted at /api/admin/unified behind requireAdmin and adminWriteGuard.
@@ -163,7 +164,7 @@ export const unifiedRoute = new Hono<AppEnv>()
       return c.json({ error: `Unknown CCSR group: ${unknown.join(', ')}` }, 400)
     if (await slugTaken(db, slug)) return c.json(slugClash(slug), 409)
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const write = db.batch([
       db
@@ -238,7 +239,7 @@ export const unifiedRoute = new Hono<AppEnv>()
     // Drafts are never public, and a draft retired unpublished never was; anything else can
     // change public pages.
     const isPublic = current.status !== 'draft' || fields.status === 'published'
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const write = db.batch([
       db
         .update(unifiedCategories)

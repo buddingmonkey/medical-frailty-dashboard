@@ -31,6 +31,7 @@ import {
   states,
 } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Category mapping screen (roadmap M2 step 9; docs/ingestion.md, "Category auto-mapping").
 // Mounted at /api/admin/states behind requireAdmin and adminWriteGuard. Mappings belong to the
@@ -332,7 +333,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     if (changes) {
       return c.json({ error: 'This changes a federal category. Preview the change first.' }, 409)
     }
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const upserts = body.data.items.map((item) => {
       const values = {
@@ -398,7 +399,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     if (preview.token !== token) {
       return c.json({ error: 'The data changed since the preview. Preview again.' }, 409)
     }
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const categoryWrites = changes.categories.map((item) => {
       const values = {

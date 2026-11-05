@@ -17,6 +17,7 @@ import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import { states, watchItems } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 type Row = typeof watchItems.$inferSelect
 
@@ -77,7 +78,7 @@ export const watch = new Hono<AppEnv>()
     if (!body.success) return c.json({ error: 'Invalid item' }, 400)
     const db = createDb(c.env.DB)
     if (!(await stateExists(db, body.data.stateId))) return c.json({ error: 'Unknown state' }, 400)
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
 
     const [row] = await db
       .insert(watchItems)
@@ -98,7 +99,7 @@ export const watch = new Hono<AppEnv>()
     const body = watchUpdateSchema.safeParse(await c.req.json().catch(() => null))
     if (!id.success || !body.success) return c.json({ error: 'Invalid item' }, 400)
     const db = createDb(c.env.DB)
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const target = `watch:${String(id.data)}`
 
     const [current] = await db.select().from(watchItems).where(eq(watchItems.id, id.data))

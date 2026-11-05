@@ -26,6 +26,7 @@ import {
 } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Mapping screen for unified categories (roadmap M5 step 3; docs/data-model.md, "Unified
 // categories (M5)"). Mounted at /api/admin/states behind requireAdmin and adminWriteGuard.
@@ -208,7 +209,7 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       }
     }
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const now = new Date().toISOString()
     const status = body.approve ? ('approved' as const) : ('proposed' as const)
     const common = {
@@ -297,7 +298,7 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       .orderBy(asc(unifiedMappings.id))
     const first = proposed[0]
     if (!first) return c.json({ error: 'There is no proposal to approve' }, 409)
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     await db.batch([
       db
         .update(unifiedMappings)

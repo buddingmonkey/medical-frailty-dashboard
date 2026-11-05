@@ -19,6 +19,7 @@ import { chunk } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { conditionGroups, conditionMembers } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Condition groups for "like" codes (roadmap M6 step 4; docs/data-model.md, "Like codes").
 // Mounted at /api/admin/condition-groups behind requireAdmin and adminWriteGuard. A save sends
@@ -139,7 +140,7 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
     if (!parsed.ok) return c.json({ error: parsed.error }, 400)
     if (await slugTaken(db, slug)) return c.json(slugClash(slug), 409)
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const write = db.batch([
       db
         .insert(conditionGroups)
@@ -198,7 +199,7 @@ export const conditionGroupsRoute = new Hono<AppEnv>()
     /** [before, after] when a field changed; left out of the audit row otherwise. */
     const diff = (a: string, b: string) => (a === b ? undefined : [a, b])
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     const write = db.batch([
       db
         .update(conditionGroups)

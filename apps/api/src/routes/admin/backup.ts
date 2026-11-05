@@ -6,7 +6,7 @@ import {
   restoreSourceResponseSchema,
 } from '@mfcd/shared'
 import { and, eq } from 'drizzle-orm'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { backupBaseName, createZipWriter, writeFullBackup } from '../../db/backup-dump'
@@ -22,14 +22,13 @@ import {
   states,
 } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Backups (docs/deployment.md, "Backups and restore"). Mounted at /api/admin/backup behind
 // requireAdmin and adminWriteGuard. The download is a zip with one JSON file (format 2). Restore
 // path 2 reads a backup in the browser and sends one version through the normal draft API; the
 // routes here only add what that API lacks: the cited source (metadata only, when its file is
 // gone) and, if the admin asks, the state's mappings.
-
-const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
 async function stateExists(db: Db, id: string): Promise<boolean> {
   const [row] = await db.select({ id: states.id }).from(states).where(eq(states.id, id))

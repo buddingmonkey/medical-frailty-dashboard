@@ -11,6 +11,7 @@ import { type AiComplete, type AiCompletion, DEFAULT_AI_MODEL } from '../../ai/c
 import { createDb } from '../../db/client'
 import { auditLog, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Optional Claude API button for AI cleanup (docs/ingestion.md, "AI cleanup";
 // docs/security.md, "AI cleanup"). Mounted behind requireAdmin and adminWriteGuard. Without the
@@ -61,7 +62,7 @@ export function aiCleanupRoute(complete: AiComplete) {
          RETURNING id`,
       )
         .bind(
-          c.var.identity?.email ?? '',
+          actorOf(c),
           target,
           JSON.stringify({ ...facts, outcome: 'pending' }),
           hourAgo,

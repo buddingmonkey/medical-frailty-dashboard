@@ -20,6 +20,7 @@ import { chunk, D1_MAX_PARAMS } from '../../db/d1-limits'
 import { bumpDataVersion } from '../../db/meta'
 import { datasetVersions, sourceDocuments, states, versionSources } from '../../db/schema'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 type Row = typeof sourceDocuments.$inferSelect
 
@@ -110,7 +111,7 @@ export const sources = new Hono<AppEnv>()
       httpMetadata: { contentType: 'application/octet-stream', contentDisposition: 'attachment' },
     })
 
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     try {
       const [inserted] = await db
         .insert(sourceDocuments)
@@ -181,7 +182,7 @@ export const sources = new Hono<AppEnv>()
       .where(eq(sourceDocuments.id, row.id))
       .returning()
     const audit = auditInsert(db, {
-      actorEmail: c.var.identity?.email ?? '',
+      actorEmail: actorOf(c),
       action: 'source.update',
       target: `source:${String(row.id)}`,
       details: {

@@ -15,6 +15,7 @@ import { recomputeSimilarity } from '../../db/similarity'
 import { datasetVersions, states } from '../../db/schema'
 import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
+import { actorOf } from './request'
 
 // Mounted behind requireAdmin and adminWriteGuard. The state picker for uploads and watch
 // items, a state's versions, and rollback.
@@ -73,7 +74,7 @@ export const adminStates = new Hono<AppEnv>()
       .from(states)
       .where(eq(states.id, stateId))
     const now = new Date().toISOString()
-    const actor = c.var.identity?.email ?? ''
+    const actor = actorOf(c)
     await db.batch([
       db
         .update(datasetVersions)
