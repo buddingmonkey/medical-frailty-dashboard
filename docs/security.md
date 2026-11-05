@@ -105,7 +105,9 @@ unless the Access application bypasses that path.)
   any file.
 - `ANTHROPIC_API_KEY` is a Worker secret and is never sent to the browser. The AI endpoint is
   admin-only and rate-limited (30 calls per hour across all admins, counted in the audit log).
-  Set a monthly spend limit in the Anthropic Console.
+  Each call reserves its audit row before it starts (one conditional insert), so calls still
+  waiting for Claude count toward the limit, and a failed call stays counted. Set a monthly
+  spend limit in the Anthropic Console.
 - The server builds the prompt from the part's text, so the key cannot be used as a general
   chat proxy. The source text sits between `<source_text>` tags, marked as data. The answer is
   validated with zod (`parseAiOutput`) in the browser and never rendered as HTML.

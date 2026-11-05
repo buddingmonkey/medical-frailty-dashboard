@@ -100,6 +100,47 @@ describe('/api/admin/ai-cleanup', () => {
     expect(fakeAi.calls).toEqual([])
   })
 
+  it('counts calls still in flight toward the hourly limit', async () => {
+    await createDb(env.DB)
+      .insert(auditLog)
+      .values(
+        Array.from({ length: 29 }, () => ({
+          actorEmail: 'a@example.org',
+          action: 'ai.cleanup',
+          target: 'state:MT',
+        })),
+      )
+    let finish = (): void => undefined
+    const held = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    const answer = fakeAi.answer
+    fakeAi.answer = async () => {
+      await held
+      return answer()
+    }
+    const first = post(body)
+    while (fakeAi.calls.length === 0) await new Promise((resolve) => setTimeout(resolve, 5))
+    // The 30th call is still waiting for Claude: the 31st is refused all the same.
+    const second = await post(body)
+    expect(second.status).toBe(429)
+    expect(fakeAi.calls).toHaveLength(1)
+    finish()
+    expect((await first).status).toBe(200)
+    const rows = await createDb(env.DB).select().from(auditLog)
+    expect(rows.filter((r) => r.action === 'ai.cleanup')).toHaveLength(30)
+  })
+
+  it('keeps a failed call counted and audited', async () => {
+    fakeAi.answer = () => Promise.reject(new Error('network down'))
+    const res = await post(body)
+    expect(res.status).toBe(500)
+    const rows = await createDb(env.DB).select().from(auditLog)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.action).toBe('ai.cleanup')
+    expect(JSON.parse(rows[0]?.detailsJson ?? '{}')).toMatchObject({ outcome: 'failed' })
+  })
+
   it('says when the model declined, and refuses an unknown state or a bad body', async () => {
     fakeAi.answer = () => ({
       text: '',
