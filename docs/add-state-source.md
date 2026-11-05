@@ -83,15 +83,16 @@ Choose the state. Each of its categories needs one or more comparison categories
 "unified categories" in the admin pages). The page suggests them from the CCSR groups (AHRQ's grouping of diagnosis codes) of the
 state's diagnosis codes. Check the suggestion, save, and approve. Until a category is approved,
 the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
-readiness) needs every category of at least 2 states approved.
+readiness) needs at least 2 states whose every category is approved and shows "Reviewed".
 
 ## 8. Check the federal categories (Admin → Federal categories)
 
 A code's federal category follows its comparison categories. The mapping here is the fallback
-for codes in no comparison category. Publishing stores keyword guesses, and the public pages use
-them right away; **Confirm** each one, or "Confirm all" after reading them. For states without categories (Georgia, Nebraska)
-map "(no category)" and use **chapter overrides**. A change that moves published codes shows a
-preview first.
+for codes in no comparison category. When you publish, the site guesses a federal category from
+the name of each new state category. The public pages use these guesses right away, marked
+"Not yet reviewed". Read each guess, then click **Confirm**, or **Confirm all guesses** after
+reading them all. For states without categories (Georgia, Nebraska), map "(no category)" and use
+**chapter overrides**. A change that moves published codes shows a preview first.
 
 ## If a file will not read
 

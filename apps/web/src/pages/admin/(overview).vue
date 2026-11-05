@@ -6,8 +6,8 @@
       recorded in the <RouterLink to="/admin/audit">Audit log</RouterLink>.
     </p>
     <p class="text-foreground">
-      The real site holds the real lists. The preview site, with the gold “Preview site” banner,
-      holds test data, and nothing you change there reaches the real site.
+      The real site holds the real lists. The preview site holds test data and shows a “Preview
+      site” banner at the top of every page. Nothing you change there reaches the real site.
     </p>
 
     <h3 class="font-display text-xl font-medium text-heading">Add or update a state’s list</h3>
@@ -28,8 +28,8 @@
         to unified categories and approve them.
       </li>
       <li>
-        <RouterLink to="/admin/categories">Federal categories</RouterLink>: confirm the guessed
-        federal category for each state category.
+        <RouterLink to="/admin/categories">Federal categories</RouterLink>: confirm or correct the
+        guessed federal category for each state category.
       </li>
     </ol>
     <p class="text-foreground">
@@ -39,9 +39,12 @@
     <h3 class="font-display text-xl font-medium text-heading">Other pages</h3>
     <ul class="list-disc space-y-1 pl-6 text-foreground">
       <li>
-        <RouterLink to="/admin/unified">Unified categories</RouterLink> and
-        <RouterLink to="/admin/condition-groups">Condition groups</RouterLink>: the shared groups
-        used to compare states and to show like codes.
+        <RouterLink to="/admin/unified">Unified categories</RouterLink>: the shared categories used
+        to compare states.
+      </li>
+      <li>
+        <RouterLink to="/admin/condition-groups">Condition groups</RouterLink>: the code groups
+        behind the “Like codes” section of a code’s page.
       </li>
       <li>
         <RouterLink to="/admin/launch-readiness">Launch readiness</RouterLink>: which states are

@@ -178,7 +178,7 @@ function duplicateText(source: SourceDocument): string {
   const versions = source.versions.map((v) => String(v.versionNo)).join(', ')
   return `This file was already loaded on ${when} ${
     versions === '' ? '(not in any version yet)' : `as version ${versions}`
-  }, titled “${source.title}”. There is nothing new to upload: use the stored copy in Read and map.`
+  }, titled “${source.title}”. There is nothing new to upload. Open the same file in Read and map, and it is matched to the stored copy.`
 }
 
 function formatSize(bytes: number): string {

@@ -135,13 +135,13 @@ describe('/api/admin/sources', () => {
     const wrongHash = await upload(pdf, { sha256: 'b'.repeat(64) })
     expect(wrongHash.status).toBe(400)
     expect(await wrongHash.json()).toEqual({
-      error: 'The file changed on the way to the server. Upload it again.',
+      error: 'The file the server received does not match the file you picked. Upload it again.',
     })
 
     const notPdf = await upload(csv, { fileType: 'pdf' })
     expect(notPdf.status).toBe(400)
     expect(await notPdf.json()).toEqual({
-      error: 'The file’s contents do not match its type (.pdf).',
+      error: 'The file name ends in .pdf, but the file is not a .pdf file.',
     })
 
     expect(await storedKeys()).toEqual([])

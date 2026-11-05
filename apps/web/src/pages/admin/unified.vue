@@ -275,9 +275,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       </button>
       <p class="max-w-prose text-muted-foreground">
         It runs in three steps (full code lists, placements, state similarity) and shows its
-        progress. Keep the page open; it can take a few minutes. When the database has too much to
-        do, the page waits and tries again. If it stops, press the button again: it changes only
-        what is still out of date.
+        progress. Keep the page open: it can take a few minutes. If the database is overloaded, the
+        page waits and tries again, up to three times. If it stops, press the button again. It
+        starts over, but changes only what is still out of date.
       </p>
       <p v-if="rebuild.isPending.value && progress" role="status">
         {{ coverageRebuildProgressText(progress) }}

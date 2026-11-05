@@ -112,8 +112,8 @@ function size(bytes: number): string {
         <h4 class="font-medium text-heading">Saved backups</h4>
         <p class="text-sm text-muted-foreground">
           Sunday backups and those made with Run maintenance now, newest first. Each is the same zip
-          as Download backup, plus where each source file is stored, so a developer can rebuild the
-          whole database from it. Like the download, it holds admin email addresses: keep it
+          as Download backup, plus where each source file is stored, so a developer who rebuilds the
+          database can find the files. Like the download, it holds admin email addresses. Keep it
           private.
         </p>
         <p v-if="status.data.value.weekly.length === 0" class="text-muted-foreground">
@@ -154,11 +154,11 @@ function size(bytes: number): string {
 
     <div class="space-y-2 rounded border border-border bg-surface p-3">
       <p class="text-foreground">
-        <strong>Run maintenance now</strong> does the same as the Sunday run: it saves a backup,
-        removes the old backups listed above, deletes open drafts with no activity for
-        {{ DRAFT_EXPIRY_DAYS }} days (and their source files, when no other version uses them), and
+        <strong>Run maintenance now</strong> does the same as the Sunday run. It saves a backup and
+        removes backups beyond the numbers kept. It deletes open drafts with no activity for
+        {{ DRAFT_EXPIRY_DAYS }} days, with their source files when no other version uses them. It
         empties drafts discarded more than {{ DRAFT_EXPIRY_DAYS }} days ago. Published and earlier
-        versions are never touched. A backup replaces any earlier one from the same day (UTC).
+        versions are never touched. A new backup replaces any earlier one from the same day (UTC).
       </p>
       <button
         type="button"

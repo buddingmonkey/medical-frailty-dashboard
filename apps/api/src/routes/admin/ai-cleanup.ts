@@ -72,7 +72,7 @@ export function aiCleanupRoute(complete: AiComplete) {
       if (!reserved) {
         return c.json(
           {
-            error: `The limit of ${String(AI_CALLS_PER_HOUR)} AI calls an hour is reached; failed calls count too. Try again later, or copy the prompt into an AI assistant.`,
+            error: `The site has used its ${String(AI_CALLS_PER_HOUR)} AI calls for the past hour. Failed calls count too. Try again later, or copy the prompt into any AI assistant.`,
           },
           429,
         )
@@ -108,7 +108,7 @@ export function aiCleanupRoute(complete: AiComplete) {
         return c.json(
           {
             error:
-              'The model declined this part. Copy the prompt into another AI assistant instead.',
+              'The AI declined to clean up this part. Copy the prompt into another AI assistant instead.',
           },
           422,
         )

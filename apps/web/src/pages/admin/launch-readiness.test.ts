@@ -61,13 +61,13 @@ describe('/admin/launch-readiness', () => {
     expect(within(ga).getByRole('link', { name: '2 unmapped' }).getAttribute('href')).toBe(
       '/admin/mappings',
     )
-    expect(within(ga).getByRole('link', { name: '1 unconfirmed' }).getAttribute('href')).toBe(
+    expect(within(ga).getByRole('link', { name: '1 not approved' }).getAttribute('href')).toBe(
       '/admin/mappings',
     )
     expect(within(ga).getByRole('link', { name: '1 unmapped' }).getAttribute('href')).toBe(
       '/admin/categories',
     )
-    expect(within(ga).getByRole('link', { name: '3 auto' }).getAttribute('href')).toBe(
+    expect(within(ga).getByRole('link', { name: '3 guessed' }).getAttribute('href')).toBe(
       '/admin/categories',
     )
     expect(ga.textContent).toContain('Not ready')

@@ -268,9 +268,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       </p>
       <p class="max-w-prose text-muted-foreground">
         When a list is published, a new state category whose name matches a keyword gets a guessed
-        federal category, and the public pages use the guess right away. Read each guess and click
-        Confirm, or confirm them all at once. A change that moves published codes shows a preview
-        before it is saved.
+        federal category. The public pages use the guess right away for codes in no unified
+        category, marked “Not yet reviewed”. Read each guess and click Confirm, or confirm them all
+        at once. A change that moves published codes shows a preview before it is saved.
       </p>
     </div>
     <div class="max-w-xs">
