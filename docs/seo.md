@@ -163,7 +163,7 @@ end to the Worker.
 - Built (M3 step 4): `Dataset` on state pages (no `license` yet: the legal team decides what
   licence the compiled lists carry; `docs/legal-review.md`, item 1), `WebSite` on the home page.
 - **Built (M8 step 3):** the home page's `WebSite` names this site as `publisher`
-  (`Organization`, `siteOrganization` in `seo/pages.ts`). The compare tabs `/compare`,
+  (`Organization`, `siteOrganization` in `seo/pages/shared.ts`). The compare tabs `/compare`,
   `/compare/categories` and `/compare/map` are `CollectionPage`s; a bare category page
   (`/compare/<slug>`) is a `Dataset` (the table caption as name, the definition plus "A comparison
   category: …" as description, since Google wants at least 50 characters, the CSV download as
@@ -246,7 +246,7 @@ accurately than scraped tables.
   logo.
 - **Head tags on every page.** `apps/web/index.html` links the icons (SVG, then the 32 px PNG),
   the Apple touch icon, the manifest and `theme-color` for light (`#0c2a59`) and dark
-  (`#031b3f`, the dark header). The Worker's `headTags` (`apps/api/src/seo/pages.ts`) drops
+  (`#031b3f`, the dark header). The Worker's `headTags` (`apps/api/src/seo/pages/shared.ts`) drops
   index.html's copies and writes the same set plus canonical, `og:type`, `og:site_name`,
   `og:title`, `og:description`, `og:url` (canonical), `og:image` (absolute, on the request's
   origin) with type, size and alt, and `twitter:card=summary_large_image`. Paths and colours:
