@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseMarkdown } from './markdown'
+import { parseInline, parseMarkdown } from './markdown'
 
 describe('parseMarkdown', () => {
   it('reads headings, paragraphs joined across lines, and lists', () => {
@@ -46,5 +46,25 @@ describe('parseMarkdown', () => {
         { type: 'text', text: ' or bad).' },
       ],
     })
+  })
+
+  it('keeps site paths as links but not protocol-relative or backslash ones', () => {
+    const hrefs = [
+      '/admin/guide',
+      '//evil.example',
+      '/\\evil.example',
+      '\\\\evil.example',
+      '/\\/x',
+      '/\t/evil.example',
+    ]
+    const links = hrefs.map((href) => parseInline(`[x](${href})`)[0])
+    expect(links).toEqual([
+      { type: 'link', text: 'x', href: '/admin/guide' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+    ])
   })
 })

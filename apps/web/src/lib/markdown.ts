@@ -15,7 +15,16 @@ export type Block =
   | { type: 'list'; ordered: boolean; items: Inline[][] }
   | { type: 'code'; text: string }
 
-const safeHref = (href: string) => href.startsWith('https://') || href.startsWith('/')
+/**
+ * An https link or a path on this site. Browsers read `\` as `/` and drop tabs and newlines, so
+ * a href with a backslash, whitespace or control character is refused, and `//host` (another
+ * site, protocol-relative) is not a path.
+ */
+function safeHref(href: string): boolean {
+  if (/[\\\s\p{Cc}]/u.test(href)) return false
+  if (href.startsWith('https://')) return true
+  return href.startsWith('/') && !href.startsWith('//')
+}
 
 function pushText(out: Inline[], text: string) {
   if (text === '') return
