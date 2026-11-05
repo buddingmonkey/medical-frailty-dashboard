@@ -310,7 +310,7 @@ with a gold test-site banner (`apps/api/src/middleware/environment-banner.ts`).
 | Backup | How | Kept |
 | --- | --- | --- |
 | Before every publish | The Worker writes the state's current published version as JSON to R2 (`backups/<state>/<version id>.json`, **format 1**: version row, sources (metadata, SHA-256, and since M7 step 1 file type and size), parts, entries; `apps/api/src/db/backup.ts`). Built in M2 step 8 | Newest 20 per state, by version id: the weekly maintenance deletes older ones and writes one `backup.prune` audit row per run with the counts. Built in M7 step 2 |
-| Weekly full dump | Cron Trigger `0 7 * * SUN` (Sunday 07:00 UTC, both Workers; `triggers` in `wrangler.jsonc`) → `backups/weekly/<UTC date>.zip`: the same zip as the manual download (format 2, same writer) **plus each source's R2 key** (`storageKeys: true`), because it stays in R2 and restore path 3 needs the keys to find the source files. The zip is buffered in memory and put in one call (R2 needs a known length; a 32 MB cap, `WEEKLY_DUMP_MAX_BYTES`, fails the dump rather than the Worker). Listed on `/admin/restore`, with an admin-only download (`GET /api/admin/backup/weekly/:date`, audited `backup.weekly.download`). Built in M7 step 2 (`apps/api/src/maintenance/`) | Newest 12 (older ones deleted by the same run) |
+| Weekly full dump | Cron Trigger `0 7 * * SUN` (Sunday 07:00 UTC, both Workers; `triggers` in `wrangler.jsonc`) → `backups/weekly/<UTC date>.zip`: the same zip as the manual download (format 2, same writer) **plus each source's R2 key** (`storageKeys: true`), because it stays in R2 and restore path 3 needs the keys to find the source files. The zip is buffered in memory and put in one call (R2 needs a known length; a 32 MB cap, `WEEKLY_DUMP_MAX_BYTES`, fails the dump rather than the Worker). Listed on `/admin/restore`, with an admin-only download (`GET /api/admin/backup/weekly/:date`, audited `backup.weekly.download`). Built in M7 step 2 (`apps/api/src/maintenance/`) | Newest 12 weekly plus newest 3 from **Run maintenance now** (older ones deleted by the same run) |
 | Before each production deploy | CI records the D1 Time Travel bookmark (`wrangler d1 time-travel info`) in the deploy log, then migrates. Not `wrangler d1 export`: it refuses databases with virtual tables, and `entries_fts` is one (user, 2026-11-01) | 7 days (Time Travel window) |
 | Manual download | Admin → **Backup and restore** → "Download backup" → `GET /api/admin/backup` streams `frailty-backup-<env>-<UTC timestamp>.zip`: one deflated JSON file (**format 2**) with `format`, `writtenAt`, `environment`, `migration` (last applied), `dataVersion`, `notes`, every state-data table (`BACKUP_TABLES` in `packages/shared/src/backup.ts`) and `"complete": true` last. Written table by table, 500 rows per query (keyset on rowid), through a streaming zip (fflate); never whole in memory (`apps/api/src/db/backup-dump.ts`). Built in M7 step 1 | Your computer |
 | Point in time | D1 Time Travel (`wrangler d1 time-travel restore`) | 7 days free / 30 days paid |
@@ -358,13 +358,19 @@ drill on the preview database once before launch.
 
 One function, `runMaintenance` (`apps/api/src/maintenance/maintenance.ts`), runs four parts in
 order, each in its own try/catch so one failure never skips the rest: weekly dump → prune
-weekly dumps (keep 12) → prune per-publish backups (keep 20 per state) → draft cleanup
+weekly dumps (keep 12 weekly and 3 manual) → prune per-publish backups (keep 20 per state) → draft cleanup
 (`docs/data-model.md`, "Replacing a state's list", step 6). The result (time, trigger, each
 part's status, counts, timing and error message; never row data) goes to
 `app_meta.last_maintenance`, shown on `/admin/restore` → **Maintenance**. The cron runs it as
 `maintenance (cron)` in the audit log. **Run maintenance now** on the same page
 (`POST /api/admin/maintenance`, audited `maintenance.run`) runs it by hand as the admin, so it
 can be tried on preview on any day.
+
+**Which dumps are kept.** Each dump carries the R2 custom metadata `trigger` (`cron` or
+`manual`). Pruning keeps the newest 12 cron dumps (`KEEP_WEEKLY_DUMPS`) and, apart from them,
+the newest 3 manual ones (`KEEP_MANUAL_DUMPS`), so manual runs never push weekly dumps out. A
+dump without the tag (written before 2026-11-04) counts as weekly. A manual run on the day of a
+weekly dump replaces that day's file (the key is the date) and keeps its `cron` tag.
 
 Trigger the cron locally:
 

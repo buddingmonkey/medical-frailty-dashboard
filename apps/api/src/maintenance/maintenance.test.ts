@@ -1,5 +1,6 @@
 import {
   fullBackupSchema,
+  KEEP_MANUAL_DUMPS,
   KEEP_PUBLISH_BACKUPS,
   KEEP_WEEKLY_DUMPS,
   LAST_MAINTENANCE_KEY,
@@ -304,6 +305,53 @@ describe('weekly dumps', () => {
     expect(left).toEqual(dates.slice(2).map((d) => `backups/weekly/${d}.zip`))
     expect(await keys('backups/MT/')).toHaveLength(1)
     expect((await listWeeklyDumps(env.FILES)).map((d) => d.date)).toEqual(dates.slice(2).reverse())
+  })
+})
+
+describe('manual dumps', () => {
+  const weekly = (i: number) => new Date(Date.UTC(2026, 7, 2 + 7 * i)).toISOString().slice(0, 10)
+  const manual = (i: number) => new Date(Date.UTC(2026, 10, 2 + i)).toISOString().slice(0, 10)
+
+  it('tags a dump with what made it', async () => {
+    await writeWeeklyDump(env, NOW, 'manual')
+    const object = await env.FILES.head('backups/weekly/2026-11-08.zip')
+    expect(object?.customMetadata?.['trigger']).toBe('manual')
+    await env.FILES.delete('backups/weekly/2026-11-08.zip')
+    await writeWeeklyDump(env, NOW)
+    const cron = await env.FILES.head('backups/weekly/2026-11-08.zip')
+    expect(cron?.customMetadata?.['trigger']).toBe('cron')
+  })
+
+  it('keeps the weekly tag when a manual run replaces that day’s weekly dump', async () => {
+    await writeWeeklyDump(env, NOW, 'cron')
+    await writeWeeklyDump(env, NOW, 'manual')
+    const object = await env.FILES.head('backups/weekly/2026-11-08.zip')
+    expect(object?.customMetadata?.['trigger']).toBe('cron')
+  })
+
+  it(`keeps ${String(KEEP_WEEKLY_DUMPS)} weekly dumps however many manual runs are newer`, async () => {
+    const cron = Array.from({ length: KEEP_WEEKLY_DUMPS + 1 }, (_, i) => weekly(i))
+    const byHand = Array.from({ length: KEEP_MANUAL_DUMPS + 2 }, (_, i) => manual(i))
+    // Untagged dumps (written before the tag existed) count as weekly.
+    await env.FILES.put(`backups/weekly/${cron[0] ?? ''}.zip`, 'zip')
+    for (const date of cron.slice(1)) {
+      await env.FILES.put(`backups/weekly/${date}.zip`, 'zip', {
+        customMetadata: { trigger: 'cron' },
+      })
+    }
+    for (const date of byHand) {
+      await env.FILES.put(`backups/weekly/${date}.zip`, 'zip', {
+        customMetadata: { trigger: 'manual' },
+      })
+    }
+
+    expect(await pruneWeeklyDumps(env.FILES)).toEqual({
+      deleted: 3,
+      kept: KEEP_WEEKLY_DUMPS + KEEP_MANUAL_DUMPS,
+    })
+    expect(await keys('backups/weekly/')).toEqual(
+      [...cron.slice(1), ...byHand.slice(2)].map((d) => `backups/weekly/${d}.zip`),
+    )
   })
 })
 

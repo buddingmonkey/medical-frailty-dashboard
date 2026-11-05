@@ -10,8 +10,13 @@ export const LAST_MAINTENANCE_KEY = 'last_maintenance'
 export const DRAFT_EXPIRY_DAYS = 30
 /** Per-publish backups (`backups/<state>/<version id>.json`) kept per state. */
 export const KEEP_PUBLISH_BACKUPS = 20
-/** Weekly dumps (`backups/weekly/<UTC date>.zip`) kept. */
+/**
+ * Weekly dumps (`backups/weekly/<UTC date>.zip`) kept: the cron's. A dump's R2 custom metadata
+ * `trigger` says what made it; one without the tag (written before it existed) counts as weekly.
+ */
 export const KEEP_WEEKLY_DUMPS = 12
+/** Dumps made by "Run maintenance now" kept, apart from the weekly ones. */
+export const KEEP_MANUAL_DUMPS = 3
 /**
  * Hard cap on a weekly dump's zip, which is buffered in memory before the R2 put. The real full
  * data zips to about 1 MB; a Worker has 128 MB. Above the cap the dump fails and says so.
