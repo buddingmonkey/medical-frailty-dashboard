@@ -1,0 +1,42 @@
+name: Suggest a feature
+description: An idea that would make the site more useful for comparing state lists.
+title: '[Idea] <short summary>'
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Ideas from advocates, researchers, state staff and providers help the most
+        when they start from a real question you need to answer. To ask for a state's list to
+        be added, use this form and link the state's published document.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The question or task the site does not help with today.
+      placeholder: e.g. I need to know which states list a code as enough by itself, across a whole category.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you picture it working. Rough is fine.
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Which best describes you?
+      options:
+        - State Medicaid staff
+        - Health care provider or association
+        - Advocate or legal aid
+        - Researcher or journalist
+        - Developer or contributor
+        - Other
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you do this today?
+      description: Any workaround, other tool or source you use now.

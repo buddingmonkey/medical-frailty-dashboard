@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseMarkdown } from './markdown'
+import { parseInline, parseMarkdown, safeMarkdownHref } from './markdown'
 
 describe('parseMarkdown', () => {
   it('reads headings, paragraphs joined across lines, and lists', () => {
@@ -46,5 +46,47 @@ describe('parseMarkdown', () => {
         { type: 'text', text: ' or bad).' },
       ],
     })
+  })
+
+  it('keeps same-site links and drops protocol-relative ones', () => {
+    expect(parseInline('[ok](/states/ga) [bad](//evil.example)')).toEqual([
+      { type: 'link', text: 'ok', href: '/states/ga' },
+      { type: 'text', text: ' bad' },
+    ])
+  })
+})
+
+describe('safeMarkdownHref', () => {
+  it('allows https and same-site paths', () => {
+    expect(safeMarkdownHref('https://example.org/a')).toBe(true)
+    expect(safeMarkdownHref('/states/ga')).toBe(true)
+    expect(safeMarkdownHref('/')).toBe(true)
+  })
+
+  it('rejects other schemes', () => {
+    for (const href of [
+      'http://example.org',
+      'javascript:alert(1)',
+      'data:text/html,x',
+      'mailto:a',
+    ]) {
+      expect(safeMarkdownHref(href)).toBe(false)
+    }
+  })
+
+  it('rejects protocol-relative URLs, backslash variants and hidden whitespace', () => {
+    // Browsers read `\` as `/` and drop tabs and newlines, so each of these leaves the site.
+    for (const href of [
+      '//evil.example',
+      '/\\evil.example',
+      '\\\\evil.example',
+      '\\/evil.example',
+      '/\t/evil.example',
+      '/\n/evil.example',
+      ' //evil.example',
+      'https://ok.example/ x',
+    ]) {
+      expect(safeMarkdownHref(href)).toBe(false)
+    }
   })
 })

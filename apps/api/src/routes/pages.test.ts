@@ -151,6 +151,36 @@ describe('GET /states/:slug (server-rendered)', () => {
     expect(jsonLd(html)).toHaveLength(1)
   })
 
+  it('renders the notes Markdown as escaped HTML, as the Vue page does', async () => {
+    await db
+      .update(states)
+      .set({
+        notesMd:
+          '# Two lists\n\nGeorgia has **two** lists. See [the PDF](https://example.org/a.pdf), ' +
+          '[codes](/codes), [bad](javascript:alert(1)) and [far](//evil.example).\n\n' +
+          '- first `F20`\n- <script>alert(1)</script>\n\n```\na < b\n```',
+      })
+      .where(eq(states.id, 'GA'))
+
+    const app = appHtml(await (await get('/states/ga')).text())
+    const notes = app.slice(app.indexOf('<h2>Notes</h2>'))
+
+    expect(notes).toContain('<h3>Two lists</h3>')
+    expect(notes).toContain(
+      '<p>Georgia has <strong>two</strong> lists. See ' +
+        '<a href="https://example.org/a.pdf" rel="noopener noreferrer external">the PDF</a>, ' +
+        '<a href="/codes">codes</a>, bad) and far.</p>',
+    )
+    expect(notes).toMatch(
+      /<ul>\s*<li>first <code>F20<\/code><\/li>\s*<li>&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/li>\s*<\/ul>/,
+    )
+    expect(notes).toContain('<pre><code>a &lt; b</code></pre>')
+    expect(notes).not.toContain('**')
+    expect(notes).not.toContain('<script>')
+    expect(notes).not.toContain('javascript:')
+    expect(notes).not.toContain('evil.example')
+  })
+
   it('says when a state has no list yet', async () => {
     const res = await get('/states/mt')
 
