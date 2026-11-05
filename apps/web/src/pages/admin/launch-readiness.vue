@@ -8,7 +8,7 @@ import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson } from '../../lib/api'
 
 // The launch data gate (roadmap M8 step 1): at least 2 published states whose every category
-// mapping is confirmed. The API applies the rule (`stateIsReady` in packages/shared).
+// mapping is approved and shows "Reviewed". The API applies the rule (`stateIsReady` in packages/shared).
 const query = useQuery({
   queryKey: ['admin', 'launch-readiness'],
   queryFn: () => getJson('/api/admin/launch-readiness', launchReadinessResponseSchema),
@@ -25,8 +25,9 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Launch readiness</h2>
     <p class="max-w-prose text-muted-foreground">
-      The launch data gate: at least 2 states with a published list must have every category mapping
-      confirmed, so each category shows “Reviewed” on the state’s public page.
+      The launch data gate passes when at least 2 states with a published list are ready. A state is
+      ready when every category is approved in Mappings and its public page shows “Reviewed” for
+      every category.
     </p>
 
     <p v-if="query.isPending.value" class="text-muted-foreground">Loading…</p>
@@ -91,9 +92,9 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
                   </li>
                   <li>
                     <RouterLink v-if="s.unified.unconfirmed > 0" :to="fixAt.unified">
-                      {{ s.unified.unconfirmed }} unconfirmed
+                      {{ s.unified.unconfirmed }} not approved
                     </RouterLink>
-                    <template v-else>0 unconfirmed</template>
+                    <template v-else>0 not approved</template>
                   </li>
                 </ul>
               </td>
@@ -113,9 +114,9 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
                   </li>
                   <li>
                     <RouterLink v-if="s.federal.auto > 0" :to="fixAt.federal">
-                      {{ s.federal.auto }} auto
+                      {{ s.federal.auto }} guessed
                     </RouterLink>
-                    <template v-else>0 auto</template>
+                    <template v-else>0 guessed</template>
                   </li>
                 </ul>
               </td>
@@ -128,10 +129,10 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
       </div>
 
       <p class="max-w-prose text-sm text-muted-foreground">
-        A state is ready when every category has an approved unified mapping and its public page
-        shows “Reviewed” for each one. Choose the state on the linked page to fix a count. Federal
-        mappings are shown for information and do not block launch. The usability gate (roadmap M8
-        step 5) is the other launch gate and is not tracked here.
+        Follow a count’s link and choose the state to fix it. The federal counts do not block launch
+        on their own. But a code in no unified category shows “Reviewed” only after its federal
+        category is confirmed on Federal categories or set by a chapter override. Testing the site
+        with real users is the other condition for launch. It is not tracked here.
       </p>
     </template>
   </section>

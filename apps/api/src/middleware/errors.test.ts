@@ -73,7 +73,7 @@ describe('server errors', () => {
     expect(res.status).toBe(500)
     expect(await res.json()).toEqual({
       error:
-        'The database was busy, or the connection to it dropped. Earlier steps are saved; the unfinished one will redo safely. Wait a minute and try again; if it keeps failing, report it with reference 8f2a1c3d4e5f6a7b-DFW.',
+        'The database was busy, or the connection to it dropped. Earlier steps are saved, and running the unfinished one again is safe. Wait a minute and try again; if it keeps failing, report it with reference 8f2a1c3d4e5f6a7b-DFW.',
       retryable: true,
     })
   })

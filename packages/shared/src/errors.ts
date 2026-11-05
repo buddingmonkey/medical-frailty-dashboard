@@ -33,7 +33,7 @@ export function classifyServerError(message: string): ServerErrorKind {
 
 const unfinished = 'Nothing was saved from the unfinished step.'
 /** Busy is retried (by the admin page, or by hand), so it must not promise that nothing saved. */
-const unfinishedRedo = 'Earlier steps are saved; the unfinished one will redo safely.'
+const unfinishedRedo = 'Earlier steps are saved, and running the unfinished one again is safe.'
 
 const adminErrorTexts: Record<ServerErrorKind, (reference: string) => string> = {
   'too-long': (ref) =>
@@ -72,7 +72,7 @@ export function adminErrorMessage(kind: ServerErrorKind, reference: string): str
 /**
  * A save whose own batch committed, but whose coverage recompute after it failed (placements,
  * pair similarity): the answer is a success with this `warning`, never a 500, because a retry
- * would meet the saved change ("Only a draft can be published").
+ * would meet the saved change ("This version is no longer a draft").
  */
 export function coverageStaleWarning(reference: string): string {
   return `Saved. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories. If that fails too, report it with reference ${reference}.`

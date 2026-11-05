@@ -139,8 +139,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       <h2 class="font-display text-2xl font-medium text-heading">Mappings</h2>
       <p class="max-w-prose text-muted-foreground">
         Map each category of a state’s published list to one or more unified categories. The
-        suggestion comes from the CCSR groups of the category’s ICD-10-CM codes. Changes are kept: a
-        new mapping replaces the old one, which stays in the history.
+        suggestion comes from the CCSR groups of the category’s ICD-10-CM codes. Save as proposed,
+        then approve, or save and approve in one step. Until a category is approved, the state’s
+        public page shows it as “Not yet reviewed”. A new mapping replaces the old one, and the old
+        one is kept for the record.
       </p>
     </div>
     <div class="max-w-xs">

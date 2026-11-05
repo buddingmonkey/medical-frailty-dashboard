@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   DRAFT_EXPIRY_DAYS,
+  KEEP_MANUAL_DUMPS,
   KEEP_PUBLISH_BACKUPS,
   KEEP_WEEKLY_DUMPS,
   maintenancePartLabels,
@@ -66,9 +67,10 @@ function size(bytes: number): string {
   <div class="max-w-3xl space-y-4 rounded border border-border p-4">
     <h3 class="font-display text-xl font-medium text-heading">Maintenance</h3>
     <p class="text-foreground">
-      Every Sunday at 07:00 UTC the site saves a full backup to its file storage (the newest
-      {{ KEEP_WEEKLY_DUMPS }} are kept), keeps the newest {{ KEEP_PUBLISH_BACKUPS }} per-publish
-      backups of each state, and cleans up old drafts.
+      Every Sunday at 07:00 UTC the site saves a full backup, removes old backups and cleans up old
+      drafts. It keeps the newest {{ KEEP_WEEKLY_DUMPS }} Sunday backups, the newest
+      {{ KEEP_MANUAL_DUMPS }} backups made with Run maintenance now, and the newest
+      {{ KEEP_PUBLISH_BACKUPS }} backups of each state saved before a publish.
     </p>
 
     <p v-if="status.isPending.value" class="text-muted-foreground">Loading…</p>
@@ -107,17 +109,19 @@ function size(bytes: number): string {
       </div>
 
       <div class="space-y-2">
-        <h4 class="font-medium text-heading">Weekly backups</h4>
+        <h4 class="font-medium text-heading">Saved backups</h4>
         <p class="text-sm text-muted-foreground">
-          Each one is the same zip as the download above, plus the storage key of each source file
-          (so a rebuilt database can find them). Keep them private.
+          Sunday backups and those made with Run maintenance now, newest first. Each is the same zip
+          as Download backup, plus where each source file is stored, so a developer who rebuilds the
+          database can find the files. Like the download, it holds admin email addresses. Keep it
+          private.
         </p>
         <p v-if="status.data.value.weekly.length === 0" class="text-muted-foreground">
-          No weekly backups yet.
+          No saved backups yet.
         </p>
         <table v-else class="w-full border-collapse text-left text-sm">
           <caption class="sr-only">
-            Weekly backups
+            Saved backups
           </caption>
           <thead class="border-b border-border text-muted-foreground">
             <tr>
@@ -138,7 +142,7 @@ function size(bytes: number): string {
                 <a
                   :href="`/api/admin/backup/weekly/${dump.date}`"
                   download
-                  :aria-label="`Download the weekly backup of ${dump.date}`"
+                  :aria-label="`Download the backup of ${dump.date}`"
                   >Download</a
                 >
               </td>
@@ -150,12 +154,12 @@ function size(bytes: number): string {
 
     <div class="space-y-2 rounded border border-border bg-surface p-3">
       <p class="text-foreground">
-        <strong>Run maintenance now</strong> does the same as the Sunday run. It deletes open drafts
-        with no activity for {{ DRAFT_EXPIRY_DAYS }} days (and their source files, when no other
-        version uses them), the entries of drafts discarded more than {{ DRAFT_EXPIRY_DAYS }} days
-        ago, per-publish backups beyond the newest {{ KEEP_PUBLISH_BACKUPS }} per state, and weekly
-        backups beyond the newest {{ KEEP_WEEKLY_DUMPS }}. Published and earlier versions are never
-        touched.
+        <strong>Run maintenance now</strong> does the same as the Sunday run. It saves a backup and
+        removes backups beyond the numbers kept. It deletes open drafts with no activity for
+        {{ DRAFT_EXPIRY_DAYS }} days, with their source files when no other version uses them. It
+        empties drafts discarded more than {{ DRAFT_EXPIRY_DAYS }} days ago. Published and earlier
+        versions are never touched. Each run deletes at most 20 drafts; any left over go in the next
+        run. A new backup replaces any earlier one from the same day (UTC).
       </p>
       <button
         type="button"

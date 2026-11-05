@@ -89,9 +89,21 @@ export const sources = new Hono<AppEnv>()
     const bytes = new Uint8Array(await c.req.arrayBuffer())
     if (bytes.byteLength === 0) return c.json({ error: 'Empty file' }, 400)
     const sha256 = await sha256Hex(bytes)
-    if (sha256 !== meta.sha256) return c.json({ error: 'File hash does not match' }, 400)
+    if (sha256 !== meta.sha256)
+      return c.json(
+        {
+          error:
+            'The file the server received does not match the file you picked. Upload it again.',
+        },
+        400,
+      )
     if (!sniffMatches(bytes, meta.fileType)) {
-      return c.json({ error: `File content is not a ${meta.fileType}` }, 400)
+      return c.json(
+        {
+          error: `The file name ends in .${meta.fileType}, but the file is not a .${meta.fileType} file.`,
+        },
+        400,
+      )
     }
 
     const [existing] = await db

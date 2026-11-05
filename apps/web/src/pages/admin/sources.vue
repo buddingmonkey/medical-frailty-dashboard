@@ -178,7 +178,7 @@ function duplicateText(source: SourceDocument): string {
   const versions = source.versions.map((v) => String(v.versionNo)).join(', ')
   return `This file was already loaded on ${when} ${
     versions === '' ? '(not in any version yet)' : `as version ${versions}`
-  }, titled “${source.title}”. There is nothing new to upload; use the stored copy.`
+  }, titled “${source.title}”. There is nothing new to upload. Open the same file in Read and map, and it is matched to the stored copy.`
 }
 
 function formatSize(bytes: number): string {
@@ -196,8 +196,10 @@ const inputClass =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Source files</h2>
       <p class="max-w-prose text-muted-foreground">
-        Store the state's original file, unchanged, as evidence. The file is hashed in your browser
-        first, so a file that is already stored is caught before it is sent.
+        Upload the state’s original file. It is kept unchanged as the record of what the state
+        published, and its title, URL and date become the citation on the public pages. If the file
+        is already stored, the page says so before anything is uploaded. Next, open the file in Read
+        and map.
       </p>
     </div>
 

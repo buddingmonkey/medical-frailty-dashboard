@@ -274,7 +274,7 @@ try them on your own computer at http://localhost:8787/admin with the sample dat
 | Admin task | How |
 | --- | --- |
 | Load or update a state's code list | [`add-state-source.md`](add-state-source.md), step by step |
-| Fix a wrong category mapping | Comparison categories: Admin → Mappings, choose the state. Federal categories: Admin → Categories, choose the new one, check the preview of what moves, then save |
+| Fix a wrong category mapping | Comparison categories: Admin → Mappings, choose the state. Federal categories: Admin → Federal categories, choose the new one, check the preview of what moves, then save |
 | Roll back a bad upload | Admin → Versions → choose the state → Restore an earlier version |
 | Add or close a watch date | Admin → Watch dates |
 | Create a comparison category and map states to it | Admin → Unified categories (choose its CCSR groups, publish), then Admin → Mappings for each state (use the suggestion, save and approve) |

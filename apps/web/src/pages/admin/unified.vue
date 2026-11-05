@@ -162,9 +162,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Unified categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Groups that sit between the federal categories and each state’s own, so many states can be
-        compared. Each one has a definition and the CCSR groups whose ICD-10-CM codes belong to it.
-        Only published categories appear on public pages.
+        Shared categories that sit between the federal categories and each state’s own, so states
+        can be compared. Each one has a definition and the CCSR groups whose ICD-10-CM codes belong
+        to it. Only published unified categories appear on public pages. Map each state’s categories
+        to them in Mappings.
       </p>
     </div>
 
@@ -258,9 +259,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         Rebuild coverage
       </h3>
       <p class="max-w-prose text-muted-foreground">
-        Rebuilds every category’s full code list, where each state’s codes count, and how alike the
-        states are. Saving categories and mappings already does this. Use it after loading seed data
-        or a new CCSR or ICD-10-CM release. It changes only what is out of date.
+        Recalculates every unified category’s full code list, which unified categories each state’s
+        codes fall in, and how alike the states’ lists are. Saving a unified category or a mapping,
+        and publishing a list, already does this for what changed. Use it after a new CCSR or
+        ICD-10-CM release, after test data is loaded, or when a save says coverage could not be
+        updated.
       </p>
       <button
         type="button"
@@ -270,11 +273,17 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       >
         {{ rebuild.isPending.value ? 'Rebuilding…' : 'Rebuild coverage' }}
       </button>
+      <p class="max-w-prose text-muted-foreground">
+        It runs in three steps (full code lists, placements, state similarity) and shows its
+        progress. Keep the page open: it can take a few minutes. If the database is overloaded, the
+        page waits and tries again, up to three times. If it stops, press the button again. It
+        starts over, but changes only what is still out of date.
+      </p>
       <p v-if="rebuild.isPending.value && progress" role="status">
         {{ coverageRebuildProgressText(progress) }}
       </p>
       <p v-if="rebuild.isPending.value && waitingToRetry" role="status">
-        Database busy; waiting to retry…
+        The database is busy. Waiting, then trying again…
       </p>
       <p v-if="rebuilt" role="status">{{ rebuilt }}</p>
       <p v-if="rebuild.error.value" role="alert" class="text-danger">

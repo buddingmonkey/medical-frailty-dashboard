@@ -34,9 +34,9 @@ export const maintenanceParts = [
 export type MaintenancePart = (typeof maintenanceParts)[number]
 
 export const maintenancePartLabels: Record<MaintenancePart, string> = {
-  weeklyDump: 'Weekly backup',
-  pruneWeeklyDumps: 'Old weekly backups removed',
-  prunePublishBackups: 'Old per-publish backups removed',
+  weeklyDump: 'Backup saved',
+  pruneWeeklyDumps: 'Old backups removed',
+  prunePublishBackups: 'Old backups of each publish removed',
   draftCleanup: 'Old drafts cleaned up',
 }
 

@@ -235,7 +235,7 @@ describe('/admin/unified: rebuild coverage', () => {
     ms: 3010,
   }
   const busy =
-    'The database was busy, or the connection to it dropped. Earlier steps are saved; the unfinished one will redo safely. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.'
+    'The database was busy, or the connection to it dropped. Earlier steps are saved, and running the unfinished one again is safe. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.'
   const busyAnswer = () => HttpResponse.json({ error: busy, retryable: true }, { status: 500 })
 
   // The page pauses between calls and waits before a retry; fake timers skip the waits. Real
@@ -284,8 +284,8 @@ describe('/admin/unified: rebuild coverage', () => {
     await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
     await within(region).findByText(/of 19 categories/)
     await wait(1500)
-    expect(text(await within(region).findByText(/Database busy/))).toBe(
-      'Database busy; waiting to retry…',
+    expect(text(await within(region).findByText(/database is busy/))).toBe(
+      'The database is busy. Waiting, then trying again…',
     )
     expect(within(region).queryByRole('alert')).toBeNull()
     // Backoff: 5 s, then 10 s.
@@ -295,7 +295,7 @@ describe('/admin/unified: rebuild coverage', () => {
     await vi.waitUntil(() => bodies.length === 3)
     await wait(10_000)
     await within(region).findByText(/^\s*Rebuilt/)
-    expect(within(region).queryByText(/Database busy/)).toBeNull()
+    expect(within(region).queryByText(/database is busy/)).toBeNull()
     const cursor = { cursor: { step: 'universe', after: '7' } }
     expect(bodies).toEqual([{}, cursor, cursor, cursor])
   })

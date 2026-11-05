@@ -297,7 +297,10 @@ describe('publish and rollback', () => {
     const codes = responses.map((r) => r.status).sort()
     expect(codes).toEqual([200, 409])
     const loser = responses.find((r) => r.status === 409)
-    expect(await loser?.json()).toEqual({ error: 'Only a draft can be published' })
+    expect(await loser?.json()).toEqual({
+      error:
+        'This version is no longer a draft: it was already published or discarded. Reload the page.',
+    })
 
     const versions = await db
       .select()

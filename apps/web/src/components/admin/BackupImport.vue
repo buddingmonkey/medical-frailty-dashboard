@@ -270,9 +270,10 @@ const statusLabels: Record<string, string> = {
       Restore a state from a backup
     </h3>
     <p class="text-foreground">
-      Pick a backup: the full download (<code>.zip</code>) or a per-publish backup from R2
-      (<code>.json</code>). The file is read here, in your browser. One version of one state becomes
-      a <strong>new draft</strong>; you then run its checks and publish it as usual.
+      Pick a backup file: a <code>.zip</code> from Download backup or from the saved backups below,
+      or a <code>.json</code> backup saved before a publish (a developer can fetch these). Choose
+      one version of one state; it becomes a <strong>new draft</strong>. Then open the draft, read
+      its checks and publish it as usual. The public list does not change until you publish.
     </p>
     <div>
       <label :for="`${id}-file`" class="font-medium">Backup file</label>

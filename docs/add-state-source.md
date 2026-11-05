@@ -16,13 +16,13 @@ public until you publish in step 6, and every step before it can be undone.
 
 ## 1. Store the file (Admin → Source files)
 
-Choose the state, pick the file, and fill in the title, the state's address for the file, and
-the date on the document. These become the citation on the public page. The page warns you if
+Choose the state, pick the file, and fill in the title, the state's URL for the file, and the
+date on the document. These become the citation on the public page. The page warns you if
 the same file is already stored.
 
-**Fixing the title, address or date later.** If a stored file is missing its address or date,
+**Fixing the title, URL or date later.** If a stored file is missing its URL or date,
 or has a typo, choose the state on Admin → Source files and click **Edit details** on that file.
-The address must start with `https://`; the date cannot be in the future; leave either blank if
+The URL must start with `https://`; the date cannot be in the future; leave either blank if
 the state gives none. Saving never changes the stored file. Every change goes in the audit log
 with the old and new values, and if the file is part of a published version, the public pages
 show the new citation right away.
@@ -83,15 +83,16 @@ Choose the state. Each of its categories needs one or more comparison categories
 "unified categories" in the admin pages). The page suggests them from the CCSR groups (AHRQ's grouping of diagnosis codes) of the
 state's diagnosis codes. Check the suggestion, save, and approve. Until a category is approved,
 the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
-readiness) needs every category of at least 2 states approved.
+readiness) needs at least 2 states whose every category is approved and shows "Reviewed".
 
-## 8. Check the federal categories (Admin → Categories)
+## 8. Check the federal categories (Admin → Federal categories)
 
 A code's federal category follows its comparison categories. The mapping here is the fallback
-for codes in no comparison category. Publishing stores keyword guesses; **Confirm** each one,
-or "Confirm all guesses" after reading them. For states without categories (Georgia, Nebraska)
-map "(no category)" and use **chapter overrides**. A change that moves published codes shows a
-preview first.
+for codes in no comparison category. When you publish, the site guesses a federal category from
+the name of each new state category. The public pages use these guesses right away, marked
+"Not yet reviewed". Read each guess, then click **Confirm**, or **Confirm all guesses** after
+reading them all. For states without categories (Georgia, Nebraska), map "(no category)" and use
+**chapter overrides**. A change that moves published codes shows a preview first.
 
 ## If a file will not read
 
