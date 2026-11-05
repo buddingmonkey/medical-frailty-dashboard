@@ -43,7 +43,7 @@ After `pnpm dev` starts, open Admin, Unified categories (`/admin/unified`) and p
 3. Run `pnpm check` after every change. `pnpm check:full` adds the build and browser tests;
    CI runs it on every pull request. To run it yourself, install the test browser once:
    `pnpm --filter @mfcd/web exec playwright install --with-deps chromium`.
-4. Open a pull request. CI must pass (`check`, `audit`, `gitleaks`, CodeQL) before it can be
+4. Open a pull request and fill in its checklist. CI must pass (`check`, `audit`, `gitleaks`, CodeQL) before it can be
    merged. Nobody can push to `main` directly.
 
 ### Rules
