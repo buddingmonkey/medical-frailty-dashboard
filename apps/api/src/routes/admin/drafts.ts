@@ -24,13 +24,14 @@ import {
 import { and, asc, count, desc, eq, inArray, min, notInArray, sql } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
-import { auditInsert } from '../../db/audit'
+import { type AuditRecord, auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
-import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements } from '../../db/placement'
 import { recomputeSimilarity } from '../../db/similarity'
 import { createDb, type Db } from '../../db/client'
 import {
+  appMeta,
+  auditLog,
   categoryMappings,
   datasetVersions,
   draftParts,
@@ -53,6 +54,52 @@ const D1_MAX_PARAMS = 100
 const LOOKUP_CHUNK = 99
 
 const idParam = routeIdSchema
+
+/** Matches the version only while it is still a draft: one row, or none once published. */
+const isDraft = (versionId: number) =>
+  and(eq(datasetVersions.id, versionId), eq(datasetVersions.status, 'draft'))
+
+/** `bumpDataVersion` for a batch, applied only while the version is still a draft. */
+function bumpDataVersionWhileDraft(db: Db, versionId: number) {
+  return db
+    .insert(appMeta)
+    .select(
+      db
+        .select({
+          key: sql<string>`'data_version'`.as('key'),
+          value: sql<string>`'1'`.as('value'),
+        })
+        .from(datasetVersions)
+        .where(isDraft(versionId)),
+    )
+    .onConflictDoUpdate({
+      target: appMeta.key,
+      set: { value: sql`CAST(CAST(${appMeta.value} AS INTEGER) + 1 AS TEXT)` },
+    })
+}
+
+/**
+ * `auditInsert` for a batch, written only while the version is still a draft. Drizzle's
+ * insert-select needs every column in table order: `id` NULL takes the next rowid, and `at`
+ * repeats the column default.
+ */
+function auditInsertWhileDraft(db: Db, versionId: number, record: AuditRecord) {
+  return db.insert(auditLog).select(
+    db
+      .select({
+        id: sql<number>`NULL`.as('id'),
+        at: sql<string>`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`.as('at'),
+        actorEmail: sql<string>`${record.actorEmail}`.as('actor_email'),
+        action: sql<string>`${record.action}`.as('action'),
+        target: sql<string>`${record.target}`.as('target'),
+        detailsJson: sql<string | null>`${
+          record.details === undefined ? null : JSON.stringify(record.details)
+        }`.as('details_json'),
+      })
+      .from(datasetVersions)
+      .where(isDraft(versionId)),
+  )
+}
 
 const summaryColumns = {
   id: datasetVersions.id,
@@ -519,14 +566,43 @@ export const draftsRoute = new Hono<AppEnv>()
         entries.stateSubcategory,
         sql`coalesce(${entries.tier}, '')`,
       )
-    await db.batch([
+    // Every statement runs only while the version is still a draft, and the statement that
+    // publishes it comes last: of two requests that both passed the draft check above (a double
+    // submit), the second batch changes nothing and gets a 409.
+    const stillDraft = sql`(SELECT status FROM dataset_versions WHERE id = ${version.id}) = 'draft'`
+    const results = await db.batch([
       db
         .delete(entries)
-        .where(and(eq(entries.versionId, version.id), notInArray(entries.id, firsts))),
+        .where(and(eq(entries.versionId, version.id), notInArray(entries.id, firsts), stillDraft)),
       db
         .update(datasetVersions)
         .set({ status: 'superseded' })
-        .where(and(eq(datasetVersions.stateId, stateId), eq(datasetVersions.status, 'published'))),
+        .where(
+          and(
+            eq(datasetVersions.stateId, stateId),
+            eq(datasetVersions.status, 'published'),
+            stillDraft,
+          ),
+        ),
+      db
+        .update(states)
+        .set({ publishedVersionId: version.id, status: 'published', updatedAt: now })
+        .where(and(eq(states.id, stateId), stillDraft)),
+      ...autoMappings,
+      bumpDataVersionWhileDraft(db, version.id),
+      auditInsertWhileDraft(db, version.id, {
+        actorEmail: actor,
+        action: 'version.publish',
+        target: `version:${String(version.id)}`,
+        details: {
+          stateId,
+          versionNo: version.versionNo,
+          replaced: previous,
+          backupKey,
+          confirmed: Object.keys(body.data.confirmations),
+          diff: checks.report.diff.totals,
+        },
+      }),
       db
         .update(datasetVersions)
         .set({
@@ -543,27 +619,13 @@ export const draftsRoute = new Hono<AppEnv>()
             eq(datasetVersions.stateId, stateId),
             eq(datasetVersions.status, 'draft'),
           ),
-        ),
-      db
-        .update(states)
-        .set({ publishedVersionId: version.id, status: 'published', updatedAt: now })
-        .where(eq(states.id, stateId)),
-      ...autoMappings,
-      bumpDataVersion(db),
-      auditInsert(db, {
-        actorEmail: actor,
-        action: 'version.publish',
-        target: `version:${String(version.id)}`,
-        details: {
-          stateId,
-          versionNo: version.versionNo,
-          replaced: previous,
-          backupKey,
-          confirmed: Object.keys(body.data.confirmations),
-          diff: checks.report.diff.totals,
-        },
-      }),
+        )
+        .returning({ id: datasetVersions.id }),
     ])
+    const published = results.at(-1)
+    if (!Array.isArray(published) || published.length !== 1) {
+      return c.json({ error: 'Only a draft can be published' }, 409)
+    }
     // Right after the batch: where the new list counts among the unified categories, then how
     // alike its list is to every other state's (roadmap M5 step 7). The publish stands if this
     // fails: the answer carries a warning instead.

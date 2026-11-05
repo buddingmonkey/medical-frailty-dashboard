@@ -1,6 +1,7 @@
 import {
   DRAFT_EXPIRY_DAYS,
   isRestoredSourceKey,
+  KEEP_MANUAL_DUMPS,
   KEEP_PUBLISH_BACKUPS,
   KEEP_WEEKLY_DUMPS,
   LAST_MAINTENANCE_KEY,
@@ -51,11 +52,20 @@ const DRAFTS_PER_RUN = 20
 type Counts = Record<string, number>
 
 /** Every object under `prefix`, following R2's pages. */
-async function listAll(files: R2Bucket, prefix: string): Promise<R2Object[]> {
+async function listAll(
+  files: R2Bucket,
+  prefix: string,
+  include: R2ListOptions['include'] = [],
+): Promise<R2Object[]> {
   const out: R2Object[] = []
   let cursor: string | undefined
   for (;;) {
-    const page = await files.list({ prefix, limit: 1000, ...(cursor ? { cursor } : {}) })
+    const page = await files.list({
+      prefix,
+      limit: 1000,
+      include,
+      ...(cursor ? { cursor } : {}),
+    })
     out.push(...page.objects)
     if (!page.truncated) return out
     cursor = page.cursor
@@ -69,10 +79,16 @@ async function deleteKeys(files: R2Bucket, keys: string[]): Promise<void> {
 
 /**
  * The full backup (the same zip as the admin download) plus R2 keys, at
- * `backups/weekly/<UTC date>.zip`. The zip is buffered, then put in one call: R2 needs a known
+ * `backups/weekly/<UTC date>.zip`, tagged with the run's trigger (custom metadata `trigger`) so
+ * pruning keeps the cron's weekly dumps apart from manual ones. A manual run on the day of a
+ * weekly dump replaces it but keeps the `cron` tag: it still stands for that week. The zip is buffered, then put in one call: R2 needs a known
  * length, real data zips to about 1 MB, and the cap stops a runaway well inside 128 MB.
  */
-export async function writeWeeklyDump(env: MaintenanceEnv, now: Date): Promise<Counts> {
+export async function writeWeeklyDump(
+  env: MaintenanceEnv,
+  now: Date,
+  trigger: MaintenanceRun['trigger'] = 'cron',
+): Promise<Counts> {
   const writtenAt = now.toISOString()
   const base = backupBaseName(env.ENVIRONMENT, writtenAt)
   const chunks: Uint8Array[] = []
@@ -100,9 +116,12 @@ export async function writeWeeklyDump(env: MaintenanceEnv, now: Date): Promise<C
     body.set(chunk, offset)
     offset += chunk.byteLength
   }
-  await env.FILES.put(`${WEEKLY_DUMP_PREFIX}${writtenAt.slice(0, 10)}.zip`, body, {
+  const key = `${WEEKLY_DUMP_PREFIX}${writtenAt.slice(0, 10)}.zip`
+  const replaced = trigger === 'manual' ? await env.FILES.head(key) : null
+  const tag = replaced && dumpTrigger(replaced) === 'cron' ? 'cron' : trigger
+  await env.FILES.put(key, body, {
     httpMetadata: { contentType: 'application/zip' },
-    customMetadata: { writtenAt, file: `${base}.zip` },
+    customMetadata: { writtenAt, file: `${base}.zip`, trigger: tag },
   })
   return {
     rows: stats.rows,
@@ -124,13 +143,30 @@ export async function listWeeklyDumps(files: R2Bucket): Promise<WeeklyDump[]> {
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
-/** Keeps the newest weekly dumps. */
+/** What made a dump: its `trigger` tag, and `cron` for a dump written before the tag. */
+function dumpTrigger(object: R2Object): MaintenanceRun['trigger'] {
+  return object.customMetadata?.['trigger'] === 'manual' ? 'manual' : 'cron'
+}
+
+/**
+ * Keeps the newest KEEP_WEEKLY_DUMPS dumps the cron made and, apart from them, the newest
+ * KEEP_MANUAL_DUMPS made by "Run maintenance now", so manual runs never push weekly dumps out.
+ */
 export async function pruneWeeklyDumps(files: R2Bucket): Promise<Counts> {
-  const dumps = await listWeeklyDumps(files)
-  const old = dumps.slice(KEEP_WEEKLY_DUMPS)
+  const objects = await listAll(files, WEEKLY_DUMP_PREFIX, ['customMetadata'])
+  const dumps = objects
+    .flatMap((o) => {
+      const date = weeklyDumpDate(o.key)
+      return date ? [{ key: o.key, date, trigger: dumpTrigger(o) }] : []
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+  const old = [
+    ...dumps.filter((d) => d.trigger === 'cron').slice(KEEP_WEEKLY_DUMPS),
+    ...dumps.filter((d) => d.trigger === 'manual').slice(KEEP_MANUAL_DUMPS),
+  ]
   await deleteKeys(
     files,
-    old.map((d) => `${WEEKLY_DUMP_PREFIX}${d.date}.zip`),
+    old.map((d) => d.key),
   )
   return { deleted: old.length, kept: dumps.length - old.length }
 }
@@ -298,7 +334,7 @@ export async function runMaintenance(
   const db = createDb(env.DB)
   const startedAt = new Date().toISOString()
   const jobs: Record<MaintenancePart, () => Promise<Counts>> = {
-    weeklyDump: () => writeWeeklyDump(env, now),
+    weeklyDump: () => writeWeeklyDump(env, now, trigger),
     pruneWeeklyDumps: () => pruneWeeklyDumps(env.FILES),
     prunePublishBackups: () => prunePublishBackups(db, env.FILES, actor),
     draftCleanup: () => cleanupDrafts(env.DB, env.FILES, now, actor),

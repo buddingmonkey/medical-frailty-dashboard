@@ -4,11 +4,10 @@ import {
   aiCleanupStatusSchema,
   buildCleanupPrompt,
 } from '@mfcd/shared'
-import { and, count, eq, gt } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 
-import { type AiComplete, DEFAULT_AI_MODEL } from '../../ai/claude'
-import { auditInsert } from '../../db/audit'
+import { type AiComplete, type AiCompletion, DEFAULT_AI_MODEL } from '../../ai/claude'
 import { createDb } from '../../db/client'
 import { auditLog, states } from '../../db/schema'
 import type { AppEnv } from '../../types'
@@ -45,14 +44,38 @@ export function aiCleanupRoute(complete: AiComplete) {
         .where(eq(states.id, body.data.stateId))
       if (!state) return c.json({ error: 'Unknown state' }, 400)
 
+      // Reserve the call before it starts: one statement inserts its audit row only while
+      // fewer than AI_CALLS_PER_HOUR rows are in the last hour, so calls still waiting for
+      // Claude count too and parallel requests cannot all pass the check.
+      const { part } = body.data
+      const target = `state:${body.data.stateId}`
+      const facts = {
+        fileName: body.data.fileName,
+        part: `${String(part.number)} of ${String(part.count)}`,
+      }
       const hourAgo = new Date(Date.now() - 3_600_000).toISOString()
-      const [recent] = await db
-        .select({ n: count() })
-        .from(auditLog)
-        .where(and(eq(auditLog.action, 'ai.cleanup'), gt(auditLog.at, hourAgo)))
-      if ((recent?.n ?? 0) >= AI_CALLS_PER_HOUR) {
+      const reserved = await c.env.DB.prepare(
+        `INSERT INTO audit_log (actor_email, action, target, details_json)
+         SELECT ?1, 'ai.cleanup', ?2, ?3
+         WHERE (SELECT count(*) FROM audit_log WHERE action = 'ai.cleanup' AND at > ?4) < ?5
+         RETURNING id`,
+      )
+        .bind(
+          c.var.identity?.email ?? '',
+          target,
+          JSON.stringify({ ...facts, outcome: 'pending' }),
+          hourAgo,
+          AI_CALLS_PER_HOUR,
+        )
+        .first<{ id: number }>()
+      if (!reserved) {
         return c.json({ error: 'The hourly limit of AI calls is reached. Try again later.' }, 429)
       }
+      const record = (details: Record<string, unknown>) =>
+        db
+          .update(auditLog)
+          .set({ detailsJson: JSON.stringify({ ...facts, ...details }) })
+          .where(eq(auditLog.id, reserved.id))
 
       const model = c.env.AI_MODEL ?? DEFAULT_AI_MODEL
       const prompt = buildCleanupPrompt({
@@ -60,20 +83,20 @@ export function aiCleanupRoute(complete: AiComplete) {
         fileName: body.data.fileName,
         part: body.data.part,
       })
-      const answer = await complete(apiKey, model, prompt)
-      const { part } = body.data
-      await auditInsert(db, {
-        actorEmail: c.var.identity?.email ?? '',
-        action: 'ai.cleanup',
-        target: `state:${body.data.stateId}`,
-        details: {
-          fileName: body.data.fileName,
-          part: `${String(part.number)} of ${String(part.count)}`,
-          model: answer.model,
-          stopReason: answer.stopReason,
-          inputTokens: answer.inputTokens,
-          outputTokens: answer.outputTokens,
-        },
+      let answer: AiCompletion
+      try {
+        answer = await complete(apiKey, model, prompt)
+      } catch (err) {
+        // The row stays and keeps counting: the call may have cost tokens before it failed.
+        await record({ outcome: 'failed', model })
+        throw err
+      }
+      await record({
+        outcome: 'answered',
+        model: answer.model,
+        stopReason: answer.stopReason,
+        inputTokens: answer.inputTokens,
+        outputTokens: answer.outputTokens,
       })
       if (answer.stopReason === 'refusal') {
         return c.json(

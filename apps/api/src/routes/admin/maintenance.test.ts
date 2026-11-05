@@ -1,10 +1,10 @@
-import { maintenanceRunSchema, maintenanceStatusSchema } from '@mfcd/shared'
+import { LAST_MAINTENANCE_KEY, maintenanceRunSchema, maintenanceStatusSchema } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb } from '../../db/client'
-import { auditLog, states } from '../../db/schema'
+import { appMeta, auditLog, states } from '../../db/schema'
 import { accessToken, ADMIN, call } from '../../test/access-fixtures'
 import { resetDb } from '../../test/reset-db'
 
@@ -45,6 +45,18 @@ describe('GET /api/admin/maintenance', () => {
       ['2026-11-01', 4],
       ['2026-10-25', 2],
     ])
+  })
+
+  it('shows no run when last_maintenance is not valid JSON or not a run', async () => {
+    for (const value of ['{not json', '{"startedAt":1}']) {
+      await db
+        .insert(appMeta)
+        .values({ key: LAST_MAINTENANCE_KEY, value })
+        .onConflictDoUpdate({ target: appMeta.key, set: { value } })
+      const res = await call('/api/admin/maintenance', { token: await accessToken() })
+      expect(res.status).toBe(200)
+      expect(maintenanceStatusSchema.parse(await res.json()).last).toBeNull()
+    }
   })
 
   it('is admin-only', async () => {

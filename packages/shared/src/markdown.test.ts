@@ -48,6 +48,26 @@ describe('parseMarkdown', () => {
     })
   })
 
+  it('keeps site paths as links but not protocol-relative or backslash ones', () => {
+    const hrefs = [
+      '/admin/guide',
+      '//evil.example',
+      '/\\evil.example',
+      '\\\\evil.example',
+      '/\\/x',
+      '/\t/evil.example',
+    ]
+    const links = hrefs.map((href) => parseInline(`[x](${href})`)[0])
+    expect(links).toEqual([
+      { type: 'link', text: 'x', href: '/admin/guide' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+      { type: 'text', text: 'x' },
+    ])
+  })
+
   it('keeps same-site links and drops protocol-relative ones', () => {
     expect(parseInline('[ok](/states/ga) [bad](//evil.example)')).toEqual([
       { type: 'link', text: 'ok', href: '/states/ga' },

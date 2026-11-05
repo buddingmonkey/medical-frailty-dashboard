@@ -18,17 +18,15 @@ export type MarkdownBlock =
   | { type: 'code'; text: string }
 
 /**
- * A link target we write: https, or a path on this site. Not `//host` or `/\host` (a browser
- * reads `\` as `/`, so both leave the site), and nothing with whitespace or control characters,
- * which browsers drop from URLs (`/<tab>/host` is `//host`).
+ * A link target we write: https, or a path on this site. Browsers read `\` as `/` and drop
+ * whitespace and control characters from URLs (`/<tab>/host` is `//host`), so a href with a
+ * backslash, whitespace or control character is refused, and `//host` (another site,
+ * protocol-relative) is not a path.
  */
 export function safeMarkdownHref(href: string): boolean {
-  for (const ch of href) {
-    const code = ch.codePointAt(0) ?? 0
-    if (code <= 0x20 || code === 0x7f) return false
-  }
+  if (/[\\\s\p{Cc}]/u.test(href)) return false
   if (href.startsWith('https://')) return true
-  return href.startsWith('/') && href[1] !== '/' && href[1] !== '\\'
+  return href.startsWith('/') && !href.startsWith('//')
 }
 
 function pushText(out: MarkdownInline[], text: string) {

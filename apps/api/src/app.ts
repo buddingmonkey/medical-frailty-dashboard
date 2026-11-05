@@ -7,7 +7,7 @@ import { environmentBanner } from './middleware/environment-banner'
 import { onServerError } from './middleware/errors'
 import { publicCache } from './middleware/public-cache'
 import { publicGetOnly } from './middleware/public-get-only'
-import { rateLimit } from './middleware/rate-limit'
+import { LIMITED_PAGE_PATHS, rateLimit } from './middleware/rate-limit'
 import { requireAdmin } from './middleware/require-admin'
 import { securityHeaders } from './middleware/security-headers'
 import { siteGate } from './middleware/site-gate'
@@ -63,8 +63,10 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.route('/llms.txt', llmsTxt)
   app.route('/.well-known/security.txt', securityTxt)
 
-  // Before the cache, so cached answers count too. Admin and pages are not limited (rate-limit.ts).
+  // Before the cache, so cached answers count too. Admin is not limited (rate-limit.ts); the
+  // server-rendered pages and downloads that read D1 per query share the public API's limit.
   app.use('/api/public/*', rateLimit)
+  for (const path of LIMITED_PAGE_PATHS) app.use(path, rateLimit)
   app.use('/api/public/*', publicGetOnly)
   app.route('/api/public/health', health)
   app.use('/api/public/states', publicCache)

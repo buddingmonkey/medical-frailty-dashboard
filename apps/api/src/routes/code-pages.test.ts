@@ -307,6 +307,31 @@ describe('the sitemap', () => {
     expect((await get('/sitemaps/codes-2.xml')).status).toBe(404)
   })
 
+  it('answers a page past the last with 404 before reading any codes', async () => {
+    const sqls: string[] = []
+    const DB = new Proxy(env.DB, {
+      get(target, prop) {
+        if (prop === 'prepare') {
+          return (query: string) => {
+            sqls.push(query)
+            return target.prepare(query)
+          }
+        }
+        const value: unknown = Reflect.get(target, prop)
+        if (typeof value !== 'function') return value
+        const method = value as (...args: unknown[]) => unknown
+        return method.bind(target)
+      },
+    })
+    const res = await call('/sitemaps/codes-9999.xml', {
+      host: 'sitemap-past.example.com',
+      vars: { SITE_MODE: 'public', ASSETS: assets, DB },
+    })
+    expect(res.status).toBe(404)
+    expect(sqls.some((q) => q.includes('count(*) AS n FROM codes'))).toBe(true)
+    expect(sqls.filter((q) => q.includes('OFFSET'))).toEqual([])
+  })
+
   it('agrees with the page: a code is in the sitemap exactly when its page is indexed', async () => {
     const xml = await (await get('/sitemaps/codes-1.xml', 'frailty.example.org')).text()
     const listed = new Set(

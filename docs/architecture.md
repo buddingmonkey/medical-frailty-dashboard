@@ -260,9 +260,13 @@ someone without one could read it.
 The middleware is `apps/api/src/middleware/public-cache.ts` (`publicCache`, or `cachePublic()`
 with options): it reads `data_version` (one row), and in public mode looks up the URL plus
 `__dv=<data_version>` and `__wv=<Worker version id>` (`CF_VERSION_METADATA`, so a deploy starts
-with an empty cache) in `caches.default`; only 200 responses are stored. Server-rendered pages
+with an empty cache) in `caches.default`; only 200 responses are stored. The URL in the key
+keeps only the query parameters the route reads, sorted (`middleware/cache-query.ts`, keyed by
+the Hono route pattern), so `?utm_source=…` or a random cache-buster is a hit, not a D1 read; a
+route missing from that table keeps every parameter, and a test checks that each cached route
+is listed. Handlers must read only the listed parameters. HEAD shares GET's entries. Server-rendered pages
 add a hash of the built `index.html` to the key and tell browsers to revalidate
-(`max-age=0, must-revalidate`) while the edge keeps its copy 5 minutes. Non-GET and private-mode responses get
+(`max-age=0, must-revalidate`) while the edge keeps its copy 5 minutes. Responses to other methods and private-mode responses get
 `Cache-Control: private, no-store`. The Cache API is a no-op on `*.workers.dev` hosts, so the
 shared cache starts working only on a custom domain (M8); until then each request reads D1
 (about 68 ms locally for the four seed states, 17k entries).

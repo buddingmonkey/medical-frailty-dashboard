@@ -105,7 +105,9 @@ unless the Access application bypasses that path.)
   any file.
 - `ANTHROPIC_API_KEY` is a Worker secret and is never sent to the browser. The AI endpoint is
   admin-only and rate-limited (30 calls per hour across all admins, counted in the audit log).
-  Set a monthly spend limit in the Anthropic Console.
+  Each call reserves its audit row before it starts (one conditional insert), so calls still
+  waiting for Claude count toward the limit, and a failed call stays counted. Set a monthly
+  spend limit in the Anthropic Console.
 - The server builds the prompt from the part's text, so the key cannot be used as a general
   chat proxy. The source text sits between `<source_text>` tags, marked as data. The answer is
   validated with zod (`parseAiOutput`) in the browser and never rendered as HTML.
@@ -157,21 +159,30 @@ X-Frame-Options: DENY
 ## Abuse and cost controls
 
 - Public responses cached at the edge (see `docs/architecture.md`, "Caching").
-- Workers Rate Limiting bindings on the public API (`apps/api/src/middleware/rate-limit.ts`),
-  keyed on the client IP (`CF-Connecting-IP`): `PUBLIC_RATE_LIMITER`, 120 requests per 60 s, on
-  `/api/public/*`, and the stricter `SEARCH_RATE_LIMITER`, 60 per 60 s (search-as-you-type is debounced, and an office may share one IP), on
-  `/api/public/codes/search` instead. Over the limit: `429 {"error":"Too many requests"}` with
-  `Retry-After: 60`. The IP is never logged. Limits are counted per Cloudflare location and are
+- Workers Rate Limiting bindings (`apps/api/src/middleware/rate-limit.ts`), keyed on the
+  client IP (`CF-Connecting-IP`): `PUBLIC_RATE_LIMITER`, 120 requests per 60 s, on
+  `/api/public/*` and on the server-rendered pages, downloads and sitemap that read D1 per
+  query (`LIMITED_PAGE_PATHS`: `/compare` and everything under it, `/compare.csv`, `/codes/*`,
+  a state's page and downloads `/states/<slug>…`, `/sitemap.xml`, `/sitemaps/*`), so the pages
+  cannot be used to get round the API's limit; and the stricter `SEARCH_RATE_LIMITER`, 60 per
+  60 s (search-as-you-type is debounced, and an office may share one IP), on
+  `/api/public/codes/search` instead. One request is counted once. Over the limit: `429` with
+  `Retry-After: 60`, `{"error":"Too many requests"}` on the API and a short plain-text line on
+  pages. The IP is never logged. Limits are counted per Cloudflare location and are
   approximate ([docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/));
   the binding has no charge of its own on Workers Paid and works on workers.dev. A request
   without `CF-Connecting-IP` (only possible locally) shares one fallback key. Local Workers
   (`ENVIRONMENT` `development` or `test`: `pnpm dev`, e2e, Vitest) skip the limits; any other
   value applies them.
+- The edge cache key keeps only the query parameters a route reads, sorted, so junk parameters
+  cannot force D1 reads; HEAD shares GET's entries (`docs/architecture.md`, "Caching"). A code
+  sitemap page past the last answers 404 after a count, before the sorted page scan.
 - **Not limited:** admin routes (`/admin*`, `/api/admin/*`: Cloudflare Access and the JWT check
-  stand in front of them) and the server-rendered HTML pages, `robots.txt` and static files
-  (edge caching absorbs repeat requests, and the pages read little from D1). Many people behind
-  one office or mobile IP share a limit, so raise the numbers in `wrangler.jsonc` if real users
-  report 429s.
+  stand in front of them), the home page, `/states`, `/search`, the about and policy pages,
+  `robots.txt`, `llms.txt` and static files (edge caching absorbs repeat requests, and they read
+  little or nothing from D1 per query). Many people behind one office or mobile IP share a
+  limit, so raise the numbers in `wrangler.jsonc` if real
+  users report 429s.
 - Cloudflare free WAF managed rules and Bot Fight Mode on once a custom domain exists.
 - A billing notification in the Cloudflare dashboard.
 

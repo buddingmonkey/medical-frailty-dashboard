@@ -8,7 +8,8 @@ import type { AppEnv } from '../../types'
 // The category drill-down's data (roadmap M5 step 6): `GET /api/public/categories/:slug` gives
 // one page of the category's codes with their state counts; `…/:slug/detail?code=` gives every
 // state's cell for one row. Counted in D1 (src/db/public-drill.ts). Cached on data_version
-// (publicCache); the cache key is the whole URL.
+// (publicCache); the cache key is the URL with the drill-down's own parameters
+// (middleware/cache-query.ts).
 
 export const publicCategoriesRoute = new Hono<AppEnv>()
   .get('/:slug', async (c) => {

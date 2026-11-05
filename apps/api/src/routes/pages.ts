@@ -9,8 +9,10 @@ import {
   COMPARE_INVALID_LINK,
   compareUnknownStatesText,
   compareCellText,
+  compareQueryKeys,
   compareQuerySchema,
   drillQueryFromRecord,
+  drillQueryKeys,
   federalCategoriesText,
   drillFiledUnder,
   isCodeTableQuery,
@@ -178,7 +180,8 @@ function tileMapRedirect(c: Context<AppEnv>) {
 /** The compare query in the URL: null when there is none, else the parsed query or an error. */
 function compareQueryOf(c: Context<AppEnv>) {
   const raw = c.req.query()
-  if (Object.keys(raw).length === 0) return null
+  // Only its own parameters count: `?utm_source=…` alone is no query (the cache ignores it).
+  if (!compareQueryKeys.some((key) => key in raw)) return null
   return compareQuerySchema.safeParse(raw)
 }
 
@@ -416,7 +419,8 @@ export const pagesRoute = new Hono<AppEnv>()
       query.code === null ? null : publicDrillDetail(db, slug, query.code, dataVersion),
     ])
     if (!data) return sendPage(c, categoryNotFoundPage(origin(c), c.req.path))
-    const hasQuery = new URL(c.req.url).search !== ''
+    // Only the drill-down's own parameters make it a filtered (noindex) view, not `?utm_…`.
+    const hasQuery = drillQueryKeys.some((key) => c.req.query(key) !== undefined)
     return sendPage(c, drillPage(data, query, detail, origin(c), hasQuery))
   })
   // The sitemap (docs/seo.md, "Sitemap"): an index of the pages' file and the code pages' files,
@@ -445,10 +449,11 @@ export const pagesRoute = new Hono<AppEnv>()
       const n = /^codes-([1-9]\d{0,3})\.xml$/.exec(name)?.[1]
       if (n === undefined) return next()
       const db = createDb(c.env.DB)
-      const [codes, updatedAt] = await Promise.all([
-        includedCodePage(db, (Number(n) - 1) * SITEMAP_MAX_URLS, SITEMAP_MAX_URLS),
-        listsUpdatedAt(db),
-      ])
+      const offset = (Number(n) - 1) * SITEMAP_MAX_URLS
+      // A page past the last is a 404 (never cached) before the sorted OFFSET scan.
+      const [total, updatedAt] = await Promise.all([includedCodeCount(db), listsUpdatedAt(db)])
+      if (offset >= total) return c.text('Not found', 404)
+      const codes = await includedCodePage(db, offset, SITEMAP_MAX_URLS)
       if (codes.length === 0) return c.text('Not found', 404)
       const base = origin(c)
       const day = updatedAt?.slice(0, 10)

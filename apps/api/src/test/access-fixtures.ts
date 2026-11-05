@@ -50,10 +50,13 @@ export async function accessToken(options: TokenOptions = {}): Promise<string> {
     .sign(options.wrongKey ? otherKeys.privateKey : signingKeys.privateKey)
 }
 
-/** Stand-in for the Claude API: records each call and answers with `fakeAi.answer`. */
+/**
+ * Stand-in for the Claude API: records each call and answers with `fakeAi.answer` (a promise
+ * holds the call open, for tests of calls in flight).
+ */
 export const fakeAi = {
   calls: [] as { apiKey: string; model: string; prompt: string }[],
-  answer: (): AiCompletion => ({
+  answer: (): AiCompletion | Promise<AiCompletion> => ({
     text: '{"rows":[]}',
     model: 'claude-opus-5-5',
     stopReason: 'end_turn',
