@@ -48,6 +48,8 @@ const checksQuery = useQuery({
   enabled: computed(() => draft.value !== undefined),
 })
 const report = computed(() => checksQuery.data.value?.report)
+/** Set when the publish stood but its coverage recompute failed. */
+const publishWarning = ref<string | null>(null)
 
 // --- Checks -----------------------------------------------------------------------------------
 const levels: { level: CheckLevel; label: string }[] = [
@@ -156,6 +158,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           This version is {{ draft.status }}; it can no longer change. See
           <RouterLink to="/admin/versions" class="text-link underline">Versions</RouterLink>.
         </p>
+        <p v-if="publishWarning" role="alert" class="text-danger">{{ publishWarning }}</p>
       </div>
 
       <div class="overflow-x-auto">
@@ -354,6 +357,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         :state-id="draft.stateId"
         :state-name="stateName || draft.stateId"
         :checks="checksQuery.data.value"
+        @published="(warning) => (publishWarning = warning)"
       />
 
       <div v-if="draft.status === 'draft'" class="flex flex-wrap items-center gap-3">

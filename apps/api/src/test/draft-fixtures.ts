@@ -23,8 +23,13 @@ export const entry = (code: string, patch: Partial<DraftEntry> = {}): DraftEntry
   ...patch,
 })
 
-export async function send(method: string, path: string, body?: unknown) {
-  return call(path, { token: await accessToken(), method, ...(body === undefined ? {} : { body }) })
+export async function send(method: string, path: string, body?: unknown, vars?: Partial<Env>) {
+  return call(path, {
+    token: await accessToken(),
+    method,
+    ...(body === undefined ? {} : { body }),
+    ...(vars ? { vars } : {}),
+  })
 }
 
 /** The source document each state's drafts cite, by state id. */
@@ -54,12 +59,12 @@ export async function checksOf(id: number) {
 }
 
 /** Publishes with every confirmation the checks ask for (typed ones get the state code). */
-export async function publishAll(id: number, stateId: string) {
+export async function publishAll(id: number, stateId: string, vars?: Partial<Env>) {
   const { report, token } = await checksOf(id)
   const confirmations = Object.fromEntries(
     report.checks
       .filter((c) => c.triggered && (c.level === 'confirm' || c.level === 'confirm_typed'))
       .map((c) => [c.id, c.level === 'confirm_typed' ? { typed: stateId } : {}]),
   )
-  return send('POST', `/api/admin/drafts/${String(id)}/publish`, { token, confirmations })
+  return send('POST', `/api/admin/drafts/${String(id)}/publish`, { token, confirmations }, vars)
 }

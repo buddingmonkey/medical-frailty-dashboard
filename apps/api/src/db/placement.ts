@@ -54,14 +54,52 @@ const inList = (values: readonly string[]) =>
   sql`(SELECT value FROM json_each(${JSON.stringify(values)}))`
 
 /**
+ * Write statements per D1 batch (each batch is one transaction): 4 × ROWS_PER_STATEMENT rows,
+ * so no batch is heavy for D1 (docs/deployment.md, "Preview data": one batch for every state
+ * hit D1's CPU limit, 2026-11-04).
+ */
+const STATEMENTS_PER_BATCH = 4
+
+/**
  * Places every entry of the published versions in scope and writes only the difference: rows
- * that moved are deleted, new or changed rows upserted, all in one batch (one transaction), with
- * a `data_version` bump when anything changed. Rows of a state's other versions are deleted.
+ * that moved are deleted, new or changed rows upserted, with a `data_version` bump when anything
+ * changed. Rows of a state's other versions are deleted.
+ *
+ * It works one state at a time ('all' is every state), and writes each state's difference in
+ * batches of at most STATEMENTS_PER_BATCH statements, so no D1 query or batch grows with the
+ * number of states. A failure part way leaves the states and batches before it written; calling
+ * it again finishes the job, because only the difference is written.
  */
 export async function recomputePlacements(db: Db, scope: PlacementScope): Promise<RecomputeResult> {
   const started = Date.now()
-  const stateFilter = (column: SQLiteColumn) =>
-    scope === 'all' ? undefined : sql`${column} IN ${inList(scope.stateIds)}`
+  const stateIds =
+    scope === 'all'
+      ? (await db.select({ id: states.id }).from(states).orderBy(states.id)).map((s) => s.id)
+      : scope.stateIds
+  const total = { entries: 0, placements: 0, inserted: 0, updated: 0, deleted: 0 }
+  for (const stateId of stateIds) {
+    const one = await recomputeState(db, stateId)
+    total.entries += one.entries
+    total.placements += one.placements
+    total.inserted += one.inserted
+    total.updated += one.updated
+    total.deleted += one.deleted
+  }
+  const result: RecomputeResult = { ...total, ms: Date.now() - started }
+  // Counts only: no codes, no names.
+  console.log(
+    JSON.stringify({
+      event: 'placements.recompute',
+      scope: scope === 'all' ? 'all' : scope.stateIds,
+      ...result,
+    }),
+  )
+  return result
+}
+
+/** One state's part of `recomputePlacements`. */
+async function recomputeState(db: Db, stateId: string): Promise<Omit<RecomputeResult, 'ms'>> {
+  const stateFilter = (column: SQLiteColumn) => sql`${column} IN ${inList([stateId])}`
 
   // Promise.all, not db.batch: D1 batches return rows as objects, which loses one of two
   // joined columns with the same name (entries.id, states.id).
@@ -96,19 +134,17 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
       })
       .from(unifiedMappings)
       .where(and(eq(unifiedMappings.status, 'approved'), stateFilter(unifiedMappings.stateId))),
-    scope === 'all'
-      ? db.select().from(entryUnified)
-      : db
-          .select({
-            entryId: entryUnified.entryId,
-            unifiedId: entryUnified.unifiedId,
-            basis: entryUnified.basis,
-            reviewed: entryUnified.reviewed,
-          })
-          .from(entryUnified)
-          .innerJoin(entries, eq(entries.id, entryUnified.entryId))
-          .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
-          .where(stateFilter(datasetVersions.stateId)),
+    db
+      .select({
+        entryId: entryUnified.entryId,
+        unifiedId: entryUnified.unifiedId,
+        basis: entryUnified.basis,
+        reviewed: entryUnified.reviewed,
+      })
+      .from(entryUnified)
+      .innerJoin(entries, eq(entries.id, entryUnified.entryId))
+      .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
+      .where(stateFilter(datasetVersions.stateId)),
   ])
 
   const index = await loadCcsrIndex(
@@ -201,26 +237,19 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
         }),
     )
   }
-  const [firstWrite, ...moreWrites] = writes
-  if (firstWrite) await db.batch([firstWrite, ...moreWrites, bumpDataVersion(db)])
+  // The bump goes with every batch, so a page cached between two batches is not read again.
+  for (let i = 0; i < writes.length; i += STATEMENTS_PER_BATCH) {
+    const [firstWrite, ...moreWrites] = writes.slice(i, i + STATEMENTS_PER_BATCH)
+    if (firstWrite) await db.batch([firstWrite, ...moreWrites, bumpDataVersion(db)])
+  }
 
-  const result: RecomputeResult = {
+  return {
     entries: published.length,
     placements: wanted.size,
     inserted: upserts.length - updated,
     updated,
     deleted: deletes.length,
-    ms: Date.now() - started,
   }
-  // Counts only: no codes, no names.
-  console.log(
-    JSON.stringify({
-      event: 'placements.recompute',
-      scope: scope === 'all' ? 'all' : scope.stateIds,
-      ...result,
-    }),
-  )
-  return result
 }
 
 /**
@@ -234,16 +263,22 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
 export function universeStatements(db: Db, unifiedId: SQL) {
   // The codes: candidates in each ICD-10-CM category (3 characters) where a ref_ccsr key has one
   // of the groups; each candidate's own groups are those of its longest key (3 to 7 characters).
+  //
+  // CROSS JOIN keeps `cats` outside, so each category reads its own range of `ref_codes` by
+  // primary key, and MATERIALIZED computes `hits` once for `best` and `codes`. Without them
+  // SQLite scanned every ICD-10-CM code per row of `cats` and ran `hits` again per row of `best`:
+  // on preview (full reference data) one category read 62M rows in 17.7 s, and Rebuild coverage
+  // hit D1's CPU limit; with them, 101k rows in 0.04 s (2026-11-04).
   const codes = sql`
     groups AS (SELECT ccsr_category FROM unified_ccsr WHERE unified_id = ${unifiedId}),
     cats AS (
       SELECT DISTINCT substr(code_norm, 1, 3) AS cat FROM ref_ccsr
       WHERE ccsr_category IN (SELECT ccsr_category FROM groups)
     ),
-    hits AS (
+    hits AS MATERIALIZED (
       SELECT c.code_norm AS code, length(r.code_norm) AS len, r.ccsr_category AS grp
       FROM cats
-      JOIN ref_codes c
+      CROSS JOIN ref_codes c
         ON c.code_system = 'icd10cm' AND c.code_norm >= cats.cat AND c.code_norm < cats.cat || '~'
       JOIN ref_ccsr r ON r.code_norm IN (
         substr(c.code_norm, 1, 3), substr(c.code_norm, 1, 4), substr(c.code_norm, 1, 5),
@@ -268,5 +303,5 @@ export function universeStatements(db: Db, unifiedId: SQL) {
       .insert(unifiedUniverse)
       .select(sql`WITH ${codes} SELECT ${unifiedId}, code FROM codes WHERE true`)
       .onConflictDoNothing(),
-  ]
+  ] as const
 }

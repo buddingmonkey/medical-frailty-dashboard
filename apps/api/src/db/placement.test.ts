@@ -1,12 +1,13 @@
 import { unifiedSaveResponseSchema } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { asc, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADMIN } from '../test/access-fixtures'
 import { draftWith, entry, publishAll, send, sourceIds } from '../test/draft-fixtures'
 import { resetDb } from '../test/reset-db'
 import { createDb } from './client'
+import { recomputePlacements } from './placement'
 import {
   appMeta,
   datasetVersions,
@@ -285,6 +286,35 @@ describe('placements (entry_unified)', () => {
     await mapCategory('MT', 'DME', kidney, true)
     expect(await placements('MT')).toEqual(before)
     expect(await dataVersion()).toBe(version + 1)
+  })
+
+  it('works one state at a time, in batches of at most four write statements', async () => {
+    await publish('MT', [entry('F20.0')])
+    await publish('NE', [entry('F31.10')])
+    // 4,500 copies of MT's entry: 5 insert statements of 1,000 rows, so two batches.
+    await env.DB.prepare(
+      `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 4499)
+       INSERT INTO entries (version_id, code_system, raw_code, code_norm, match_kind,
+         state_category, state_subcategory, qualification, qualification_basis,
+         source_document_id, source_part)
+       SELECT version_id, code_system, raw_code, code_norm, match_kind, state_category,
+         state_subcategory, qualification, qualification_basis, source_document_id, source_part
+       FROM entries, n
+       WHERE version_id = (SELECT published_version_id FROM states WHERE id = 'MT')`,
+    ).run()
+    await db.delete(entryUnified)
+
+    const batch = vi.spyOn(db, 'batch')
+    const result = await recomputePlacements(db, 'all')
+    const sizes = batch.mock.calls.map(([items]) => items.length)
+    batch.mockRestore()
+    expect(result.placements).toBe(4501)
+    // Writes (reads are batches of one): MT 4 + bump, then 1 + bump; NE 1 + bump. Every other
+    // state writes nothing.
+    expect(sizes.filter((n) => n > 1)).toEqual([5, 2, 2])
+    expect((await placements('NE')).length).toBe(1)
+    // A second run writes nothing.
+    expect((await recomputePlacements(db, 'all')).inserted).toBe(0)
   })
 })
 

@@ -20,7 +20,8 @@ const props = defineProps<{
   stateName: string
   checks: DraftChecksResponse
 }>()
-const emit = defineEmits<{ published: [] }>()
+/** `warning`: the publish stands, but its coverage recompute failed (Rebuild coverage repairs it). */
+const emit = defineEmits<{ published: [warning: string | null] }>()
 
 const id = useId()
 const queryClient = useQueryClient()
@@ -62,8 +63,8 @@ const publish = useMutation({
       { token: props.checks.token, confirmations: confirmations.value },
       publishResponseSchema,
     ),
-  onSuccess: async () => {
-    emit('published')
+  onSuccess: async (result) => {
+    emit('published', result.warning ?? null)
     await queryClient.invalidateQueries({ queryKey: ['admin'] })
   },
 })
