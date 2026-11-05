@@ -2,29 +2,31 @@ import type { CodeSystem } from '@mfcd/shared'
 import { sql } from 'drizzle-orm'
 
 import type { Db } from './client'
-import { rangeCovers } from './public-drill'
+import { coversByPrefixSql, entryCols, prefixBoundsSql, rangeCoversSql } from './code-match'
 
 // The code pages in the sitemap (roadmap M6 step 5; docs/seo.md, "Sitemap"): every code that at
 // least one published state includes, listed or covered, which are exactly the code pages that
 // are indexed. The cover rules are the drill-down's (`shared` in public-drill.ts): a wildcard
-// covers every code that starts with it, a range uses `rangeCovers`. Covered codes come from
+// covers every code that starts with it, a range uses `rangeCoversSql` (src/db/code-match.ts). Covered codes come from
 // `ref_codes` (range scans of its primary key), so a range of CPT codes adds only its two ends:
 // there is no CPT code set to expand it with (docs/data-model.md, "Licensing of code text").
+
+const g = entryCols('g')
+const rows = entryCols('pe')
 
 /**
  * The included codes, as a CTE `codes(sys, norm)`. The distinct wildcards and ranges come first
  * (states repeat each other's), then `CROSS JOIN` keeps them outside the `ref_codes` range
  * scans: left to itself, local D1's planner scanned all of `ref_codes` instead (24 s on the
- * seed; 14 ms in this order).
+ * seed; 14 ms in this order). Exported for the query-plan test.
  */
-/** The included-codes CTE as plain SQL (no parameters); exported for the query-plan test. */
-export const includedCodesSql = `WITH
+export const includedCodes = sql`WITH
   pe AS (
     SELECT e.code_system, e.code_norm, e.match_kind, e.range_end_norm, e.includes_children
     FROM states s JOIN entries e ON e.version_id = s.published_version_id),
   wild AS MATERIALIZED (
     SELECT DISTINCT code_system, code_norm FROM pe
-    WHERE match_kind = 'prefix' OR (match_kind = 'exact' AND includes_children = 1)),
+    WHERE ${coversByPrefixSql(rows)}),
   rng AS MATERIALIZED (
     SELECT DISTINCT code_system, code_norm, range_end_norm, includes_children FROM pe
     WHERE match_kind = 'range'),
@@ -37,13 +39,12 @@ export const includedCodesSql = `WITH
     UNION
     SELECT r.code_system, r.code_norm FROM wild w
       CROSS JOIN ref_codes r ON r.code_system = w.code_system
-        AND r.code_norm >= w.code_norm AND r.code_norm < w.code_norm || '~'
+        AND ${prefixBoundsSql('w.code_norm', 'r.code_norm')}
     UNION
     SELECT r.code_system, r.code_norm FROM rng g
       CROSS JOIN ref_codes r ON r.code_system = g.code_system
         AND r.code_norm >= g.code_norm AND r.code_norm < g.range_end_norm || '~'
-      WHERE ${rangeCovers('g', 'r.code_norm')})`
-const includedCodes = sql.raw(includedCodesSql)
+      WHERE ${rangeCoversSql(g, 'r.code_norm')})`
 
 /** How many codes the sitemap lists. */
 export async function includedCodeCount(db: Db): Promise<number> {

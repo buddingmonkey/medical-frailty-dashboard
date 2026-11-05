@@ -54,9 +54,10 @@ export async function publishVersion(
     .returning()
   if (!doc || !version) throw new Error('insert failed')
   await db.insert(versionSources).values({ versionId: version.id, sourceDocumentId: doc.id })
-  await db
-    .insert(entries)
-    .values(rows.map((r) => ({ ...r, versionId: version.id, sourceDocumentId: doc.id })))
+  // One row per statement: an entry binds about 20 parameters, and D1 binds at most 100.
+  for (const r of rows) {
+    await db.insert(entries).values({ ...r, versionId: version.id, sourceDocumentId: doc.id })
+  }
   if (status === 'published') {
     await db
       .update(states)

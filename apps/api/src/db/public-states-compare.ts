@@ -18,10 +18,10 @@ import {
 import { and, asc, inArray, isNotNull, type SQL, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
+import { entryCols, rowColumnsSql } from './code-match'
 import {
   describedSql,
   keyOf,
-  kindOf,
   type MatchColumns,
   matchColumns,
   narrowerCount,
@@ -52,9 +52,7 @@ const chosenPub = (ids: readonly string[]) =>
         AND id IN (SELECT value FROM json_each(${JSON.stringify(ids)}))`
 
 /** Every distinct entry of the chosen states, as `rows0`. */
-const chosenRows = sql`SELECT DISTINCT e.code_system AS sys, ${sql.raw(kindOf('e'))} AS kind,
-    e.code_norm AS norm, e.range_end_norm AS end_norm,
-    CASE WHEN e.match_kind = 'prefix' OR e.includes_children = 1 THEN 1 ELSE 0 END AS wild
+const chosenRows = sql`SELECT DISTINCT ${rowColumnsSql(entryCols('e'))}
   FROM pub p JOIN entries e ON e.version_id = p.vid`
 
 /**
@@ -75,7 +73,7 @@ const compareCtes = sql`,
     FROM drows r LEFT JOIN best b ON b.rk = r.rk LEFT JOIN entries e ON e.id = b.entry_id
     GROUP BY r.rk),
   placed AS MATERIALIZED (
-    SELECT DISTINCT ${sql.raw(keyOf('e'))} AS rk, eu.unified_id AS gid
+    SELECT DISTINCT ${keyOf('e')} AS rk, eu.unified_id AS gid
     FROM pub p
     JOIN entries e ON e.version_id = p.vid
     JOIN entry_unified eu ON eu.entry_id = e.id
