@@ -17,7 +17,7 @@ import { qualificationLabels, RULE_HEADING } from './qualification'
 
 // The code detail page (roadmap M6 step 3; docs/data-model.md, "Matching across states"): one
 // code, and every state's status for it in the M4 words (`compareStatusLabels`). The wording
-// below is provisional and on the legal team's list (docs/status.md); change it here, never in
+// below is provisional and on the legal team's list (docs/legal-review.md, Part 2); change it here, never in
 // components. Like codes (step 4) are not a status: they sit beside it, in `likeCodes`
 // (condition-groups.ts), so a like match never reads as a confirmed one.
 

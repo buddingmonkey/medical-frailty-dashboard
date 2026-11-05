@@ -16,7 +16,7 @@ export const STATUTE_URL =
   'https://www.govinfo.gov/content/pkg/PLAW-119publ21/html/PLAW-119publ21.htm'
 
 export interface FederalCategoryInfo {
-  /** Short public label. Provisional: the legal team may reword it (docs/status.md). */
+  /** Short public label. Provisional: the legal team may reword it (docs/legal-review.md, item 3). */
   label: string
   /** `(aa)`–`(ee)` for the statutory categories; null for our own. */
   statuteClause: string | null

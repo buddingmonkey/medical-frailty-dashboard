@@ -10,7 +10,7 @@ import { unifiedSlugFromLabel } from './unified-admin'
 // condition (a cancer diagnosis, a chemotherapy service, a chemotherapy drug). On a code's page,
 // a state that does not list or cover the code but lists a code in another code system in the
 // same group gets a "like" match, shown apart from the confirmed matches. The wording at the end
-// of this file is provisional and on the legal team's list (docs/status.md).
+// of this file is provisional and on the legal team's list (docs/legal-review.md, item 11).
 
 // ---------------------------------------------------------------------------------------------
 // Members: what codes a member covers
