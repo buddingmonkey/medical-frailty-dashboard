@@ -35,6 +35,8 @@ coverage that works on real data, and admin and contributor text that matches th
 8. "The admin tool overview page also has outdated text." Same process: an auditor checked
    every admin string against the code, then a copy editor checked the auditor (#107).
 9. `v0.9.3` released with the text fixes.
+10. The project lead: the admin pages should not mention the preview site, which only they use
+    for testing. Removed (#109) and released as `v0.9.4`.
 
 ## Decisions
 | Decision | Why | Who decided |
@@ -65,7 +67,7 @@ coverage that works on real data, and admin and contributor text that matches th
 ## Numbers
 - Time: ≈ 13 h of wall clock across the day (11:04 to 00:23 CST merges), with long idle gaps;
   active time not measured.
-- 12 PRs (#96–#107); 3 releases (`v0.9.1`, `v0.9.2`, `v0.9.3`).
+- 14 PRs (#96–#109); 4 releases (`v0.9.1` to `v0.9.4`).
 - 1,806 Vitest (727 unit, 30 reference data, 328 component, 621 API, 100 scripts) and 271 e2e.
 - AI cost and hosting: not measured; Workers Paid.
 
