@@ -1,5 +1,6 @@
 import {
   LAST_MAINTENANCE_KEY,
+  type MaintenanceRun,
   maintenanceRunSchema,
   maintenanceStatusSchema,
   WEEKLY_DUMP_PREFIX,
@@ -19,6 +20,18 @@ import type { AppEnv } from '../../types'
 
 const actorOf = (c: Context<AppEnv>) => c.var.identity?.email ?? ''
 
+/** The stored last run, or null when the value is not valid JSON or not a run. */
+function lastRun(value: string): MaintenanceRun | null {
+  let json: unknown
+  try {
+    json = JSON.parse(value)
+  } catch {
+    return null
+  }
+  const parsed = maintenanceRunSchema.safeParse(json)
+  return parsed.success ? parsed.data : null
+}
+
 /** Mounted at /api/admin/maintenance. */
 export const maintenanceRoute = new Hono<AppEnv>()
   // The last run and the weekly dumps in R2.
@@ -27,10 +40,9 @@ export const maintenanceRoute = new Hono<AppEnv>()
       .select({ value: appMeta.value })
       .from(appMeta)
       .where(eq(appMeta.key, LAST_MAINTENANCE_KEY))
-    const parsed = row ? maintenanceRunSchema.safeParse(JSON.parse(row.value)) : null
     return c.json(
       maintenanceStatusSchema.parse({
-        last: parsed?.success ? parsed.data : null,
+        last: row ? lastRun(row.value) : null,
         weekly: await listWeeklyDumps(c.env.FILES),
       }),
     )
