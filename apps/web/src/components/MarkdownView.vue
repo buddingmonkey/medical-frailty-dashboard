@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { type Inline, parseMarkdown } from '../lib/markdown'
+import { isExternalHref, type MarkdownInline, parseMarkdown } from '@mfcd/shared'
 
-// Renders our own Markdown docs as text nodes (lib/markdown.ts); never as HTML. Headings move
+// Renders Markdown as text nodes (packages/shared/src/markdown.ts); never as HTML. Headings move
 // down `shift` levels so a doc's "#" fits under the page's own heading.
 const props = withDefaults(defineProps<{ source: string; shift?: number }>(), { shift: 1 })
 const blocks = computed(() => parseMarkdown(props.source))
@@ -14,7 +14,7 @@ const headingClass = (level: number) =>
     : level === 2
       ? 'font-display text-xl font-medium text-heading pt-2'
       : 'font-medium'
-const segments = (text: Inline[]) => text
+const segments = (text: MarkdownInline[]) => text
 </script>
 
 <template>
@@ -46,9 +46,13 @@ const segments = (text: Inline[]) => text
           <template v-for="(seg, k) in item" :key="k">
             <code v-if="seg.type === 'code'" class="font-mono text-sm">{{ seg.text }}</code>
             <strong v-else-if="seg.type === 'bold'">{{ seg.text }}</strong>
-            <a v-else-if="seg.type === 'link'" :href="seg.href" class="text-link underline">{{
-              seg.text
-            }}</a>
+            <a
+              v-else-if="seg.type === 'link'"
+              :href="seg.href"
+              :rel="isExternalHref(seg.href) ? 'noopener noreferrer external' : undefined"
+              class="text-link underline"
+              >{{ seg.text }}</a
+            >
             <template v-else>{{ seg.text }}</template>
           </template>
         </li>
@@ -57,9 +61,13 @@ const segments = (text: Inline[]) => text
         <template v-for="(seg, j) in block.text" :key="j">
           <code v-if="seg.type === 'code'" class="font-mono text-sm">{{ seg.text }}</code>
           <strong v-else-if="seg.type === 'bold'">{{ seg.text }}</strong>
-          <a v-else-if="seg.type === 'link'" :href="seg.href" class="text-link underline">{{
-            seg.text
-          }}</a>
+          <a
+            v-else-if="seg.type === 'link'"
+            :href="seg.href"
+            :rel="isExternalHref(seg.href) ? 'noopener noreferrer external' : undefined"
+            class="text-link underline"
+            >{{ seg.text }}</a
+          >
           <template v-else>{{ seg.text }}</template>
         </template>
       </p>
