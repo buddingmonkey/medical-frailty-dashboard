@@ -262,8 +262,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         Recalculates every unified category’s full code list, which unified categories each state’s
         codes fall in, and how alike the states’ lists are. Saving a unified category or a mapping,
         and publishing a list, already does this for what changed. Use it after a new CCSR or
-        ICD-10-CM release, after test data is loaded, or when a save says coverage could not be
-        updated.
+        ICD-10-CM release, or when a save says coverage could not be updated.
       </p>
       <button
         type="button"
