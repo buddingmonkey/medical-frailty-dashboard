@@ -81,6 +81,8 @@ literacy, little or no coding.
 | 2026-11-03 | The weekly backup worked in every test, but the builder checked the platform's limits anyway: a free-plan scheduled job gets 10 ms of CPU, and the backup needs up to 160 ms. On the free plan it would have failed every Sunday without a trace | Check the free tier's limits for scheduled jobs too, not only for web requests | same |
 | 2026-11-03 | A new Windows CI job found three bugs nobody could see on Linux (`D:\D:\` paths, slash direction, slow runners) | Test on the platforms your contributors use | `devlog/2026-11-03-m8-hardening.md` |
 | 2026-11-03 | The project lead found Georgia's source page; the posted files were byte-identical to what we had loaded | Hash your sources so you can prove it | same |
+| 2026-11-04 | Rebuild coverage failed twice on real data, for two different database limits: one transaction too big, then too much load in a 10-second window. Measuring rows read per step turned the second fix from a guess into numbers | When it fails again, read the new error fresh; it may be a new problem | `devlog/2026-11-04-launch-prep.md` |
+| 2026-11-04 | The admin overview still promised features as "coming next" that had shipped. The first AI audit fixed it but got two facts wrong itself; a second reviewer told to check each claim against the code caught both | Factual text needs a second reviewer who checks sources, not style | same |
 
 ## Numbers to collect
 
@@ -153,6 +155,7 @@ Start in M0; record per milestone in the devlog and total them here.
 | **M6 total** (2026-11-03) | **≈ 2.2 h** (10:31–12:40) | not measured | Workers Paid | 8 PRs (#69–#76); 1,365 Vitest + 64 e2e; code search over 107k reference codes, code pages for crawlers, like codes, a plain-language pass, contributor docs, a map fix; 7 builders + 2 reviewer agents, up to 3 at once |
 | **M7 total** (2026-11-03) | **≈ 1.3 h** (13:34–14:55) | not measured | Workers Paid (the weekly dump needs it) | 3 PRs (#80–#82); 1,452 Vitest + 69 e2e; bulk remap with a preview, zip backup and restore, weekly cron with cleanup; 3 builders, 2 review rounds |
 | **M8 steps 1–4, 6, 7** (2026-11-03) | **≈ 4 h** (15:16–19:20) | not measured | Workers Paid (rate limiting no extra charge) | 10 PRs (#85–#94); 1,683 Vitest + 271 e2e; launch gate page, About/methodology, icons and share image, Lighthouse 69 → 97, axe on 100 combinations, rate limits, cross-platform scripts with a Windows CI job; 8 builders + 1 security review agent |
+| Launch prep (2026-11-04) | not measured (merges 11:04–00:23) | not measured | Workers Paid | 12 PRs (#96–#107); 1,806 Vitest + 271 e2e; legal doc, site mark, review fixes, paced rebuild, docs and admin copy passes; 3 releases |
 
 ## Assets to capture for slides
 
