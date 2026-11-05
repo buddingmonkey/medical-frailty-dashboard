@@ -76,8 +76,6 @@ Prices change, so check https://claude.com/pricing (plans) and https://claude.co
 
 ### Windows: PowerShell
 
-Windows 10 or 11 works as it is. You do not need WSL or Linux.
-
 1. Click Start, type `Terminal` and press Enter. (On Windows 10 without Terminal, type
    `PowerShell` and open **Windows PowerShell**.) Do not choose "Run as administrator".
 2. Allow the tools you install in the next steps to run. Type this and press Enter:
@@ -93,10 +91,6 @@ Windows 10 or 11 works as it is. You do not need WSL or Linux.
 
 Every command in these guides goes in this window. Keep the project in your own folder
 (step 10 does this for you), not in OneDrive or on a network drive.
-
-**Prefer WSL?** It works too. Install it (https://learn.microsoft.com/en-us/windows/wsl/install),
-then follow the **Linux** steps in the Ubuntu window, and keep the project inside Ubuntu (`~`),
-not under `/mnt/c/`.
 
 ### macOS
 
@@ -227,8 +221,7 @@ You should see `v26.` and more numbers.
 ## Step 7. Install pnpm 12.16.1
 
 **pnpm** downloads the packages the site is built from. This project uses exactly version
-12.16.1. Node 26 no longer includes the tool (corepack) that used to install pnpm, so you
-install it yourself:
+12.16.1:
 
 ```text
 npm install -g pnpm@12.16.1
@@ -279,8 +272,7 @@ https://code.claude.com/docs/en/terminal-guide
 You do not need an editor: Claude Code edits the files for you. An editor helps you read the
 files and the changes. **Visual Studio Code** is free: https://code.visualstudio.com
 
-Install it, then open the project folder from the File menu. (With WSL, add the **WSL**
-extension too: https://code.visualstudio.com/docs/remote/wsl.)
+Install it, then open the project folder from the File menu.
 
 ## Step 10. Copy the project to your computer (fork and clone)
 
@@ -315,9 +307,6 @@ git remote -v
 You should see two names: `origin` (your fork, with your GitHub name in the address) and
 `upstream` (the main project, with `buddingmonkey`). You can also see your fork at
 `https://github.com/yourname/medical-frailty-dashboard`.
-
-People with write access to the main project make a branch instead of a fork. If you are one
-of them, use `gh repo clone buddingmonkey/medical-frailty-dashboard`.
 
 ## Step 11. Install the project's packages
 
@@ -405,8 +394,8 @@ Open a **second** terminal, go to the project folder, and run:
 pnpm dev:stop
 ```
 
-**Success:** it says `Stopped` and a number of processes (for example `Stopped 15 processes.`). The first window returns to the
-prompt. Use this command rather than closing the window: it stops every part of the site.
+**Success:** it says `Stopped` and a number of processes (for example `Stopped 15 processes.`).
+The first window returns to the prompt. Use this command rather than closing the window: it stops every part of the site.
 
 ## Step 14. Start Claude Code for the first time
 
@@ -442,7 +431,7 @@ pull request, so you do not have to. To run it on your computer, install the tes
 pnpm --filter @mfcd/web exec playwright install --with-deps chromium
 ```
 
-On Linux and WSL it asks for your password (it installs system libraries).
+On Linux it asks for your password (it installs system libraries).
 
 ## Optional: the Vue skill for Claude Code
 
@@ -454,8 +443,6 @@ the repo. To add it, in Claude Code type these two commands, one at a time:
 /plugin install vue-development
 ```
 
-(See `docs/architecture.md`, "Agent skills".)
-
 ## Troubleshooting
 
 | What you see | Why | Fix |
@@ -466,13 +453,12 @@ the repo. To add it, in Claude Code type these two commands, one at a time:
 | `pnpm: command not found`, or `pnpm --version` is not `12.16.1` | pnpm is missing or a different version | `npm install -g pnpm@12.16.1`, then open a new terminal |
 | `EACCES` or "permission denied" when you run `npm install -g` (macOS, Linux) | You are using a Node that came with the system, not nvm's | Never add `sudo`. Do step 6 again, open a new terminal, check that `which node` shows a path with `.nvm` in it |
 | pnpm refuses a package because it was published too recently (`minimumReleaseAge`) | The project refuses packages less than 3 days old, which blocks most hijacked releases | Ask Claude Code to use the previous version of that package. Do not change the setting |
-| `Port 8787 is still in use`, or `pnpm dev` says the address is already in use | An earlier `pnpm dev` is still running | `pnpm dev:stop`. If that does not free it, see what holds it: on Windows `netstat -ano \| findstr :8787` (the last number is the process ID; Task Manager shows it under Details), on Linux or WSL `ss -ltnp \| grep 8787`, on macOS `lsof -i :8787` |
+| `Port 8787 is still in use`, or `pnpm dev` says the address is already in use | An earlier `pnpm dev` is still running | `pnpm dev:stop`. If that does not free it, see what holds it: on Windows `netstat -ano \| findstr :8787` (the last number is the process ID; Task Manager shows it under Details), on Linux `ss -ltnp \| grep 8787`, on macOS `lsof -i :8787` |
 | Pages show errors such as `no such table`, or the site has no states | The local database is empty | Do step 12 again, then press Rebuild coverage (step 13) |
 | Compare or Map is empty but state pages work | Coverage was not rebuilt after seeding | Admin → Unified categories → Rebuild coverage |
 | `pnpm check` says `FAIL format` | Files are not laid out the project's way | `pnpm format`, then `pnpm check` again |
-| Windows: `FAIL format` on almost every file, or `\r` in an error | Git turned line endings into Windows ones (the project's `.gitattributes` should prevent this) | `git config --global core.autocrlf input`, then clone again (step 10) |
+| Windows: `FAIL format` on almost every file, or `\r` in an error | Git turned line endings into Windows ones | `git config --global core.autocrlf input`, then clone again (step 10) |
 | Windows: `Filename too long` or `ENAMETOOLONG` | Windows limits path length, and the project's packages sit deep in folders | `git config --global core.longpaths true`, and keep the project in your user folder (`C:\Users\yourname\medical-frailty-dashboard`) |
-| WSL: everything is very slow | The project is in a Windows folder (`/mnt/c/...`) | Clone again inside Ubuntu, into `~` (step 10) |
 | `pnpm db:ref:local` fails with a network or download error | It downloads files from cms.gov | Check your internet and try again later |
 | `git push` says `Permission denied`, `403`, or `GH013: Repository rule violations` | You pushed to the main project or to `main` | Push your own branch to your fork: `git push -u origin your-branch-name` |
 | A check says browsers are missing (`Executable doesn't exist`) | The test browser is not installed | See "Optional: the browser tests" above |
