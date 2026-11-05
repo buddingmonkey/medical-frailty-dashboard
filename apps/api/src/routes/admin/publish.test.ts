@@ -1,11 +1,12 @@
 import {
   auditListResponseSchema,
   publishResponseSchema,
+  rollbackResponseSchema,
   versionListResponseSchema,
 } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq, inArray } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createDb } from '../../db/client'
 import { publishedEntries } from '../../db/published'
@@ -22,6 +23,7 @@ import {
 } from '../../db/schema'
 import { ADMIN } from '../../test/access-fixtures'
 import { checksOf, draftWith, entry, publishAll, send, sourceIds } from '../../test/draft-fixtures'
+import { failingD1 } from '../../test/failing-d1'
 import { resetDb } from '../../test/reset-db'
 
 // Publish and rollback (docs/data-model.md, "Replacing a state's list"), including the
@@ -332,5 +334,37 @@ describe('publish and rollback', () => {
       400,
     )
     expect(await statusOf(mt)).toBe('published')
+  })
+  it('keeps a publish whose coverage recompute fails, and says so with a warning', async () => {
+    const id = await draftWith('MT', [entry('F20.0')])
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = await publishAll(id, 'MT', { DB: failingD1(env.DB, /entry_unified/) })
+    logged.mockRestore()
+    expect(res.status).toBe(200)
+    const body = publishResponseSchema.parse(await res.json())
+    expect(body.warning).toMatch(
+      /^Saved\. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories\. If that fails too, report it with reference [0-9a-f]{8}\.$/,
+    )
+    expect(await statusOf(id)).toBe('published')
+    // Without the failure, there is no warning.
+    const next = await draftWith('MT', [entry('F31.0')])
+    expect(await (await publishAll(next, 'MT')).json()).not.toHaveProperty('warning')
+  })
+
+  it('keeps a rollback whose coverage recompute fails, and says so with a warning', async () => {
+    const first = await draftWith('MT', [entry('F20.0')])
+    await publishAll(first, 'MT')
+    await publishAll(await draftWith('MT', [entry('F31.0')]), 'MT')
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = await send(
+      'POST',
+      '/api/admin/states/MT/rollback',
+      { versionId: first },
+      { DB: failingD1(env.DB, /entry_unified/) },
+    )
+    logged.mockRestore()
+    expect(res.status).toBe(200)
+    expect(rollbackResponseSchema.parse(await res.json()).warning).toMatch(/^Saved\./)
+    expect(await statusOf(first)).toBe('published')
   })
 })

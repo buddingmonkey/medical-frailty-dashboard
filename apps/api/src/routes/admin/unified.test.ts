@@ -6,7 +6,7 @@ import {
 } from '@mfcd/shared'
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createDb } from '../../db/client'
 import {
@@ -21,6 +21,7 @@ import {
   unifiedUniverse,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
+import { failingD1 } from '../../test/failing-d1'
 import { resetDb } from '../../test/reset-db'
 
 // Unified categories (roadmap M5 step 3). CCSR ids and names here are made up (TST…).
@@ -178,6 +179,36 @@ describe('/api/admin/unified', () => {
     await send('PUT', `/api/admin/unified/${String(id)}`, { ...body, ccsr: ['TST003', 'TST002'] })
     const rows = await db.select().from(unifiedCcsr).where(eq(unifiedCcsr.unifiedId, id))
     expect(rows.map((r) => r.ccsrCategory).sort()).toEqual(['TST002', 'TST003'])
+  })
+
+  it('keeps a save whose placement recompute fails, and says so with a warning', async () => {
+    const { id } = await create({ status: 'published' })
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const broken = { DB: failingD1(env.DB, /entry_unified/) }
+    const res = await call(`/api/admin/unified/${String(id)}`, {
+      token: await accessToken(),
+      method: 'PUT',
+      body: { ...body, status: 'published', ccsr: ['TST003'] },
+      vars: broken,
+      headers: { 'cf-ray': '8f2a1c3d4e5f6a7b-DFW' },
+    })
+    const created = await call('/api/admin/unified', {
+      token: await accessToken(),
+      method: 'POST',
+      body: { ...body, label: 'Kidney', status: 'published', ccsr: ['TST001'] },
+      vars: broken,
+    })
+    const lines = logged.mock.calls.map(([line]) => String(line))
+    logged.mockRestore()
+    expect(res.status).toBe(200)
+    expect(unifiedSaveResponseSchema.parse(await res.json()).warning).toBe(
+      'Saved. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories. If that fails too, report it with reference 8f2a1c3d4e5f6a7b-DFW.',
+    )
+    expect(lines.some((l) => l.includes('"ref":"8f2a1c3d4e5f6a7b-DFW"'))).toBe(true)
+    const rows = await db.select().from(unifiedCcsr).where(eq(unifiedCcsr.unifiedId, id))
+    expect(rows.map((r) => r.ccsrCategory)).toEqual(['TST003'])
+    expect(created.status).toBe(201)
+    expect(unifiedSaveResponseSchema.parse(await created.json()).warning).toMatch(/^Saved\./)
   })
 
   it('allows draft → published ⇄ retired, never back to draft, and bumps data_version', async () => {

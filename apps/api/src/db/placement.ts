@@ -54,14 +54,52 @@ const inList = (values: readonly string[]) =>
   sql`(SELECT value FROM json_each(${JSON.stringify(values)}))`
 
 /**
+ * Write statements per D1 batch (each batch is one transaction): 4 × ROWS_PER_STATEMENT rows,
+ * so no batch is heavy for D1 (docs/deployment.md, "Preview data": one batch for every state
+ * hit D1's CPU limit, 2026-11-04).
+ */
+const STATEMENTS_PER_BATCH = 4
+
+/**
  * Places every entry of the published versions in scope and writes only the difference: rows
- * that moved are deleted, new or changed rows upserted, all in one batch (one transaction), with
- * a `data_version` bump when anything changed. Rows of a state's other versions are deleted.
+ * that moved are deleted, new or changed rows upserted, with a `data_version` bump when anything
+ * changed. Rows of a state's other versions are deleted.
+ *
+ * It works one state at a time ('all' is every state), and writes each state's difference in
+ * batches of at most STATEMENTS_PER_BATCH statements, so no D1 query or batch grows with the
+ * number of states. A failure part way leaves the states and batches before it written; calling
+ * it again finishes the job, because only the difference is written.
  */
 export async function recomputePlacements(db: Db, scope: PlacementScope): Promise<RecomputeResult> {
   const started = Date.now()
-  const stateFilter = (column: SQLiteColumn) =>
-    scope === 'all' ? undefined : sql`${column} IN ${inList(scope.stateIds)}`
+  const stateIds =
+    scope === 'all'
+      ? (await db.select({ id: states.id }).from(states).orderBy(states.id)).map((s) => s.id)
+      : scope.stateIds
+  const total = { entries: 0, placements: 0, inserted: 0, updated: 0, deleted: 0 }
+  for (const stateId of stateIds) {
+    const one = await recomputeState(db, stateId)
+    total.entries += one.entries
+    total.placements += one.placements
+    total.inserted += one.inserted
+    total.updated += one.updated
+    total.deleted += one.deleted
+  }
+  const result: RecomputeResult = { ...total, ms: Date.now() - started }
+  // Counts only: no codes, no names.
+  console.log(
+    JSON.stringify({
+      event: 'placements.recompute',
+      scope: scope === 'all' ? 'all' : scope.stateIds,
+      ...result,
+    }),
+  )
+  return result
+}
+
+/** One state's part of `recomputePlacements`. */
+async function recomputeState(db: Db, stateId: string): Promise<Omit<RecomputeResult, 'ms'>> {
+  const stateFilter = (column: SQLiteColumn) => sql`${column} IN ${inList([stateId])}`
 
   // Promise.all, not db.batch: D1 batches return rows as objects, which loses one of two
   // joined columns with the same name (entries.id, states.id).
@@ -96,19 +134,17 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
       })
       .from(unifiedMappings)
       .where(and(eq(unifiedMappings.status, 'approved'), stateFilter(unifiedMappings.stateId))),
-    scope === 'all'
-      ? db.select().from(entryUnified)
-      : db
-          .select({
-            entryId: entryUnified.entryId,
-            unifiedId: entryUnified.unifiedId,
-            basis: entryUnified.basis,
-            reviewed: entryUnified.reviewed,
-          })
-          .from(entryUnified)
-          .innerJoin(entries, eq(entries.id, entryUnified.entryId))
-          .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
-          .where(stateFilter(datasetVersions.stateId)),
+    db
+      .select({
+        entryId: entryUnified.entryId,
+        unifiedId: entryUnified.unifiedId,
+        basis: entryUnified.basis,
+        reviewed: entryUnified.reviewed,
+      })
+      .from(entryUnified)
+      .innerJoin(entries, eq(entries.id, entryUnified.entryId))
+      .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
+      .where(stateFilter(datasetVersions.stateId)),
   ])
 
   const index = await loadCcsrIndex(
@@ -201,26 +237,19 @@ export async function recomputePlacements(db: Db, scope: PlacementScope): Promis
         }),
     )
   }
-  const [firstWrite, ...moreWrites] = writes
-  if (firstWrite) await db.batch([firstWrite, ...moreWrites, bumpDataVersion(db)])
+  // The bump goes with every batch, so a page cached between two batches is not read again.
+  for (let i = 0; i < writes.length; i += STATEMENTS_PER_BATCH) {
+    const [firstWrite, ...moreWrites] = writes.slice(i, i + STATEMENTS_PER_BATCH)
+    if (firstWrite) await db.batch([firstWrite, ...moreWrites, bumpDataVersion(db)])
+  }
 
-  const result: RecomputeResult = {
+  return {
     entries: published.length,
     placements: wanted.size,
     inserted: upserts.length - updated,
     updated,
     deleted: deletes.length,
-    ms: Date.now() - started,
   }
-  // Counts only: no codes, no names.
-  console.log(
-    JSON.stringify({
-      event: 'placements.recompute',
-      scope: scope === 'all' ? 'all' : scope.stateIds,
-      ...result,
-    }),
-  )
-  return result
 }
 
 /**

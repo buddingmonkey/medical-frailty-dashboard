@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { CheckId } from './checks'
 import { versionStatuses } from './enums'
+import { saveWarningSchema } from './errors'
 
 // Publish and rollback (docs/data-model.md, "Replacing a state's list").
 
@@ -35,10 +36,14 @@ export const publishResponseSchema = z.object({
   ok: z.literal(true),
   /** R2 key of the backup of the version this publish replaced; null on a first publish. */
   backupKey: z.string().nullable(),
+  warning: saveWarningSchema,
 })
 
 /** Body of `POST /api/admin/states/:stateId/rollback`. */
 export const rollbackRequestSchema = z.object({ versionId: z.number().int().positive() })
+
+/** Answer of the rollback. */
+export const rollbackResponseSchema = z.object({ ok: z.literal(true), warning: saveWarningSchema })
 
 export const versionListResponseSchema = z.object({
   items: z.array(

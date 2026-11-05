@@ -1,5 +1,6 @@
 import {
   rollbackRequestSchema,
+  rollbackResponseSchema,
   stateListResponseSchema,
   versionListResponseSchema,
 } from '@mfcd/shared'
@@ -12,6 +13,7 @@ import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements } from '../../db/placement'
 import { recomputeSimilarity } from '../../db/similarity'
 import { datasetVersions, states } from '../../db/schema'
+import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
 
 // Mounted behind requireAdmin and adminWriteGuard. The state picker for uploads and watch
@@ -103,8 +105,11 @@ export const adminStates = new Hono<AppEnv>()
         },
       }),
     ])
-    await recomputePlacements(db, { stateIds: [stateId] })
-    // Then how alike its list is to every other state's (roadmap M5 step 7).
-    await recomputeSimilarity(db, { stateIds: [stateId] })
-    return c.json({ ok: true })
+    // Then how alike its list is to every other state's (roadmap M5 step 7). The rollback
+    // stands if this fails: the answer carries a warning instead.
+    const recomputed = await recomputeAfterSave(c, async () => {
+      await recomputePlacements(db, { stateIds: [stateId] })
+      await recomputeSimilarity(db, { stateIds: [stateId] })
+    })
+    return c.json(rollbackResponseSchema.parse({ ok: true, ...recomputed }))
   })

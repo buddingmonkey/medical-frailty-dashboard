@@ -132,6 +132,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
+    <p v-if="saved && save.data.value?.warning" role="alert" class="text-danger">
+      {{ save.data.value.warning }}
+    </p>
     <p v-if="list.error.value" role="alert" class="text-danger">
       Could not load the unified categories: {{ list.error.value.message }}
     </p>

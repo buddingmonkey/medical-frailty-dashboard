@@ -7,6 +7,7 @@ import {
   type UnifiedStatus,
   unifiedStatusSchema,
 } from './enums'
+import { saveWarningSchema } from './errors'
 import {
   ccsrCategorySchema,
   unifiedCategorySaveSchema,
@@ -88,6 +89,7 @@ export const unifiedSaveResponseSchema = z.object({
   id: z.number().int().positive(),
   slug: unifiedSlugSchema,
   version: z.number().int().positive(),
+  warning: saveWarningSchema,
 })
 
 /**
@@ -235,6 +237,7 @@ export const unifiedMappingSaveResponseSchema = z.object({
   ok: z.literal(true),
   status: z.enum(['approved', 'proposed']),
   review: z.enum(['Reviewed by one admin', 'Proposed']),
+  warning: saveWarningSchema,
 })
 
 const suggestionSchema = z.object({

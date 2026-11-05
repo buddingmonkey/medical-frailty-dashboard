@@ -175,6 +175,23 @@ describe('/admin/unified', () => {
     ])
   })
 
+  it('says so when the save stood but coverage could not be updated', async () => {
+    fakeApi()
+    const warning =
+      'Saved. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories. If that fails too, report it with reference ab12cd34.'
+    server.use(
+      http.put('/api/admin/unified/:id', () =>
+        HttpResponse.json({ id: 1, slug: 'serious-mental-illness', version: 2, warning }),
+      ),
+    )
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Edit Serious mental illness' }))
+    const form = screen.getByRole('form', { name: 'Edit Serious mental illness' })
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText(/^Saved Serious mental illness/)).toBeTruthy()
+    expect(screen.getByRole('alert').textContent.trim()).toBe(warning)
+  })
+
   it('retires a draft that was never published', async () => {
     const draft = {
       ...smi,

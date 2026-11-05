@@ -1,7 +1,8 @@
-import { type SQL, sql } from 'drizzle-orm'
+import { isNotNull, type SQL, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { bumpDataVersion } from './meta'
+import { states } from './schema'
 
 // Pair similarity (roadmap M5 step 7; docs/data-model.md, "Pair similarity"): how alike two
 // states' published lists are, stored in `state_similarity` so the state pages and the
@@ -135,22 +136,44 @@ const deleteStale = sql`DELETE FROM state_similarity
  * Recomputes the pairs in scope and writes only what changed, with a `data_version` bump when
  * anything did (a page cached since the publish batch is never read again). Call it right after
  * `recomputePlacements` on publish and rollback.
+ *
+ * 'all' runs one statement per state (its pairs with each state after it), never one for every
+ * pair: with 44 states on preview that one statement read 3.5M rows in 3 s, and it grows with
+ * the square of the states. A failure part way leaves the earlier states written; calling it
+ * again finishes the job.
  */
 export async function recomputeSimilarity(
   db: Db,
   scope: SimilarityScope,
 ): Promise<SimilarityResult> {
   const started = Date.now()
-  // Two statements, each atomic (drizzle's D1 batch does not take raw SQL runs).
+  const parts: SimilarityScope[] =
+    scope === 'all'
+      ? (
+          await db
+            .select({ id: states.id })
+            .from(states)
+            .where(isNotNull(states.publishedVersionId))
+            .orderBy(states.id)
+        ).map((s) => ({ pairsAfter: s.id }))
+      : [scope]
+  // Separate statements, each atomic (drizzle's D1 batch does not take raw SQL runs).
   const deleted = await db.run(deleteStale)
-  const upserted = await db.run(similarityUpsert(scope))
-  const changed = deleted.meta.changes + upserted.meta.changes
-  if (changed > 0) await bumpDataVersion(db)
+  const totals = {
+    written: 0,
+    rowsRead: deleted.meta.rows_read,
+    rowsWritten: deleted.meta.rows_written,
+  }
+  for (const part of parts) {
+    const upserted = await db.run(similarityUpsert(part))
+    totals.written += upserted.meta.changes
+    totals.rowsRead += upserted.meta.rows_read
+    totals.rowsWritten += upserted.meta.rows_written
+  }
+  if (deleted.meta.changes + totals.written > 0) await bumpDataVersion(db)
   const result: SimilarityResult = {
-    written: upserted.meta.changes,
+    ...totals,
     deleted: deleted.meta.changes,
-    rowsRead: deleted.meta.rows_read + upserted.meta.rows_read,
-    rowsWritten: deleted.meta.rows_written + upserted.meta.rows_written,
     ms: Date.now() - started,
   }
   // Counts only: no codes.

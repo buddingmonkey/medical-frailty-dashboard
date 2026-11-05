@@ -47,3 +47,15 @@ const adminErrorTexts: Record<ServerErrorKind, (reference: string) => string> = 
 export function adminErrorMessage(kind: ServerErrorKind, reference: string): string {
   return adminErrorTexts[kind](reference)
 }
+
+/**
+ * A save whose own batch committed, but whose coverage recompute after it failed (placements,
+ * pair similarity): the answer is a success with this `warning`, never a 500, because a retry
+ * would meet the saved change ("Only a draft can be published").
+ */
+export function coverageStaleWarning(reference: string): string {
+  return `Saved. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories. If that fails too, report it with reference ${reference}.`
+}
+
+/** The `warning` field of a save's answer: set only when the recompute after it failed. */
+export const saveWarningSchema = z.string().min(1).optional()

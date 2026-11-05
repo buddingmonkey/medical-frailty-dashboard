@@ -24,6 +24,7 @@ import {
   unifiedCcsr,
   unifiedMappings,
 } from '../../db/schema'
+import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
 
 // Mapping screen for unified categories (roadmap M5 step 3; docs/data-model.md, "Unified
@@ -271,8 +272,10 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
       }),
     ])
     // A proposal changes no placement; an approval may.
-    if (body.approve) await recomputePlacements(db, { stateIds: [state.id] })
-    return c.json(review(status))
+    const recomputed = body.approve
+      ? await recomputeAfterSave(c, () => recomputePlacements(db, { stateIds: [state.id] }))
+      : {}
+    return c.json(unifiedMappingSaveResponseSchema.parse({ ...review(status), ...recomputed }))
   })
 
   .post('/:stateId/unified-mappings/approve', async (c) => {
@@ -322,6 +325,8 @@ export const unifiedMappingsRoute = new Hono<AppEnv>()
         details: { stateCategory, stateSubcategory, rows: proposed.length },
       }),
     ])
-    await recomputePlacements(db, { stateIds: [state.id] })
-    return c.json(review('approved'))
+    const recomputed = await recomputeAfterSave(c, () =>
+      recomputePlacements(db, { stateIds: [state.id] }),
+    )
+    return c.json(unifiedMappingSaveResponseSchema.parse({ ...review('approved'), ...recomputed }))
   })

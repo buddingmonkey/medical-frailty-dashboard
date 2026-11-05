@@ -1,6 +1,7 @@
 import {
   adminErrorMessage,
   classifyServerError,
+  coverageStaleWarning,
   errorReferenceSchema,
   publicErrorMessage,
 } from '@mfcd/shared'
@@ -36,4 +37,33 @@ export function onServerError(err: Error, c: Context<AppEnv>): Response {
     ? adminErrorMessage(classifyServerError(err.message), ref)
     : publicErrorMessage
   return c.json({ error }, 500)
+}
+
+/**
+ * Runs the coverage recompute that follows a committed save (placements, pair similarity). The
+ * save stands either way, so a failure here is logged with a reference and returned as the
+ * answer's `warning` (Rebuild coverage repairs it) instead of a 500 that would read as "not
+ * saved".
+ */
+export async function recomputeAfterSave(
+  c: Context<AppEnv>,
+  work: () => Promise<unknown>,
+): Promise<{ warning?: string }> {
+  try {
+    await work()
+    return {}
+  } catch (err) {
+    const ref = errorReference(c)
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'recompute.after-save',
+        message: err instanceof Error ? err.message : String(err),
+        method: c.req.method,
+        path: c.req.path,
+        ref,
+      }),
+    )
+    return { warning: coverageStaleWarning(ref) }
+  }
 }
