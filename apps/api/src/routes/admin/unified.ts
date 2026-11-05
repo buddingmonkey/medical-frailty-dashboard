@@ -18,6 +18,7 @@ import { createDb, type Db } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
 import { recomputePlacements, universeStatements } from '../../db/placement'
 import { refCcsrCategories, unifiedCategories, unifiedCcsr, unifiedMappings } from '../../db/schema'
+import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
 
 // Unified categories (roadmap M5 step 3; docs/data-model.md, "Unified categories (M5)").
@@ -199,8 +200,12 @@ export const unifiedRoute = new Hono<AppEnv>()
     if (!result) return c.json(slugClash(slug), 409)
     const id = result[0][0]?.id ?? 0
     // A new published category takes entries by CCSR group in every state with a list.
-    if (fields.status === 'published' && ccsr.length > 0) await recomputePlacements(db, 'all')
-    return c.json(unifiedSaveResponseSchema.parse({ id, slug, version: 1 }), 201)
+    // The category stands if this fails: the answer carries a warning instead.
+    const recomputed =
+      fields.status === 'published' && ccsr.length > 0
+        ? await recomputeAfterSave(c, () => recomputePlacements(db, 'all'))
+        : {}
+    return c.json(unifiedSaveResponseSchema.parse({ id, slug, version: 1, ...recomputed }), 201)
   })
 
   .put('/:id', async (c) => {
@@ -271,10 +276,11 @@ export const unifiedRoute = new Hono<AppEnv>()
     })
     if (!result) return c.json(slugClash(slug), 409)
     // Placements read the CCSR set and the status (published only), in every state.
-    if (isPublic && (ccsrChanged || current.status !== fields.status)) {
-      await recomputePlacements(db, 'all')
-    }
-    return c.json(unifiedSaveResponseSchema.parse({ id, slug, version }))
+    const recomputed =
+      isPublic && (ccsrChanged || current.status !== fields.status)
+        ? await recomputeAfterSave(c, () => recomputePlacements(db, 'all'))
+        : {}
+    return c.json(unifiedSaveResponseSchema.parse({ id, slug, version, ...recomputed }))
   })
 
 /** Every CCSR category, for the picker. Mounted at /api/admin/ccsr-categories. */

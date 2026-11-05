@@ -175,6 +175,23 @@ describe('/admin/unified', () => {
     ])
   })
 
+  it('says so when the save stood but coverage could not be updated', async () => {
+    fakeApi()
+    const warning =
+      'Saved. Coverage could not be updated; press Rebuild coverage on Admin → Unified categories. If that fails too, report it with reference ab12cd34.'
+    server.use(
+      http.put('/api/admin/unified/:id', () =>
+        HttpResponse.json({ id: 1, slug: 'serious-mental-illness', version: 2, warning }),
+      ),
+    )
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Edit Serious mental illness' }))
+    const form = screen.getByRole('form', { name: 'Edit Serious mental illness' })
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText(/^Saved Serious mental illness/)).toBeTruthy()
+    expect(screen.getByRole('alert').textContent.trim()).toBe(warning)
+  })
+
   it('retires a draft that was never published', async () => {
     const draft = {
       ...smi,
@@ -201,33 +218,84 @@ describe('/admin/unified', () => {
 })
 
 describe('/admin/unified: rebuild coverage', () => {
-  it('rebuilds every derived table and says how much it found', async () => {
+  const totals = { categories: 19, universeCodes: 12_034, placements: 812, similarPairs: 6 }
+  const text = (el: HTMLElement) => el.textContent.replace(/\s+/g, ' ').trim()
+
+  it('calls again with the cursor until done, shows progress, then how much it found', async () => {
     fakeApi()
-    let calls = 0
+    const bodies: unknown[] = []
+    let release: () => void = () => undefined
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
     server.use(
-      http.post('/api/admin/coverage/rebuild', () => {
-        calls += 1
+      http.post('/api/admin/coverage/rebuild', async ({ request }) => {
+        bodies.push(await request.json())
+        if (bodies.length === 1) {
+          return HttpResponse.json({
+            ...totals,
+            done: false,
+            next: { step: 'universe', after: '7' },
+            progress: { step: 'universe', completed: 7, total: 19 },
+            ms: 1200,
+          })
+        }
+        // The second call waits, so the page shows the first call's progress meanwhile.
+        await held
         return HttpResponse.json({
-          categories: 19,
-          universeCodes: 12_034,
-          placements: 812,
-          similarPairs: 6,
-          ms: 4210,
+          ...totals,
+          done: true,
+          next: null,
+          progress: { step: 'similarity', completed: 4, total: 4 },
+          ms: 3010,
         })
       }),
     )
     await open()
     const region = screen.getByRole('region', { name: 'Rebuild coverage' })
     await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    expect(text(await within(region).findByText(/of 19 categories/))).toBe(
+      'Rebuilding… full code lists: 7 of 19 categories',
+    )
     expect(
-      (await within(region).findByRole('status')).textContent.replace(/\s+/g, ' ').trim(),
-    ).toBe(
+      within(region).getByRole<HTMLButtonElement>('button', { name: 'Rebuilding…' }).disabled,
+    ).toBe(true)
+    release()
+    expect(text(await within(region).findByText(/^\s*Rebuilt/))).toBe(
       'Rebuilt 19 categories: 12,034 codes in their full lists, 812 placements, 6 state pairs (4.2 s).',
     )
-    expect(calls).toBe(1)
+    expect(bodies).toEqual([{}, { cursor: { step: 'universe', after: '7' } }])
   })
 
-  it('shows the error when the rebuild fails', async () => {
+  it('shows the error with the step that failed', async () => {
+    fakeApi()
+    const message =
+      'The database took too long on this step and stopped it. Nothing was saved from the unfinished step. Try again; if it keeps failing, report it with reference 8f2a1c3d4e5f6a7b-DFW.'
+    let calls = 0
+    server.use(
+      http.post('/api/admin/coverage/rebuild', () => {
+        calls += 1
+        if (calls === 1) {
+          return HttpResponse.json({
+            ...totals,
+            done: false,
+            next: { step: 'universe', after: '19' },
+            progress: { step: 'universe', completed: 19, total: 19 },
+            ms: 900,
+          })
+        }
+        return HttpResponse.json({ error: message }, { status: 500 })
+      }),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    expect(text(await within(region).findByRole('alert'))).toBe(
+      `Could not rebuild (placements): ${message}`,
+    )
+  })
+
+  it('names the first step when the first call fails', async () => {
     fakeApi()
     server.use(
       http.post('/api/admin/coverage/rebuild', () =>
@@ -237,6 +305,8 @@ describe('/admin/unified: rebuild coverage', () => {
     await open()
     const region = screen.getByRole('region', { name: 'Rebuild coverage' })
     await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
-    expect((await within(region).findByRole('alert')).textContent).toContain('Internal error')
+    expect(text(await within(region).findByRole('alert'))).toBe(
+      'Could not rebuild (full code lists): Internal error',
+    )
   })
 })

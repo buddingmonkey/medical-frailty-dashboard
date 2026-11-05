@@ -41,6 +41,7 @@ import {
   states,
   versionSources,
 } from '../../db/schema'
+import { recomputeAfterSave } from '../../middleware/errors'
 import type { AppEnv } from '../../types'
 
 // Draft versions (docs/ingestion.md, steps 6 and 7). Mounted behind requireAdmin and
@@ -625,11 +626,14 @@ export const draftsRoute = new Hono<AppEnv>()
     if (!Array.isArray(published) || published.length !== 1) {
       return c.json({ error: 'Only a draft can be published' }, 409)
     }
-    // Right after the batch: where the new list counts among the unified categories.
-    await recomputePlacements(db, { stateIds: [stateId] })
-    // Then how alike its list is to every other state's (roadmap M5 step 7).
-    await recomputeSimilarity(db, { stateIds: [stateId] })
-    return c.json(publishResponseSchema.parse({ ok: true, backupKey }))
+    // Right after the batch: where the new list counts among the unified categories, then how
+    // alike its list is to every other state's (roadmap M5 step 7). The publish stands if this
+    // fails: the answer carries a warning instead.
+    const recomputed = await recomputeAfterSave(c, async () => {
+      await recomputePlacements(db, { stateIds: [stateId] })
+      await recomputeSimilarity(db, { stateIds: [stateId] })
+    })
+    return c.json(publishResponseSchema.parse({ ok: true, backupKey, ...recomputed }))
   })
 
   .post('/:id/discard', async (c) => {

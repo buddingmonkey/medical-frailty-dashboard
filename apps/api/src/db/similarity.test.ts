@@ -1,7 +1,7 @@
 import type { D1Migration } from 'cloudflare:test'
 import { env } from 'cloudflare:workers'
 import { and, asc, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADMIN } from '../test/access-fixtures'
 import { draftWith, entry, publishAll, send, sourceIds } from '../test/draft-fixtures'
@@ -190,6 +190,22 @@ describe('pair similarity (state_similarity)', () => {
     expect(await pairs()).toEqual(expected)
     await db.delete(stateSimilarity)
     await recomputeSimilarity(db, 'all')
+    expect(await pairs()).toEqual(expected)
+  })
+
+  it('computes every pair one state per statement', async () => {
+    await publish('MT', mtList)
+    await publish('NE', neList)
+    await publish('GA', gaList)
+    const expected = await pairs()
+    await db.delete(stateSimilarity)
+    const run = vi.spyOn(db, 'run')
+    const result = await recomputeSimilarity(db, 'all')
+    const statements = run.mock.calls.length
+    run.mockRestore()
+    // The stale-pair delete, then one upsert each for GA (GA–MT, GA–NE), MT (MT–NE) and NE.
+    expect(statements).toBe(4)
+    expect(result.written).toBe(3)
     expect(await pairs()).toEqual(expected)
   })
 })

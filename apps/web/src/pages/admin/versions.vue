@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  rollbackResponseSchema,
   stateListResponseSchema,
   type VersionListItem,
   versionListResponseSchema,
@@ -7,7 +8,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { z } from 'zod'
 
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
@@ -52,7 +52,7 @@ const rollback = useMutation({
       'POST',
       `/api/admin/states/${stateId.value}/rollback`,
       { versionId: v.id },
-      z.object({ ok: z.literal(true) }),
+      rollbackResponseSchema,
     ),
   onSuccess: async (_, v) => {
     restored.value = v.versionNo
@@ -90,6 +90,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
     <p v-if="restored !== null" role="status" class="font-medium">
       v{{ restored }} is public again for {{ stateName }}.
+    </p>
+    <p v-if="restored !== null && rollback.data.value?.warning" role="alert" class="text-danger">
+      {{ rollback.data.value.warning }}
     </p>
     <p v-if="rollback.error.value" role="alert" class="text-danger">
       Could not restore: {{ rollback.error.value.message }}

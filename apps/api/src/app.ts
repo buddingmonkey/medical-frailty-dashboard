@@ -4,6 +4,7 @@ import { type AiComplete, claudeComplete } from './ai/claude'
 import type { GetJwks } from './auth/access'
 import { adminWriteGuard } from './middleware/admin-write-guard'
 import { environmentBanner } from './middleware/environment-banner'
+import { onServerError } from './middleware/errors'
 import { publicCache } from './middleware/public-cache'
 import { publicGetOnly } from './middleware/public-get-only'
 import { LIMITED_PAGE_PATHS, rateLimit } from './middleware/rate-limit'
@@ -124,17 +125,7 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
     return new Response(asset.body, asset)
   })
 
-  app.onError((err, c) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        message: err.message,
-        method: c.req.method,
-        path: c.req.path,
-      }),
-    )
-    return c.json({ error: 'Internal error' }, 500)
-  })
+  app.onError(onServerError)
 
   return app
 }

@@ -59,15 +59,19 @@ const editingKey = ref<string | null>(null)
 const editing = computed(() => categories.value.find((c) => keyOf(c) === editingKey.value))
 const formRegion = useTemplateRef<HTMLElement>('formRegion')
 const saved = ref<string | null>(null)
+/** Set when the save stood but its coverage recompute failed. */
+const savedWarning = ref<string | null>(null)
 
 watch(stateId, () => {
   editingKey.value = null
   saved.value = null
+  savedWarning.value = null
 })
 
 async function edit(c: StateUnifiedCategory) {
   editingKey.value = keyOf(c)
   saved.value = null
+  savedWarning.value = null
   save.reset()
   await nextTick()
   formRegion.value?.querySelector('input')?.focus()
@@ -100,6 +104,7 @@ const save = useMutation({
     sendJson('PUT', `/api/admin/states/${stateId.value}/unified-mappings`, body, ok),
   onSuccess: async (result, body) => {
     saved.value = `${stateCategoryName(body)}: ${result.review}.`
+    savedWarning.value = result.warning ?? null
     editingKey.value = null
     await refresh()
   },
@@ -114,6 +119,7 @@ const approve = useMutation({
     ),
   onSuccess: async (result, c) => {
     saved.value = `${stateCategoryName(c)}: ${result.review}.`
+    savedWarning.value = result.warning ?? null
     await refresh()
   },
 })
@@ -156,6 +162,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
+    <p v-if="savedWarning" role="alert" class="text-danger">{{ savedWarning }}</p>
     <p v-if="approve.error.value" role="alert" class="text-danger">
       Could not approve: {{ approve.error.value.message }}
     </p>
