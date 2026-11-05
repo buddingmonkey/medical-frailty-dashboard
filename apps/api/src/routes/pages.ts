@@ -27,7 +27,6 @@ import {
   STATES_COMPARE_MIN,
   statesComparePath,
   statesCompareQueryFromRecord,
-  toCsv,
 } from '@mfcd/shared'
 import { asc, eq } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
@@ -64,6 +63,7 @@ import {
 import { codeNotFoundPage, codePage, searchPage } from '../seo/code-page'
 import { infoPageParts } from '../seo/info-page'
 import type { AppEnv } from '../types'
+import { CODE_CSV_COLUMNS, codeCsvCells, csvResponse, perStateCsvColumns } from './csv'
 
 // Public pages rendered on the server (roadmap M3 step 4; docs/seo.md), the state downloads and
 // the sitemap. Every URL is built from the request's own origin: no host is hard-coded.
@@ -277,19 +277,10 @@ export const pagesRoute = new Hono<AppEnv>()
       'state_category',
       'federal_categories',
     ]
-    const csv = toCsv([
-      [
-        'code_system',
-        'code',
-        'description',
-        'description_source',
-        ...result.states.flatMap((s) => perState.map((col) => `${s.id}_${col}`)),
-      ],
+    const rows = [
+      [...CODE_CSV_COLUMNS, ...perStateCsvColumns(result.states, perState)],
       ...result.rows.map((row) => [
-        codeSystemLabels[row.codeSystem],
-        row.display,
-        row.description,
-        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        ...codeCsvCells(row),
         ...row.cells.flatMap((cell) => {
           const m = cell.match
           return [
@@ -303,13 +294,10 @@ export const pagesRoute = new Hono<AppEnv>()
           ]
         }),
       ]),
-    ])
+    ]
     const subject = query.category ?? `${(query.ownState ?? '').toLowerCase()}-own`
     const name = `compare-${subject.replaceAll('_', '-')}-${query.states.join('-').toLowerCase()}.csv`
-    return c.body(csv, 200, {
-      'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="${name}"`,
-    })
+    return csvResponse(c, rows, name)
   })
   // Compare 2–4 states (roadmap M5 step 7). Before `/compare/:slug…`, which `states` would
   // otherwise reach as a category slug (it is reserved).
@@ -348,21 +336,15 @@ export const pagesRoute = new Hono<AppEnv>()
     const data = ids ? await publicStatesCompareCsv(createDb(c.env.DB), ids) : null
     if (!ids || !data) return c.json({ error: 'Not found' }, 404)
     const perState = ['status', 'entry', 'tier', 'qualification', 'state_category']
-    const csv = toCsv([
+    const rows = [
       [
-        'code_system',
-        'code',
-        'description',
-        'description_source',
+        ...CODE_CSV_COLUMNS,
         'unified_categories',
         'differs',
-        ...data.states.flatMap((s) => perState.map((col) => `${s.id}_${col}`)),
+        ...perStateCsvColumns(data.states, perState),
       ],
       ...data.rows.map((row) => [
-        codeSystemLabels[row.codeSystem],
-        row.display,
-        row.description,
-        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        ...codeCsvCells(row),
         row.groups,
         row.differs ? 'yes' : 'no',
         ...row.cells.flatMap((cell) => {
@@ -376,11 +358,12 @@ export const pagesRoute = new Hono<AppEnv>()
           ]
         }),
       ]),
-    ])
-    return c.body(csv, 200, {
-      'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="compare-${ids.join('-vs-').toLowerCase()}-medical-frailty-codes.csv"`,
-    })
+    ]
+    return csvResponse(
+      c,
+      rows,
+      `compare-${ids.join('-vs-').toLowerCase()}-medical-frailty-codes.csv`,
+    )
   })
   .get('/compare/states/:pair', async (c, next) => {
     // Before the cache: a redirect is not a page. `/compare/states/GA-vs-MT` → lowercase.
@@ -408,32 +391,23 @@ export const pagesRoute = new Hono<AppEnv>()
       drillQueryFromRecord(c.req.queries()),
     )
     if (!data) return c.json({ error: 'Not found' }, 404)
-    const csv = toCsv([
+    const rows = [
       [
-        'code_system',
-        'code',
-        'description',
-        'description_source',
+        ...CODE_CSV_COLUMNS,
         'group',
         'states_listing',
         'states_with_list',
         ...data.states.map((s) => s.id),
       ],
       ...data.rows.map((row) => [
-        codeSystemLabels[row.codeSystem],
-        row.display,
-        row.description,
-        row.descriptionSource === 'cms' ? 'CMS' : row.descriptionSource,
+        ...codeCsvCells(row),
         row.codeSystem === 'icd10cm' ? row.codeNorm.slice(0, 3) : codeSystemLabels[row.codeSystem],
         String(row.count),
         String(data.states.length),
         ...row.cells.map((cell) => compareCellText(cell)),
       ]),
-    ])
-    return c.body(csv, 200, {
-      'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="${data.category.slug}-codes-by-state.csv"`,
-    })
+    ]
+    return csvResponse(c, rows, `${data.category.slug}-codes-by-state.csv`)
   })
   .get('/compare/:slug', pageCache, async (c) => {
     const db = createDb(c.env.DB)
@@ -534,7 +508,7 @@ export const pagesRoute = new Hono<AppEnv>()
     const data = await downloadData(c)
     if (!data) return c.json({ error: 'Not found' }, 404)
     const { detail, published, rows } = data
-    const csv = toCsv([
+    const table = [
       [
         'state',
         'code_system',
@@ -575,11 +549,8 @@ export const pagesRoute = new Hono<AppEnv>()
         r.sourceDate,
         r.sourceLocator,
       ]),
-    ])
-    return c.body(csv, 200, {
-      'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="${downloadName(detail.state.slug, published.versionNo, 'csv')}"`,
-    })
+    ]
+    return csvResponse(c, table, downloadName(detail.state.slug, published.versionNo, 'csv'))
   })
   .get('/states/:slug/codes.json', publicCache, async (c) => {
     const data = await downloadData(c)

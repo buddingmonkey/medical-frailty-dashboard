@@ -1,40 +1,43 @@
 // A small Markdown reader for our own docs shown in the admin (docs/add-state-source.md at
-// /admin/guide). It returns a tree that a component renders as text nodes, so nothing is ever
-// inserted as HTML. Supports what those docs use: headings, paragraphs, lists, fenced code,
-// inline code, bold and links. Linear scans only (no backtracking regexes).
+// /admin/guide) and for a state's notes (the Vue state page and the server-rendered one). It
+// returns a tree that the web renders as text nodes (MarkdownView.vue) and the API as escaped
+// HTML (apps/api/src/seo/pages.ts), so the text never becomes markup. Supports headings,
+// paragraphs, lists, fenced code, inline code, bold and links. Linear scans only (no
+// backtracking regexes).
 
-export type Inline =
+export type MarkdownInline =
   | { type: 'text'; text: string }
   | { type: 'code'; text: string }
   | { type: 'bold'; text: string }
   | { type: 'link'; text: string; href: string }
 
-export type Block =
-  | { type: 'heading'; level: number; text: Inline[] }
-  | { type: 'paragraph'; text: Inline[] }
-  | { type: 'list'; ordered: boolean; items: Inline[][] }
+export type MarkdownBlock =
+  | { type: 'heading'; level: number; text: MarkdownInline[] }
+  | { type: 'paragraph'; text: MarkdownInline[] }
+  | { type: 'list'; ordered: boolean; items: MarkdownInline[][] }
   | { type: 'code'; text: string }
 
 /**
- * An https link or a path on this site. Browsers read `\` as `/` and drop tabs and newlines, so
- * a href with a backslash, whitespace or control character is refused, and `//host` (another
- * site, protocol-relative) is not a path.
+ * A link target we write: https, or a path on this site. Browsers read `\` as `/` and drop
+ * whitespace and control characters from URLs (`/<tab>/host` is `//host`), so a href with a
+ * backslash, whitespace or control character is refused, and `//host` (another site,
+ * protocol-relative) is not a path.
  */
-function safeHref(href: string): boolean {
+export function safeMarkdownHref(href: string): boolean {
   if (/[\\\s\p{Cc}]/u.test(href)) return false
   if (href.startsWith('https://')) return true
   return href.startsWith('/') && !href.startsWith('//')
 }
 
-function pushText(out: Inline[], text: string) {
+function pushText(out: MarkdownInline[], text: string) {
   if (text === '') return
   const last = out.at(-1)
   if (last?.type === 'text') last.text += text
   else out.push({ type: 'text', text })
 }
 
-export function parseInline(text: string): Inline[] {
-  const out: Inline[] = []
+export function parseInline(text: string): MarkdownInline[] {
+  const out: MarkdownInline[] = []
   let i = 0
   let plain = ''
   const flush = () => {
@@ -66,7 +69,7 @@ export function parseInline(text: string): Inline[] {
         flush()
         const label = text.slice(i + 1, close)
         const href = text.slice(close + 2, end)
-        if (safeHref(href)) out.push({ type: 'link', text: label, href })
+        if (safeMarkdownHref(href)) out.push({ type: 'link', text: label, href })
         else pushText(out, label)
         i = end + 1
         continue
@@ -94,9 +97,9 @@ function listItem(line: string): { ordered: boolean; text: string } | null {
   return null
 }
 
-export function parseMarkdown(markdown: string): Block[] {
+export function parseMarkdown(markdown: string): MarkdownBlock[] {
   const lines = markdown.split(/\r?\n/)
-  const blocks: Block[] = []
+  const blocks: MarkdownBlock[] = []
   let i = 0
   while (i < lines.length) {
     const line = lines[i] ?? ''
