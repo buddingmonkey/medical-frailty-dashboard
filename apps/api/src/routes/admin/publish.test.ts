@@ -20,7 +20,7 @@ import {
   states,
   versionSources,
 } from '../../db/schema'
-import { ADMIN } from '../../test/access-fixtures'
+import { ADMIN, accessToken, call } from '../../test/access-fixtures'
 import { checksOf, draftWith, entry, publishAll, send, sourceIds } from '../../test/draft-fixtures'
 import { resetDb } from '../../test/reset-db'
 
@@ -55,6 +55,46 @@ async function snapshotState(stateId: string) {
       : [],
     mappings: await db.select().from(categoryMappings).where(eq(categoryMappings.stateId, stateId)),
   }
+}
+
+/**
+ * `real`, except that the first two publish-sized batches (5+ statements) are held until both
+ * have been sent, then run one after the other: a double submit that passed the checks twice.
+ */
+function racingBatches(real: D1Database): D1Database {
+  let secondSent = (): void => undefined
+  const bothSent = new Promise<void>((resolve) => {
+    secondSent = resolve
+  })
+  let firstDone = (): void => undefined
+  const firstFinished = new Promise<void>((resolve) => {
+    firstDone = resolve
+  })
+  let held = 0
+  const batch = async (statements: D1PreparedStatement[]) => {
+    if (statements.length < 5 || held >= 2) return real.batch(statements)
+    held++
+    if (held === 1) {
+      await bothSent
+      try {
+        return await real.batch(statements)
+      } finally {
+        firstDone()
+      }
+    }
+    secondSent()
+    await firstFinished
+    return real.batch(statements)
+  }
+  return new Proxy(real, {
+    get(target, prop) {
+      if (prop === 'batch') return batch
+      const value: unknown = Reflect.get(target, prop)
+      if (typeof value !== 'function') return value
+      const method = value as (...args: unknown[]) => unknown
+      return method.bind(target)
+    },
+  })
 }
 
 describe('publish and rollback', () => {
@@ -229,6 +269,53 @@ describe('publish and rollback', () => {
     const id = await draftWith('MT', [entry('F20.0')])
     expect((await publishAll(id, 'MT')).status).toBe(200)
     expect((await publishAll(id, 'MT')).status).toBe(409)
+  })
+
+  it('lets only one of two racing publishes of a draft through (double submit)', async () => {
+    const previous = await draftWith('MT', [entry('F20.0')])
+    expect((await publishAll(previous, 'MT')).status).toBe(200)
+    const id = await draftWith('MT', [entry('F20.0'), entry('F31.0')])
+    const { report, token } = await checksOf(id)
+    const confirmations = Object.fromEntries(
+      report.checks
+        .filter((c) => c.triggered && (c.level === 'confirm' || c.level === 'confirm_typed'))
+        .map((c) => [c.id, c.level === 'confirm_typed' ? { typed: 'MT' } : {}]),
+    )
+    // Both requests pass the draft check before either batch runs; the second batch runs
+    // after the first has committed.
+    const DB = racingBatches(env.DB)
+    const publish = async () =>
+      call(`/api/admin/drafts/${String(id)}/publish`, {
+        token: await accessToken(),
+        method: 'POST',
+        body: { token, confirmations },
+        vars: { DB },
+      })
+    const responses = await Promise.all([publish(), publish()])
+    const codes = responses.map((r) => r.status).sort()
+    expect(codes).toEqual([200, 409])
+    const loser = responses.find((r) => r.status === 409)
+    expect(await loser?.json()).toEqual({ error: 'Only a draft can be published' })
+
+    const versions = await db
+      .select()
+      .from(datasetVersions)
+      .where(eq(datasetVersions.stateId, 'MT'))
+      .orderBy(datasetVersions.id)
+    expect(versions.map((v) => [v.id, v.status])).toEqual([
+      [previous, 'superseded'],
+      [id, 'published'],
+    ])
+    const [mt] = await db.select().from(states).where(eq(states.id, 'MT'))
+    expect(mt?.publishedVersionId).toBe(id)
+    const audit = auditListResponseSchema.parse(
+      await (await send('GET', '/api/admin/audit')).json(),
+    )
+    expect(
+      audit.items.filter(
+        (a) => a.action === 'version.publish' && a.target === `version:${String(id)}`,
+      ),
+    ).toHaveLength(1)
   })
 
   it('merges duplicates on publish, keeping the first', async () => {
