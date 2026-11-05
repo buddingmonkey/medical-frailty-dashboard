@@ -24,8 +24,10 @@ export default defineProject({
     name: 'api',
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test/apply-migrations.ts'],
-    // Windows CI runners run workerd about 3x slower than Linux; the 5 s test and 10 s hook defaults timed out there.
+    // Windows CI runs this stage about 12x slower than Linux (≈430 s against ≈36 s, 2026-11-05),
+    // and now and then one test's setup (a reset and seed of D1) stalls past 30 s. A different
+    // test each time, so the limit on Windows is generous; a real hang still fails.
     testTimeout: 20_000,
-    hookTimeout: 30_000,
+    hookTimeout: process.platform === 'win32' ? 120_000 : 30_000,
   },
 })

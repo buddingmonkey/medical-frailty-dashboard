@@ -89,6 +89,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # Real-time antivirus scans every file the tests write (each API test copies a small D1
+      # database), which made this job about 12x slower than Linux. Skip the folders the build
+      # and tests write to. Warn, not fail, if the runner image changes.
+      - name: Skip antivirus scans of the build folders
+        shell: pwsh
+        run: |
+          try {
+            Add-MpPreference -ExclusionPath $env:GITHUB_WORKSPACE, $env:RUNNER_TEMP, $env:TEMP, "$env:LOCALAPPDATA\pnpm"
+            Write-Output "Excluded: $((Get-MpPreference).ExclusionPath -join ', ')"
+          } catch {
+            Write-Output "::warning::Could not add antivirus exclusions: $_"
+          }
+
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm check
