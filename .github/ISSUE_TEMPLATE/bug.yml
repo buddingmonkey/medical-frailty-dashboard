@@ -1,0 +1,53 @@
+name: Report a bug
+description: Something on the site does not work, looks broken or is hard to use.
+title: '[Bug] <short summary>'
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Please **do not include any patient or member information** (names, IDs,
+        claims). If a code, description or date does not match a state's document, use
+        **Report a data error** instead. Report security problems privately (see the link on
+        the previous page).
+  - type: input
+    id: page
+    attributes:
+      label: Page on this site
+      description: The address of the page where it happened.
+      placeholder: e.g. /compare/codes?states=GA,LA
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw. Copy any error message exactly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you clicked or typed, in order.
+      placeholder: |
+        1. Open …
+        2. Choose …
+        3. See …
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Chrome 131 on Windows 11; Safari on iPhone
+  - type: dropdown
+    id: assistive
+    attributes:
+      label: Were you using assistive technology?
+      description: For example a screen reader, zoom or keyboard only.
+      options:
+        - 'No'
+        - 'Yes (please say which in "What happened?")'
