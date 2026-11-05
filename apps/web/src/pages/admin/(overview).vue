@@ -5,10 +5,6 @@
       Load each state’s list of medically frail codes, check it and publish it. Every change is
       recorded in the <RouterLink to="/admin/audit">Audit log</RouterLink>.
     </p>
-    <p class="text-foreground">
-      The real site holds the real lists. The preview site holds test data and shows a “Preview
-      site” banner at the top of every page. Nothing you change there reaches the real site.
-    </p>
 
     <h3 class="font-display text-xl font-medium text-heading">Add or update a state’s list</h3>
     <ol class="list-decimal space-y-1 pl-6 text-foreground">
