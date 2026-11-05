@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { server } from '../../test/msw-server'
 import { renderRoute } from '../../test/render-route'
@@ -220,6 +220,106 @@ describe('/admin/unified', () => {
 describe('/admin/unified: rebuild coverage', () => {
   const totals = { categories: 19, universeCodes: 12_034, placements: 812, similarPairs: 6 }
   const text = (el: HTMLElement) => el.textContent.replace(/\s+/g, ' ').trim()
+  const partial = (after: string, completed: number) => ({
+    ...totals,
+    done: false,
+    next: { step: 'universe', after },
+    progress: { step: 'universe', completed, total: 19 },
+    ms: 900,
+  })
+  const finished = {
+    ...totals,
+    done: true,
+    next: null,
+    progress: { step: 'similarity', completed: 4, total: 4 },
+    ms: 3010,
+  }
+  const busy =
+    'The database was busy, or the connection to it dropped. Earlier steps are saved; the unfinished one will redo safely. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.'
+  const busyAnswer = () => HttpResponse.json({ error: busy, retryable: true }, { status: 500 })
+
+  // The page pauses between calls and waits before a retry; fake timers skip the waits. Real
+  // time still moves them too (shouldAdvanceTime), so Testing Library's polling works.
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+  const wait = (ms: number) => vi.advanceTimersByTimeAsync(ms)
+
+  it('pauses between calls, so the database can recover', async () => {
+    fakeApi()
+    const bodies: unknown[] = []
+    server.use(
+      http.post('/api/admin/coverage/rebuild', async ({ request }) => {
+        bodies.push(await request.json())
+        return HttpResponse.json(bodies.length === 1 ? partial('7', 7) : finished)
+      }),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    await within(region).findByText(/of 19 categories/)
+    await wait(1000)
+    expect(bodies).toHaveLength(1)
+    await wait(600)
+    await within(region).findByText(/^\s*Rebuilt/)
+    expect(bodies).toHaveLength(2)
+  })
+
+  it('waits and retries the same cursor when the database is busy, then finishes', async () => {
+    fakeApi()
+    const bodies: unknown[] = []
+    server.use(
+      http.post('/api/admin/coverage/rebuild', async ({ request }) => {
+        bodies.push(await request.json())
+        if (bodies.length === 1) return HttpResponse.json(partial('7', 7))
+        if (bodies.length <= 3) return busyAnswer()
+        return HttpResponse.json(finished)
+      }),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    await within(region).findByText(/of 19 categories/)
+    await wait(1500)
+    expect(text(await within(region).findByText(/Database busy/))).toBe(
+      'Database busy; waiting to retry…',
+    )
+    expect(within(region).queryByRole('alert')).toBeNull()
+    // Backoff: 5 s, then 10 s.
+    await wait(4900)
+    expect(bodies).toHaveLength(2)
+    await wait(100)
+    await vi.waitUntil(() => bodies.length === 3)
+    await wait(10_000)
+    await within(region).findByText(/^\s*Rebuilt/)
+    expect(within(region).queryByText(/Database busy/)).toBeNull()
+    const cursor = { cursor: { step: 'universe', after: '7' } }
+    expect(bodies).toEqual([{}, cursor, cursor, cursor])
+  })
+
+  it('shows the error once the retries run out', async () => {
+    fakeApi()
+    let calls = 0
+    server.use(
+      http.post('/api/admin/coverage/rebuild', () => {
+        calls += 1
+        return calls === 1 ? HttpResponse.json(partial('19', 19)) : busyAnswer()
+      }),
+    )
+    await open()
+    const region = screen.getByRole('region', { name: 'Rebuild coverage' })
+    await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    await within(region).findByText(/of 19 categories/)
+    await wait(1500 + 5000 + 10_000 + 20_000)
+    expect(text(await within(region).findByRole('alert'))).toBe(
+      `Could not rebuild (placements): ${busy}`,
+    )
+    // The first call, then the failed call and its 3 retries.
+    expect(calls).toBe(5)
+  })
 
   it('calls again with the cursor until done, shows progress, then how much it found', async () => {
     fakeApi()
@@ -260,6 +360,7 @@ describe('/admin/unified: rebuild coverage', () => {
     expect(
       within(region).getByRole<HTMLButtonElement>('button', { name: 'Rebuilding…' }).disabled,
     ).toBe(true)
+    await wait(1500)
     release()
     expect(text(await within(region).findByText(/^\s*Rebuilt/))).toBe(
       'Rebuilt 19 categories: 12,034 codes in their full lists, 812 placements, 6 state pairs (4.2 s).',
@@ -290,9 +391,13 @@ describe('/admin/unified: rebuild coverage', () => {
     await open()
     const region = screen.getByRole('region', { name: 'Rebuild coverage' })
     await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
+    await within(region).findByText(/of 19 categories/)
+    await wait(1500)
     expect(text(await within(region).findByRole('alert'))).toBe(
       `Could not rebuild (placements): ${message}`,
     )
+    // Not a busy database: no retry.
+    expect(calls).toBe(2)
   })
 
   it('names the first step when the first call fails', async () => {

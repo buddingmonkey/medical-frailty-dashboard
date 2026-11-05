@@ -309,9 +309,10 @@ describe('placements (entry_unified)', () => {
     const sizes = batch.mock.calls.map(([items]) => items.length)
     batch.mockRestore()
     expect(result.placements).toBe(4501)
-    // Writes (reads are batches of one): MT 4 + bump, then 1 + bump; NE 1 + bump. Every other
-    // state writes nothing.
-    expect(sizes.filter((n) => n > 1)).toEqual([5, 2, 2])
+    // First the categories and their CCSR groups, read once for every state (a batch of 2).
+    // Then writes (reads are batches of one): MT 4 + bump, then 1 + bump; NE 1 + bump. Every
+    // other state writes nothing.
+    expect(sizes.filter((n) => n > 1)).toEqual([2, 5, 2, 2])
     expect((await placements('NE')).length).toBe(1)
     // A second run writes nothing.
     expect((await recomputePlacements(db, 'all')).inserted).toBe(0)

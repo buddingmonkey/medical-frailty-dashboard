@@ -11,7 +11,12 @@ import { Hono } from 'hono'
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
 import { bumpDataVersion } from '../../db/meta'
-import { recomputePlacements, universeStatements } from '../../db/placement'
+import {
+  loadPlacementCategories,
+  type PlacementCategories,
+  recomputePlacements,
+  universeStatements,
+} from '../../db/placement'
 import {
   entryUnified,
   states,
@@ -35,16 +40,40 @@ import { actorOf } from './request'
 //   2. placements: one state's entries (`recomputePlacements` for that state; one batch);
 //   3. similarity: one state's pairs with each state after it (one statement, ~0.5 s for the
 //      largest on preview, where 44 states have lists).
-// A call runs units until BUDGET_MS of wall time has passed, then answers with progress and the
-// cursor of its last unit; the admin page calls again until `done`. Resumable calls rather than
+// A call runs a bounded number of units (below), then answers with progress and the cursor of
+// its last unit; the admin page calls again until `done`. Resumable calls rather than
 // all units in one request, because one request would grow with the data (51 states with
 // thousands of entries each) towards the Worker's CPU limit and the 100 s proxy timeout, and
 // the cursor costs little: the units are listed again on every call, and a unit that finished
 // stays finished. A failed call leaves every earlier unit done; pressing the button again starts
 // over, which is safe because each unit writes only what changed.
 
+//
+// Why each call is small (2026-11-05): with 5 s of units per call, preview answered "D1 DB is
+// overloaded. Too many resources consumed within a 10 second window" during placements, right
+// after the universe step. D1 limits load over a 10-second window, not one query. Measured on
+// preview (read-only, rows read and D1's SQL time per unit):
+//   - universe: one category ~95k rows and ~35 ms, run twice (delete and insert), so ~70 ms;
+//   - placements: one state (largest 353 entries) ~6.3k rows, ~25 ms in about 6 requests, most
+//     of it the state's ref_ccsr ranges (~4.4k rows); at most a few hundred rows written;
+//   - similarity: one state's pairs 34k to 680k rows, 30 to 550 ms (the first states cost most).
+// So a call now stops when its units' weights reach CALL_WEIGHT (about 0.5 s of D1 time: 5
+// categories, 10 states' placements or 1 state's pairs), or after BUDGET_MS of wall time,
+// whichever comes first, and the admin page pauses between calls (unified.vue) so D1's window
+// recovers. If D1 still answers "overloaded", the error carries `retryable: true` and the page
+// waits and sends the same cursor again.
+
 /** Wall time per call before it stops at a unit's end (a unit never splits). */
-const BUDGET_MS = 5000
+const BUDGET_MS = 2000
+
+/** Each unit's share of a call, roughly in proportion to its D1 time (see above). */
+const UNIT_WEIGHT: Record<CoverageRebuildStep, number> = {
+  universe: 2,
+  placements: 1,
+  similarity: 10,
+}
+/** The most weight one call runs; the first unit always runs, whatever its weight. */
+const CALL_WEIGHT = 10
 
 const stepOrder = coverageRebuildStepSchema.options
 
@@ -95,14 +124,22 @@ function startIndex(units: Unit[], cursor: CoverageRebuildCursor | undefined): n
   return i === -1 ? units.length : i
 }
 
-async function runUnit(db: Db, unit: Unit): Promise<void> {
+async function runUnit(
+  db: Db,
+  unit: Unit,
+  placementCategories: () => Promise<PlacementCategories>,
+): Promise<void> {
   if (unit.step === 'universe') {
     await db.batch([
       ...universeStatements(db, sql<number>`${Number(unit.key)}`),
       bumpDataVersion(db),
     ])
   } else if (unit.step === 'placements') {
-    await recomputePlacements(db, { stateIds: [unit.key] })
+    await recomputePlacements(
+      db,
+      { stateIds: [unit.key] },
+      { categories: await placementCategories() },
+    )
   } else {
     await recomputeSimilarity(db, { pairsAfter: unit.key })
   }
@@ -115,14 +152,20 @@ export const coverageRoute = new Hono<AppEnv>().post('/rebuild', async (c) => {
   const budget = body.data.budgetMs ?? BUDGET_MS
   const db = createDb(c.env.DB)
 
-  const { units, categories } = await listUnits(db)
+  const { units, categories: categoryCount } = await listUnits(db)
   let i = startIndex(units, body.data.cursor)
-  if (i < units.length) {
-    do {
-      const unit = units[i]
-      if (unit) await runUnit(db, unit)
-      i += 1
-    } while (i < units.length && Date.now() - started < budget)
+  // Categories and CCSR groups are the same for every state: read them once per call.
+  let categories: Promise<PlacementCategories> | undefined
+  const placementCategories = () => (categories ??= loadPlacementCategories(db))
+  let weight = 0
+  for (;;) {
+    const unit = units[i]
+    if (!unit) break
+    const next = weight + UNIT_WEIGHT[unit.step]
+    if (weight > 0 && (next > CALL_WEIGHT || Date.now() - started >= budget)) break
+    await runUnit(db, unit, placementCategories)
+    weight = next
+    i += 1
   }
   const done = i >= units.length
   const last = units[i - 1] ?? units.at(-1)
@@ -142,7 +185,7 @@ export const coverageRoute = new Hono<AppEnv>().post('/rebuild', async (c) => {
       completed: last ? inStep.indexOf(last) + 1 : 0,
       total: inStep.length,
     },
-    categories,
+    categories: categoryCount,
     universeCodes: codes?.n ?? 0,
     placements: placements?.n ?? 0,
     similarPairs: pairs?.n ?? 0,

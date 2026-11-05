@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { adminErrorMessage, classifyServerError, errorReferenceSchema } from './errors'
+import {
+  adminErrorMessage,
+  classifyServerError,
+  errorBodySchema,
+  errorReferenceSchema,
+  isRetryableServerError,
+} from './errors'
 
 describe('classifyServerError', () => {
   it('knows the D1 failures an admin can hit', () => {
@@ -19,6 +25,11 @@ describe('classifyServerError', () => {
       classifyServerError('D1_ERROR: D1 DB is overloaded. Requests queued for too long.'),
     ).toBe('busy')
     expect(classifyServerError('D1_ERROR: Network connection lost.')).toBe('busy')
+    expect(
+      classifyServerError(
+        'D1_ERROR: D1 DB is overloaded. Too many resources consumed within a 10 second window',
+      ),
+    ).toBe('busy')
   })
 
   it('leaves everything else unknown', () => {
@@ -35,6 +46,30 @@ describe('adminErrorMessage', () => {
     for (const kind of ['too-many-values', 'busy', 'unknown'] as const) {
       expect(adminErrorMessage(kind, 'ab12cd34')).toMatch(/reference ab12cd34\.$/)
     }
+  })
+})
+
+describe('retryable errors', () => {
+  it('retries only a busy database', () => {
+    expect(isRetryableServerError('busy')).toBe(true)
+    for (const kind of ['too-long', 'too-many-values', 'unknown'] as const) {
+      expect(isRetryableServerError(kind)).toBe(false)
+    }
+  })
+
+  it('does not promise that nothing was saved when busy, since a retry follows', () => {
+    expect(adminErrorMessage('busy', 'ab12cd34')).toBe(
+      'The database was busy, or the connection to it dropped. Earlier steps are saved; the unfinished one will redo safely. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.',
+    )
+  })
+
+  it('reads the error body, with retryable only as true', () => {
+    expect(errorBodySchema.parse({ error: 'x', retryable: true })).toEqual({
+      error: 'x',
+      retryable: true,
+    })
+    expect(errorBodySchema.parse({ error: 'x' })).toEqual({ error: 'x' })
+    expect(errorBodySchema.safeParse({ error: 'x', retryable: false }).success).toBe(false)
   })
 })
 

@@ -2,7 +2,9 @@ import {
   adminErrorMessage,
   classifyServerError,
   coverageStaleWarning,
+  type ErrorBody,
   errorReferenceSchema,
+  isRetryableServerError,
   publicErrorMessage,
 } from '@mfcd/shared'
 import type { Context } from 'hono'
@@ -18,8 +20,9 @@ function errorReference(c: Context<AppEnv>): string {
 /**
  * `app.onError`: one JSON log line with a reference, and a 500. Admin routes (behind Access)
  * get a plain-language message for the D1 failures an admin can hit, with the reference to quote
- * (texts in packages/shared/src/errors.ts). Every other route keeps the generic text, so no
- * internals reach the public. The log holds the error message, method and path only: no body.
+ * (texts in packages/shared/src/errors.ts), and `retryable: true` when the database was busy, so
+ * the page can wait and try again. Every other route keeps the generic text, so no internals
+ * reach the public. The log holds the error message, method and path only: no body.
  */
 export function onServerError(err: Error, c: Context<AppEnv>): Response {
   const ref = errorReference(c)
@@ -33,10 +36,13 @@ export function onServerError(err: Error, c: Context<AppEnv>): Response {
     }),
   )
   const admin = c.req.path === '/api/admin' || c.req.path.startsWith('/api/admin/')
-  const error = admin
-    ? adminErrorMessage(classifyServerError(err.message), ref)
-    : publicErrorMessage
-  return c.json({ error }, 500)
+  if (!admin) return c.json({ error: publicErrorMessage } satisfies ErrorBody, 500)
+  const kind = classifyServerError(err.message)
+  const body: ErrorBody = {
+    error: adminErrorMessage(kind, ref),
+    ...(isRetryableServerError(kind) ? { retryable: true } : {}),
+  }
+  return c.json(body, 500)
 }
 
 /**
