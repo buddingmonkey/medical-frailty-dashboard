@@ -162,6 +162,7 @@ import {
 
 import { Html, html, jsonLdScript } from './html'
 import { linkHtml } from './info-page'
+import { markdownHtml } from './markdown-html'
 
 // The content of each public page as plain semantic HTML, for crawlers that do not run
 // JavaScript (docs/seo.md). Vue replaces it when it mounts. Wording and numbers come from the
@@ -567,7 +568,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
 
   const notes = detail.notesMd
     ? html`<h2>Notes</h2>
-        ${detail.notesMd.split(/\n\s*\n/).map((para) => html`<p>${para.trim()}</p>`)}`
+        ${markdownHtml(detail.notesMd, 2)}`
     : null
 
   const listed = p

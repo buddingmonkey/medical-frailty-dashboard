@@ -44,23 +44,25 @@ what is still open, and the decisions behind it.
 ### Releases
 
 Production deploys come from CI on a `v*` tag, after the project lead approves. Before
-migrating, CI logs a D1 Time Travel bookmark; the ones below are the restore points recorded
-here.
+migrating, the deploy workflow (`.github/workflows/deploy.yml`, step "Record D1 Time Travel
+bookmark") writes a D1 Time Travel bookmark and its restore command to that run's GitHub Actions
+summary; the copy-state-data workflow does the same for its copy. Look there for a restore point
+(Time Travel keeps 7 days). This table records only what shipped.
 
 | Tag | Date | Notes |
 | --- | --- | --- |
 | `v0.0.1` | 2026-11-01 | First deploy, both Workers behind Access |
-| `v0.1.0` | 2026-11-01 | Schema and FTS; reference load run 41387560691 (22 chunks, 107,173 rows) |
-| `v0.2.0` | 2026-11-02 | Run 41492763306; migrations 0002–0006 |
-| `v0.3.0` | 2026-11-02 | Run 41523353868 |
+| `v0.1.0` | 2026-11-01 | Schema and FTS; reference load (22 chunks, 107,173 rows) |
+| `v0.2.0` | 2026-11-02 | Migrations 0002–0006 |
+| `v0.3.0` | 2026-11-02 | Release |
 | `v0.4.0` | 2026-11-02 | Compare by category |
 | `v0.5.0` | 2026-11-02 | M5; production then needed the CCSR load |
-| Copy state data | 2026-11-02 | Run 41579169608: preview's four states copied to production; row counts, checksums and R2 SHA-256 match. Bookmark before: `00000009-00000000-00005118-c5f815f77b9a6cbc5768eed2dfbc9729`. Preview seed bookmark: `00000046-00000000-00005118-ab565850df3a1d1238999baf26ba4ddb` |
-| `v0.6.0` | 2026-11-03 | Run 41673703422 |
-| `v0.7.0` | 2026-11-03 | Run 41698090729; migrations 0012–0014 (search index built in 0.9 s). Bookmark: `00000012-00000000-00005118-b846c9731914f1f1a56dc2eefef1c849` |
-| `v0.8.0` | 2026-11-03 | Run 41718101149; migration 0015, Sunday cron on. Bookmark: `00000013-00000000-00005118-ca54835bca6d3b3549bf2d294f885a67` |
-| `v0.9.0` | 2026-11-04 | Run 41791515954; M8 hardening |
-| `v0.9.1` | 2026-11-04 | New site mark (live; run 41921891983) |
+| Copy state data | 2026-11-02 | Preview's four states copied to production; row counts, checksums and R2 SHA-256 match |
+| `v0.6.0` | 2026-11-03 | Compare tabs |
+| `v0.7.0` | 2026-11-03 | Migrations 0012–0014 (search index built in 0.9 s) |
+| `v0.8.0` | 2026-11-03 | Migration 0015, Sunday cron on |
+| `v0.9.0` | 2026-11-04 | M8 hardening |
+| `v0.9.1` | 2026-11-04 | New site mark (live) |
 
 ## For the project lead
 
