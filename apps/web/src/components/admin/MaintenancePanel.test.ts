@@ -51,7 +51,7 @@ function setup(status: MaintenanceStatus) {
 }
 
 describe('MaintenancePanel', () => {
-  it('shows the last run, each part’s result and the weekly backups', async () => {
+  it('shows the last run, each part’s result and the saved backups', async () => {
     setup({
       last: run,
       weekly: [
@@ -69,12 +69,12 @@ describe('MaintenancePanel', () => {
     expect(items[3]?.textContent).toContain('300 entries deleted')
     expect(screen.getByText(/Scheduled run/)).toBeTruthy()
 
-    const table = screen.getByRole('table', { name: 'Weekly backups' })
+    const table = screen.getByRole('table', { name: 'Saved backups' })
     const rows = within(table).getAllByRole('row')
     expect(rows).toHaveLength(3)
     expect(rows[1]?.textContent).toContain('1.3 MB')
     const link = within(table).getByRole('link', {
-      name: 'Download the weekly backup of 2026-11-08',
+      name: 'Download the backup of 2026-11-08',
     })
     expect(link.getAttribute('href')).toBe('/api/admin/backup/weekly/2026-11-08')
     expect(rows[2]?.textContent).toContain('900 B')
@@ -83,7 +83,7 @@ describe('MaintenancePanel', () => {
   it('says so when nothing has run yet', async () => {
     setup({ last: null, weekly: [] })
     expect(await screen.findByText('Maintenance has not run yet.')).toBeTruthy()
-    expect(screen.getByText('No weekly backups yet.')).toBeTruthy()
+    expect(screen.getByText('No saved backups yet.')).toBeTruthy()
   })
 
   it('warns what it deletes, runs on click and shows the new run', async () => {

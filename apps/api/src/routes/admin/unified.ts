@@ -152,7 +152,7 @@ export const unifiedRoute = new Hono<AppEnv>()
     if (!body) return c.json({ error: 'Invalid unified category' }, 400)
     const { ccsr, ...fields } = body
     if (fields.status === 'retired') {
-      return c.json({ error: 'A new unified category is a draft or published' }, 400)
+      return c.json({ error: 'Save a new unified category as a draft or as published.' }, 400)
     }
     const slug = fields.slug ?? unifiedSlugFromLabel(fields.label)
     if (isReservedUnifiedSlug(slug)) return c.json(slugReserved(slug), 400)

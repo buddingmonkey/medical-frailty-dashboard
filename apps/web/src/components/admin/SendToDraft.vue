@@ -212,7 +212,7 @@ const inputClass =
         <p v-if="sha256 !== null && sourcesQuery.isSuccess.value && !matched" class="mt-1 text-sm">
           This file is not stored yet. Store it on
           <RouterLink to="/admin/sources" class="text-link underline">Source files</RouterLink>
-          first: its title, address and date become the citation.
+          first: its title, URL and date become the citation.
         </p>
       </div>
       <div>

@@ -25,8 +25,8 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Launch readiness</h2>
     <p class="max-w-prose text-muted-foreground">
-      The launch data gate: at least 2 states with a published list must have every category mapping
-      confirmed, so each category shows “Reviewed” on the state’s public page.
+      The site is ready for launch when at least 2 states with a published list have every category
+      approved in Mappings, so each category shows “Reviewed” on the state’s public page.
     </p>
 
     <p v-if="query.isPending.value" class="text-muted-foreground">Loading…</p>
@@ -129,9 +129,9 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
 
       <p class="max-w-prose text-sm text-muted-foreground">
         A state is ready when every category has an approved unified mapping and its public page
-        shows “Reviewed” for each one. Choose the state on the linked page to fix a count. Federal
-        mappings are shown for information and do not block launch. The usability gate (roadmap M8
-        step 5) is the other launch gate and is not tracked here.
+        shows “Reviewed” for each one. Follow a count’s link and choose the state to fix it. Federal
+        mappings are shown for information and do not block launch. Testing the site with real users
+        is the other condition for launch; it is not tracked here.
       </p>
     </template>
   </section>

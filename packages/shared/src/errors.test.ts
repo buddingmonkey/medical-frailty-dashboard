@@ -59,7 +59,7 @@ describe('retryable errors', () => {
 
   it('does not promise that nothing was saved when busy, since a retry follows', () => {
     expect(adminErrorMessage('busy', 'ab12cd34')).toBe(
-      'The database was busy, or the connection to it dropped. Earlier steps are saved; the unfinished one will redo safely. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.',
+      'The database was busy, or the connection to it dropped. Earlier steps are saved, and running the unfinished one again is safe. Wait a minute and try again; if it keeps failing, report it with reference ab12cd34.',
     )
   })
 

@@ -12,9 +12,10 @@ import MaintenancePanel from '../../components/admin/MaintenancePanel.vue'
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Backup and restore</h2>
       <p class="max-w-prose text-muted-foreground">
-        Download every state’s lists, versions, sources (metadata only), mappings, watch dates and
-        the audit log as one zip. Reference codes and computed tables are left out: they are
-        reloaded or rebuilt.
+        Download a backup of the site’s data as one zip: every state’s lists and versions, the
+        source details (not the files), mappings, unified categories, condition groups, watch dates
+        and the audit log. The CMS and CCSR code lists and the coverage tables are left out: they
+        are loaded again or rebuilt with Rebuild coverage.
       </p>
     </div>
     <div class="max-w-3xl space-y-2 rounded border border-border p-4">

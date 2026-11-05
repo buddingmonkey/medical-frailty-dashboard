@@ -36,7 +36,7 @@ const sections = [
   { to: '/admin/drafts', label: 'Drafts' },
   { to: '/admin/versions', label: 'Versions' },
   { to: '/admin/restore', label: 'Backup and restore' },
-  { to: '/admin/categories', label: 'Categories' },
+  { to: '/admin/categories', label: 'Federal categories' },
   { to: '/admin/unified', label: 'Unified categories' },
   { to: '/admin/mappings', label: 'Mappings' },
   { to: '/admin/condition-groups', label: 'Condition groups' },

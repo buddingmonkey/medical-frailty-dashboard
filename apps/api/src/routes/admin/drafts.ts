@@ -373,7 +373,14 @@ export const draftsRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
     if (!version) return notFound(c)
-    if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
+    if (version.status !== 'draft')
+      return c.json(
+        {
+          error:
+            'This version is no longer a draft, so it cannot change. Send the rows to a new draft.',
+        },
+        409,
+      )
     const [doc] = await db
       .select({ stateId: sourceDocuments.stateId, title: sourceDocuments.title })
       .from(sourceDocuments)
@@ -432,7 +439,14 @@ export const draftsRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
     if (!version) return notFound(c)
-    if (version.status !== 'draft') return c.json({ error: 'Only a draft can change' }, 409)
+    if (version.status !== 'draft')
+      return c.json(
+        {
+          error:
+            'This version is no longer a draft, so it cannot change. Send the rows to a new draft.',
+        },
+        409,
+      )
     const [link] = await db
       .select({ expected: draftParts.expectedEntries })
       .from(draftParts)
@@ -455,7 +469,10 @@ export const draftsRoute = new Hono<AppEnv>()
         ),
       )
     if ((stored?.n ?? 0) + sent.length > link.expected) {
-      return c.json({ error: 'More rows than the source announced; send the source again' }, 400)
+      return c.json(
+        { error: 'More rows arrived than expected. Send the table to the draft again.' },
+        400,
+      )
     }
 
     const rows = sent.map((e) => entryRow(version.id, sourceDocumentId, part, e))
@@ -495,7 +512,14 @@ export const draftsRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
     if (!version) return notFound(c)
-    if (version.status !== 'draft') return c.json({ error: 'Only a draft can be published' }, 409)
+    if (version.status !== 'draft')
+      return c.json(
+        {
+          error:
+            'This version is no longer a draft: it was already published or discarded. Reload the page.',
+        },
+        409,
+      )
 
     const checks = await runDraftChecks(db, version)
     if (checks.token !== body.data.token) {
@@ -614,7 +638,13 @@ export const draftsRoute = new Hono<AppEnv>()
     ])
     const published = results.at(-1)
     if (!Array.isArray(published) || published.length !== 1) {
-      return c.json({ error: 'Only a draft can be published' }, 409)
+      return c.json(
+        {
+          error:
+            'This version is no longer a draft: it was already published or discarded. Reload the page.',
+        },
+        409,
+      )
     }
     // Right after the batch: where the new list counts among the unified categories, then how
     // alike its list is to every other state's (roadmap M5 step 7). The publish stands if this
@@ -632,7 +662,14 @@ export const draftsRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const version = await findVersion(db, id.data)
     if (!version) return notFound(c)
-    if (version.status !== 'draft') return c.json({ error: 'Only a draft can be discarded' }, 409)
+    if (version.status !== 'draft')
+      return c.json(
+        {
+          error:
+            'This version is no longer a draft: it was already published or discarded. Reload the page.',
+        },
+        409,
+      )
     await db.batch([
       db
         .update(datasetVersions)

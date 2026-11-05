@@ -36,7 +36,8 @@ const draftsQuery = useQuery({
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Drafts</h2>
       <p class="max-w-prose text-muted-foreground">
-        A draft holds a state’s new list until it is published. Nothing in a draft is public.
+        A draft holds a state’s new list until it is published. Nothing in a draft is public. To
+        start one, send rows from Read and map. Open a draft to read its checks and publish it.
       </p>
     </div>
     <div class="max-w-xs">

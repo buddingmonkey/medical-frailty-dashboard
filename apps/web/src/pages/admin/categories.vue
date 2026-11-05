@@ -260,12 +260,17 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 <template>
   <section class="space-y-6">
     <div class="space-y-2">
-      <h2 class="font-display text-2xl font-medium text-heading">Categories</h2>
+      <h2 class="font-display text-2xl font-medium text-heading">Federal categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Each state names its own categories. A code placed in a published unified category counts
-        under that category’s federal parent; map each state category to a federal category from
-        H.R.1 for the codes placed in none. Guesses come from a keyword table and count only after
-        an admin confirms them.
+        Each state names its own categories. A code in a published unified category counts under
+        that unified category’s federal category. For codes in no unified category, map each state
+        category to one of the H.R.1 federal categories here.
+      </p>
+      <p class="max-w-prose text-muted-foreground">
+        When a list is published, a new state category whose name matches a keyword gets a guessed
+        federal category, and the public pages use the guess right away. Read each guess and click
+        Confirm, or confirm them all at once. A change that moves published codes shows a preview
+        before it is saved.
       </p>
     </div>
     <div class="max-w-xs">

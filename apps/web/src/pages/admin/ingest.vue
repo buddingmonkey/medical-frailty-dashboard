@@ -350,8 +350,9 @@ const inputClass =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Read and map a list</h2>
       <p class="max-w-prose text-muted-foreground">
-        The file is read in your browser; nothing is sent until you save. Say what each column means
-        once per layout: the next file with the same headers maps itself.
+        Open a state’s file or paste a table. Say what each column means, check the rows, then send
+        them to a draft. Click Save column profile to remember the columns: the next file with the
+        same headers is mapped the same way.
       </p>
     </div>
 

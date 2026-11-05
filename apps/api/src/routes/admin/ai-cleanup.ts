@@ -70,7 +70,12 @@ export function aiCleanupRoute(complete: AiComplete) {
         )
         .first<{ id: number }>()
       if (!reserved) {
-        return c.json({ error: 'The hourly limit of AI calls is reached. Try again later.' }, 429)
+        return c.json(
+          {
+            error: `The limit of ${String(AI_CALLS_PER_HOUR)} AI calls an hour is reached; failed calls count too. Try again later, or copy the prompt into an AI assistant.`,
+          },
+          429,
+        )
       }
       const record = (details: Record<string, unknown>) =>
         db
@@ -101,7 +106,10 @@ export function aiCleanupRoute(complete: AiComplete) {
       })
       if (answer.stopReason === 'refusal') {
         return c.json(
-          { error: 'The model declined this part. Use the copy-and-paste prompt instead.' },
+          {
+            error:
+              'The model declined this part. Copy the prompt into another AI assistant instead.',
+          },
           422,
         )
       }
