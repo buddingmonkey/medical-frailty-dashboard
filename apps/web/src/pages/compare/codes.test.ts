@@ -4,6 +4,7 @@ import {
   federalCategories,
   type PublicStateDetail,
   type PublicStatesResponse,
+  qualificationHelp,
   qualifications,
   zeroCounts,
 } from '@mfcd/shared'
@@ -255,6 +256,17 @@ describe('compare page', () => {
     expect(within(cpt).getAllByRole('cell')[0]?.textContent).toContain('As published by Montana')
     expect(within(cpt).getAllByRole('cell')[1]?.textContent).toContain('Not listed')
     expect(within(f10).getAllByRole('cell')[2]?.textContent).toContain('3 narrower codes listed')
+  })
+
+  it('keeps rule badges out of the Tab order, still described by their help', async () => {
+    await renderRoute('/compare/codes?states=GA,MT&category=sud')
+
+    const table = await screen.findByRole('table')
+    const badge = within(table).getByRole('button', {
+      name: 'Enough by itself',
+      description: qualificationHelp.standalone,
+    })
+    expect(badge.getAttribute('tabindex')).toBe('-1')
   })
 
   it('pages through the rows and offers every row as CSV', async () => {

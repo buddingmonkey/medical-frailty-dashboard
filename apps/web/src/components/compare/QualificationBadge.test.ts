@@ -7,10 +7,10 @@ import '../../test/ui-sdk-stubs'
 
 import QualificationBadge from './QualificationBadge.vue'
 
-function setup() {
+function setup(focusable = true) {
   const user = userEvent.setup()
   render(QualificationBadge, {
-    props: { match: { qualification: 'standalone', qualificationBasis: 'inferred' } },
+    props: { match: { qualification: 'standalone', qualificationBasis: 'inferred' }, focusable },
   })
   return { user, badge: screen.getByRole('button', { name: 'Enough by itself (inferred)' }) }
 }
@@ -38,6 +38,17 @@ describe('QualificationBadge', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('tooltip')).toBeNull()
     expect(document.activeElement).toBe(badge)
+  })
+
+  it('stays out of the Tab order by default, for tables full of badges', async () => {
+    const { user, badge } = setup(false)
+
+    expect(screen.getByRole('button', { description: qualificationHelp.standalone })).toBe(badge)
+    await user.tab()
+    expect(document.activeElement).toBe(document.body)
+
+    await user.click(badge)
+    expect(screen.getByRole('tooltip').textContent).toBe(qualificationHelp.standalone)
   })
 
   it('opens and closes the help on a tap, for touch screens', async () => {
