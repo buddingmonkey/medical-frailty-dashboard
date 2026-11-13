@@ -15,6 +15,7 @@ export {
 export { homePage } from './home'
 export { statesPage } from './states'
 export { mapPage } from './map'
+export { overlapsPage } from './overlaps'
 export { categoriesPage } from './categories'
 export { downloadName, statePage } from './state'
 export { compareCsvPath, comparePage } from './compare'

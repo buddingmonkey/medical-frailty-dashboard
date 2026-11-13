@@ -15,6 +15,11 @@ const pages = [
   { path: '/compare', heading: 'How much of each category each state lists' },
   { path: '/compare/categories', heading: null },
   { path: '/compare/map', heading: null },
+  { path: '/compare/overlaps', heading: 'Which states list the same codes' },
+  {
+    path: '/compare/overlaps?category=test-psychoses',
+    heading: 'Which states list the same codes',
+  },
   { path: '/compare/states', heading: null },
   { path: '/compare/codes', heading: 'Compare single codes' },
   { path: '/compare/codes?states=MT,NE&category=sud', heading: 'Compare single codes' },
@@ -84,6 +89,25 @@ for (const theme of ['light', 'dark'] as const) {
       await ready(page, null)
       await page.locator('main a, main button, main select').first().focus()
       await page.keyboard.press('Tab')
+      expect(await a11yViolations(page)).toEqual([])
+    })
+
+    test('the overlaps tab with a row open, and at 320px with no sideways scroll', async ({
+      page,
+    }) => {
+      await page.goto('/compare/overlaps?category=test-psychoses')
+      await ready(page, 'Which states list the same codes')
+      const table = page.getByRole('table', { name: /groups of states that list exactly/ })
+      const first = table.getByRole('rowheader').first().getByRole('button')
+      await first.click()
+      await expect(first).toHaveAttribute('aria-expanded', 'true')
+      expect(await a11yViolations(page)).toEqual([])
+
+      await page.setViewportSize({ width: 320, height: 800 })
+      const sideways = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      )
+      expect(sideways).toBe(false)
       expect(await a11yViolations(page)).toEqual([])
     })
 
