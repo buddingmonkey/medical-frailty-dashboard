@@ -299,6 +299,12 @@ Cell words and legend, shown under every code table:
 Also: "As published by [state]", "No description from CMS or the state", "State’s category:",
 "Download this table (CSV, N rows)" (item 6: the CSV carries state descriptions in bulk).
 
+State picker (provisional, 2026-11-13; `COMPARE_STATES` in `packages/shared/src/compare.ts`):
+"States to compare: None chosen", "States to compare: 3 chosen (Georgia, Montana, Nebraska)",
+"… (Alabama, Alaska, Arizona and 12 more)", "All states with a list", "Clear", "Filter states",
+"12 states shown", "Show the table" (the form without JavaScript), and "To compare a state’s
+own category, turn on JavaScript or start from the state’s page."
+
 ### Code pages (one page per code)
 
 - Title: "[code] [CMS text]: medical frailty status in N states" (CPT: "CPT [code]: …") and

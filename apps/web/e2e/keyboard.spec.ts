@@ -73,6 +73,9 @@ test('a route change moves focus to the new page’s heading', async ({ page }) 
 test('a filter change in the URL leaves focus where it is', async ({ page }) => {
   await page.goto('/compare/codes?states=MT&category=sud')
   await expect(page.getByRole('table', { name: /codes by state/ })).toBeVisible()
+  // The state picker starts closed once states are chosen; Enter on its summary opens it.
+  await page.getByText('States to compare:').focus()
+  await page.keyboard.press('Enter')
   const nebraska = page.getByRole('group', { name: 'States' }).getByRole('checkbox', {
     name: 'Nebraska',
   })
@@ -243,6 +246,37 @@ test.describe('the usability tasks with the keyboard only', () => {
     }
     const table = page.getByRole('table', { name: 'Substance use disorder: codes by state' })
     await expect(table.getByRole('row', { name: /F10\.20/ })).toContainText('Listed')
+  })
+
+  test('the compare state picker: presets, filter and checkboxes with Tab and Space', async ({
+    page,
+  }) => {
+    await page.goto('/compare/codes')
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Compare single codes' }),
+    ).toBeVisible()
+    const category = page.getByLabel('Federal category', { exact: true })
+    await tabTo(page, category)
+    await page.keyboard.type('Substance')
+    await expect(category).toHaveValue('sud')
+
+    // Open while nothing is chosen: the presets come first.
+    await tabTo(page, page.getByRole('button', { name: 'All states with a list' }))
+    await page.keyboard.press('Space')
+    await expect(page).toHaveURL(/states=MT,NE&category=sud/)
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('button', { name: 'Clear' })).toBeFocused()
+    await page.keyboard.press('Space')
+
+    await page.keyboard.press('Tab')
+    await expect(page.getByLabel('Filter states')).toBeFocused()
+    await page.keyboard.type('neb')
+    await expect(page.getByText('1 state shown')).toBeVisible()
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('checkbox', { name: 'Nebraska' })).toBeFocused()
+    await page.keyboard.press('Space')
+    await expect(page).toHaveURL(/states=NE&category=sud/)
+    await expect(page.getByRole('checkbox', { name: 'Nebraska' })).toBeFocused()
   })
 
   test('3. whether F20.0 qualifies in Louisiana, and which other states list it', async ({

@@ -11,6 +11,9 @@ import {
   compareQuerySchema,
   COMPARE_PAGE_SIZE,
   compareSearchParams,
+  COMPARE_STATES,
+  compareStatesSummary,
+  sortStateIds,
   displayEntryCode,
   isCodeTableQuery,
 } from './compare'
@@ -54,21 +57,21 @@ function input(entries: CompareEntry[], patch: Partial<CompareInput> = {}): Comp
 }
 
 describe('compareQuerySchema', () => {
-  it('reads states in any case, de-duplicated, in the order given', () => {
+  it('reads states in any case, de-duplicated, alphabetical by name', () => {
     const q = compareQuerySchema.parse({ states: 'mt, GA,mt', category: 'sud' })
-    expect(q.states).toEqual(['MT', 'GA'])
+    expect(q.states).toEqual(['GA', 'MT'])
     expect(q).toMatchObject({ category: 'sud', page: 1, alone: false })
     expect(q.system).toBeUndefined()
   })
 
   it("takes a state's own category instead of a federal one, and adds that state", () => {
     const q = compareQuerySchema.parse({
-      states: 'GA',
+      states: 'NE,GA',
       ownState: 'la',
       ownCategory: ' Behavioral Health ',
     })
     expect(q).toMatchObject({
-      states: ['LA', 'GA'],
+      states: ['LA', 'GA', 'NE'],
       ownState: 'LA',
       ownCategory: 'Behavioral Health',
       ownSubcategory: '',
@@ -120,6 +123,45 @@ describe('compareQuerySchema', () => {
   it('leaves defaults out of the URL', () => {
     const q = compareQuerySchema.parse({ states: 'GA', ownState: 'GA', ownCategory: 'Cancer' })
     expect(compareSearchParams(q).toString()).toBe('states=GA&ownState=GA&ownCategory=Cancer')
+  })
+})
+
+describe('sortStateIds', () => {
+  it('sorts postal codes by the state’s name, not the code', () => {
+    // MO, MS, MT by code; Mississippi, Missouri, Montana by name.
+    expect(sortStateIds(['MT', 'MO', 'MS', 'DC', 'DE'])).toEqual(['DE', 'DC', 'MS', 'MO', 'MT'])
+  })
+
+  it('puts codes it does not know last, by code', () => {
+    expect(sortStateIds(['ZZ', 'GA', 'YY'])).toEqual(['GA', 'YY', 'ZZ'])
+  })
+
+  it('makes an old unsorted link and a sorted one the same query', () => {
+    const old = compareQuerySchema.parse({ states: 'NE,MT,GA', category: 'sud' })
+    expect(compareSearchParams(old).toString()).toBe('states=GA%2CMT%2CNE&category=sud')
+  })
+})
+
+describe('compareStatesSummary', () => {
+  it('names up to three states', () => {
+    expect(compareStatesSummary([])).toBe(COMPARE_STATES.none)
+    expect(compareStatesSummary(['Georgia'])).toBe('1 chosen (Georgia)')
+    expect(compareStatesSummary(['Georgia', 'Montana', 'Nebraska'])).toBe(
+      '3 chosen (Georgia, Montana, Nebraska)',
+    )
+  })
+
+  it('shortens a long list', () => {
+    expect(compareStatesSummary(['Alabama', 'Alaska', 'Arizona', 'Arkansas'])).toBe(
+      '4 chosen (Alabama, Alaska, Arizona and 1 more)',
+    )
+    const fifteen = Array.from({ length: 15 }, (_, i) => `State ${String(i + 1)}`)
+    expect(compareStatesSummary(fifteen)).toBe('15 chosen (State 1, State 2, State 3 and 12 more)')
+  })
+
+  it('counts the states shown', () => {
+    expect(COMPARE_STATES.shown(1)).toBe('1 state shown')
+    expect(COMPARE_STATES.shown(12)).toBe('12 states shown')
   })
 })
 

@@ -3458,6 +3458,11 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
     {
       "cells": [
         {
+          "match": null,
+          "narrowerCount": 1,
+          "status": "narrower",
+        },
+        {
           "match": {
             "display": "F20.*",
             "federalCategories": [
@@ -3471,11 +3476,6 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
           },
           "narrowerCount": 0,
           "status": "exact",
-        },
-        {
-          "match": null,
-          "narrowerCount": 1,
-          "status": "narrower",
         },
       ],
       "codeNorm": "F20",
@@ -3492,21 +3492,6 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
       "cells": [
         {
           "match": {
-            "display": "F20.*",
-            "federalCategories": [
-              "disabling_mental_disorder",
-            ],
-            "qualification": "standalone",
-            "qualificationBasis": "published",
-            "stateCategory": "Mental health",
-            "stateSubcategory": "",
-            "tier": null,
-          },
-          "narrowerCount": 0,
-          "status": "covered",
-        },
-        {
-          "match": {
             "display": "F20.0–F20.9",
             "federalCategories": [
               "disabling_mental_disorder",
@@ -3519,6 +3504,21 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
           },
           "narrowerCount": 0,
           "status": "exact",
+        },
+        {
+          "match": {
+            "display": "F20.*",
+            "federalCategories": [
+              "disabling_mental_disorder",
+            ],
+            "qualification": "standalone",
+            "qualificationBasis": "published",
+            "stateCategory": "Mental health",
+            "stateSubcategory": "",
+            "tier": null,
+          },
+          "narrowerCount": 0,
+          "status": "covered",
         },
       ],
       "codeNorm": "F200",
@@ -3534,11 +3534,6 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
     {
       "cells": [
         {
-          "match": null,
-          "narrowerCount": 2,
-          "status": "narrower",
-        },
-        {
           "match": {
             "display": "F31.*–F32.*",
             "federalCategories": [
@@ -3552,6 +3547,11 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
           },
           "narrowerCount": 0,
           "status": "exact",
+        },
+        {
+          "match": null,
+          "narrowerCount": 2,
+          "status": "narrower",
         },
       ],
       "codeNorm": "F31",
@@ -3567,16 +3567,16 @@ exports[`public numbers > compare by category > /api/public/compare?states=TX,MT
   ],
   "states": [
     {
-      "id": "TX",
-      "name": "Texas",
-      "published": true,
-      "slug": "tx",
-    },
-    {
       "id": "MT",
       "name": "Montana",
       "published": true,
       "slug": "mt",
+    },
+    {
+      "id": "TX",
+      "name": "Texas",
+      "published": true,
+      "slug": "tx",
     },
   ],
   "totalRows": 3,
