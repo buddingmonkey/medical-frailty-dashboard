@@ -73,8 +73,11 @@ test('the CSV has every row', async ({ request }) => {
   expect(res.status()).toBe(200)
   const lines = (await res.text()).trimEnd().split('\r\n')
   expect(lines).toHaveLength(2)
-  expect(lines[1]).toContain('F10.20,"Alcohol dependence, uncomplicated",MT,Listed')
-  expect(lines[1]).toContain('No list on this site')
+  const row = lines[1] ?? ''
+  expect(row).toContain('F10.20,"Alcohol dependence, uncomplicated",MT,')
+  // The columns are alphabetical by name (project lead, 2026-11-13): Alabama, then Montana.
+  expect(row.indexOf('No list on this site')).toBeGreaterThan(-1)
+  expect(row.indexOf('No list on this site')).toBeLessThan(row.indexOf('Listed'))
 })
 
 test.describe('with JavaScript off', () => {

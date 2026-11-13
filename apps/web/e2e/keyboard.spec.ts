@@ -74,9 +74,9 @@ test('a filter change in the URL leaves focus where it is', async ({ page }) => 
   await page.goto('/compare/codes?states=MT&category=sud')
   await expect(page.getByRole('table', { name: /codes by state/ })).toBeVisible()
   // The state picker starts closed once states are chosen; Enter on its summary opens it.
-  await page.getByText('States to compare:').focus()
+  await page.locator('summary', { hasText: 'States to compare:' }).focus()
   await page.keyboard.press('Enter')
-  const nebraska = page.getByRole('group', { name: 'States' }).getByRole('checkbox', {
+  const nebraska = page.getByRole('group', { name: 'States to compare' }).getByRole('checkbox', {
     name: 'Nebraska',
   })
   await nebraska.focus()
