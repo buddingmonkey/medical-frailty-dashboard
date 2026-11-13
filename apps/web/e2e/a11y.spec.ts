@@ -143,3 +143,21 @@ test.describe('with scripts blocked', () => {
     }
   }
 })
+
+// The state picker on Compare single codes (2026-11-13): open, with every state chosen and a
+// filter typed, in both themes.
+for (const theme of ['light', 'dark'] as const) {
+  test(`the compare state picker, open and filtered, has no violations (${theme})`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme })
+    await page.goto('/compare/codes?states=MT&category=sud')
+    await ready(page, 'Compare single codes')
+    await page.getByText('States to compare:').click()
+    await page.getByRole('button', { name: 'All states with a list' }).click()
+    await page.getByLabel('Filter states').fill('mon')
+    // Both are checked, so both stay in view.
+    await expect(page.getByText('2 states shown')).toBeVisible()
+    expect(await a11yViolations(page)).toEqual([])
+  })
+}

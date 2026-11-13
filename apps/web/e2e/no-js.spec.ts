@@ -51,6 +51,27 @@ test.describe('with JavaScript off', () => {
     await expect(table.getByRole('row')).toHaveCount(52)
     await expect(table.getByRole('row', { name: /^Montana List on this site 3/ })).toBeVisible()
   })
+
+  test('the single-code comparison works as a plain form', async ({ page }) => {
+    await page.goto('/compare/codes')
+
+    await page.getByLabel('Federal category').selectOption('sud')
+    // Checked out of order; the URL comes back as one parameter, alphabetical by name.
+    await page.getByRole('checkbox', { name: 'Nebraska' }).check()
+    await page.getByRole('checkbox', { name: 'Montana' }).check()
+    await page.getByRole('button', { name: 'Show the table' }).click()
+
+    await expect(page).toHaveURL(/\/compare\/codes\?states=MT,NE&category=sud$/)
+    const table = page.getByRole('table', { name: 'Substance use disorder: codes by state' })
+    await expect(table.getByRole('columnheader')).toHaveText([
+      'Code',
+      'Description',
+      'Montana',
+      'Nebraska',
+    ])
+    await expect(page.getByRole('checkbox', { name: 'Montana' })).toBeChecked()
+    await expect(page.getByLabel('Federal category')).toHaveValue('sud')
+  })
 })
 
 test('the state page with JavaScript: same facts, no console or CSP errors, axe clean', async ({
