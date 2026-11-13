@@ -27,12 +27,14 @@ import {
   STATES_COMPARE_MIN,
   statesComparePath,
   statesCompareQueryFromRecord,
+  tileMapCategory,
 } from '@mfcd/shared'
 import { asc, eq } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
 import { publicCode } from '../db/public-code'
+import { publicOverlaps } from '../db/public-overlaps'
 import { includedCodeCount, includedCodePage, listsUpdatedAt } from '../db/public-code-sitemap'
 import { publicCompare } from '../db/public-compare'
 import { publicDrill, publicDrillCsv, publicDrillDetail } from '../db/public-drill'
@@ -50,6 +52,7 @@ import {
   downloadName,
   homePage,
   mapPage,
+  overlapsPage,
   notFoundPage,
   overviewPage,
   type PageParts,
@@ -243,6 +246,15 @@ export const pagesRoute = new Hono<AppEnv>()
   .get('/compare/map', pageCache, async (c) => {
     const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
     return sendPage(c, mapPage(data, origin(c), c.req.query()))
+  })
+  .get('/compare/overlaps', pageCache, async (c) => {
+    const db = createDb(c.env.DB)
+    const dataVersion = c.get('dataVersion') ?? 0
+    const { categories } = await publicOverview(db, dataVersion)
+    const current = tileMapCategory(categories, c.req.query())
+    if (!current) return sendPage(c, overlapsPage(origin(c), null))
+    const data = await publicOverlaps(db, current.slug, dataVersion)
+    return sendPage(c, overlapsPage(origin(c), { categories, current, data }))
   })
   .get('/compare/codes', pageCache, async (c) => {
     const parsed = compareQueryOf(c)
@@ -491,6 +503,7 @@ export const pagesRoute = new Hono<AppEnv>()
       // The compare tabs that are indexed (`/compare/states` is not; docs/seo.md).
       url(`${base}/compare/categories`, newest),
       url(`${base}/compare/map`, newest),
+      url(`${base}/compare/overlaps`, newest),
       // A category page changes with its own edits and with any state's list.
       ...categories.map((u) => {
         const day = u.updatedAt.slice(0, 10)

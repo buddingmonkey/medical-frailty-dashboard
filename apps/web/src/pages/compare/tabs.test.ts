@@ -37,6 +37,7 @@ describe('compare tabs', () => {
       ['Overview', '/compare'],
       ['Categories', '/compare/categories'],
       ['Map', '/compare/map'],
+      ['Overlaps', '/compare/overlaps'],
       ['States side by side', '/compare/states'],
       ['Single codes', '/compare/codes'],
     ])
@@ -46,6 +47,7 @@ describe('compare tabs', () => {
     ['/compare', 'Overview', 'page'],
     ['/compare/categories', 'Categories', 'page'],
     ['/compare/map', 'Map', 'page'],
+    ['/compare/overlaps', 'Overlaps', 'page'],
     ['/compare/states', 'States side by side', 'page'],
     ['/compare/codes', 'Single codes', 'page'],
     ['/compare/kidney-failure', 'Categories', 'true'],

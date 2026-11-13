@@ -10,6 +10,7 @@ import {
   HOME_INTRO,
   infoPages,
   MAP_DESCRIPTION,
+  OVERLAPS_DESCRIPTION,
   OVERVIEW_DESCRIPTION,
   pageDescriptions,
   SEARCH_PAGE,
@@ -42,6 +43,7 @@ const TAB_NOTES: Record<CompareTab['path'], string> = {
   '/compare': OVERVIEW_DESCRIPTION,
   '/compare/categories': CATEGORIES_DESCRIPTION,
   '/compare/map': MAP_DESCRIPTION,
+  '/compare/overlaps': OVERLAPS_DESCRIPTION,
   '/compare/states': STATES_LANDING_DESCRIPTION,
   '/compare/codes': COMPARE_DESCRIPTION,
 }

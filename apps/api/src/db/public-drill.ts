@@ -131,7 +131,7 @@ export function shared(rows0: SQL, pub0?: SQL): SQL {
 }
 
 /** The rows placed in a category, plus its universe codes when asked. */
-function placedRows(unifiedId: number, withUniverse: boolean): SQL {
+export function placedRows(unifiedId: number, withUniverse: boolean): SQL {
   const placed = sql`SELECT DISTINCT ${rowColumnsSql(entryCols('e'))}
     FROM states s
     JOIN entries e ON e.version_id = s.published_version_id
@@ -334,7 +334,7 @@ interface CategoryContext {
 }
 
 /** The published category by slug, with every state and the systems among its rows; null: none. */
-async function categoryContext(db: Db, slug: string): Promise<CategoryContext | null> {
+export async function categoryContext(db: Db, slug: string): Promise<CategoryContext | null> {
   const [found] = await db
     .select()
     .from(unifiedCategories)
