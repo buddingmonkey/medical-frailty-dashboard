@@ -63,6 +63,7 @@ const PUBLIC_PAGES = [
   '/compare',
   '/compare/categories',
   '/compare/map',
+  '/compare/overlaps',
   '/compare/codes',
   '/compare/states',
   '/compare/states/ga-vs-mt',

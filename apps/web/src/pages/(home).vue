@@ -61,15 +61,14 @@ const legend = [
 </script>
 
 <template>
-  <div class="space-y-8">
-    <section class="max-w-prose space-y-4">
-      <h1 class="font-display text-4xl font-medium text-balance text-heading">
+  <div class="space-y-6">
+    <!-- Wide and small: the intro is context, the map is the page (project lead, 2026-11-13). -->
+    <section class="max-w-5xl space-y-2">
+      <h1 class="font-display text-3xl font-medium text-balance text-heading">
         Compare medical frailty codes by state
       </h1>
-      <p class="text-lg text-foreground">
-        {{ HOME_INTRO }} <AboutLinkView :link="learnMore.home" />
-      </p>
-      <p>
+      <p class="text-foreground">{{ HOME_INTRO }} <AboutLinkView :link="learnMore.home" /></p>
+      <p class="text-sm">
         <a :href="STATUTE_URL" rel="noopener noreferrer external" class="text-link">{{
           STATUTE_LINK_TEXT
         }}</a>

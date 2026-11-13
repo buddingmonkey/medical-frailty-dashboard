@@ -19,6 +19,7 @@ import {
 import { federalCategoriesText, federalCategoryInfo } from './categories'
 import { STATES_AND_DC, stateCategoryName } from './public'
 import { qualificationLabels } from './qualification'
+import { usTileLayout } from './tile-map'
 
 // Compare by category (roadmap M4; docs/architecture.md, "API shape"). Rows are the codes,
 // wildcards and ranges the selected states list in one category; columns are the states. Each
@@ -27,6 +28,23 @@ import { qualificationLabels } from './qualification'
 // Pure functions: the Worker loads the entries, this file aligns them.
 
 export const COMPARE_PAGE_SIZE = 100
+
+const stateNameById = new Map(usTileLayout.map((p) => [p.id, p.name]))
+
+/**
+ * Postal codes in alphabetical order of the state's name (project lead, 2026-11-13): the
+ * picker, the URL and the table's columns all use it. A code with no state goes last.
+ */
+export function sortStateIds(ids: readonly string[]): string[] {
+  const key = (id: string) => stateNameById.get(id)
+  return [...ids].sort((a, b) => {
+    const [na, nb] = [key(a), key(b)]
+    if (na !== undefined && nb !== undefined) return na.localeCompare(nb, 'en')
+    if (na !== undefined) return -1
+    if (nb !== undefined) return 1
+    return a.localeCompare(b, 'en')
+  })
+}
 
 const stateId = z
   .string()
@@ -38,7 +56,7 @@ const label = z.string().trim().max(200)
 /** The code table's URL query (`/compare/codes?…`, `/api/public/compare?…`), read from strings. */
 export const compareQuerySchema = z
   .object({
-    /** Comma-separated postal codes, in column order. */
+    /** Comma-separated postal codes; the columns are alphabetical by name whatever the order. */
     states: z
       .string()
       .max(400)
@@ -67,9 +85,10 @@ export const compareQuerySchema = z
     }
   })
   .transform((q) => {
-    // The state whose category it is comes first; every state once.
-    const ids = q.ownState === undefined ? q.states : [q.ownState, ...q.states]
-    return { ...q, states: [...new Set(ids)] }
+    // The state whose category it is comes first, then the rest by name; every state once.
+    const own = q.ownState
+    const others = sortStateIds([...new Set(q.states)].filter((id) => id !== own))
+    return { ...q, states: own === undefined ? others : [own, ...others] }
   })
   .refine((q) => q.states.length <= STATES_AND_DC, {
     message: `At most ${String(STATES_AND_DC)} states`,
@@ -575,6 +594,34 @@ export const compareEmptyText = (alone: boolean): string =>
 /** The filter that keeps codes some state says are enough by themselves. */
 export const COMPARE_ALONE_LABEL =
   'Only codes that are enough by themselves in at least one state (by the state’s rule)'
+
+/**
+ * The state picker on `/compare/codes` (project lead, 2026-11-13): a disclosure, GOV.UK's
+ * "option select". Provisional (docs/legal-review.md).
+ */
+export const COMPARE_STATES = {
+  legend: 'States to compare',
+  legendOwn: 'States to compare with',
+  none: 'None chosen',
+  all: 'All states with a list',
+  clear: 'Clear',
+  filterLabel: 'Filter states',
+  shown: (n: number): string => `${String(n)} ${n === 1 ? 'state' : 'states'} shown`,
+  noList: 'No state has a list on this site yet.',
+  submit: 'Show the table',
+  ownNoJs: 'To compare a state’s own category, turn on JavaScript or start from the state’s page.',
+} as const
+
+/** How many names the picker's summary shows before "and N more". */
+export const COMPARE_STATES_NAMED = 3
+
+/** "3 chosen (Georgia, Montana, Nebraska)"; "15 chosen (Alabama, Alaska, Arizona and 12 more)". */
+export function compareStatesSummary(names: readonly string[]): string {
+  if (names.length === 0) return COMPARE_STATES.none
+  const shown = names.slice(0, COMPARE_STATES_NAMED).join(', ')
+  const more = names.length - COMPARE_STATES_NAMED
+  return `${String(names.length)} chosen (${shown}${more > 0 ? ` and ${String(more)} more` : ''})`
+}
 
 /** The legend of every code table: each cell word, then the badges. */
 export const compareLegend: readonly { term: string; text: string }[] = [

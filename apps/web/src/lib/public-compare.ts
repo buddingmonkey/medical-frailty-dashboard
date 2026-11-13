@@ -22,7 +22,7 @@ export interface CompareSelection {
   /** Null until one is chosen ('' is a real category: the state's "(no category)"). */
   ownCategory: string | null
   ownSubcategory: string
-  /** The other states, in the order they were picked. */
+  /** The other states, alphabetical by name (sortStateIds). */
   states: string[]
   system: CodeSystem | ''
   alone: boolean

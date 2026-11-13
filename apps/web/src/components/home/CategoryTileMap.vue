@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   overviewCategoryGroups,
+  type OverviewCellCardPayload,
   OVERVIEW_NOT_REVIEWED,
   type PublicOverviewResponse,
   TILE_MAP_NOT_REVIEWED_NOTE,
@@ -8,16 +9,19 @@ import {
   type TileMapShade,
   tileMapTiles,
 } from '@mfcd/shared'
+import { createHoverCardController, HoverCardTrigger } from '@ui-sdk/vue/hover-card'
 import { computed, useId } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import CoverageLegend from '../compare/CoverageLegend.vue'
+import OverviewCellCard from '../compare/OverviewCellCard.vue'
 
 // The tile map (roadmap M5 step 8): one published unified category across the country, an
 // equal square per state on the US tile grid, with the overview's numbers and shades. The tiles
 // are a list in order of state name (what a screen reader reads); CSS grid places each one on
 // the map. Every tile says its number in text and its full meaning in its accessible name, and
-// the same data is in a table beneath (WCAG 1.3.1, 1.4.1).
+// the same data is in a table beneath (WCAG 1.3.1, 1.4.1). Each tile with a list opens the
+// overview matrix's hover card for its state and the category (project lead, 2026-11-13).
 
 const props = defineProps<{ data: PublicOverviewResponse }>()
 /** The category's slug; the page keeps it in the URL. */
@@ -29,6 +33,20 @@ const current = computed(
   () => props.data.categories.find((c) => c.slug === category.value) ?? props.data.categories[0],
 )
 const tiles = computed(() => (current.value ? tileMapTiles(props.data, current.value) : []))
+
+const tileCard = createHoverCardController<OverviewCellCardPayload>()
+/** The card's payload for each state with a list, by state id. */
+const payloads = computed(() => {
+  const out = new Map<string, OverviewCellCardPayload>()
+  const category = current.value
+  if (!category) return out
+  const index = props.data.categories.findIndex((c) => c.id === category.id)
+  for (const state of props.data.states) {
+    const cell = state.hasList ? state.cells[index] : undefined
+    if (cell) out.set(state.id, { stateName: state.name, category, cell })
+  }
+  return out
+})
 const caption = computed(() => (current.value ? tileMapCaption(current.value) : ''))
 const anyNotReviewed = computed(() => tiles.value.some((t) => t.notReviewed))
 
@@ -100,13 +118,17 @@ const tileClass =
           <span aria-hidden="true" class="font-semibold">{{ t.id }}</span>
           <!-- The number is the link text, so the visible words are in its accessible name
                (WCAG 2.5.3); the link covers the whole tile. -->
-          <RouterLink
-            v-if="t.href"
-            :to="t.href"
-            :aria-label="t.label"
-            class="mt-[0.2em] font-mono text-current no-underline outline-none after:absolute after:inset-0 hover:underline"
-            >{{ t.text }}<span v-if="t.notReviewed" aria-hidden="true">*</span></RouterLink
-          >
+          <RouterLink v-if="t.href" v-slot="{ href, navigate }" :to="t.href" custom>
+            <HoverCardTrigger
+              :controller="tileCard"
+              :payload="payloads.get(t.id)"
+              :href="href"
+              :aria-label="t.label"
+              class="mt-[0.2em] font-mono text-current no-underline outline-none after:absolute after:inset-0 hover:underline data-open:underline"
+              @click="navigate"
+              >{{ t.text }}<span v-if="t.notReviewed" aria-hidden="true">*</span></HoverCardTrigger
+            >
+          </RouterLink>
           <template v-else>
             <span aria-hidden="true" class="mt-[0.2em] text-[0.85em]">{{ t.text }}</span>
             <span class="sr-only">{{ t.label }}</span>
@@ -114,6 +136,7 @@ const tileClass =
         </li>
       </ul>
     </div>
+    <OverviewCellCard :controller="tileCard" />
     <p v-if="anyNotReviewed" class="max-w-prose text-sm text-muted-foreground">
       {{ TILE_MAP_NOT_REVIEWED_NOTE }}
     </p>

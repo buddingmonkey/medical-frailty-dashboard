@@ -4,6 +4,7 @@ import {
   federalCategories,
   type PublicStateDetail,
   type PublicStatesResponse,
+  qualificationHelp,
   qualifications,
   zeroCounts,
 } from '@mfcd/shared'
@@ -219,11 +220,40 @@ describe('compare page', () => {
 
     await waitFor(() => {
       expect(router.currentRoute.value.fullPath).toBe(
-        '/compare/codes?states=MT,GA&category=sud&system=icd10cm&alone=1',
+        '/compare/codes?states=GA,MT&category=sud&system=icd10cm&alone=1',
       )
     })
     await screen.findByRole('table')
-    expect(compareUrls.at(-1)?.search).toBe('?states=MT%2CGA&category=sud&system=icd10cm&alone=1')
+    expect(compareUrls.at(-1)?.search).toBe('?states=GA%2CMT&category=sud&system=icd10cm&alone=1')
+  })
+
+  it('chooses every state with a list with one button, and writes the URL', async () => {
+    const user = userEvent.setup()
+    const { router } = await renderRoute('/compare/codes')
+
+    await user.selectOptions(await screen.findByLabelText('Federal category'), 'sud')
+    await user.click(await screen.findByRole('button', { name: 'All states with a list' }))
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/compare/codes?states=GA,MT&category=sud')
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Montana' }))
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/compare/codes?states=MT&category=sud')
+    })
+  })
+
+  it('asks for the columns in alphabetical order, even from an old unsorted link', async () => {
+    await renderRoute('/compare/codes?states=MT,GA&category=sud')
+
+    const table = await screen.findByRole('table')
+    expect(compareUrls.at(-1)?.searchParams.get('states')).toBe('GA,MT')
+    const headers = within(table)
+      .getAllByRole('columnheader')
+      .map((h) => h.textContent.trim())
+    expect(headers).toEqual(['Code', 'Description', 'Georgia', 'Montana'])
+    expect(screen.getByText(/2 chosen \(Georgia, Montana\)/)).toBeTruthy()
   })
 
   it('shows each state as a column and each code as a row, with the state’s own rule', async () => {
@@ -255,6 +285,17 @@ describe('compare page', () => {
     expect(within(cpt).getAllByRole('cell')[0]?.textContent).toContain('As published by Montana')
     expect(within(cpt).getAllByRole('cell')[1]?.textContent).toContain('Not listed')
     expect(within(f10).getAllByRole('cell')[2]?.textContent).toContain('3 narrower codes listed')
+  })
+
+  it('keeps rule badges out of the Tab order, still described by their help', async () => {
+    await renderRoute('/compare/codes?states=GA,MT&category=sud')
+
+    const table = await screen.findByRole('table')
+    const badge = within(table).getByRole('button', {
+      name: 'Enough by itself',
+      description: qualificationHelp.standalone,
+    })
+    expect(badge.getAttribute('tabindex')).toBe('-1')
   })
 
   it('pages through the rows and offers every row as CSV', async () => {

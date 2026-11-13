@@ -399,6 +399,53 @@ describe('GET /compare/codes (server-rendered, noindex)', () => {
     const html = await (await get('/compare/codes?states=ZZ&category=sud')).text()
     expect(html).toContain('No state has the code ZZ. Pick a category and states to compare.')
   })
+
+  it('offers the choices as a GET form that works without JavaScript', async () => {
+    const html = appHtml(
+      await (await get('/compare/codes?states=ga,ne&category=sud&system=icd10cm&alone=1')).text(),
+    )
+    expect(html).toContain('<form method="get" action="/compare/codes">')
+    expect(html).toMatch(/<option value="sud" selected>/)
+    expect(html).toMatch(/<option value="icd10cm" selected>/)
+    // Only states with a list; the current ones checked.
+    expect(html).toMatch(/name="states"\s+value="GA"\s+checked\s*\/>\s*Georgia/)
+    expect(html).not.toContain('value="NE"')
+    expect(html).toMatch(/name="alone" value="1"\s+checked\s*\/>/)
+    expect(html).toContain('<button type="submit">Show the table</button>')
+  })
+
+  it('leaves the form unchecked without a selection', async () => {
+    const html = appHtml(await (await get('/compare/codes')).text())
+    expect(html).toContain('<form method="get" action="/compare/codes">')
+    expect(html).toMatch(/name="states"\s+value="GA"\s*\/>/)
+    expect(html).toMatch(/<option value="" selected>Choose a category<\/option>/)
+  })
+
+  it('treats a form sent without a category or states as no selection yet', async () => {
+    const html = await (await get('/compare/codes?states=GA')).text()
+    expect(html).toContain('Pick a category and at least one state')
+    expect(html).not.toContain('This comparison link is not valid')
+  })
+
+  it('redirects the form’s repeated states to one sorted parameter', async () => {
+    const res = await get('/compare/codes?states=mt&states=ga&states=GA&category=sud&system=')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe('/compare/codes?states=GA,MT&category=sud')
+  })
+
+  it('redirects a form with one state but empty choices to the clean URL', async () => {
+    const res = await get('/compare/codes?states=GA&category=sud&system=&utm_source=x')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe('/compare/codes?states=GA&category=sud&utm_source=x')
+  })
+
+  it('serves an old unsorted link as it is, with sorted columns', async () => {
+    const res = await get('/compare/codes?states=ne,ga&category=sud')
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html.indexOf('>Georgia</a></th>')).toBeLessThan(html.indexOf('>Nebraska</a></th>'))
+    expect(html).toContain('href="/compare/codes.csv?states=GA%2CNE&amp;category=sud"')
+  })
 })
 
 describe('GET /compare/codes.csv', () => {

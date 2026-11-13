@@ -8,6 +8,7 @@ import {
   overviewCellNotReviewed,
   overviewCellText,
   overviewDrillDownPath,
+  type OverviewCellCardPayload,
   type OverviewOrder,
   overviewOverall,
   orderOverviewStates,
@@ -17,8 +18,11 @@ import {
   OVERVIEW_UNION_MARK,
   type PublicOverviewResponse,
 } from '@mfcd/shared'
+import { createHoverCardController, HoverCardTrigger } from '@ui-sdk/vue/hover-card'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+
+import OverviewCellCard from './OverviewCellCard.vue'
 
 // The overview matrix (roadmap M5 step 5): a row per state, a column per published unified
 // category under its federal parent, and an overall column. Every cell carries its number as
@@ -26,9 +30,12 @@ import { RouterLink } from 'vue-router'
 // a sort button; the page owns the order and announces it. A category's header is two controls
 // (project lead, 2026-11-02): its label links to the category page, and a separate button,
 // named "Sort by <label>", sorts by it; both are in the tab order (WCAG 2.1.1, 4.1.2).
+// Every cell is a trigger of one shared hover card, so about 1,300 cells mount a single card.
 
 const props = defineProps<{ data: PublicOverviewResponse; caption: string }>()
 const order = defineModel<OverviewOrder>('order', { required: true })
+
+const cellCard = createHoverCardController<OverviewCellCardPayload>()
 
 const groups = computed(() => overviewCategoryGroups(props.data.categories))
 /** The rows in order, each cell beside its category (cells come in `categories` order). */
@@ -37,7 +44,9 @@ const rows = computed(() =>
     state,
     cells: props.data.categories.flatMap((category, i) => {
       const cell = state.cells[i]
-      return cell ? [{ category, cell }] : []
+      if (!cell) return []
+      const payload: OverviewCellCardPayload = { stateName: state.name, category, cell }
+      return [{ category, cell, payload }]
     }),
   })),
 )
@@ -158,18 +167,29 @@ const shade: Record<CoverageBand, string> = {
           </td>
           <template v-else>
             <td
-              v-for="{ category: c, cell } in cells"
+              v-for="{ category: c, cell, payload } in cells"
               :key="c.id"
               class="border-b border-border p-0.5"
             >
               <RouterLink
+                v-slot="{ href, navigate }"
                 :to="overviewDrillDownPath(c.slug, s.id)"
-                :aria-label="overviewCellLabel(s.name, c, cell)"
-                class="block min-w-14 rounded-sm px-1 py-1.5 text-center font-mono text-xs font-medium no-underline hover:underline"
-                :class="shade[coverageBand(cell.share)]"
-                >{{ overviewCellText(cell.share)
-                }}<span v-if="overviewCellNotReviewed(cell)" aria-hidden="true">*</span></RouterLink
+                custom
               >
+                <HoverCardTrigger
+                  :controller="cellCard"
+                  :payload="payload"
+                  :href="href"
+                  :aria-label="overviewCellLabel(s.name, c, cell)"
+                  class="block min-w-14 rounded-sm px-1 py-1.5 text-center font-mono text-xs font-medium no-underline hover:underline data-open:underline"
+                  :class="shade[coverageBand(cell.share)]"
+                  @click="navigate"
+                  >{{ overviewCellText(cell.share)
+                  }}<span v-if="overviewCellNotReviewed(cell)" aria-hidden="true"
+                    >*</span
+                  ></HoverCardTrigger
+                >
+              </RouterLink>
             </td>
             <td class="border-b border-border px-2 py-1 text-right font-mono text-xs font-semibold">
               {{ overviewCellText(overviewOverall(s)) }}
@@ -178,5 +198,6 @@ const shade: Record<CoverageBand, string> = {
         </tr>
       </tbody>
     </table>
+    <OverviewCellCard :controller="cellCard" />
   </div>
 </template>

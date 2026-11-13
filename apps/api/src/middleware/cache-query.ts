@@ -18,6 +18,7 @@ const params: Readonly<Record<string, readonly string[]>> = {
   '/api/public/states/*': none,
   '/api/public/compare': compareQueryKeys,
   '/api/public/overview': none,
+  '/api/public/overlaps': ['category'],
   '/api/public/categories/*': drillQueryKeys,
   '/api/public/states-compare': ['states', ...statesCompareQueryKeys],
   // Search and one code's detail share the mount; the detail reads none of these.
@@ -31,6 +32,7 @@ const params: Readonly<Record<string, readonly string[]>> = {
   '/compare': overviewOrder,
   '/compare/categories': none,
   '/compare/map': ['category'],
+  '/compare/overlaps': ['category'],
   '/compare/codes': compareQueryKeys,
   '/compare/codes.csv': compareQueryKeys,
   '/compare/states': ['state'],
