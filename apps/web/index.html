@@ -8,6 +8,9 @@
       name="description"
       content="Compare the code lists US states use to mark Medicaid members as medically frail."
     />
+    <!-- No nonce: ui-sdk then adds its CSS as constructed style sheets, which our CSP
+         (style-src 'self', no 'unsafe-inline') allows. docs/security.md. -->
+    <meta property="csp-nonce" content="none" />
     <title>Medical Frailty Coding Dashboard</title>
     <!-- Icons, manifest and theme colours: SITE_ICONS and THEME_COLORS in packages/shared
          (scripts/make-icons.ts writes the files). The Worker writes the same tags itself. -->
