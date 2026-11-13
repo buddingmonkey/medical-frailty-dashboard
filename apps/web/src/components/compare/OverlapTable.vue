@@ -48,7 +48,7 @@ const rowText = (row: OverlapsResponse['intersections'][number]) =>
     <p class="max-w-prose text-sm text-muted-foreground">{{ OVERLAPS_COUNT_NOTE }}</p>
     <p class="text-sm" aria-live="polite">{{ overlapsStatusText(data, rows.length) }}</p>
     <div
-      class="max-w-full overflow-x-auto rounded-lg border border-border"
+      class="relative max-w-full overflow-x-auto rounded-lg border border-border"
       role="region"
       :aria-label="`${caption}, table`"
       tabindex="0"
