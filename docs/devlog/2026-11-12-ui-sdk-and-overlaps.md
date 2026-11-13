@@ -53,6 +53,10 @@ visualizations, and build the one view from the M5 research that was still missi
   absolute`) had no positioned ancestor. One `relative` fixed it.
 - **A CSP check found an older report:** Zod tests `new Function` once per page. CSP blocks it
   (harmless; Zod falls back), and a violation is reported on every page, before today too.
+  The project lead asked for Zod's `jitless` setting. Set in the web app's `main.ts`, it came too
+  late: the bundler puts Zod and the shared schemas in a chunk that runs before `main.ts`. It now
+  sits at the top of `packages/shared/src/index.ts`, and a new e2e test (`csp-clean.spec.ts`)
+  fails on any CSP violation on four public pages.
 
 ## What a non-technical builder should take from this
 - A test that fails once may not fail again. Run it again before you change code because of it.
@@ -62,12 +66,11 @@ visualizations, and build the one view from the M5 research that was still missi
 ## Numbers
 - About 5.5 hours in total. AI cost not measured.
 - 53 files changed, about 2,400 lines added. 17 test files were touched or added: unit 727 → 745,
-  component 328 → 356, API 621 → 632, e2e 271 → 277.
+  component 328 → 356, API 621 → 632, e2e 271 → 281.
 - First load 112.7 → 115.5 KiB brotli. ui-sdk adds 25.6 KiB on demand.
 
 ## Open threads
 - Remove the ui-sdk exemption from `pnpm-workspace.yaml` after 2026-11-15 (add a watch date in
   `/admin/watch`).
 - Legal: the new wording in `docs/legal-review.md` (Overlaps tab, matrix card lines).
-- Zod's `new Function` probe: setting `z.config({ jitless: true })` would end the CSP report.
 - Code pages have no link to the badge legend when scripts are off (this was already so).

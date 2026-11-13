@@ -1,4 +1,7 @@
 // Shared zod schemas, API types and (from M1) code normalization. Pure functions, no I/O.
+// First, before any schema is built: see the file.
+import './zod-config'
+
 export * from './about'
 export * from './admin'
 export * from './backup'
