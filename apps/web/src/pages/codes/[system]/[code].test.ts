@@ -129,6 +129,8 @@ describe('/codes/:system/:code', () => {
     const source = within(row).getByRole('link', { name: /Georgia list/ })
     expect(source.getAttribute('href')).toBe('https://example.gov/GA.pdf')
     expect(row.textContent).toContain('p. 3')
+    const badge = within(row).getByRole('button', { name: 'Enough by itself (inferred)' })
+    expect(badge.hasAttribute('tabindex')).toBe(false)
 
     const covered = screen.getByRole('table', { name: 'Covered by a broader entry' })
     expect(covered.textContent).toContain('F20.*')
