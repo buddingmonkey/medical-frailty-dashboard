@@ -15,7 +15,7 @@ what is still open, and the decisions behind it.
 - **Preview** is a test site with seed data and a gold "Preview site: test data" banner: 4 real
   states (up to 300 real entries each), 40 synthetic lists, 4 announced and 3 with no list
   (`apps/api/seed/seed.sql`, written by `pnpm db:seed:make`). Never seed production.
-- **Built:** the public site (map, `/states`, state pages, compare tabs, code search, code
+- **Built:** the public site (map, `/states`, state pages, compare tabs including Overlaps, code search, code
   pages, About, Disclaimer, Privacy, Accessibility; server-rendered HTML, JSON-LD, sitemap
   index, `/llms.txt`), and the admin area (upload, read and map, review, drafts and checks,
   publish and rollback, federal and unified category mapping, condition groups, backup and
@@ -23,6 +23,10 @@ what is still open, and the decisions behind it.
 - **Toolchain:** Node 26 LTS, pnpm 12.16.1 (installed by hand), TypeScript 6.0.3, not 7
   (`docs/architecture.md`, "Tool versions"). pnpm refuses packages younger than 3 days. All
   scripts are cross-platform Node, with a `check (windows)` CI job.
+- **ui-sdk** (`@ui-sdk/vue`, `@ui-sdk/core` 0.1.0-beta.1, added 2026-11-12) gives the badge
+  tooltips, the matrix hover cards and the Overlaps rows. Its theme CSS is not loaded; see
+  `AGENTS.md`. **Temporary:** `pnpm-workspace.yaml` exempts the two packages from the 3-day
+  rule (project lead, 2026-11-12). Remove that entry after 2026-11-15.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
   purpose (user, 2026-11-01). Their sources are in `docs/architecture.md`, "Agent skills".
 
