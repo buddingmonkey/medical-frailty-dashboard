@@ -250,7 +250,7 @@ Every string below is live and provisional. Please mark any you want changed.
   state lists here"); "N entries placed here; Q are enough by themselves (P%)" or "none is
   enough by itself"; "Every placement here was reviewed" or "Not yet reviewed: some entries
   were placed here automatically, by the CCSR group of their code"; "Select the number to see
-  the codes"
+  the codes". Since 2026-11-13 the Map tab's tiles show the same card.
 
 ### Category drill-down
 
