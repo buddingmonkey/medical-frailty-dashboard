@@ -1,8 +1,8 @@
 # Status
 
-_Last updated: 2026-11-05. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.9.4` (admin text fixes,
-2026-11-05)._
+_Last updated: 2026-11-13. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.9.5` (ui-sdk tooltips and
+hover cards, the Overlaps tab, the new state picker, 2026-11-13)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -10,8 +10,9 @@ what is still open, and the decisions behind it.
 ## Where things stand
 
 - **Production** holds the real lists for the four seed states (GA, LA, MT, NE), copied from
-  preview on 2026-11-02, and admins edit them there. The whole site stays behind Cloudflare
-  Access (the pre-launch gate) until go-live.
+  preview on 2026-11-02, and admins edit them there. **Indiana** (Tier 1 only, 4,250 ICD-10-CM
+  codes) was added on production by the project lead on 2026-11-13 (`docs/sources.md`,
+  Indiana). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
 - **Preview** is a test site with seed data and a gold "Preview site: test data" banner: 4 real
   states (up to 300 real entries each), 40 synthetic lists, 4 announced and 3 with no list
   (`apps/api/seed/seed.sql`, written by `pnpm db:seed:make`). Never seed production.
@@ -69,7 +70,8 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.9.1` | 2026-11-04 | New site mark |
 | `v0.9.2` | 2026-11-04 | Paced, resumable Rebuild coverage; pre-launch review fixes |
 | `v0.9.3` | 2026-11-05 | Admin and getting-started text corrected |
-| `v0.9.4` | 2026-11-05 | Admin pages no longer mention the preview site (live) |
+| `v0.9.4` | 2026-11-05 | Admin pages no longer mention the preview site |
+| `v0.9.5` | 2026-11-13 | Badge tooltips, matrix and map hover cards, Overlaps tab, state picker, Zod jitless (live) |
 
 ## For the project lead
 
@@ -80,6 +82,12 @@ Open items, with the date each was raised. Close them here when done.
 - **M8 step 8, go live:** domain or a host organization, then `docs/deployment.md`, "Going
   live".
 - **Restore drill** on preview, together (M8 step 7, 2026-11-03).
+- **Indiana on production** (2026-11-13): map its 159 categories on `/admin/categories` and
+  `/admin/mappings`. 2,319 entries are "Not yet classified" because the guess works from
+  names. Decide two things:
+  1. Should the site read the state's own federal category, which is now in each row's notes?
+  2. How should the state page say that Tier 2 exists (diagnosis plus utilization evidence)
+     when Indiana publishes no codes for it?
 - **Georgia sources on production:** set the URL (DCH public notices page) and publisher date
   (2026-07-09) on GA's two source documents in `/admin/sources` (2026-11-03).
 - **Publish on production:** the 19 starter comparison categories and the 8 condition groups
