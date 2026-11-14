@@ -39,6 +39,8 @@ export const columnRoles = [
   'qualification',
   'included',
   'notes',
+  /** The state's own federal category per row (Indiana): `parseStateFederalCell` reads it. */
+  'stateFederal',
   'ignore',
 ] as const
 export const columnRoleSchema = z.enum(columnRoles)
@@ -54,11 +56,14 @@ export const columnRoleLabels: Record<ColumnRole, string> = {
   qualification: 'Qualification',
   included: 'Included (Yes/No)',
   notes: 'Notes / rationale',
+  stateFederal: 'Federal category (the state’s own)',
   ignore: 'Ignore',
 }
 
 // First match wins, so the more specific patterns ("Code Type", "Code Name") come before "Code".
 const ROLE_PATTERNS: [RegExp, ColumnRole][] = [
+  // Before "categ": a state's federal category column is not its own category (Indiana).
+  [/federal[\s_-]?categ/, 'stateFederal'],
   [/designation|qualif/, 'qualification'],
   [/tier/, 'tier'],
   [/^(yes ?\/ ?no|included?|frail)$/, 'included'],
@@ -164,6 +169,8 @@ export interface MappedRow {
   included: boolean
   /** The state's notes or rationale (GA). */
   notes: string
+  /** The state's own federal category cell, as written (IN); '' without that column. */
+  stateFederal: string
 }
 
 export interface MappingResult {
@@ -224,6 +231,7 @@ export function applyMapping(table: RawTable, profile: ColumnProfile): MappingRe
       qualificationValue,
       included: !NOT_INCLUDED.has(cell(row, at('included')).toLowerCase()),
       notes: cell(row, at('notes')),
+      stateFederal: cell(row, at('stateFederal')),
     })
   }
   return {

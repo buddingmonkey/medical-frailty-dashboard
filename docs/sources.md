@@ -149,15 +149,18 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - **Loading it** (local, 2026-11-13; no AI needed): the HTML tables convert to CSV
   mechanically. The admin upload takes PDF, xlsx, CSV, JSON or text, not HTML. The CSV was
   stored as the source file, with the page URL and 2026-11-04 as the citation. Read and map:
-  Code, Description, Category = High-level condition, Notes = Federal category, Tier "Tier 1"
-  for every row, Enough by itself (stated by the state). Review: 99 undotted codes that are
+  Code, Description, Category = High-level condition, Federal category = **Federal category
+  (the state's own)** (first load: Notes, before that role existed), Tier "Tier 1" for every
+  row, Enough by itself (stated by the state). Review: 99 undotted codes that are
   also valid HCPCS shapes (`C9021`) were set to ICD-10-CM, plus the 28 bare categories to
   "this code only". After that, 4,250 of 4,250 rows were ready, 0 were not in the CMS lists,
   and the draft checks passed with nothing blocking.
-- **After publishing**, the automatic federal guesses leave 2,319 entries "Not yet
-  classified", because the guess works from category names and the 159 condition names rarely
-  match. The state's own federal category is in each row's notes, but the site does not read
-  it yet.
+- **After publishing** the first load, the automatic federal guesses left 2,319 entries "Not
+  yet classified", because the guess works from category names and the 159 condition names
+  rarely match. The site now reads the state's own federal category (role "Federal category
+  (the state's own)", 2026-11-13): re-upload the CSV, map "Federal category" to that role and
+  publish. Every entry then counts under the category Indiana names, shown as "Stated by the
+  state".
 
 ## Montana (MT)
 

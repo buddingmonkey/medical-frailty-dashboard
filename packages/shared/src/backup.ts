@@ -19,6 +19,7 @@ import {
 import { federalCategories, mappingMethods } from './enums'
 import { MAX_ROWS } from './ingest'
 import { sourceFileTypeSchema, fileTypeFromName, type SourceFileType } from './sources'
+import { decodeStateFederal } from './state-federal'
 
 /** The full download's format number. Format 1 is the per-publish R2 backup. */
 export const FULL_BACKUP_FORMAT = 2
@@ -157,6 +158,8 @@ export const backupEntryRowSchema = z.looseObject({
   sourceDocumentId: int,
   sourceLocator: nullableText,
   sourcePart: z.string().default(''),
+  /** Added 2026-11-13 (migration 0016); older backups have none. */
+  stateFederalCategories: nullableText,
 })
 export type BackupEntryRow = z.infer<typeof backupEntryRowSchema>
 
@@ -514,6 +517,7 @@ export function toRestoredEntry(row: BackupEntryRow): unknown {
       // Unreadable attributes count as none, as the checks read them.
     }
   }
+  const stateFederal = decodeStateFederal(row.stateFederalCategories)
   return {
     codeSystem: row.codeSystem,
     rawCode: row.rawCode,
@@ -529,6 +533,7 @@ export function toRestoredEntry(row: BackupEntryRow): unknown {
     qualificationBasis: row.qualificationBasis,
     sourceLocator: (row.sourceLocator ?? '').slice(0, 200),
     attributes,
+    ...(stateFederal.length > 0 ? { stateFederalCategories: stateFederal } : {}),
   }
 }
 

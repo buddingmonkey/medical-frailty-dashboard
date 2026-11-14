@@ -18,6 +18,8 @@ import {
   namedStateIdsSchema,
   runChecks,
   sha256Hex,
+  decodeStateFederal,
+  encodeStateFederal,
   validateDraftEntry,
   verifyConfirmations,
 } from '@mfcd/shared'
@@ -131,6 +133,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       tier: entries.tier,
       descriptionPublished: entries.descriptionPublished,
       attributesJson: entries.attributesJson,
+      stateFederalCategories: entries.stateFederalCategories,
     })
     .from(entries)
     .where(eq(entries.versionId, versionId))
@@ -147,6 +150,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       descriptionPublished: r.descriptionPublished,
       included: attributes.success ? attributes.data.included : true,
       unresolvedFlags: attributes.success ? attributes.data.flags : [],
+      stateFederalCategories: decodeStateFederal(r.stateFederalCategories),
     }
   })
 }
@@ -239,6 +243,7 @@ function entryRow(versionId: number, sourceDocumentId: number, part: string, e: 
     qualification: e.qualification,
     qualificationBasis: e.qualificationBasis,
     sourceLocator: e.sourceLocator,
+    stateFederalCategories: encodeStateFederal(e.stateFederalCategories),
   }
 }
 

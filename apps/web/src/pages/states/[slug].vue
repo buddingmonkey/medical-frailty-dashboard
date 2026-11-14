@@ -232,7 +232,7 @@ function categoryName(category: string, subcategory: string) {
                 </th>
                 <td class="py-2 pr-4">{{ federalCategoryInfo[c.federalCategory].label }}</td>
                 <td class="py-2 pr-4 text-right tabular-nums">{{ formatCount(c.entries) }}</td>
-                <td class="py-2 pr-4">{{ reviewStatusText(c.confirmed) }}</td>
+                <td class="py-2 pr-4">{{ reviewStatusText(c.confirmed, c.stated) }}</td>
                 <td class="py-2">
                   <RouterLink
                     :to="compareLink(c.stateCategory, c.stateSubcategory)"

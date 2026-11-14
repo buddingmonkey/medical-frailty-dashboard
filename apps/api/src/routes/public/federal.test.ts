@@ -110,6 +110,7 @@ describe('federal categories through unified categories', () => {
         stateSubcategory: '',
         federalCategory: 'disabling_mental_disorder',
         confirmed: false,
+        stated: false,
         entries: 3,
       },
       {
@@ -117,6 +118,7 @@ describe('federal categories through unified categories', () => {
         stateSubcategory: '',
         federalCategory: 'serious_complex_medical',
         confirmed: false,
+        stated: false,
         entries: 1,
       },
       {
@@ -124,6 +126,7 @@ describe('federal categories through unified categories', () => {
         stateSubcategory: '',
         federalCategory: 'physical_idd_adl',
         confirmed: true,
+        stated: false,
         entries: 2,
       },
       {
@@ -131,6 +134,7 @@ describe('federal categories through unified categories', () => {
         stateSubcategory: '',
         federalCategory: 'sud',
         confirmed: true,
+        stated: false,
         entries: 1,
       },
     ])
@@ -177,5 +181,78 @@ describe('federal categories through unified categories', () => {
     ])
     // MT's range sits in "Serious mental illness" only.
     expect(mt?.match?.federalCategories).toEqual(['disabling_mental_disorder'])
+  })
+})
+
+describe('federal categories the state published (Indiana’s column)', () => {
+  beforeEach(async () => {
+    // G0001 ("Other", mapped by hand to SUD) and F20.0 (placed by an unreviewed CCSR guess).
+    await db
+      .update(entries)
+      .set({ stateFederalCategories: 'blind_or_disabled,serious_complex_medical' })
+      .where(eq(entries.codeNorm, 'G0001'))
+    await db
+      .update(entries)
+      .set({ stateFederalCategories: 'sud' })
+      .where(and(eq(entries.codeNorm, 'F200'), eq(entries.stateCategory, 'Behavioral Health')))
+  })
+
+  it('counts an entry under exactly the state’s federal categories, ahead of everything', async () => {
+    const body = publicStatesResponseSchema.parse(await (await get('/api/public/states')).json())
+    const ga = body.items.find((s) => s.id === 'GA')?.published
+    expect(ga?.byFederalCategory).toEqual({
+      blind_or_disabled: 1,
+      // F20.0 by the state, not its placement in "Serious mental illness".
+      sud: 1,
+      disabling_mental_disorder: 2,
+      physical_idd_adl: 2,
+      // F31.* in "Bipolar", and G0001 by the state.
+      serious_complex_medical: 2,
+      state_specific: 0,
+      unmapped: 0,
+    })
+    // F31.* and F32 are still unreviewed CCSR placements.
+    expect(ga?.mappingsConfirmed).toBe(false)
+  })
+
+  it('shows those rows as stated by the state, which counts as confirmed', async () => {
+    const body = publicStateDetailResponseSchema.parse(
+      await (await get('/api/public/states/ga')).json(),
+    )
+    const rows = body.categories.map((c) => [
+      c.stateCategory,
+      c.federalCategory,
+      c.confirmed,
+      c.stated,
+      c.entries,
+    ])
+    expect(rows).toEqual([
+      ['Behavioral Health', 'sud', true, true, 1],
+      ['Behavioral Health', 'disabling_mental_disorder', false, false, 2],
+      ['Behavioral Health', 'serious_complex_medical', false, false, 1],
+      ['DME', 'physical_idd_adl', true, false, 2],
+      ['Other', 'blind_or_disabled', true, true, 1],
+      ['Other', 'serious_complex_medical', true, true, 1],
+    ])
+  })
+
+  it('makes a state confirmed when every entry is stated or reviewed', async () => {
+    await db
+      .update(entries)
+      .set({ stateFederalCategories: 'disabling_mental_disorder' })
+      .where(eq(entries.stateCategory, 'Behavioral Health'))
+    const body = publicStatesResponseSchema.parse(await (await get('/api/public/states')).json())
+    expect(body.items.find((s) => s.id === 'GA')?.published?.mappingsConfirmed).toBe(true)
+  })
+
+  it('uses them in downloads and the code table', async () => {
+    const csv = (await (await get('/states/ga/codes.csv')).text()).trimEnd().split('\r\n')
+    expect(csv.find((l) => l.includes(',G0001,'))).toContain(
+      ',Blind or disabled; Serious or complex medical condition,',
+    )
+    const body = compareResponseSchema.parse(
+      await (await get('/api/public/compare?states=GA,MT&category=blind_or_disabled')).json(),
+    )
+    expect(body.rows.map((r) => r.display)).toEqual(['G0001'])
   })
 })

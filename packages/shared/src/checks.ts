@@ -4,7 +4,8 @@
 // what needs I/O: how many rows failed validation, which states the files name, and which ICD-10-CM
 // codes exist in `ref_codes`.
 import { formatCode } from './codes'
-import { codeSystemLabels, type CodeSystem, type MatchKind } from './enums'
+import { codeSystemLabels, type CodeSystem, type FederalCategory, type MatchKind } from './enums'
+import { federalCategoriesText } from './categories'
 
 /** Thresholds from docs/ingestion.md. */
 export const CHECK_LIMITS = {
@@ -32,6 +33,8 @@ export interface CheckEntry {
   included: boolean
   /** Review flags (codes.ts CodeFlag) the admin has not accepted yet. */
   unresolvedFlags: readonly string[]
+  /** The state's own federal categories for the row (Indiana); none when left out. */
+  stateFederalCategories?: readonly FederalCategory[]
 }
 
 export interface CheckInput {
@@ -108,8 +111,14 @@ export interface CheckReport {
 /** One code, wildcard or range, whatever category it sits under. */
 const codeKey = (e: CheckEntry) =>
   [e.codeSystem, e.matchKind, e.codeNorm, e.rangeEndNorm ?? ''].join('|')
-const categoryLabel = (e: CheckEntry) =>
-  e.stateSubcategory ? `${e.stateCategory} / ${e.stateSubcategory}` : e.stateCategory
+/** The state's category, and its own federal category when it names one (so a change shows). */
+function categoryLabel(e: CheckEntry): string {
+  const label = e.stateSubcategory ? `${e.stateCategory} / ${e.stateSubcategory}` : e.stateCategory
+  const federal = e.stateFederalCategories ?? []
+  return federal.length === 0
+    ? label
+    : `${label} (state’s federal category: ${federalCategoriesText(federal)})`
+}
 
 function displayCode(e: CheckEntry): string {
   const start = formatCode(e.codeSystem, e.codeNorm)

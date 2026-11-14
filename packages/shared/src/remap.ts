@@ -9,7 +9,8 @@ import { icd10cmChapterOf, icd10cmChapters } from './icd-chapters'
 // The preview applies the one federal-category rule (`federalCategoriesOf`) to every published
 // entry of the state, before and after the proposed changes, so it says honestly which entries
 // move and which stay: an entry placed in a published unified category keeps that category's
-// federal parent, and an ICD-10-CM entry under a chapter override keeps the override.
+// federal parent, an ICD-10-CM entry under a chapter override keeps the override, and an entry
+// whose state published its federal category keeps that.
 
 const SAMPLE_SIZE = 20
 
@@ -81,6 +82,8 @@ const remapChange = z.object({
   /** Entries whose federal category is already the new one. */
   already: z.number().int().nonnegative(),
   alreadyIn: z.array(federal),
+  /** Entries that stay because the state published their federal category, and under what. */
+  stated: z.object({ n: z.number().int().nonnegative(), federal: z.array(federal) }),
   /** Entries that stay because a published unified placement wins, and under what. */
   placed: z.object({ n: z.number().int().nonnegative(), federal: z.array(federal) }),
   /** Category changes only: ICD-10-CM entries that stay because a chapter override wins. */
@@ -125,6 +128,8 @@ export interface RemapEntry {
   stateCategory: string
   stateSubcategory: string
   unifiedParents: readonly FederalCategory[]
+  /** The state's own federal categories for the entry (they win over everything). */
+  stateFederalCategories?: readonly FederalCategory[]
 }
 
 /** Open-draft entries counted by category and ICD-10-CM three-character category ('' if none). */
@@ -179,6 +184,8 @@ export function previewRemap(input: {
   ): RemapChange => {
     const moves = new Map<string, { from: FederalCategory; to: FederalCategory; n: number }>()
     const placedFederal = new Set<FederalCategory>()
+    const statedFederal = new Set<FederalCategory>()
+    let stated = 0
     const alreadyIn = new Set<FederalCategory>()
     const overrides = new Map<
       number,
@@ -189,6 +196,11 @@ export function previewRemap(input: {
     let already = 0
     let movingTotal = 0
     for (const r of covered) {
+      if ((r.e.stateFederalCategories ?? []).length > 0) {
+        stated += 1
+        for (const f of r.before) statedFederal.add(f)
+        continue
+      }
       if (r.e.unifiedParents.length > 0) {
         placed += 1
         for (const f of r.before) placedFederal.add(f)
@@ -233,6 +245,7 @@ export function previewRemap(input: {
       movingTotal,
       already,
       alreadyIn: federalCategories.filter((f) => alreadyIn.has(f)),
+      stated: { n: stated, federal: federalCategories.filter((f) => statedFederal.has(f)) },
       placed: { n: placed, federal: federalCategories.filter((f) => placedFederal.has(f)) },
       chapterOverride: [...overrides.values()].sort((a, b) => a.chapter - b.chapter),
       sample,
@@ -300,6 +313,12 @@ export function remapChangeSentences(change: RemapChange): string[] {
   if (change.already > 0) {
     lines.push(
       `${count(change.already, 'is', 'are')} already in ${federalCategoriesText(change.alreadyIn)}.`,
+    )
+  }
+  if (change.stated.n > 0) {
+    const verb = change.stated.n === 1 ? 'stays' : 'stay'
+    lines.push(
+      `${change.stated.n.toLocaleString('en-US')} ${verb} in ${federalCategoriesText(change.stated.federal)} because the state’s list names that federal category.`,
     )
   }
   if (change.placed.n > 0) {

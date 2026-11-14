@@ -2,7 +2,7 @@ import { federalCategoryInfo, STATUTE_CITATION, STATUTE_URL } from './categories
 import { compareLegend, compareStatusLabels } from './compare'
 import { CCSR_CITATION, CCSR_URL } from './drill'
 import { federalCategories } from './enums'
-import { formatDay, reviewStatusText, SITE_NAME } from './public'
+import { formatDay, reviewStatusText, SITE_NAME, STATED_BY_STATE } from './public'
 import { qualificationBasisLabels, qualificationHelp, qualificationLabels } from './qualification'
 
 // The About/methodology page, the disclaimer, privacy and accessibility pages, the footer links
@@ -289,6 +289,13 @@ const aboutSections: AboutSection[] = [
           parts: [
             'The site suggested the mapping automatically and nobody has checked it yet. ' +
               'Numbers that depend on it may change after review.',
+          ],
+        },
+        {
+          term: STATED_BY_STATE,
+          parts: [
+            'The state’s own list names the federal category for these codes, and this site ' +
+              'uses it as published.',
           ],
         },
       ),

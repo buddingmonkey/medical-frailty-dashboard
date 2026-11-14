@@ -155,7 +155,7 @@ export function statePage(detail: PublicStateDetail, origin: string): PageParts 
                   <th scope="row">${categoryName(c.stateCategory, c.stateSubcategory)}</th>
                   <td>${federalCategoryInfo[c.federalCategory].label}</td>
                   <td>${formatCount(c.entries)}</td>
-                  <td>${reviewStatusText(c.confirmed)}</td>
+                  <td>${reviewStatusText(c.confirmed, c.stated)}</td>
                 </tr>`,
             )}
           </tbody>

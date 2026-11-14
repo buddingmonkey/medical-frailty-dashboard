@@ -6341,6 +6341,7 @@ exports[`public numbers > state pages > /api/public/states/ga 1`] = `
       "federalCategory": "disabling_mental_disorder",
       "stateCategory": "Behavioral Health",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": true,
@@ -6348,6 +6349,7 @@ exports[`public numbers > state pages > /api/public/states/ga 1`] = `
       "federalCategory": "physical_idd_adl",
       "stateCategory": "DME",
       "stateSubcategory": "",
+      "stated": false,
     },
   ],
   "notesMd": null,
@@ -6446,6 +6448,7 @@ exports[`public numbers > state pages > /api/public/states/mt 1`] = `
       "federalCategory": "physical_idd_adl",
       "stateCategory": "DME",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": true,
@@ -6453,6 +6456,7 @@ exports[`public numbers > state pages > /api/public/states/mt 1`] = `
       "federalCategory": "disabling_mental_disorder",
       "stateCategory": "SMI",
       "stateSubcategory": "",
+      "stated": false,
     },
   ],
   "notesMd": null,
@@ -6551,6 +6555,7 @@ exports[`public numbers > state pages > /api/public/states/ne 1`] = `
       "federalCategory": "disabling_mental_disorder",
       "stateCategory": "Conditions",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6558,6 +6563,7 @@ exports[`public numbers > state pages > /api/public/states/ne 1`] = `
       "federalCategory": "serious_complex_medical",
       "stateCategory": "Conditions",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6565,6 +6571,7 @@ exports[`public numbers > state pages > /api/public/states/ne 1`] = `
       "federalCategory": "unmapped",
       "stateCategory": "Conditions",
       "stateSubcategory": "",
+      "stated": false,
     },
   ],
   "notesMd": null,
@@ -6663,6 +6670,7 @@ exports[`public numbers > state pages > /api/public/states/tx 1`] = `
       "federalCategory": "unmapped",
       "stateCategory": "DME",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6670,6 +6678,7 @@ exports[`public numbers > state pages > /api/public/states/tx 1`] = `
       "federalCategory": "serious_complex_medical",
       "stateCategory": "Kidney",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6677,6 +6686,7 @@ exports[`public numbers > state pages > /api/public/states/tx 1`] = `
       "federalCategory": "unmapped",
       "stateCategory": "Kidney",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6684,6 +6694,7 @@ exports[`public numbers > state pages > /api/public/states/tx 1`] = `
       "federalCategory": "disabling_mental_disorder",
       "stateCategory": "Mental health",
       "stateSubcategory": "",
+      "stated": false,
     },
     {
       "confirmed": false,
@@ -6691,6 +6702,7 @@ exports[`public numbers > state pages > /api/public/states/tx 1`] = `
       "federalCategory": "unmapped",
       "stateCategory": "Mental health",
       "stateSubcategory": "",
+      "stated": false,
     },
   ],
   "notesMd": null,

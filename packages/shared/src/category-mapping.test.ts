@@ -21,6 +21,23 @@ describe('federalCategoriesOf', () => {
   ])
   const none = new Map<number, never>()
 
+  it('counts an entry the state gave federal categories under exactly those, first of all', () => {
+    const stated = {
+      ...entry('F200', 'SMI'),
+      stateFederalCategories: ['physical_idd_adl', 'serious_complex_medical'] as const,
+    }
+    const chapters = new Map([[5, 'blind_or_disabled' as const]])
+    // Ahead of placements, the state category's mapping and a chapter override.
+    expect(federalCategoriesOf(stated, ['sud'], mappings, chapters)).toEqual([
+      'physical_idd_adl',
+      'serious_complex_medical',
+    ])
+    // An empty list is no statement: the other rules apply.
+    expect(
+      federalCategoriesOf({ ...stated, stateFederalCategories: [] }, ['sud'], mappings, none),
+    ).toEqual(['sud'])
+  })
+
   it('follows the federal parents of the unified categories the entry is placed in', () => {
     expect(federalCategoriesOf(entry('F200', 'Other'), ['sud'], mappings, none)).toEqual(['sud'])
     // The placement wins over the state category's mapping and a chapter override.

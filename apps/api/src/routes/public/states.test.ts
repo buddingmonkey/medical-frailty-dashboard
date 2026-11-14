@@ -198,6 +198,7 @@ describe('GET /api/public/states/:slug', () => {
         stateSubcategory: '',
         federalCategory: 'serious_complex_medical',
         confirmed: false,
+        stated: false,
         entries: 1,
       },
       {
@@ -205,6 +206,7 @@ describe('GET /api/public/states/:slug', () => {
         stateSubcategory: '',
         federalCategory: 'unmapped',
         confirmed: false,
+        stated: false,
         entries: 1,
       },
       {
@@ -212,6 +214,7 @@ describe('GET /api/public/states/:slug', () => {
         stateSubcategory: '',
         federalCategory: 'sud',
         confirmed: true,
+        stated: false,
         entries: 2,
       },
     ])

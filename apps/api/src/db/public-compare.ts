@@ -3,6 +3,7 @@ import {
   comparePatternKey,
   type CompareQuery,
   type CompareResult,
+  decodeStateFederal,
   type FederalCategory,
   federalCategoriesOf,
   federalCategoryList,
@@ -12,7 +13,7 @@ import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { chunk, D1_MAX_PARAMS } from './d1-limits'
-import { unifiedParentsSql } from './federal'
+import { stateFederalSql, unifiedParentsSql } from './federal'
 import { categoryMappings, chapterMappings, entries, refCodes, states } from './schema'
 
 // Compare by category (roadmap M4): loads the selected states' published entries with their
@@ -54,6 +55,7 @@ export async function publicCompare(
         tier: entries.tier,
         qualification: entries.qualification,
         qualificationBasis: entries.qualificationBasis,
+        stateFederal: stateFederalSql,
         parents: unifiedParentsSql,
       })
       .from(states)
@@ -90,14 +92,14 @@ export async function publicCompare(
         name: s.name,
         published: s.publishedVersionId !== null,
       })),
-      entries: rows.map(({ parents, ...r }) => ({
+      entries: rows.map(({ parents, stateFederal, ...r }) => ({
         ...r,
         // Descriptions are read for the rows shown only (describeFromStates): the bulk load
         // stays small, which keeps the Worker inside the Free plan's CPU time.
         descriptionPublished: null,
         includesChildren: r.includesChildren === 1 ? 1 : r.includesChildren === 0 ? 0 : null,
         federalCategories: federalCategoriesOf(
-          r,
+          { ...r, stateFederalCategories: decodeStateFederal(stateFederal) },
           federalCategoryList(parents),
           mappingsBy.get(r.stateId) ?? none,
           overridesBy.get(r.stateId) ?? none,
