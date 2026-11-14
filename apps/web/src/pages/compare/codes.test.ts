@@ -69,6 +69,7 @@ const montana: PublicStateDetail = {
       stateSubcategory: '',
       federalCategory: 'disabling_mental_disorder',
       confirmed: true,
+      stated: false,
       entries: 20,
     },
     {
@@ -76,6 +77,7 @@ const montana: PublicStateDetail = {
       stateSubcategory: '',
       federalCategory: 'sud',
       confirmed: true,
+      stated: false,
       entries: 4,
     },
     {
@@ -83,6 +85,7 @@ const montana: PublicStateDetail = {
       stateSubcategory: 'Solid',
       federalCategory: 'serious_complex_medical',
       confirmed: false,
+      stated: false,
       entries: 9,
     },
   ],

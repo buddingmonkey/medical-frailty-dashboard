@@ -72,6 +72,7 @@ export function assertNoEmails(sql: string): void {
 export const RESET_SQL = [
   "UPDATE states SET published_version_id = NULL, status = 'none';",
   'DELETE FROM entry_unified;',
+  'DELETE FROM entry_federal_suggestions;',
   'DELETE FROM unified_universe;',
   'DELETE FROM state_similarity;',
   'DELETE FROM entries;',

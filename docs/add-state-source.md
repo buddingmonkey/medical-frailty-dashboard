@@ -33,7 +33,9 @@ show the new citation right away.
 2. If the file has several tables (Nebraska: diagnoses, then a CPT/HCPCS page) or sheets, the
    **Table** list shows them. Map and send each one; they go to the same draft.
 3. **Columns:** check what each column "means". The guess is usually right; fix it where two
-   columns share a name (Montana: the first "Category" is the tier).
+   columns share a name (Montana: the first "Category" is the tier). A column that names one of
+   the five federal categories per code (Indiana's "Federal category") is **Federal category
+   (the state's own)**, not Category.
 4. **Does a code qualify on its own?** One value for the whole file, or per value of a column
    (Louisiana's 0/1/2 "Code Designation"; Montana's tier). Pick "The state says so" or
    "Inferred by us" honestly.
@@ -93,6 +95,16 @@ the name of each new state category. The public pages use these guesses right aw
 "Not yet reviewed". Read each guess, then click **Confirm**, or **Confirm all guesses** after
 reading them all. For states without categories (Georgia, Nebraska), map "(no category)" and use
 **chapter overrides**. A change that moves published codes shows a preview first.
+
+**Suggestions by code.** When another state's list names a federal category for each code
+(Indiana does), publishing also suggests one for each ICD-10-CM code of the new list: the same
+code's, else the most common one for codes with the same first three characters, else (rarely)
+the chapter's. A suggestion wins over a guessed mapping, not over a confirmed one, and shows
+publicly as "Not yet reviewed (suggested from Indiana's list)". The Entries column says how many
+codes follow suggestions; click **Confirm suggestions** on a row, or **Confirm all guesses**.
+After that state's list changes, press **Re-run automatic suggestions** for each other state: it
+shows how many codes gain, change or lose a suggestion before you save. It never changes
+confirmed suggestions or anything you set by hand.
 
 ## If a file will not read
 

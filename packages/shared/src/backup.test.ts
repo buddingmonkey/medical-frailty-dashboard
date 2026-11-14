@@ -34,6 +34,7 @@ const entryRow = (id: number, versionId: number, patch: Record<string, unknown> 
   sourceDocumentId: 7,
   sourceLocator: null,
   sourcePart: '',
+  stateFederalCategories: null,
   ...patch,
 })
 
@@ -211,6 +212,16 @@ describe('restorePlan', () => {
       sourceLocator: 'row 9',
       attributes: { included: false, flags: [] },
     })
+  })
+
+  it('keeps a state’s own federal categories, and reads older backups without them', () => {
+    const file = formatOne()
+    file.entries[0] = entryRow(1, 3, { stateFederalCategories: 'sud,serious_complex_medical' })
+    const [version] = parseBackup(JSON.stringify(file)).versions
+    if (!version) throw new Error('no version')
+    const [part] = restorePlan(version).parts
+    expect(part?.entries[0]?.stateFederalCategories).toEqual(['sud', 'serious_complex_medical'])
+    expect(part?.entries[1]?.stateFederalCategories).toBeUndefined()
   })
 
   it('names a part for entries stored without one', () => {

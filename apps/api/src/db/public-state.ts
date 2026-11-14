@@ -1,8 +1,9 @@
 import {
+  decodeStateFederal,
+  decodeSuggestion,
   type FederalCategory,
   federalCategoriesOf,
   federalCategoryList,
-  mappingKey,
   type PublicStateDetail,
   publicStateDetailResponseSchema,
   SIMILAR_STATES_SHOWN,
@@ -11,7 +12,8 @@ import {
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
-import { unifiedParentsSql } from './federal'
+import { suggestionSql, unifiedParentsSql } from './federal'
+import { mappingLookups } from './federal-suggestions'
 import { publicSummaries } from './public-summary'
 import {
   categoryMappings,
@@ -118,6 +120,7 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
         sourceUrl: sourceDocuments.url,
         sourceDate: sourceDocuments.publisherDate,
         parents: unifiedParentsSql,
+        suggestion: suggestionSql,
       })
       .from(states)
       .innerJoin(entries, eq(entries.versionId, states.publishedVersionId))
@@ -127,19 +130,22 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
     db.select().from(categoryMappings).where(eq(categoryMappings.stateId, stateId)),
     db.select().from(chapterMappings).where(eq(chapterMappings.stateId, stateId)),
   ])
-  const byKey = new Map<string, FederalCategory>(
-    mappings.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory]),
-  )
+  const { mappings: byKey, manualKeys } = mappingLookups(mappings)
   const byChapter = new Map<number, FederalCategory>(
     overrides.map((o) => [o.chapter, o.federalCategory]),
   )
   return rows.map((r) => ({
     ...r.entry,
     federalCategories: federalCategoriesOf(
-      r.entry,
+      {
+        ...r.entry,
+        stateFederalCategories: decodeStateFederal(r.entry.stateFederalCategories),
+        suggestion: decodeSuggestion(r.suggestion),
+      },
       federalCategoryList(r.parents),
       byKey,
       byChapter,
+      manualKeys,
     ),
     sourceTitle: r.sourceTitle,
     sourceUrl: safeUrl(r.sourceUrl),

@@ -18,6 +18,8 @@ import {
   namedStateIdsSchema,
   runChecks,
   sha256Hex,
+  decodeStateFederal,
+  encodeStateFederal,
   validateDraftEntry,
   verifyConfirmations,
 } from '@mfcd/shared'
@@ -26,6 +28,7 @@ import { Hono } from 'hono'
 
 import { type AuditRecord, auditInsert } from '../../db/audit'
 import { backupVersion } from '../../db/backup'
+import { suggestAfterPublish } from '../../db/federal-suggestions'
 import { recomputePlacements } from '../../db/placement'
 import { recomputeSimilarity } from '../../db/similarity'
 import { createDb, type Db } from '../../db/client'
@@ -131,6 +134,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       tier: entries.tier,
       descriptionPublished: entries.descriptionPublished,
       attributesJson: entries.attributesJson,
+      stateFederalCategories: entries.stateFederalCategories,
     })
     .from(entries)
     .where(eq(entries.versionId, versionId))
@@ -147,6 +151,7 @@ async function checkEntries(db: Db, versionId: number): Promise<CheckEntry[]> {
       descriptionPublished: r.descriptionPublished,
       included: attributes.success ? attributes.data.included : true,
       unresolvedFlags: attributes.success ? attributes.data.flags : [],
+      stateFederalCategories: decodeStateFederal(r.stateFederalCategories),
     }
   })
 }
@@ -239,6 +244,7 @@ function entryRow(versionId: number, sourceDocumentId: number, part: string, e: 
     qualification: e.qualification,
     qualificationBasis: e.qualificationBasis,
     sourceLocator: e.sourceLocator,
+    stateFederalCategories: encodeStateFederal(e.stateFederalCategories),
   }
 }
 
@@ -646,11 +652,14 @@ export const draftsRoute = new Hono<AppEnv>()
         409,
       )
     }
-    // Right after the batch: where the new list counts among the unified categories, then how
-    // alike its list is to every other state's (roadmap M5 step 7). The publish stands if this
-    // fails: the answer carries a warning instead.
+    // Right after the batch: where the new list counts among the unified categories, its
+    // suggestions by code (reviews carried over from the version it replaced; publishing a
+    // reference state does not re-run other states), then how alike its list is to every other
+    // state's (roadmap M5 step 7). The publish stands if this fails: the answer carries a
+    // warning instead.
     const recomputed = await recomputeAfterSave(c, async () => {
       await recomputePlacements(db, { stateIds: [stateId] })
+      await suggestAfterPublish(db, stateId, previous)
       await recomputeSimilarity(db, { stateIds: [stateId] })
     })
     return c.json(publishResponseSchema.parse({ ok: true, backupKey, ...recomputed }))

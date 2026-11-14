@@ -75,6 +75,68 @@ describe('previewRemap', () => {
     ])
   })
 
+  it('leaves entries whose state published their federal category where they are', () => {
+    const preview = previewRemap({
+      entries: [
+        { ...entry('F20.0', 'SMI', ['serious_complex_medical']), stateFederalCategories: ['sud'] },
+        entry('F31.0', 'SMI'),
+      ],
+      mappings,
+      chapterOverrides: new Map(),
+      changes: {
+        categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
+        chapters: [],
+      },
+      draftGroups: [],
+    })
+    const [change] = preview.changes
+    expect(change).toMatchObject({
+      entries: 2,
+      stated: { n: 1, federal: ['sud'] },
+      placed: { n: 0, federal: [] },
+      movingTotal: 1,
+    })
+    expect(change && remapChangeSentences(change)).toContain(
+      '1 stays in Substance use disorder because the state’s list names that federal category.',
+    )
+  })
+
+  it('moves unreviewed suggestions to the new manual mapping, keeps reviewed ones', () => {
+    const suggestion = (reviewed: boolean) => ({
+      categories: ['serious_complex_medical' as const],
+      reviewed,
+      referenceNames: ['Indiana'],
+    })
+    const preview = previewRemap({
+      entries: [
+        { ...entry('E10.65', 'Diabetes'), suggestion: suggestion(false) },
+        { ...entry('E11.65', 'Diabetes'), suggestion: suggestion(true) },
+        entry('E13.65', 'Diabetes'),
+      ],
+      mappings: new Map([[mappingKey('Diabetes', ''), 'physical_idd_adl' as const]]),
+      manualKeys: new Set(),
+      chapterOverrides: new Map(),
+      changes: {
+        categories: [
+          { stateCategory: 'Diabetes', stateSubcategory: '', federalCategory: 'physical_idd_adl' },
+        ],
+        chapters: [],
+      },
+      draftGroups: [],
+    })
+    const [change] = preview.changes
+    expect(change).toMatchObject({
+      entries: 3,
+      // E10.65: its unreviewed suggestion beat the automatic mapping; the confirmed mapping wins.
+      moves: [{ from: 'serious_complex_medical', to: 'physical_idd_adl', n: 1 }],
+      already: 1,
+      suggested: { n: 1, federal: ['serious_complex_medical'] },
+    })
+    expect(change && remapChangeSentences(change)).toContain(
+      '1 stays in Serious or complex medical condition because an admin confirmed the suggestion from another state’s list.',
+    )
+  })
+
   it('counts entries already in the target, and the public totals before and after', () => {
     const preview = previewRemap({
       entries,

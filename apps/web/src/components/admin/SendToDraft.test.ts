@@ -23,6 +23,7 @@ const row = (locator: string, rawCode: string): MappedRow => ({
   qualificationValue: '',
   included: true,
   notes: '',
+  stateFederal: '',
 })
 
 const source = (id: number, title: string, sha256: string) => ({

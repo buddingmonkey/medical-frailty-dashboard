@@ -13,6 +13,7 @@ import {
 const GA = ['Code', 'Code Type', 'Description', 'Yes/ No', 'Rationale']
 const LA = ['Category', 'Sub-Category', 'Group', 'Code Designation', 'Description', 'Code']
 const MT = ['Category (tier)', 'Category', 'Condition Name', 'Code', 'Code Name']
+const IN = ['Diagnosis code', 'Description', 'High-level condition', 'Federal category']
 
 describe('guessColumnRoles', () => {
   it('reads the Georgia headers', () => {
@@ -32,6 +33,16 @@ describe('guessColumnRoles', () => {
 
   it('reads the Montana headers', () => {
     expect(guessColumnRoles(MT)).toEqual(['tier', 'category', 'subcategory', 'code', 'description'])
+  })
+
+  it('reads Indiana’s “Federal category” as the state’s own federal category, not Category', () => {
+    expect(guessColumnRoles(IN)).toEqual(['code', 'description', 'ignore', 'stateFederal'])
+    expect(guessColumnRoles(['Code', 'Category', 'Federal Categories'])).toEqual([
+      'code',
+      'category',
+      'stateFederal',
+    ])
+    expect(guessColumnRoles(['Code', 'federal_category'])).toEqual(['code', 'stateFederal'])
   })
 
   it('gives each role to the first matching column only', () => {
@@ -134,6 +145,7 @@ describe('applyMapping', () => {
       qualificationValue: '0',
       included: true,
       notes: '',
+      stateFederal: '',
     })
     expect(rows[1]).toMatchObject({ rawCode: 'F32.9', qualification: 'supporting_only' })
   })
@@ -186,6 +198,30 @@ describe('applyMapping', () => {
       }),
     )
     expect(rows[0]?.tier).toBe('Attachment B')
+  })
+
+  it('keeps the state’s federal category cell as written (Indiana)', () => {
+    const table: RawTable = {
+      name: 'Tier 1',
+      header: IN,
+      rows: [
+        {
+          locator: 'row 2',
+          cells: ['C9021', 'Leukemia', 'Leukemia', ' Serious or complex medical condition '],
+        },
+      ],
+    }
+    const { rows } = applyMapping(
+      table,
+      columnProfileSchema.parse({
+        roles: ['code', 'description', 'category', 'stateFederal'],
+        qualification: { mode: 'fixed', value: 'standalone', basis: 'published' },
+      }),
+    )
+    expect(rows[0]).toMatchObject({
+      category: 'Leukemia',
+      stateFederal: 'Serious or complex medical condition',
+    })
   })
 
   it('uses the default category when the file has none', () => {

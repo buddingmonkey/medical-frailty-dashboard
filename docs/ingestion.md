@@ -118,7 +118,8 @@ cannot publish rows that changed after the checks ran.
   read counted as invalid. Open review flags travel in `attributes.flags`; GA's "Yes/No" in
   `attributes.included`; the rationale in `attributes.notes`; LA's raw designation in
   `attributes.qualificationValue`. Column roles `Included (Yes/No)` and `Notes / rationale`
-  read these from the file.
+  read these from the file. The role `Federal category (the state's own)` (Indiana) goes to
+  `stateFederalCategories`, stored in `entries.state_federal_categories`.
 - The **source document** is found by the file's SHA-256 among the state's stored files; a
   file not stored yet must be stored on "Source files" first (its title, URL and date are the
   citation). A pasted table picks a stored file by hand.
@@ -202,6 +203,18 @@ header layout (`column_profiles`). The qualification rule is one value for the f
 from the qualification or tier column, each value mapped by the admin; values left "Not set"
 become `unknown`, and the screen lists them.
 
+**Federal category (the state's own)** (role `stateFederal`, added 2026-11-13 for Indiana): for
+a state that publishes, per code, which of the five federal categories it falls under. A header
+like "Federal category" or "Federal categories" is guessed as this role, never as Category.
+`parseStateFederalCell` (`packages/shared/src/state-federal.ts`) reads the cell: parts split on
+";", each matched against the five labels and the law's words, ignoring case and punctuation
+("Blind or disabled", "Substance use disorder", "Disabling mental disorder", "Physical,
+intellectual or developmental disability", "Serious or complex medical condition"). An empty
+cell is none. Text it does not know raises the review flag "State's federal category not
+recognized": edit the cell in the row's Edit form, or Accept, which ignores the state's federal
+category for that row. These categories decide the entry's federal categories ahead of
+everything else (`docs/data-model.md`, "Federal categories").
+
 ## Category auto-mapping
 
 1. An exact match against existing `category_mappings` for the state (re-uploads).
@@ -233,6 +246,24 @@ unified category takes those categories' federal parents; for one placed nowhere
 override (ICD-10-CM entries only) wins, then the category mapping, else `unmapped`
 (`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
+
+**Suggestions by code** (project lead, 2026-11-13). Besides the keyword guess per category,
+publish suggests a federal category per ICD-10-CM entry from the published lists that name one
+per code (Indiana's Tier 1): same code, else the most common for the 3-character category,
+else the chapter when large and nearly unanimous, never chapter 5 (`suggestFederal`,
+`docs/data-model.md`, "Federal categories"). Stored in `entry_federal_suggestions`; an
+unreviewed suggestion ranks above an `auto` mapping and below a `manual` one, a reviewed one
+above a `manual` mapping. `apps/api/src/db/federal-suggestions.ts` plans one state at a time
+and writes only the difference: `json_each` chunks of 1,000 rows, 4 statements per D1 batch,
+each with a `data_version` bump (as Rebuild coverage does), so Nebraska's ~8.2k entries are at
+most a few batches in one request; a failure part way is finished by running it again. On
+`/admin/categories`: **Re-run automatic suggestions** (`POST
+/api/admin/states/:stateId/categories/suggestions/preview`, then `/run` with the preview's
+token; 409 when anything changed; audit `category.suggest`), **Confirm suggestions** per row
+(`/suggestions/confirm`; audit `category.suggest.confirm`), and **Confirm all guesses**, which
+confirms pending suggestions too. Confirming a mapping (`PUT`) also confirms the suggestions
+that decide its entries now, so nothing moves. Publishing a reference state does not re-run the
+others.
 
 **Bulk remap, built in M7 step 3.** On `/admin/categories` the admin ticks rows (or "Select
 all"), in the category table or the chapter table, chooses one federal category (or chapter
