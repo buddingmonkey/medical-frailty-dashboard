@@ -56,5 +56,5 @@ ingest it or whether it needs the AI cleanup flow, and load the Tier 1 codes to 
 
 ## Open threads
 - Map Indiana's categories on production.
-- Product decision: read the state's own federal category column?
-- Product and legal decision: how to show a Tier 2 that has no published codes.
+- The project lead chose to read the state's own federal category column (being built on
+  `state-federal-category`), and not to note on the site that Tier 2 has no codes.
