@@ -30,6 +30,7 @@ const TABLES = [
   'unified_universe',
   'state_similarity',
   'ref_codes_fts',
+  'entry_federal_suggestions',
 ]
 
 /** One state with a source document and a draft version; returns their ids. */
@@ -143,6 +144,29 @@ describe('schema', () => {
     for (const bad of ['', 'unmapped', 'state_specific', 'sud,sud', 'sud,', ',sud', 'SUD']) {
       await expect(set(bad)).rejects.toThrow(/CHECK constraint failed/)
     }
+  })
+
+  it('keeps suggestions by code: law categories, known levels, deleted with the entry', async () => {
+    const entry = await insertEntry(ids.versionId, ids.docId)
+    const add = (category: string, level = 'exact', reviewed = 0) =>
+      db
+        .prepare(
+          `INSERT INTO entry_federal_suggestions (entry_id, federal_category, level, reference_state_id, reviewed)
+           VALUES (?, ?, ?, 'LA', ?)`,
+        )
+        .bind(entry?.id, category, level, reviewed)
+        .run()
+    await expect(add('sud')).resolves.toBeTruthy()
+    await expect(add('sud')).rejects.toThrow(/UNIQUE|PRIMARY KEY/)
+    await expect(add('unmapped')).rejects.toThrow(/CHECK constraint failed/)
+    await expect(add('state_specific')).rejects.toThrow(/CHECK constraint failed/)
+    await expect(add('physical_idd_adl', 'nearby')).rejects.toThrow(/CHECK constraint failed/)
+    await expect(add('physical_idd_adl', 'chapter', 2)).rejects.toThrow(/CHECK constraint failed/)
+    await db.prepare(`DELETE FROM entries WHERE id = ?`).bind(entry?.id).run()
+    const left = await db
+      .prepare(`SELECT count(*) AS n FROM entry_federal_suggestions`)
+      .first<{ n: number }>()
+    expect(left?.n).toBe(0)
   })
 
   it('rejects a range entry without an end, and an end on a non-range entry', async () => {

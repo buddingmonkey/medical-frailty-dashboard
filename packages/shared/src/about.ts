@@ -2,6 +2,7 @@ import { federalCategoryInfo, STATUTE_CITATION, STATUTE_URL } from './categories
 import { compareLegend, compareStatusLabels } from './compare'
 import { CCSR_CITATION, CCSR_URL } from './drill'
 import { federalCategories } from './enums'
+import { suggestionFromText } from './federal-suggestions'
 import { formatDay, reviewStatusText, SITE_NAME, STATED_BY_STATE } from './public'
 import { qualificationBasisLabels, qualificationHelp, qualificationLabels } from './qualification'
 
@@ -289,6 +290,14 @@ const aboutSections: AboutSection[] = [
           parts: [
             'The site suggested the mapping automatically and nobody has checked it yet. ' +
               'Numbers that depend on it may change after review.',
+          ],
+        },
+        {
+          term: `Not yet reviewed (${suggestionFromText([])})`,
+          parts: [
+            'Another state’s list names a federal category for each of its codes. The site ' +
+              'suggested the same one for this code, or the one most codes like it have there, ' +
+              'and nobody has checked it yet. The status names that state.',
           ],
         },
         {

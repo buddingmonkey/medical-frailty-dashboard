@@ -4,6 +4,7 @@ import {
   categoryMappingSaveSchema,
   federalCategoriesOf,
   federalCategoryList,
+  federalRuleOf,
   mappingKey,
 } from './category-mapping'
 
@@ -82,6 +83,69 @@ describe('federalCategoriesOf', () => {
 
   it('is unmapped when nothing applies', () => {
     expect(federalCategoriesOf(entry('F200', 'Other'), [], mappings, none)).toEqual(['unmapped'])
+  })
+})
+
+describe('federalRuleOf: suggestions by code', () => {
+  const auto = new Map([[mappingKey('SMI', ''), 'disabling_mental_disorder' as const]])
+  const none = new Map<number, never>()
+  const suggested = (reviewed: boolean) => ({
+    ...entry('E1065', 'SMI'),
+    suggestion: {
+      categories: ['serious_complex_medical' as const],
+      reviewed,
+      referenceNames: ['Indiana'],
+    },
+  })
+
+  it('puts an unreviewed suggestion above an automatic mapping', () => {
+    expect(federalRuleOf(suggested(false), [], auto, none, new Set())).toEqual({
+      rule: 'suggested',
+      categories: ['serious_complex_medical'],
+    })
+  })
+
+  it('puts a manual mapping above an unreviewed suggestion', () => {
+    const manual = new Set([mappingKey('SMI', '')])
+    expect(federalRuleOf(suggested(false), [], auto, none, manual)).toEqual({
+      rule: 'manual',
+      categories: ['disabling_mental_disorder'],
+    })
+  })
+
+  it('puts a reviewed suggestion above a manual mapping, below a chapter override', () => {
+    const manual = new Set([mappingKey('SMI', '')])
+    expect(federalRuleOf(suggested(true), [], auto, none, manual).rule).toBe('suggestedReviewed')
+    const chapters = new Map([[4, 'blind_or_disabled' as const]])
+    expect(federalRuleOf(suggested(true), [], auto, chapters, manual)).toEqual({
+      rule: 'chapter',
+      categories: ['blind_or_disabled'],
+    })
+  })
+
+  it('lets placements and stated categories win over any suggestion', () => {
+    expect(federalRuleOf(suggested(true), ['sud'], auto, none, new Set()).rule).toBe('placed')
+    expect(
+      federalRuleOf(
+        { ...suggested(true), stateFederalCategories: ['sud'] as const },
+        [],
+        auto,
+        none,
+        new Set(),
+      ).rule,
+    ).toBe('stated')
+  })
+
+  it('counts every mapping as manual when the caller names none (a suggestion never beats it)', () => {
+    expect(federalCategoriesOf(suggested(false), [], auto, none)).toEqual([
+      'disabling_mental_disorder',
+    ])
+    expect(federalRuleOf(suggested(false), [], new Map(), none).rule).toBe('suggested')
+  })
+
+  it('names the auto and unmapped rules', () => {
+    expect(federalRuleOf(entry('E1065', 'SMI'), [], auto, none, new Set()).rule).toBe('auto')
+    expect(federalRuleOf(entry('E1065', 'X'), [], auto, none, new Set()).rule).toBe('unmapped')
   })
 })
 

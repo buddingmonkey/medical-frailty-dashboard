@@ -16,6 +16,7 @@ import {
   datasetVersions,
   draftParts,
   entries,
+  entryFederalSuggestions,
   refCodes,
   sourceDocuments,
   states,
@@ -182,6 +183,31 @@ describe('publish and rollback', () => {
     ).toEqual([
       ['SMI', 'disabling_mental_disorder', 'auto', 0.9],
       ['SUD', 'state_specific', 'manual', null],
+    ])
+  })
+
+  it('suggests federal categories by code for the new version, from published reference lists', async () => {
+    // NE names a federal category per code (as Indiana does): the reference.
+    const reference = await draftWith('NE', [
+      entry('F20.0', {
+        stateCategory: 'Tier 1',
+        stateFederalCategories: ['disabling_mental_disorder'],
+      }),
+    ])
+    expect((await publishAll(reference, 'NE')).status).toBe(200)
+    const id = await draftWith('MT', [entry('F20.0', { stateCategory: 'Other' })])
+    expect((await publishAll(id, 'MT')).status).toBe(200)
+    const rows = await db
+      .select({
+        code: entries.codeNorm,
+        category: entryFederalSuggestions.federalCategory,
+        level: entryFederalSuggestions.level,
+        from: entryFederalSuggestions.referenceStateId,
+      })
+      .from(entryFederalSuggestions)
+      .innerJoin(entries, eq(entries.id, entryFederalSuggestions.entryId))
+    expect(rows).toEqual([
+      { code: 'F200', category: 'disabling_mental_disorder', level: 'exact', from: 'NE' },
     ])
   })
 

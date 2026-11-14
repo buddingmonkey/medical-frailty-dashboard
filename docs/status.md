@@ -84,10 +84,11 @@ Open items, with the date each was raised. Close them here when done.
 - **Restore drill** on preview, together (M8 step 7, 2026-11-03).
 - **Indiana on production** (2026-11-13): map its 159 categories on `/admin/categories` and
   `/admin/mappings`. 2,319 entries are "Not yet classified" because the guess works from
-  names. The site will read the state's own federal category column (project lead,
-  2026-11-13; being built). Then re-upload Indiana's CSV with that column mapped. The state
-  page will not mention Indiana's Tier 2, which has no published codes (project lead,
-  2026-11-13).
+  names. After the release with the state's own federal category column and suggestions by code
+  (project lead, 2026-11-13), re-upload Indiana's CSV with the federal column mapped and publish
+  it, then press **Re-run automatic suggestions** on `/admin/categories` for GA, LA, MT and NE,
+  and review their suggestions. The state page will not mention Indiana's Tier 2, which has no
+  published codes (project lead, 2026-11-13).
 - **Georgia sources on production:** set the URL (DCH public notices page) and publisher date
   (2026-07-09) on GA's two source documents in `/admin/sources` (2026-11-03).
 - **Publish on production:** the 19 starter comparison categories and the 8 condition groups

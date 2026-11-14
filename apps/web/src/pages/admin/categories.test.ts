@@ -460,3 +460,100 @@ describe('/admin/categories', () => {
     ])
   })
 })
+
+describe('/admin/categories: suggestions by code', () => {
+  const withSuggestions = {
+    ...data,
+    categories: data.categories.map((c) =>
+      c.stateCategory === 'Cancer'
+        ? {
+            ...c,
+            codeSuggested: {
+              entries: 3,
+              pending: 3,
+              federal: ['serious_complex_medical'],
+              referenceNames: ['Indiana'],
+            },
+          }
+        : c,
+    ),
+  }
+
+  function fakeSuggestions() {
+    const api = fakeApi()
+    const confirms: unknown[] = []
+    const runs: unknown[] = []
+    server.use(
+      http.get('/api/admin/states/LA/categories', () => HttpResponse.json(withSuggestions)),
+      http.post('/api/admin/states/LA/categories/suggestions/confirm', async ({ request }) => {
+        confirms.push(await request.json())
+        return HttpResponse.json({ ok: true, confirmed: 3 })
+      }),
+      http.post('/api/admin/states/LA/categories/suggestions/preview', () =>
+        HttpResponse.json({
+          token: 'run-1',
+          reference: ['Indiana'],
+          entries: 40,
+          gain: 2,
+          change: 1,
+          lose: 0,
+          unchanged: 30,
+          keptReviewed: 3,
+          byCategory: [{ federalCategory: 'serious_complex_medical', gain: 3, lose: 1 }],
+          sample: [
+            {
+              code: 'C50.911',
+              description: 'Breast cancer',
+              before: [],
+              after: ['serious_complex_medical'],
+            },
+          ],
+        }),
+      ),
+      http.post('/api/admin/states/LA/categories/suggestions/run', async ({ request }) => {
+        runs.push(await request.json())
+        return HttpResponse.json({ ok: true })
+      }),
+    )
+    return { ...api, confirms, runs }
+  }
+
+  it('says which entries follow a suggestion from another state’s list, and confirms them', async () => {
+    const { confirms } = fakeSuggestions()
+    const table = await open()
+    const row = rowOf(table, 'Cancer')
+    expect(row.textContent).toContain(
+      '3 suggested from Indiana’s list: Serious or complex medical condition (3 not reviewed)',
+    )
+    await user.click(within(row).getByRole('button', { name: 'Confirm suggestions for Cancer' }))
+    expect(await screen.findByText('Confirmed 3 suggestions for Cancer.')).toBeTruthy()
+    expect(confirms).toEqual([{ items: [{ stateCategory: 'Cancer', stateSubcategory: '' }] }])
+  })
+
+  it('confirms pending suggestions with "Confirm all guesses"', async () => {
+    const { confirms, saves } = fakeSuggestions()
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Confirm all 3 guesses' }))
+    await waitFor(() => {
+      expect(saves).toHaveLength(1)
+    })
+    expect(confirms).toEqual([{ items: [{ stateCategory: 'Cancer', stateSubcategory: '' }] }])
+  })
+
+  it('previews a re-run of the automatic suggestions, then saves it with the token', async () => {
+    const { runs } = fakeSuggestions()
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Re-run automatic suggestions' }))
+    const region = await screen.findByRole('region', {
+      name: 'Check the automatic suggestions before saving',
+    })
+    expect(await within(region).findByText('2 entries gain a suggestion.')).toBeTruthy()
+    expect(
+      within(region).getByText(/3 entries keep the suggestion an admin confirmed/),
+    ).toBeTruthy()
+    expect(within(region).getByRole('rowheader', { name: 'C50.911' })).toBeTruthy()
+    await user.click(within(region).getByRole('button', { name: 'Save suggestions' }))
+    expect(await screen.findByText('Saved the automatic suggestions for Louisiana.')).toBeTruthy()
+    expect(runs).toEqual([{ token: 'run-1' }])
+  })
+})

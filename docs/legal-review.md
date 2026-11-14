@@ -228,6 +228,12 @@ Every string below is live and provisional. Please mark any you want changed.
 - Review status heading, with "Reviewed" / "Not yet reviewed (automatic suggestion)" /
   "Stated by the state" (added 2026-11-13, provisional: the state's own list names the federal
   category, as Indiana's does)
+- Review status "Not yet reviewed (suggested from Indiana’s list)" (added 2026-11-13,
+  provisional; the state is named from the reference list, not fixed): the site suggested the
+  federal category from another state's per-code list. Also the categories intro sentence
+  "Where another state’s list names a federal category for the same code, or for codes like it,
+  this site may suggest that one instead (“suggested from” that state’s list).", and the About
+  page's glossary entry "Not yet reviewed (suggested from another state’s list)"
 - The categories intro sentence "Where the state’s list names a federal category for a code,
   this site uses it (“Stated by the state”)." (added 2026-11-13, provisional), and the About
   page's glossary entry for "Stated by the state"

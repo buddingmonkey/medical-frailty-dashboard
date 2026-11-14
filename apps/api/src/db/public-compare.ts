@@ -4,16 +4,17 @@ import {
   type CompareQuery,
   type CompareResult,
   decodeStateFederal,
+  decodeSuggestion,
   type FederalCategory,
   federalCategoriesOf,
   federalCategoryList,
-  mappingKey,
 } from '@mfcd/shared'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { chunk, D1_MAX_PARAMS } from './d1-limits'
-import { stateFederalSql, unifiedParentsSql } from './federal'
+import { stateFederalSql, suggestionSql, unifiedParentsSql } from './federal'
+import { mappingLookups } from './federal-suggestions'
 import { categoryMappings, chapterMappings, entries, refCodes, states } from './schema'
 
 // Compare by category (roadmap M4): loads the selected states' published entries with their
@@ -57,6 +58,7 @@ export async function publicCompare(
         qualificationBasis: entries.qualificationBasis,
         stateFederal: stateFederalSql,
         parents: unifiedParentsSql,
+        suggestion: suggestionSql,
       })
       .from(states)
       .innerJoin(entries, eq(entries.versionId, states.publishedVersionId))
@@ -69,12 +71,13 @@ export async function publicCompare(
   const unknownStates = ids.filter((id) => !found.has(id))
   if (unknownStates.length > 0) return { ok: false, unknownStates }
 
-  const mappingsBy = new Map<string, Map<string, FederalCategory>>()
-  for (const m of mappings) {
-    const forState = mappingsBy.get(m.stateId) ?? new Map<string, FederalCategory>()
-    forState.set(mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory)
-    mappingsBy.set(m.stateId, forState)
-  }
+  const lookupsBy = new Map(
+    [...new Set(mappings.map((m) => m.stateId))].map((id) => [
+      id,
+      mappingLookups(mappings.filter((m) => m.stateId === id)),
+    ]),
+  )
+  const noLookups = mappingLookups([])
   const overridesBy = new Map<string, Map<number, FederalCategory>>()
   for (const o of overrides) {
     const forState = overridesBy.get(o.stateId) ?? new Map<number, FederalCategory>()
@@ -92,17 +95,22 @@ export async function publicCompare(
         name: s.name,
         published: s.publishedVersionId !== null,
       })),
-      entries: rows.map(({ parents, stateFederal, ...r }) => ({
+      entries: rows.map(({ parents, stateFederal, suggestion, ...r }) => ({
         ...r,
         // Descriptions are read for the rows shown only (describeFromStates): the bulk load
         // stays small, which keeps the Worker inside the Free plan's CPU time.
         descriptionPublished: null,
         includesChildren: r.includesChildren === 1 ? 1 : r.includesChildren === 0 ? 0 : null,
         federalCategories: federalCategoriesOf(
-          { ...r, stateFederalCategories: decodeStateFederal(stateFederal) },
+          {
+            ...r,
+            stateFederalCategories: decodeStateFederal(stateFederal),
+            suggestion: decodeSuggestion(suggestion),
+          },
           federalCategoryList(parents),
-          mappingsBy.get(r.stateId) ?? none,
+          (lookupsBy.get(r.stateId) ?? noLookups).mappings,
           overridesBy.get(r.stateId) ?? none,
+          (lookupsBy.get(r.stateId) ?? noLookups).manualKeys,
         ),
       })),
     },

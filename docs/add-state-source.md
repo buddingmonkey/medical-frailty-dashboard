@@ -96,6 +96,16 @@ the name of each new state category. The public pages use these guesses right aw
 reading them all. For states without categories (Georgia, Nebraska), map "(no category)" and use
 **chapter overrides**. A change that moves published codes shows a preview first.
 
+**Suggestions by code.** When another state's list names a federal category for each code
+(Indiana does), publishing also suggests one for each ICD-10-CM code of the new list: the same
+code's, else the most common one for codes with the same first three characters, else (rarely)
+the chapter's. A suggestion wins over a guessed mapping, not over a confirmed one, and shows
+publicly as "Not yet reviewed (suggested from Indiana's list)". The Entries column says how many
+codes follow suggestions; click **Confirm suggestions** on a row, or **Confirm all guesses**.
+After that state's list changes, press **Re-run automatic suggestions** for each other state: it
+shows how many codes gain, change or lose a suggestion before you save. It never changes
+confirmed suggestions or anything you set by hand.
+
 ## If a file will not read
 
 Use **Get help from an AI assistant** on the Read and map page: copy each part's prompt into an

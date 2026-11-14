@@ -247,6 +247,24 @@ override (ICD-10-CM entries only) wins, then the category mapping, else `unmappe
 (`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
 
+**Suggestions by code** (project lead, 2026-11-13). Besides the keyword guess per category,
+publish suggests a federal category per ICD-10-CM entry from the published lists that name one
+per code (Indiana's Tier 1): same code, else the most common for the 3-character category,
+else the chapter when large and nearly unanimous, never chapter 5 (`suggestFederal`,
+`docs/data-model.md`, "Federal categories"). Stored in `entry_federal_suggestions`; an
+unreviewed suggestion ranks above an `auto` mapping and below a `manual` one, a reviewed one
+above a `manual` mapping. `apps/api/src/db/federal-suggestions.ts` plans one state at a time
+and writes only the difference: `json_each` chunks of 1,000 rows, 4 statements per D1 batch,
+each with a `data_version` bump (as Rebuild coverage does), so Nebraska's ~8.2k entries are at
+most a few batches in one request; a failure part way is finished by running it again. On
+`/admin/categories`: **Re-run automatic suggestions** (`POST
+/api/admin/states/:stateId/categories/suggestions/preview`, then `/run` with the preview's
+token; 409 when anything changed; audit `category.suggest`), **Confirm suggestions** per row
+(`/suggestions/confirm`; audit `category.suggest.confirm`), and **Confirm all guesses**, which
+confirms pending suggestions too. Confirming a mapping (`PUT`) also confirms the suggestions
+that decide its entries now, so nothing moves. Publishing a reference state does not re-run the
+others.
+
 **Bulk remap, built in M7 step 3.** On `/admin/categories` the admin ticks rows (or "Select
 all"), in the category table or the chapter table, chooses one federal category (or chapter
 override, or "Use the category mapping"), and clicks Preview. The server

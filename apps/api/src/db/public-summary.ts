@@ -1,12 +1,12 @@
 import {
   codeSystems,
+  confirmedRules,
   decodeStateFederal,
+  decodeSuggestion,
   type FederalCategory,
   federalCategories,
-  federalCategoriesOf,
   federalCategoryList,
-  icd10cmChapterOf,
-  mappingKey,
+  federalRuleOf,
   type PublicStateCategory,
   type PublicStateSummary,
   qualifications,
@@ -15,7 +15,8 @@ import {
 import { asc, count, eq, max, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
-import { placementsReviewedSql, stateFederalSql, unifiedParentsSql } from './federal'
+import { placementsReviewedSql, stateFederalSql, suggestionSql, unifiedParentsSql } from './federal'
+import { mappingLookups } from './federal-suggestions'
 import {
   categoryMappings,
   chapterMappings,
@@ -34,8 +35,9 @@ import {
 // Federal categories (docs/data-model.md, "Federal categories"): an entry the state gave its own
 // federal categories counts under exactly those; else once under each federal parent of its
 // unified categories, so `byFederalCategory` can add up to more than `totalEntries`; an entry
-// placed nowhere counts under its M2 mapping. Confirmed: stated by the state, or every
-// placement reviewed, or, placed nowhere, a manual mapping or a chapter override.
+// placed nowhere counts under a chapter override, a suggestion by code or its M2 mapping
+// (`federalRuleOf`). Confirmed: stated by the state, or every placement reviewed, or, placed
+// nowhere, a chapter override, a reviewed suggestion or a manual mapping.
 
 export interface PublicSummaries {
   items: PublicStateSummary[]
@@ -74,6 +76,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         stateFederal: stateFederalSql,
         parents: unifiedParentsSql,
         reviewed: placementsReviewedSql,
+        suggestion: suggestionSql,
         n: count(),
       })
       .from(states)
@@ -89,6 +92,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         stateFederalSql,
         unifiedParentsSql,
         placementsReviewedSql,
+        suggestionSql,
       ),
     db
       .select()
@@ -107,19 +111,12 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       .groupBy(states.id),
   ])
 
-  const mappingsBy = new Map<string, Map<string, FederalCategory>>()
-  const manualBy = new Map<string, Set<string>>()
-  for (const m of mappings) {
-    const key = mappingKey(m.stateCategory, m.stateSubcategory)
-    const forState = mappingsBy.get(m.stateId) ?? new Map<string, FederalCategory>()
-    forState.set(key, m.federalCategory)
-    mappingsBy.set(m.stateId, forState)
-    if (m.method === 'manual') {
-      const manual = manualBy.get(m.stateId) ?? new Set<string>()
-      manual.add(key)
-      manualBy.set(m.stateId, manual)
-    }
-  }
+  const lookupsBy = new Map(
+    [...new Set(mappings.map((m) => m.stateId))].map((id) => [
+      id,
+      mappingLookups(mappings.filter((m) => m.stateId === id)),
+    ]),
+  )
   const overridesBy = new Map<string, Map<number, FederalCategory>>()
   for (const o of overrides) {
     const forState = overridesBy.get(o.stateId) ?? new Map<number, FederalCategory>()
@@ -144,7 +141,9 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
   }
 
   const categories = new Map<string, Map<string, PublicStateCategory>>()
-  const noMappings = new Map<string, FederalCategory>()
+  /** Per row key: the reference states of its suggested entries, or null once another kind is unconfirmed. */
+  const suggestedBy = new Map<string, Set<string> | null>()
+  const noLookups = mappingLookups([])
   const noOverrides = new Map<number, FederalCategory>()
   for (const g of groups) {
     const p = published.get(g.stateId)
@@ -157,14 +156,17 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       stateCategory: g.stateCategory,
       stateSubcategory: g.stateSubcategory,
       stateFederalCategories: decodeStateFederal(g.stateFederal),
+      suggestion: decodeSuggestion(g.suggestion),
     }
     const stated = entry.stateFederalCategories.length > 0
     const parents = federalCategoryList(g.parents)
-    const federal = federalCategoriesOf(
+    const lookups = lookupsBy.get(g.stateId) ?? noLookups
+    const { rule, categories: federal } = federalRuleOf(
       entry,
       parents,
-      mappingsBy.get(g.stateId) ?? noMappings,
+      lookups.mappings,
       stateOverrides,
+      lookups.manualKeys,
     )
     p.totalEntries += g.n
     p.bySystem[g.codeSystem] += g.n
@@ -179,11 +181,9 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       // Placed: an admin reviewed every placement (an approved mapping or by_code row).
       confirmed = g.reviewed === 1
     } else {
-      // Placed nowhere: a chapter override (always set by hand) or a manual mapping decides it.
-      const chapter = g.icd === '' ? null : icd10cmChapterOf(g.icd)
-      const byOverride = chapter !== null && stateOverrides.has(chapter.number)
-      const manual = manualBy.get(g.stateId)?.has(mappingKey(g.stateCategory, g.stateSubcategory))
-      confirmed = byOverride || manual === true
+      // Placed nowhere: a chapter override (always set by hand), a reviewed suggestion or a
+      // manual mapping decides it.
+      confirmed = confirmedRules.has(rule)
     }
     if (!confirmed) p.mappingsConfirmed = false
 
@@ -199,7 +199,15 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         entries: 0,
       }
       cat.entries += g.n
-      if (!confirmed) cat.confirmed = false
+      if (!confirmed) {
+        cat.confirmed = false
+        const names = suggestedBy.get(`${g.stateId}\u0000${key}`)
+        if (rule === 'suggested' && names !== null) {
+          const set = names ?? new Set<string>()
+          for (const n of entry.suggestion?.referenceNames ?? []) set.add(n)
+          suggestedBy.set(`${g.stateId}\u0000${key}`, set)
+        } else suggestedBy.set(`${g.stateId}\u0000${key}`, null)
+      }
       if (!stated) cat.stated = false
       forState.set(key, cat)
     }
@@ -218,13 +226,18 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
     categories: new Map(
       [...categories].map(([id, cats]) => [
         id,
-        [...cats.values()].sort(
-          (a, b) =>
-            a.stateCategory.localeCompare(b.stateCategory) ||
-            a.stateSubcategory.localeCompare(b.stateSubcategory) ||
-            federalCategories.indexOf(a.federalCategory) -
-              federalCategories.indexOf(b.federalCategory),
-        ),
+        [...cats]
+          .map(([key, cat]) => {
+            const names = suggestedBy.get(`${id}\u0000${key}`)
+            return names && names.size > 0 ? { ...cat, suggestedFrom: [...names].sort() } : cat
+          })
+          .sort(
+            (a, b) =>
+              a.stateCategory.localeCompare(b.stateCategory) ||
+              a.stateSubcategory.localeCompare(b.stateSubcategory) ||
+              federalCategories.indexOf(a.federalCategory) -
+                federalCategories.indexOf(b.federalCategory),
+          ),
       ]),
     ),
   }

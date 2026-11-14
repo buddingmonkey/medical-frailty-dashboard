@@ -15,6 +15,7 @@ import { computed, nextTick, reactive, ref, useId, watch } from 'vue'
 import { z } from 'zod'
 
 import RemapPreview from '../../components/admin/RemapPreview.vue'
+import SuggestionRun from '../../components/admin/SuggestionRun.vue'
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
 
@@ -24,6 +25,8 @@ import { getJson, sendJson } from '../../lib/api'
 // admin confirms it here (launch needs every mapping confirmed). States that group codes only
 // by ICD-10-CM chapter (NE, GA) can override by chapter. Bulk remap (M7 step 3): select rows,
 // choose one federal category (or chapter override), check the server's preview, then save.
+// Suggestions by code (project lead, 2026-11-13): entries whose federal category comes from
+// another state's per-code list; confirmed per state category, re-run with a preview.
 type Category = StateCategories['categories'][number]
 type Chapter = StateCategories['chapters'][number]
 
@@ -85,6 +88,14 @@ function guessOf(c: Category): ChosenFederalCategory | null {
 // A suggestion for a category with published entries and no stored mapping counts as not
 // mapped (its entries are unmapped now); confirming it is a change, previewed per row.
 const guesses = computed(() => categories.value.filter((c) => guessOf(c) !== null))
+/** Categories with entries that follow an unreviewed suggestion by code. */
+const pendingSuggestions = computed(() =>
+  categories.value.filter((c) => c.codeSuggested.pending > 0),
+)
+/** What "Confirm all guesses" confirms: the guessed mappings and the pending suggestions. */
+const allGuesses = computed(
+  () => new Set([...guesses.value, ...pendingSuggestions.value].map(keyOf)).size,
+)
 const summary = computed(() => {
   const confirmed = categories.value.filter((c) => c.mapping?.method === 'manual').length
   const guessed = guesses.value.length
@@ -195,8 +206,57 @@ watch(stateId, () => {
   selected.value = new Set()
   selectedChapters.value = new Set()
   remap.value = null
+  rerun.value = null
 })
+
+// "Re-run automatic suggestions": the preview panel, keyed so each opening fetches afresh.
+const rerun = ref<number | null>(null)
+let rerunCount = 0
+let rerunOpener: HTMLElement | null = null
+function openRerun() {
+  rerunOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  rerunCount += 1
+  rerun.value = rerunCount
+}
+async function closeRerun() {
+  rerun.value = null
+  await nextTick()
+  rerunOpener?.focus()
+}
+async function rerunSaved(message: string) {
+  rerun.value = null
+  saved.value = message
+  await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+}
 const ok = z.object({ ok: z.literal(true) })
+const confirmedSuggestions = z.object({ ok: z.literal(true), confirmed: z.number().int() })
+const categoryItem = (c: Category) => ({
+  stateCategory: c.stateCategory,
+  stateSubcategory: c.stateSubcategory,
+})
+const postConfirmSuggestions = (items: { stateCategory: string; stateSubcategory: string }[]) =>
+  sendJson(
+    'POST',
+    `/api/admin/states/${stateId.value}/categories/suggestions/confirm`,
+    { items },
+    confirmedSuggestions,
+  )
+
+const confirmSuggestions = useMutation({
+  mutationFn: (c: Category) => postConfirmSuggestions([categoryItem(c)]),
+  onSuccess: async (result, c) => {
+    saved.value = `Confirmed ${String(result.confirmed)} ${result.confirmed === 1 ? 'suggestion' : 'suggestions'} for ${nameOf(c)}.`
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+  },
+})
+const suggestedText = (c: Category) =>
+  `${n(c.codeSuggested.entries)} suggested from ${
+    c.codeSuggested.referenceNames.length > 0
+      ? `${c.codeSuggested.referenceNames.join(' and ')}’s list`
+      : 'another state’s list'
+  }: ${federalCategoriesText(c.codeSuggested.federal)}${
+    c.codeSuggested.pending > 0 ? ` (${n(c.codeSuggested.pending)} not reviewed)` : ''
+  }`
 
 const save = useMutation({
   mutationFn: (
@@ -224,22 +284,37 @@ function confirmOne(c: Category) {
   else openRemap('categories', { categories: [item], chapters: [] })
 }
 
-function confirmGuesses() {
-  save.mutate(
-    guesses.value.slice(0, 200).flatMap((c) => {
-      const federalCategory = guessOf(c)
-      return federalCategory
-        ? [
-            {
-              stateCategory: c.stateCategory,
-              stateSubcategory: c.stateSubcategory,
-              federalCategory,
-            },
-          ]
-        : []
-    }),
-  )
-}
+const guessItems = () =>
+  guesses.value.slice(0, 200).flatMap((c) => {
+    const federalCategory = guessOf(c)
+    return federalCategory
+      ? [{ stateCategory: c.stateCategory, stateSubcategory: c.stateSubcategory, federalCategory }]
+      : []
+  })
+
+// "Confirm all guesses": the pending suggestions by code first, then the guessed mappings
+// (whose own suggestions the server confirms with them).
+const confirmAll = useMutation({
+  mutationFn: async () => {
+    const pending = pendingSuggestions.value.slice(0, 200).map(categoryItem)
+    if (pending.length > 0) await postConfirmSuggestions(pending)
+    const items = guessItems()
+    if (items.length > 0) {
+      await sendJson('PUT', `/api/admin/states/${stateId.value}/categories`, { items }, ok)
+    }
+    return new Set([...pending, ...items].map(keyOf)).size
+  },
+  onSuccess: async (count) => {
+    saved.value = `Confirmed ${String(count)} ${count === 1 ? 'category' : 'categories'}.`
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
+  },
+})
+const busy = computed(
+  () => save.isPending.value || confirmAll.isPending.value || confirmSuggestions.isPending.value,
+)
+const saveError = computed(
+  () => save.error.value ?? confirmAll.error.value ?? confirmSuggestions.error.value,
+)
 
 const chapterChanged = (ch: Chapter) =>
   (chapterPicked[ch.chapter] ?? '') !== (ch.override?.federalCategory ?? '')
@@ -274,6 +349,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         category, marked “Not yet reviewed”. Read each guess and click Confirm, or confirm them all
         at once. A change that moves published codes shows a preview before it is saved.
       </p>
+      <p class="max-w-prose text-muted-foreground">
+        When another state’s list names a federal category for each code (Indiana does), publishing
+        suggests one for this state’s ICD-10-CM codes: the same code’s, else the most common one for
+        codes starting with the same three characters, else the chapter’s when nearly all of it
+        agrees. A suggestion wins over a guessed mapping, not over a confirmed one. Confirm a
+        category’s suggestions, or re-run them after that state’s list changes.
+      </p>
     </div>
     <div class="max-w-xs">
       <label :for="`${id}-state`" class="font-medium">State</label>
@@ -290,9 +372,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
-    <p v-if="save.error.value" role="alert" class="text-danger">
-      Could not save: {{ save.error.value.message }}
-    </p>
+    <p v-if="saveError" role="alert" class="text-danger">Could not save: {{ saveError.message }}</p>
     <p v-if="query.error.value" role="alert" class="text-danger">
       Could not load the categories: {{ query.error.value.message }}
     </p>
@@ -305,15 +385,26 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         <div class="flex flex-wrap items-center gap-3">
           <p>{{ summary }}</p>
           <button
-            v-if="guesses.length > 0"
+            v-if="allGuesses > 0"
             type="button"
             :class="smallButton"
-            :disabled="save.isPending.value"
-            @click="confirmGuesses"
+            :disabled="busy"
+            @click="confirmAll.mutate()"
           >
-            Confirm all {{ guesses.length }} guesses
+            Confirm all {{ allGuesses }} guesses
+          </button>
+          <button type="button" :class="smallButton" :disabled="rerun !== null" @click="openRerun">
+            Re-run automatic suggestions
           </button>
         </div>
+        <SuggestionRun
+          v-if="rerun !== null"
+          :key="rerun"
+          :state-id="stateId"
+          :state-name="stateName"
+          @saved="rerunSaved"
+          @cancel="closeRerun"
+        />
         <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">
           <legend class="px-1 font-medium">Remap several categories</legend>
           <label class="flex items-center gap-2">
@@ -398,6 +489,21 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                     >{{ n(c.placedEntries) }} follow their unified categories:
                     {{ federalCategoriesText(c.placedFederal) }}</span
                   >
+                  <span
+                    v-if="c.codeSuggested.entries > 0"
+                    class="block text-xs text-muted-foreground"
+                    >{{ suggestedText(c) }}</span
+                  >
+                  <button
+                    v-if="c.codeSuggested.pending > 0"
+                    type="button"
+                    class="mt-1 rounded border border-border px-2 py-0.5 text-xs hover:bg-surface"
+                    :disabled="busy"
+                    :aria-label="`Confirm suggestions for ${nameOf(c)}`"
+                    @click="confirmSuggestions.mutate(c)"
+                  >
+                    Confirm suggestions
+                  </button>
                 </td>
                 <td class="py-2 pr-4">
                   <span v-if="c.mapping" class="block">{{ label(c.mapping.federalCategory) }}</span>
@@ -415,7 +521,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                     <button
                       type="button"
                       :class="smallButton"
-                      :disabled="!picked[keyOf(c)] || save.isPending.value"
+                      :disabled="!picked[keyOf(c)] || busy"
                       :aria-label="
                         isConfirmOnly(c, picked[keyOf(c)] ?? '')
                           ? `Confirm ${nameOf(c)}`

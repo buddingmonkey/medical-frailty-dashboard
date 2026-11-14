@@ -1,7 +1,13 @@
 import { z } from 'zod'
 
 import { federalCategoriesText, federalCategoryInfo } from './categories'
-import { categoryLabel, chosenCategory, federalCategoriesOf, mappingKey } from './category-mapping'
+import {
+  categoryLabel,
+  chosenCategory,
+  type FederalRuleEntry,
+  federalRuleOf,
+  mappingKey,
+} from './category-mapping'
 import { type CodeSystem, type FederalCategory, federalCategories } from './enums'
 import { icd10cmChapterOf, icd10cmChapters } from './icd-chapters'
 
@@ -9,8 +15,10 @@ import { icd10cmChapterOf, icd10cmChapters } from './icd-chapters'
 // The preview applies the one federal-category rule (`federalCategoriesOf`) to every published
 // entry of the state, before and after the proposed changes, so it says honestly which entries
 // move and which stay: an entry placed in a published unified category keeps that category's
-// federal parent, an ICD-10-CM entry under a chapter override keeps the override, and an entry
-// whose state published its federal category keeps that.
+// federal parent, an ICD-10-CM entry under a chapter override keeps the override, an entry
+// whose state published its federal category keeps that, and so does an entry whose suggestion
+// by code an admin confirmed. A remapped category's mapping becomes manual, so it wins over the
+// unreviewed suggestions of its entries: those move.
 
 const SAMPLE_SIZE = 20
 
@@ -86,6 +94,10 @@ const remapChange = z.object({
   stated: z.object({ n: z.number().int().nonnegative(), federal: z.array(federal) }),
   /** Entries that stay because a published unified placement wins, and under what. */
   placed: z.object({ n: z.number().int().nonnegative(), federal: z.array(federal) }),
+  /** Category changes only: entries that stay because an admin confirmed their suggestion. */
+  suggested: z
+    .object({ n: z.number().int().nonnegative(), federal: z.array(federal) })
+    .default({ n: 0, federal: [] }),
   /** Category changes only: ICD-10-CM entries that stay because a chapter override wins. */
   chapterOverride: z.array(
     z.object({ chapter: z.number().int(), federalCategory: federal, n: z.number().int() }),
@@ -130,6 +142,8 @@ export interface RemapEntry {
   unifiedParents: readonly FederalCategory[]
   /** The state's own federal categories for the entry (they win over everything). */
   stateFederalCategories?: readonly FederalCategory[]
+  /** The entry's suggestion by code, if any. */
+  suggestion?: FederalRuleEntry['suggestion']
 }
 
 /** Open-draft entries counted by category and ICD-10-CM three-character category ('' if none). */
@@ -147,14 +161,20 @@ const chapterOf = (e: { codeSystem: CodeSystem; codeNorm: string }) =>
 export function previewRemap(input: {
   entries: readonly RemapEntry[]
   mappings: ReadonlyMap<string, FederalCategory>
+  /** The state categories whose mapping is manual; left out: every mapping. */
+  manualKeys?: ReadonlySet<string>
   chapterOverrides: ReadonlyMap<number, FederalCategory>
   changes: RemapChanges
   draftGroups: readonly RemapDraftGroup[]
 }): Omit<RemapPreview, 'token'> {
   const { entries, mappings, chapterOverrides, changes } = input
+  const manualKeys = input.manualKeys ?? new Set(mappings.keys())
   const afterMappings = new Map(mappings)
+  const afterManual = new Set(manualKeys)
   for (const c of changes.categories) {
-    afterMappings.set(mappingKey(c.stateCategory, c.stateSubcategory), c.federalCategory)
+    const key = mappingKey(c.stateCategory, c.stateSubcategory)
+    afterMappings.set(key, c.federalCategory)
+    afterManual.add(key)
   }
   const afterChapters = new Map(chapterOverrides)
   for (const c of changes.chapters) {
@@ -162,13 +182,18 @@ export function previewRemap(input: {
     else afterChapters.set(c.chapter, c.federalCategory)
   }
 
-  const rows = entries.map((e) => ({
-    e,
-    key: mappingKey(e.stateCategory, e.stateSubcategory),
-    chapter: chapterOf(e),
-    before: federalCategoriesOf(e, e.unifiedParents, mappings, chapterOverrides),
-    after: federalCategoriesOf(e, e.unifiedParents, afterMappings, afterChapters),
-  }))
+  const rows = entries.map((e) => {
+    const before = federalRuleOf(e, e.unifiedParents, mappings, chapterOverrides, manualKeys)
+    const after = federalRuleOf(e, e.unifiedParents, afterMappings, afterChapters, afterManual)
+    return {
+      e,
+      key: mappingKey(e.stateCategory, e.stateSubcategory),
+      chapter: chapterOf(e),
+      before: before.categories,
+      after: after.categories,
+      afterRule: after.rule,
+    }
+  })
 
   const before = new Map<FederalCategory, number>()
   const after = new Map<FederalCategory, number>()
@@ -185,7 +210,9 @@ export function previewRemap(input: {
     const moves = new Map<string, { from: FederalCategory; to: FederalCategory; n: number }>()
     const placedFederal = new Set<FederalCategory>()
     const statedFederal = new Set<FederalCategory>()
+    const suggestedFederal = new Set<FederalCategory>()
     let stated = 0
+    let suggested = 0
     const alreadyIn = new Set<FederalCategory>()
     const overrides = new Map<
       number,
@@ -204,6 +231,11 @@ export function previewRemap(input: {
       if (r.e.unifiedParents.length > 0) {
         placed += 1
         for (const f of r.before) placedFederal.add(f)
+        continue
+      }
+      if (base.kind === 'category' && r.afterRule === 'suggestedReviewed') {
+        suggested += 1
+        for (const f of r.before) suggestedFederal.add(f)
         continue
       }
       const override = r.chapter === null ? undefined : afterChapters.get(r.chapter)
@@ -247,6 +279,10 @@ export function previewRemap(input: {
       alreadyIn: federalCategories.filter((f) => alreadyIn.has(f)),
       stated: { n: stated, federal: federalCategories.filter((f) => statedFederal.has(f)) },
       placed: { n: placed, federal: federalCategories.filter((f) => placedFederal.has(f)) },
+      suggested: {
+        n: suggested,
+        federal: federalCategories.filter((f) => suggestedFederal.has(f)),
+      },
       chapterOverride: [...overrides.values()].sort((a, b) => a.chapter - b.chapter),
       sample,
       draftEntries,
@@ -326,6 +362,12 @@ export function remapChangeSentences(change: RemapChange): string[] {
     const pronoun = change.placed.n === 1 ? 'it is' : 'they are'
     lines.push(
       `${change.placed.n.toLocaleString('en-US')} ${verb} in ${federalCategoriesText(change.placed.federal)} because ${pronoun} placed in a published unified category.`,
+    )
+  }
+  if (change.suggested.n > 0) {
+    const verb = change.suggested.n === 1 ? 'stays' : 'stay'
+    lines.push(
+      `${change.suggested.n.toLocaleString('en-US')} ${verb} in ${federalCategoriesText(change.suggested.federal)} because an admin confirmed the suggestion from another state’s list.`,
     )
   }
   for (const o of change.chapterOverride) {

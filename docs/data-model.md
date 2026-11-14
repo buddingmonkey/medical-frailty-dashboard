@@ -55,9 +55,40 @@ public pages):
    (`unified_categories.federal_category`) of the **published** unified categories the entry is
    placed in. A code in two unified categories with different parents counts under **both**.
    Admins manage only state → unified; each unified category's parent is fixed.
-3. **Entries placed nowhere** fall back to the M2 rule: an ICD-10-CM chapter override of the
-   state (`chapter_mappings`) wins, then the mapping of the entry's state category
-   (`category_mappings`), else `unmapped`.
+3. **Entries placed nowhere**, first match wins (`federalRuleOf`):
+   1. an ICD-10-CM chapter override of the state (`chapter_mappings`);
+   2. a **reviewed suggestion by code** (below): an admin confirmed it for this code, which is
+      more specific than a category mapping;
+   3. a **manual** mapping of the entry's state category (`category_mappings`);
+   4. an **unreviewed suggestion by code** (project lead, 2026-11-13);
+   5. an **auto** (keyword) mapping of the state category;
+   6. else `unmapped`.
+
+**Suggestions by code** (project lead, 2026-11-13; `suggestFederal` in
+`packages/shared/src/federal-suggestions.ts`, stored in `entry_federal_suggestions`). The
+reference is every published entry with `state_federal_categories` (today Indiana's Tier 1,
+4,250 ICD-10-CM codes). Each other ICD-10-CM entry gets, most specific first:
+
+- `exact`: the reference lists the same code: its categories (several reference states: the
+  union).
+- `category3`: the most common category among reference codes with the same first 3
+  characters (a tie: the union of the tied ones).
+- `chapter`: the ICD-10-CM chapter's category, only when the reference has at least
+  `CHAPTER_MIN_CODES` (20) codes in it and at least `CHAPTER_MIN_SHARE` (90%) share one
+  category; never a chapter in `SUGGESTION_EXCLUDED_CHAPTERS` (chapter 5, F codes: Indiana leaves
+  behavioural health out of Tier 1 on purpose, so its F codes are 98% substance use and would
+  label e.g. F20 as SUD).
+- else none.
+
+A wildcard (`prefix`) or range entry is looked up by its own `code_norm` (a range by its start),
+so in practice by its 3-character category; it never matches a narrower reference code exactly.
+Only the five law categories are suggested; an entry with stated categories gets none.
+Publishing a state computes its new version's suggestions and carries over reviewed ones from the
+version it replaced (same code, kind, range end and category); publishing a reference state does
+not re-run other states: an admin presses "Re-run automatic suggestions" (Admin → Federal
+categories), which previews, then writes only the difference and never changes a reviewed
+suggestion. Public label of an unreviewed one: "Not yet reviewed (suggested from Indiana’s
+list)", the state named from the reference (provisional, `docs/legal-review.md`).
 
 What this means where counts are shown:
 
@@ -73,16 +104,23 @@ What this means where counts are shown:
 - **Confirmed** (state pages, `mappingsConfirmed`): an entry with state-published federal
   categories is always confirmed, and its category rows show "Stated by the state" (`stated` in
   the API, provisional wording) when every entry in the row is stated. Otherwise a placed entry is
-  confirmed when every one of its placements is reviewed (`entry_unified.reviewed`); an unplaced one when its M2 mapping is
-  `manual` or a chapter override applies. A state's mappings are confirmed when all its entries
-  are.
+  confirmed when every one of its placements is reviewed (`entry_unified.reviewed`); an unplaced
+  one when a chapter override, a reviewed suggestion or a `manual` mapping decides it
+  (`confirmedRules`). A row whose unconfirmed entries all follow unreviewed suggestions carries
+  `suggestedFrom` (the reference states' names) and shows "Not yet reviewed (suggested from
+  Indiana’s list)". A state's mappings are confirmed when all its entries are.
 - Public reads stay lookups: the entry's own `state_federal_categories` column
-  (`stateFederalSql`), plus two correlated subqueries per entry on `entry_unified` joined to
-  `unified_categories` (`apps/api/src/db/federal.ts`), never CCSR work per request.
+  (`stateFederalSql`), two correlated subqueries per entry on `entry_unified` joined to
+  `unified_categories`, and one on `entry_federal_suggestions` by entry id (`suggestionSql`;
+  `apps/api/src/db/federal.ts`), never CCSR or suggestion work per request.
 - The admin categories screen shows, per state category, how many published entries the state
   gave federal categories ("stated by the state") and how many follow their unified categories,
-  and under which federal categories; its mapping covers the rest. The bulk remap preview says
-  which entries stay because the state named their federal category.
+  and under which federal categories, and how many follow a suggestion by code (with how many
+  are not reviewed, and a "Confirm suggestions" button); its mapping covers the rest. Confirming
+  a category's mapping, or its suggestions, confirms only the suggestions that decide an entry
+  now, so nothing moves. The bulk remap preview says which entries stay because the state named
+  their federal category or an admin confirmed their suggestion; a remapped category's mapping
+  becomes manual and wins over its entries' unreviewed suggestions.
 - A changed state federal category shows in the draft diff as a category change: the label
   becomes "Category (state's federal category: …)".
 
@@ -370,6 +408,12 @@ category_mappings   id, state_id, state_category, state_subcategory, federal_cat
                     method ('auto'|'manual'), confidence, mapped_by, mapped_at
 chapter_mappings    state_id, chapter (1–22), federal_category, mapped_by, mapped_at
                     (ICD-10-CM chapter overrides; PK state_id + chapter)
+entry_federal_suggestions
+                    entry_id (FK entries, ON DELETE CASCADE), federal_category (law categories),
+                    level ('exact'|'category3'|'chapter'), reference_state_id (FK states; the
+                    first by id when several agree), reviewed (0/1), reviewed_by, reviewed_at
+                    (suggestions by code; PK entry_id + federal_category; migration 0017; rows of
+                    older versions stay for rollback; in the full backup, as it holds reviews)
 
 ref_codes           code_system, code_norm, description, parent_norm, chapter, billable,
                     valid_from, valid_to  (ICD-10-CM and HCPCS Level II only, from public-domain

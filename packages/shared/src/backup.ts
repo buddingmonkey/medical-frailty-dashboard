@@ -48,6 +48,7 @@ export const BACKUP_TABLES = [
   'entries',
   'category_mappings',
   'chapter_mappings',
+  'entry_federal_suggestions',
   'unified_categories',
   'unified_ccsr',
   'unified_mappings',
@@ -227,6 +228,8 @@ export const fullBackupSchema = z.object({
     entries: z.array(backupEntryRowSchema),
     category_mappings: z.array(backupCategoryMappingSchema.loose()),
     chapter_mappings: z.array(backupChapterMappingSchema.loose()),
+    // Added with migration 0017: an older backup has none.
+    entry_federal_suggestions: z.array(anyRow).default([]),
     unified_categories: z.array(anyRow),
     unified_ccsr: z.array(anyRow),
     unified_mappings: z.array(anyRow),

@@ -4,7 +4,10 @@ import {
   type FederalCategory,
   federalCategories,
   decodeStateFederal,
+  decodeSuggestion,
+  diffSuggestions,
   federalCategoryList,
+  federalRuleOf,
   icd10cmChapterOf,
   icd10cmChapters,
   mappingKey,
@@ -16,13 +19,25 @@ import {
   remapSaveSchema,
   sha256Hex,
   stateCategoriesResponseSchema,
+  suggestionConfirmSchema,
+  suggestionRunPreviewSchema,
+  suggestionRunSaveSchema,
 } from '@mfcd/shared'
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
 import { createDb, type Db } from '../../db/client'
-import { stateFederalSql, unifiedParentsSql } from '../../db/federal'
+import { stateFederalSql, suggestionSql, unifiedParentsSql } from '../../db/federal'
+import {
+  applyingSuggestionIds,
+  confirmSuggestionStatements,
+  loadSuggestionReference,
+  mappingLookups,
+  planSuggestions,
+  planToken,
+  writeSuggestionPlan,
+} from '../../db/federal-suggestions'
 import { bumpDataVersion } from '../../db/meta'
 import { categoryMappings, chapterMappings, datasetVersions, entries } from '../../db/schema'
 import type { AppEnv } from '../../types'
@@ -73,6 +88,7 @@ async function remapPreview(
             stateSubcategory: entries.stateSubcategory,
             stateFederal: stateFederalSql,
             parents: unifiedParentsSql,
+            suggestion: suggestionSql,
           })
           .from(entries)
           .where(eq(entries.versionId, state.publishedVersionId))
@@ -108,17 +124,17 @@ async function remapPreview(
       .where(eq(chapterMappings.stateId, state.id))
       .orderBy(chapterMappings.chapter),
   ])
-  const mappings = new Map(
-    mappingRows.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m.federalCategory]),
-  )
+  const { mappings, manualKeys } = mappingLookups(mappingRows)
   const overrides = new Map(overrideRows.map((o) => [o.chapter, o.federalCategory]))
   const result = previewRemap({
-    entries: published.map(({ stateFederal, parents, ...e }) => ({
+    entries: published.map(({ stateFederal, parents, suggestion, ...e }) => ({
       ...e,
       unifiedParents: federalCategoryList(parents),
       stateFederalCategories: decodeStateFederal(stateFederal),
+      suggestion: decodeSuggestion(suggestion),
     })),
     mappings,
+    manualKeys,
     chapterOverrides: overrides,
     changes,
     draftGroups: drafts,
@@ -137,6 +153,21 @@ async function remapPreview(
     ),
   )
   return { preview: remapPreviewResponseSchema.parse({ token, ...result }), mappings, overrides }
+}
+
+/** Entries shown in the re-run preview's sample. */
+const SUGGESTION_SAMPLE = 20
+
+/** The preview of "Re-run automatic suggestions", with its token. */
+async function suggestionRunPreview(db: Db, stateId: string) {
+  const { reference, names } = await loadSuggestionReference(db)
+  const plan = await planSuggestions(db, stateId, reference)
+  return suggestionRunPreviewSchema.parse({
+    token: await planToken(plan, names),
+    reference: names,
+    entries: plan.entries,
+    ...diffSuggestions(plan.changes, SUGGESTION_SAMPLE),
+  })
 }
 
 export const categoriesRoute = new Hono<AppEnv>()
@@ -204,6 +235,86 @@ export const categoriesRoute = new Hono<AppEnv>()
       by.set(key, p)
     }
 
+    const mappings = await db
+      .select()
+      .from(categoryMappings)
+      .where(eq(categoryMappings.stateId, state.id))
+    const byKey = new Map(mappings.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m]))
+    const overrides = await db
+      .select()
+      .from(chapterMappings)
+      .where(eq(chapterMappings.stateId, state.id))
+    const overrideBy = new Map(overrides.map((o) => [o.chapter, o]))
+
+    // Published entries whose federal categories come from a suggestion by code (rules 4 and
+    // 6), grouped so the rule runs once per kind of entry, not once per entry.
+    const withSuggestion =
+      state.publishedVersionId === null
+        ? []
+        : await db
+            .select({
+              category: entries.stateCategory,
+              subcategory: entries.stateSubcategory,
+              codeSystem: entries.codeSystem,
+              icd: icdCategory,
+              stateFederal: stateFederalSql,
+              parents: unifiedParentsSql,
+              suggestion: suggestionSql,
+              n: count(),
+            })
+            .from(entries)
+            .where(
+              and(
+                eq(entries.versionId, state.publishedVersionId),
+                sql`EXISTS (SELECT 1 FROM entry_federal_suggestions s WHERE s.entry_id = ${entries.id})`,
+              ),
+            )
+            .groupBy(
+              entries.stateCategory,
+              entries.stateSubcategory,
+              entries.codeSystem,
+              icdCategory,
+              stateFederalSql,
+              unifiedParentsSql,
+              suggestionSql,
+            )
+    const lookups = mappingLookups(mappings)
+    const overrideMap = new Map(overrides.map((o) => [o.chapter, o.federalCategory]))
+    const suggestedBy = new Map<
+      string,
+      { entries: number; pending: number; federal: Set<FederalCategory>; names: Set<string> }
+    >()
+    for (const r of withSuggestion) {
+      const suggestion = decodeSuggestion(r.suggestion)
+      const { rule, categories: federal } = federalRuleOf(
+        {
+          codeSystem: r.codeSystem,
+          codeNorm: r.icd,
+          stateCategory: r.category,
+          stateSubcategory: r.subcategory,
+          stateFederalCategories: decodeStateFederal(r.stateFederal),
+          suggestion,
+        },
+        federalCategoryList(r.parents),
+        lookups.mappings,
+        overrideMap,
+        lookups.manualKeys,
+      )
+      if (rule !== 'suggested' && rule !== 'suggestedReviewed') continue
+      const key = `${r.category}\u0000${r.subcategory}`
+      const t = suggestedBy.get(key) ?? {
+        entries: 0,
+        pending: 0,
+        federal: new Set<FederalCategory>(),
+        names: new Set<string>(),
+      }
+      t.entries += r.n
+      if (rule === 'suggested') t.pending += r.n
+      for (const f of federal) t.federal.add(f)
+      for (const n of suggestion?.referenceNames ?? []) t.names.add(n)
+      suggestedBy.set(key, t)
+    }
+
     const categories = new Map<
       string,
       {
@@ -239,17 +350,6 @@ export const categoriesRoute = new Hono<AppEnv>()
     add(published, 'publishedEntries')
     add(inDrafts, 'draftEntries')
 
-    const mappings = await db
-      .select()
-      .from(categoryMappings)
-      .where(eq(categoryMappings.stateId, state.id))
-    const byKey = new Map(mappings.map((m) => [mappingKey(m.stateCategory, m.stateSubcategory), m]))
-    const overrides = await db
-      .select()
-      .from(chapterMappings)
-      .where(eq(chapterMappings.stateId, state.id))
-    const overrideBy = new Map(overrides.map((o) => [o.chapter, o]))
-
     return c.json(
       stateCategoriesResponseSchema.parse({
         categories: [...categories.values()]
@@ -263,12 +363,19 @@ export const categoriesRoute = new Hono<AppEnv>()
             const auto = autoMapCategory(cat.stateCategory, cat.stateSubcategory)
             const p = placedBy.get(`${cat.stateCategory}\u0000${cat.stateSubcategory}`)
             const st = statedBy.get(`${cat.stateCategory}\u0000${cat.stateSubcategory}`)
+            const sg = suggestedBy.get(`${cat.stateCategory}\u0000${cat.stateSubcategory}`)
             return {
               ...cat,
               statedEntries: st?.n ?? 0,
               statedFederal: federalCategories.filter((f) => st?.federal.has(f) === true),
               placedEntries: p?.n ?? 0,
               placedFederal: federalCategories.filter((f) => p?.federal.has(f) === true),
+              codeSuggested: {
+                entries: sg?.entries ?? 0,
+                pending: sg?.pending ?? 0,
+                federal: federalCategories.filter((f) => sg?.federal.has(f) === true),
+                referenceNames: [...(sg?.names ?? [])].sort(),
+              },
               mapping: m
                 ? {
                     federalCategory: m.federalCategory,
@@ -298,7 +405,9 @@ export const categoriesRoute = new Hono<AppEnv>()
 
   // Confirm mappings (manual), up to 200 at once ("Confirm all guesses"), only when no published
   // entry moves: the stored federal category unchanged, or a category with no published entries
-  // (draft only). Any other change goes through the preview and /remap (M7 step 3): 409.
+  // (draft only). Any other change goes through the preview and /remap (M7 step 3): 409. A
+  // manual mapping wins over unreviewed suggestions by code, so the suggestions that decide an
+  // entry of these categories now are confirmed in the same batch: nothing moves.
   .put('/:stateId/categories', async (c) => {
     const db = createDb(c.env.DB)
     const state = await findStateParam(db, c)
@@ -339,6 +448,11 @@ export const categoriesRoute = new Hono<AppEnv>()
     }
     const actor = actorOf(c)
     const now = new Date().toISOString()
+    const suggested = await applyingSuggestionIds(
+      db,
+      state,
+      new Set(body.data.items.map((item) => mappingKey(item.stateCategory, item.stateSubcategory))),
+    )
     const upserts = body.data.items.map((item) => {
       const values = {
         federalCategory: item.federalCategory,
@@ -369,15 +483,87 @@ export const categoriesRoute = new Hono<AppEnv>()
     await db.batch([
       first,
       ...rest,
+      ...confirmSuggestionStatements(db, suggested, actor, now),
       ...publicChange(db, state.id),
       auditInsert(db, {
         actorEmail: actor,
         action: 'category.map',
         target: `state:${state.id}`,
-        details: { items: body.data.items },
+        details: { items: body.data.items, suggestionsConfirmed: suggested.length },
       }),
     ])
     return c.json({ ok: true })
+  })
+
+  // Suggestions by code, step 1 of "Re-run automatic suggestions": what a run would change for
+  // the state's published entries (read-only; a POST like the remap preview).
+  .post('/:stateId/categories/suggestions/preview', async (c) => {
+    const db = createDb(c.env.DB)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
+    return c.json(await suggestionRunPreview(db, state.id))
+  })
+
+  // Step 2: run it, or 409 when anything changed since the preview. Writes only the difference
+  // (src/db/federal-suggestions.ts); reviewed suggestions, stated categories, placements,
+  // chapter overrides and mappings are never touched.
+  .post('/:stateId/categories/suggestions/run', async (c) => {
+    const db = createDb(c.env.DB)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
+    const body = suggestionRunSaveSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: 'Invalid request' }, 400)
+    const { reference, names } = await loadSuggestionReference(db)
+    const plan = await planSuggestions(db, state.id, reference)
+    if ((await planToken(plan, names)) !== body.data.token) {
+      return c.json({ error: 'The data changed since the preview. Preview again.' }, 409)
+    }
+    const diff = diffSuggestions(plan.changes, 0)
+    const actor = actorOf(c)
+    await writeSuggestionPlan(db, plan, [
+      ...publicChange(db, state.id),
+      auditInsert(db, {
+        actorEmail: actor,
+        action: 'category.suggest',
+        target: `state:${state.id}`,
+        details: {
+          reference: names,
+          gain: diff.gain,
+          change: diff.change,
+          lose: diff.lose,
+          keptReviewed: diff.keptReviewed,
+          byCategory: diff.byCategory,
+        },
+      }),
+    ])
+    return c.json({ ok: true })
+  })
+
+  // "Confirm suggestions": the unreviewed suggestions that decide the federal category of the
+  // published entries in these state categories now. Moves nothing.
+  .post('/:stateId/categories/suggestions/confirm', async (c) => {
+    const db = createDb(c.env.DB)
+    const state = await findStateParam(db, c)
+    if (!state) return notFound(c)
+    const body = suggestionConfirmSchema.safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: 'Invalid categories' }, 400)
+    const keys = new Set(
+      body.data.items.map((item) => mappingKey(item.stateCategory, item.stateSubcategory)),
+    )
+    const ids = await applyingSuggestionIds(db, state, keys)
+    const actor = actorOf(c)
+    const now = new Date().toISOString()
+    await db.batch([
+      auditInsert(db, {
+        actorEmail: actor,
+        action: 'category.suggest.confirm',
+        target: `state:${state.id}`,
+        details: { items: body.data.items, entries: ids.length },
+      }),
+      ...confirmSuggestionStatements(db, ids, actor, now),
+      ...publicChange(db, state.id),
+    ])
+    return c.json({ ok: true, confirmed: ids.length })
   })
 
   // Bulk remap, step 1: what the proposed changes would do (read-only; a POST for the body).

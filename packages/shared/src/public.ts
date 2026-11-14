@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { suggestionFromText } from './federal-suggestions'
 import {
   type CodeSystem,
   codeSystems,
@@ -70,18 +71,30 @@ export const stateCategoriesIntro = (stateName: string): string =>
   'Where the state’s list names a federal category for a code, this site uses it (“Stated by ' +
   'the state”). Otherwise it gives each entry the federal category of the comparison category ' +
   'its code falls in; a code in no comparison category takes the federal category mapped to ' +
-  'the state’s own category. “Not yet reviewed” means this site suggested the mapping automatically and nobody ' +
-  'has checked it yet.'
+  'the state’s own category. Where another state’s list names a federal category for the same ' +
+  'code, or for codes like it, this site may suggest that one instead (“suggested from” that ' +
+  'state’s list). “Not yet reviewed” means this site suggested the mapping automatically and ' +
+  'nobody has checked it yet.'
 
 /** Review status of federal categories the state published itself (Indiana's column). */
 export const STATED_BY_STATE = 'Stated by the state'
 
 /**
  * A state category row's review status (the "Review status" column). "Stated by the state":
- * the state's own list names the federal category (provisional, docs/legal-review.md).
+ * the state's own list names the federal category. `suggestedFrom`: the reference states whose
+ * lists suggested the row's federal category by code, "Not yet reviewed (suggested from
+ * Indiana’s list)". Both provisional (docs/legal-review.md).
  */
-export const reviewStatusText = (confirmed: boolean, stated = false): string =>
-  stated ? STATED_BY_STATE : confirmed ? 'Reviewed' : 'Not yet reviewed (automatic suggestion)'
+export const reviewStatusText = (
+  confirmed: boolean,
+  stated = false,
+  suggestedFrom: readonly string[] = [],
+): string => {
+  if (stated) return STATED_BY_STATE
+  if (confirmed) return 'Reviewed'
+  if (suggestedFrom.length > 0) return `Not yet reviewed (${suggestionFromText(suggestedFrom)})`
+  return 'Not yet reviewed (automatic suggestion)'
+}
 
 /** On the home card when some of a state's mappings are not reviewed. */
 export const MAPPINGS_NOT_REVIEWED_NOTE =
@@ -132,6 +145,11 @@ export const publicStateCategorySchema = z.object({
   confirmed: z.boolean(),
   /** Every entry of the row has this federal category because the state published it. */
   stated: z.boolean(),
+  /**
+   * Not confirmed, and every unconfirmed entry of the row takes this federal category from an
+   * unreviewed suggestion by code: the reference states' names. Left out or empty otherwise.
+   */
+  suggestedFrom: z.array(z.string()).optional(),
   entries: z.number().int().min(0),
 })
 export type PublicStateCategory = z.infer<typeof publicStateCategorySchema>
