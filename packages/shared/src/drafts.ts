@@ -15,6 +15,7 @@ import {
 } from './enums'
 import { MAX_ROWS } from './ingest'
 import type { ReviewFlag, ReviewResult } from './review'
+import { stateFederalCategoriesSchema } from './state-federal'
 
 /** Entries per `POST /api/admin/drafts/:id/rows`: keeps each request well under Workers CPU limits. */
 export const DRAFT_CHUNK = 500
@@ -28,6 +29,7 @@ const reviewFlagSchema = z.enum([
   'system_ambiguous',
   'mixed_wildcard_range',
   'multiline_description',
+  'state_federal_unknown',
 ] satisfies ReviewFlag[])
 
 /** Stored as `entries.attributes_json`. */
@@ -35,7 +37,7 @@ export const entryAttributesSchema = z.object({
   /** False when the source marks the row as not qualifying (GA "Yes/No" = No). */
   included: z.boolean(),
   /** Review flags nobody answered or accepted. */
-  flags: z.array(reviewFlagSchema).max(4),
+  flags: z.array(reviewFlagSchema).max(5),
   notes: text(MAX_CELL_LENGTH).optional(),
   /** The cell the qualification rule read (LA designation `0`). */
   qualificationValue: text(200).optional(),
@@ -60,6 +62,8 @@ export const draftEntrySchema = z.object({
   qualificationBasis: qualificationBasisSchema,
   sourceLocator: text(200),
   attributes: entryAttributesSchema,
+  /** The state's own federal categories for the row (Indiana); left out when it names none. */
+  stateFederalCategories: stateFederalCategoriesSchema.optional(),
 })
 export type DraftEntry = z.infer<typeof draftEntrySchema>
 
@@ -207,8 +211,13 @@ export function toDraftEntries(review: ReviewResult): {
     const attributes: EntryAttributes = { included: row.included, flags: r.openFlags }
     if (row.notes) attributes.notes = row.notes
     if (row.qualificationValue) attributes.qualificationValue = row.qualificationValue
+    const stateFederal =
+      r.stateFederalCategories.length > 0
+        ? { stateFederalCategories: r.stateFederalCategories }
+        : {}
     for (const code of r.codes) {
       entries.push({
+        ...stateFederal,
         codeSystem: code.codeSystem,
         rawCode: code.rawCode,
         codeNorm: code.codeNorm,

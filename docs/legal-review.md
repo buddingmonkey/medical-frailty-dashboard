@@ -225,7 +225,12 @@ Every string below is live and provisional. Please mark any you want changed.
 ### State pages
 
 - Categories intro
-- Review status heading, with "Reviewed" / "Not yet reviewed (automatic suggestion)"
+- Review status heading, with "Reviewed" / "Not yet reviewed (automatic suggestion)" /
+  "Stated by the state" (added 2026-11-13, provisional: the state's own list names the federal
+  category, as Indiana's does)
+- The categories intro sentence "Where the state’s list names a federal category for a code,
+  this site uses it (“Stated by the state”)." (added 2026-11-13, provisional), and the About
+  page's glossary entry for "Stated by the state"
 - Source document date labels
 - The sentences shown for a state with no list on the site
 

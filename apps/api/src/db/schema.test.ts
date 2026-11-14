@@ -130,6 +130,21 @@ describe('schema', () => {
     ).rejects.toThrow(/CHECK constraint failed/)
   })
 
+  it('keeps only the five law categories, each once, as a state’s own federal categories', async () => {
+    const entry = await insertEntry(ids.versionId, ids.docId)
+    const set = (value: string | null) =>
+      db
+        .prepare(`UPDATE entries SET state_federal_categories = ? WHERE id = ?`)
+        .bind(value, entry?.id)
+        .run()
+    for (const ok of [null, 'sud', 'physical_idd_adl,serious_complex_medical']) {
+      await expect(set(ok)).resolves.toBeTruthy()
+    }
+    for (const bad of ['', 'unmapped', 'state_specific', 'sud,sud', 'sud,', ',sud', 'SUD']) {
+      await expect(set(bad)).rejects.toThrow(/CHECK constraint failed/)
+    }
+  })
+
   it('rejects a range entry without an end, and an end on a non-range entry', async () => {
     const sql = `INSERT INTO entries (version_id, source_document_id, code_system, raw_code, code_norm,
                    match_kind, range_end_norm, state_category) VALUES (?, ?, 'cpt', '32851', '32851', ?, ?, 'X')`

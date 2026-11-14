@@ -1,5 +1,6 @@
 import {
   codeSystems,
+  decodeStateFederal,
   type FederalCategory,
   federalCategories,
   federalCategoriesOf,
@@ -14,7 +15,7 @@ import {
 import { asc, count, eq, max, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
-import { placementsReviewedSql, unifiedParentsSql } from './federal'
+import { placementsReviewedSql, stateFederalSql, unifiedParentsSql } from './federal'
 import {
   categoryMappings,
   chapterMappings,
@@ -30,9 +31,10 @@ import {
 // federal categories each one counts under. Reads only through states.published_version_id, so
 // drafts never show. Five queries, all states at once unless `stateId` narrows them.
 //
-// Federal categories (docs/data-model.md, "Federal categories"): an entry counts once under
-// each federal parent of its unified categories, so `byFederalCategory` can add up to more
-// than `totalEntries`; an entry placed nowhere counts under its M2 mapping. Confirmed: every
+// Federal categories (docs/data-model.md, "Federal categories"): an entry the state gave its own
+// federal categories counts under exactly those; else once under each federal parent of its
+// unified categories, so `byFederalCategory` can add up to more than `totalEntries`; an entry
+// placed nowhere counts under its M2 mapping. Confirmed: stated by the state, or every
 // placement reviewed, or, placed nowhere, a manual mapping or a chapter override.
 
 export interface PublicSummaries {
@@ -69,6 +71,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         stateSubcategory: entries.stateSubcategory,
         qualification: entries.qualification,
         icd: icdCategory,
+        stateFederal: stateFederalSql,
         parents: unifiedParentsSql,
         reviewed: placementsReviewedSql,
         n: count(),
@@ -83,6 +86,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         entries.stateSubcategory,
         entries.qualification,
         icdCategory,
+        stateFederalSql,
         unifiedParentsSql,
         placementsReviewedSql,
       ),
@@ -152,7 +156,9 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       codeNorm: g.icd,
       stateCategory: g.stateCategory,
       stateSubcategory: g.stateSubcategory,
+      stateFederalCategories: decodeStateFederal(g.stateFederal),
     }
+    const stated = entry.stateFederalCategories.length > 0
     const parents = federalCategoryList(g.parents)
     const federal = federalCategoriesOf(
       entry,
@@ -166,7 +172,10 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
     p.byQualification[g.qualification] += g.n
 
     let confirmed: boolean
-    if (parents.length > 0) {
+    if (stated) {
+      // The state published the federal category: nothing for an admin to review.
+      confirmed = true
+    } else if (parents.length > 0) {
       // Placed: an admin reviewed every placement (an approved mapping or by_code row).
       confirmed = g.reviewed === 1
     } else {
@@ -186,10 +195,12 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
         stateSubcategory: g.stateSubcategory,
         federalCategory: f,
         confirmed: true,
+        stated: true,
         entries: 0,
       }
       cat.entries += g.n
       if (!confirmed) cat.confirmed = false
+      if (!stated) cat.stated = false
       forState.set(key, cat)
     }
     categories.set(g.stateId, forState)

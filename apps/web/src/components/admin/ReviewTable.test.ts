@@ -19,6 +19,7 @@ const row = (locator: string, rawCode: string, extra: Partial<MappedRow> = {}): 
   qualificationValue: '',
   included: true,
   notes: '',
+  stateFederal: '',
   ...extra,
 })
 
@@ -114,6 +115,35 @@ describe('ReviewTable', () => {
     expect(screen.getByText(/1 row: 1 ready/)).toBeTruthy()
     await user.selectOptions(screen.getByLabelText('Show'), 'Edited')
     expect(within(rowFor('L89.500-L89.509')).getByText('Edited')).toBeTruthy()
+  })
+
+  it('shows the state’s own federal category, and flags text it does not know', async () => {
+    const { user, edits } = setup([
+      row('r1', 'F20.0', { stateFederal: 'Substance use disorder' }),
+      row('r2', 'F20.1', { stateFederal: 'Frailty' }),
+    ])
+    const flagged = rowFor('F20.1')
+    expect(within(flagged).getByText(/State’s federal category not recognized/)).toBeTruthy()
+    expect(within(flagged).getByText('State’s federal category: Frailty')).toBeTruthy()
+    await user.click(within(flagged).getByRole('button', { name: 'Accept' }))
+    expect(edits.value).toEqual({ r2: { accepted: ['state_federal_unknown'] } })
+
+    await user.selectOptions(screen.getByLabelText('Show'), 'All rows')
+    expect(
+      within(rowFor('F20.0')).getByText('State’s federal category: Substance use disorder'),
+    ).toBeTruthy()
+  })
+
+  it('edits the state’s federal category inline', async () => {
+    const { user, edits } = setup([row('r1', 'F20.0', { stateFederal: 'Frailty' })])
+    await user.click(within(rowFor('F20.0')).getByRole('button', { name: /Edit/ }))
+    const form = screen.getByRole('group', { name: 'Edit row r1' })
+    const field = within(form).getByLabelText('State’s federal category')
+    await user.clear(field)
+    await user.type(field, 'Blind or disabled')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+    expect(edits.value).toEqual({ r1: { stateFederal: 'Blind or disabled' } })
+    expect(screen.getByText(/1 row: 1 ready/)).toBeTruthy()
   })
 
   it('cancels an inline edit without changing anything', async () => {

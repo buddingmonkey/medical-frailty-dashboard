@@ -1,4 +1,5 @@
 import {
+  decodeStateFederal,
   type FederalCategory,
   federalCategoriesOf,
   federalCategoryList,
@@ -136,7 +137,7 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
   return rows.map((r) => ({
     ...r.entry,
     federalCategories: federalCategoriesOf(
-      r.entry,
+      { ...r.entry, stateFederalCategories: decodeStateFederal(r.entry.stateFederalCategories) },
       federalCategoryList(r.parents),
       byKey,
       byChapter,

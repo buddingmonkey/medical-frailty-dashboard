@@ -169,6 +169,8 @@ interface Draft {
   category: string
   subcategory: string
   tier: string
+  /** The state's own federal category cell (Indiana). */
+  stateFederal: string
   qualification: Qualification
 }
 const draft = reactive<Draft>({
@@ -178,6 +180,7 @@ const draft = reactive<Draft>({
   category: '',
   subcategory: '',
   tier: '',
+  stateFederal: '',
   qualification: 'unknown',
 })
 
@@ -191,11 +194,19 @@ function startEdit(r: ReviewRow) {
     category: r.row.category,
     subcategory: r.row.subcategory,
     tier: r.row.tier,
+    stateFederal: r.row.stateFederal,
     qualification: r.row.qualification,
   })
 }
 
-const TEXT_FIELDS = ['rawCode', 'description', 'category', 'subcategory', 'tier'] as const
+const TEXT_FIELDS = [
+  'rawCode',
+  'description',
+  'category',
+  'subcategory',
+  'tier',
+  'stateFederal',
+] as const
 
 function saveEdit(r: ReviewRow) {
   const { accepted, includesChildren, dropped } = edits.value[r.key] ?? {}
@@ -352,6 +363,9 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
                 <span v-if="r.row.tier" class="block text-xs text-muted-foreground">{{
                   r.row.tier
                 }}</span>
+                <span v-if="r.row.stateFederal" class="block text-xs text-muted-foreground"
+                  >State’s federal category: {{ r.row.stateFederal }}</span
+                >
               </td>
               <td class="py-1.5 pr-3">{{ qualificationLabels[r.row.qualification] }}</td>
               <td class="space-y-1 py-1.5 pr-3">
@@ -486,6 +500,19 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
                   <div>
                     <label :for="`${id}-e-tier`" class="text-sm">Tier</label>
                     <input :id="`${id}-e-tier`" v-model="draft.tier" :class="inputClass" />
+                  </div>
+                  <div class="md:col-span-3">
+                    <label :for="`${id}-e-federal`" class="text-sm">State’s federal category</label>
+                    <input
+                      :id="`${id}-e-federal`"
+                      v-model="draft.stateFederal"
+                      :aria-describedby="`${id}-e-federal-hint`"
+                      :class="inputClass"
+                    />
+                    <p :id="`${id}-e-federal-hint`" class="mt-1 text-xs text-muted-foreground">
+                      One of the five federal categories in the law, as the state wrote it. Put “;”
+                      between two. Leave empty when the state names none.
+                    </p>
                   </div>
                   <div class="flex gap-2 md:col-span-3">
                     <button

@@ -118,7 +118,8 @@ cannot publish rows that changed after the checks ran.
   read counted as invalid. Open review flags travel in `attributes.flags`; GA's "Yes/No" in
   `attributes.included`; the rationale in `attributes.notes`; LA's raw designation in
   `attributes.qualificationValue`. Column roles `Included (Yes/No)` and `Notes / rationale`
-  read these from the file.
+  read these from the file. The role `Federal category (the state's own)` (Indiana) goes to
+  `stateFederalCategories`, stored in `entries.state_federal_categories`.
 - The **source document** is found by the file's SHA-256 among the state's stored files; a
   file not stored yet must be stored on "Source files" first (its title, URL and date are the
   citation). A pasted table picks a stored file by hand.
@@ -201,6 +202,18 @@ on the real GA, LA and MT headers), the admin confirms, and the profile is saved
 header layout (`column_profiles`). The qualification rule is one value for the file, or read
 from the qualification or tier column, each value mapped by the admin; values left "Not set"
 become `unknown`, and the screen lists them.
+
+**Federal category (the state's own)** (role `stateFederal`, added 2026-11-13 for Indiana): for
+a state that publishes, per code, which of the five federal categories it falls under. A header
+like "Federal category" or "Federal categories" is guessed as this role, never as Category.
+`parseStateFederalCell` (`packages/shared/src/state-federal.ts`) reads the cell: parts split on
+";", each matched against the five labels and the law's words, ignoring case and punctuation
+("Blind or disabled", "Substance use disorder", "Disabling mental disorder", "Physical,
+intellectual or developmental disability", "Serious or complex medical condition"). An empty
+cell is none. Text it does not know raises the review flag "State's federal category not
+recognized": edit the cell in the row's Edit form, or Accept, which ignores the state's federal
+category for that row. These categories decide the entry's federal categories ahead of
+everything else (`docs/data-model.md`, "Federal categories").
 
 ## Category auto-mapping
 

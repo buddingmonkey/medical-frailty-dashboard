@@ -199,6 +199,32 @@ describe('/api/admin/drafts', () => {
     expect(JSON.parse(stored[2]?.attributesJson ?? '')).toEqual({ included: false, flags: [] })
   })
 
+  it('stores a state’s own federal categories, and refuses our own two', async () => {
+    const draft = await createDraft()
+    const path = `/api/admin/drafts/${String(draft.id)}`
+    expect((await send('PUT', `${path}/sources/${String(mtSource)}`, source(2))).status).toBe(200)
+    const res = await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [
+        entry('F20.0', { stateFederalCategories: ['physical_idd_adl', 'serious_complex_medical'] }),
+        entry('F31.0'),
+      ],
+    })
+    expect(res.status).toBe(200)
+    const stored = await db.select().from(entries).where(eq(entries.versionId, draft.id))
+    expect(stored.map((e) => e.stateFederalCategories)).toEqual([
+      'physical_idd_adl,serious_complex_medical',
+      null,
+    ])
+    const bad = await send('POST', `${path}/rows`, {
+      sourceDocumentId: mtSource,
+      part: 'Table 1',
+      entries: [{ ...entry('F32.9'), stateFederalCategories: ['unmapped'] }],
+    })
+    expect(bad.status).toBe(400)
+  })
+
   it('starts a source over when it is sent again', async () => {
     const draft = await createDraft()
     const path = `/api/admin/drafts/${String(draft.id)}`

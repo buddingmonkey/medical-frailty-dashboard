@@ -54,8 +54,9 @@ export const publicStateSummarySchema = z.object({
       byFederalCategory: countsOf(federalCategories),
       byQualification: countsOf(qualifications),
       /**
-       * Every entry's federal category was confirmed by an admin: each placement in a unified
-       * category reviewed, or, for an entry placed nowhere, a manual mapping or chapter override.
+       * Every entry's federal category is confirmed: stated by the state (its own federal
+       * category column), or confirmed by an admin (each placement in a unified category
+       * reviewed, or, for an entry placed nowhere, a manual mapping or chapter override).
        */
       mappingsConfirmed: z.boolean(),
     })
@@ -66,14 +67,21 @@ export type PublicStateSummary = z.infer<typeof publicStateSummarySchema>
 /** The words above a state's category table, in the Vue page and the server-rendered HTML. */
 export const stateCategoriesIntro = (stateName: string): string =>
   `How ${stateName}’s own categories line up with the five federal categories in the law. ` +
-  'This site gives each entry the federal category of the comparison category its code falls ' +
-  'in; a code in no comparison category takes the federal category mapped to the state’s own ' +
-  'category. “Not yet reviewed” means this site suggested the mapping automatically and nobody ' +
+  'Where the state’s list names a federal category for a code, this site uses it (“Stated by ' +
+  'the state”). Otherwise it gives each entry the federal category of the comparison category ' +
+  'its code falls in; a code in no comparison category takes the federal category mapped to ' +
+  'the state’s own category. “Not yet reviewed” means this site suggested the mapping automatically and nobody ' +
   'has checked it yet.'
 
-/** A state category row's review status (the "Review status" column). */
-export const reviewStatusText = (confirmed: boolean): string =>
-  confirmed ? 'Reviewed' : 'Not yet reviewed (automatic suggestion)'
+/** Review status of federal categories the state published itself (Indiana's column). */
+export const STATED_BY_STATE = 'Stated by the state'
+
+/**
+ * A state category row's review status (the "Review status" column). "Stated by the state":
+ * the state's own list names the federal category (provisional, docs/legal-review.md).
+ */
+export const reviewStatusText = (confirmed: boolean, stated = false): string =>
+  stated ? STATED_BY_STATE : confirmed ? 'Reviewed' : 'Not yet reviewed (automatic suggestion)'
 
 /** On the home card when some of a state's mappings are not reviewed. */
 export const MAPPINGS_NOT_REVIEWED_NOTE =
@@ -117,10 +125,13 @@ export const publicStateCategorySchema = z.object({
   stateSubcategory: z.string(),
   federalCategory: federalCategorySchema,
   /**
-   * An admin confirmed it: every placement reviewed, or, for entries placed nowhere, a manual
-   * mapping or a chapter override. Else a guess (CCSR group or keyword).
+   * Confirmed: the state stated it, or an admin confirmed it (every placement reviewed, or, for
+   * entries placed nowhere, a manual mapping or a chapter override). Else a guess (CCSR group or
+   * keyword).
    */
   confirmed: z.boolean(),
+  /** Every entry of the row has this federal category because the state published it. */
+  stated: z.boolean(),
   entries: z.number().int().min(0),
 })
 export type PublicStateCategory = z.infer<typeof publicStateCategorySchema>

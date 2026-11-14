@@ -235,6 +235,14 @@ export const entries = sqliteTable(
     sourceLocator: text('source_locator'),
     /** The table or sheet of the source the entry came from (`draft_parts.part`). */
     sourcePart: text('source_part').notNull().default(''),
+    /**
+     * The state's own federal categories for this row (Indiana's "Federal category" column):
+     * law categories in federal order joined by ",", NULL when the state names none
+     * (`encodeStateFederal`). They decide the entry's federal categories ahead of everything
+     * else (docs/data-model.md, "Federal categories"). Migration 0016 adds a column CHECK that
+     * Drizzle cannot express: only the five law categories, each once.
+     */
+    stateFederalCategories: text('state_federal_categories'),
   },
   (t) => [
     index('entries_version_code_idx').on(t.versionId, t.codeNorm),

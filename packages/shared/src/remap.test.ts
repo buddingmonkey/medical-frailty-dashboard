@@ -75,6 +75,32 @@ describe('previewRemap', () => {
     ])
   })
 
+  it('leaves entries whose state published their federal category where they are', () => {
+    const preview = previewRemap({
+      entries: [
+        { ...entry('F20.0', 'SMI', ['serious_complex_medical']), stateFederalCategories: ['sud'] },
+        entry('F31.0', 'SMI'),
+      ],
+      mappings,
+      chapterOverrides: new Map(),
+      changes: {
+        categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
+        chapters: [],
+      },
+      draftGroups: [],
+    })
+    const [change] = preview.changes
+    expect(change).toMatchObject({
+      entries: 2,
+      stated: { n: 1, federal: ['sud'] },
+      placed: { n: 0, federal: [] },
+      movingTotal: 1,
+    })
+    expect(change && remapChangeSentences(change)).toContain(
+      '1 stays in Substance use disorder because the state’s list names that federal category.',
+    )
+  })
+
   it('counts entries already in the target, and the public totals before and after', () => {
     const preview = previewRemap({
       entries,

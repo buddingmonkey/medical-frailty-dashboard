@@ -24,6 +24,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 150,
       placedFederal: ['disabling_mental_disorder', 'serious_complex_medical'],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: {
         federalCategory: 'disabling_mental_disorder',
         method: 'auto',
@@ -40,6 +42,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: {
         federalCategory: 'sud',
         method: 'manual',
@@ -56,6 +60,8 @@ const data = {
       draftEntries: 2,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 4,
+      statedFederal: ['blind_or_disabled'],
       mapping: null,
       suggestion: null,
     },
@@ -68,6 +74,8 @@ const data = {
       draftEntries: 3,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: null,
       suggestion: { federalCategory: 'state_specific', keyword: 'tier', confidence: 0.5 },
     },
@@ -80,6 +88,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: null,
       suggestion: {
         federalCategory: 'serious_complex_medical',
@@ -105,6 +115,7 @@ const previewBody = (token: string) => ({
       movingTotal: 50,
       already: 0,
       alreadyIn: [],
+      stated: { n: 0, federal: [] },
       placed: { n: 150, federal: ['serious_complex_medical'] },
       chapterOverride: [],
       sample: [
@@ -128,6 +139,7 @@ const previewBody = (token: string) => ({
       movingTotal: 10,
       already: 0,
       alreadyIn: [],
+      stated: { n: 0, federal: [] },
       placed: { n: 0, federal: [] },
       chapterOverride: [],
       sample: [],
@@ -208,6 +220,15 @@ describe('/admin/categories', () => {
       '150 follow their unified categories: Disabling mental disorder; Serious or complex medical condition',
     )
     expect(rowOf(table, 'SUD').textContent).not.toContain('unified')
+  })
+
+  it('says which entries the state gave their own federal category', async () => {
+    fakeApi()
+    const table = await open()
+    expect(rowOf(table, 'Miscellaneous').textContent).toContain(
+      '4 stated by the state: Blind or disabled',
+    )
+    expect(rowOf(table, 'SMI').textContent).not.toContain('stated by the state')
   })
 
   it('confirms a stored guess at once, since no entry moves', async () => {

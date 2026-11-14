@@ -262,9 +262,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Federal categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Each state names its own categories. A code in a published unified category counts under
-        that unified category’s federal category. For codes in no unified category, map each state
-        category to one of the H.R.1 federal categories here.
+        Each state names its own categories. When the state’s list names a federal category for a
+        code, the code counts under that one (“stated by the state”), and nothing here changes it.
+        Otherwise a code in a published unified category counts under that unified category’s
+        federal category. For codes in no unified category, map each state category to one of the
+        H.R.1 federal categories here.
       </p>
       <p class="max-w-prose text-muted-foreground">
         When a list is published, a new state category whose name matches a keyword gets a guessed
@@ -387,6 +389,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                   {{ n(c.publishedEntries) }}
                   <span v-if="c.draftEntries > 0" class="block text-xs text-muted-foreground"
                     >{{ n(c.draftEntries) }} in drafts</span
+                  >
+                  <span v-if="c.statedEntries > 0" class="block text-xs text-muted-foreground"
+                    >{{ n(c.statedEntries) }} stated by the state:
+                    {{ federalCategoriesText(c.statedFederal) }}</span
                   >
                   <span v-if="c.placedEntries > 0" class="block text-xs text-muted-foreground"
                     >{{ n(c.placedEntries) }} follow their unified categories:

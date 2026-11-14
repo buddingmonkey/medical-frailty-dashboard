@@ -248,6 +248,36 @@ describe('diff', () => {
     })
   })
 
+  it('shows a changed state federal category as a category change (Indiana re-upload)', () => {
+    const published = [entry('F200', { stateCategory: 'Schizophrenia' }), entry('F201')]
+    const draft = [
+      entry('F200', { stateCategory: 'Schizophrenia', stateFederalCategories: ['sud'] }),
+      entry('F201'),
+    ]
+    const { diff } = runChecks(
+      base({
+        draft: {
+          entries: draft,
+          invalidRowCount: 0,
+          incompleteSources: [],
+          sourceSha256s: [],
+          namedStateIds: [],
+        },
+        published: { entries: published, sourceSha256s: [] },
+      }),
+    )
+    expect(diff.totals.categoryChanged).toBe(1)
+    expect(diff.changes).toEqual([
+      {
+        kind: 'category_changed',
+        codeSystem: 'icd10cm',
+        code: 'F20.0',
+        before: 'Schizophrenia',
+        after: 'Schizophrenia (state’s federal category: Substance use disorder)',
+      },
+    ])
+  })
+
   it('treats a range and an exact code with the same start as different codes', () => {
     const published = [entry('32851', { codeSystem: 'cpt' })]
     const draft = [entry('32851', { codeSystem: 'cpt', matchKind: 'range', rangeEndNorm: '32854' })]

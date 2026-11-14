@@ -33,7 +33,9 @@ show the new citation right away.
 2. If the file has several tables (Nebraska: diagnoses, then a CPT/HCPCS page) or sheets, the
    **Table** list shows them. Map and send each one; they go to the same draft.
 3. **Columns:** check what each column "means". The guess is usually right; fix it where two
-   columns share a name (Montana: the first "Category" is the tier).
+   columns share a name (Montana: the first "Category" is the tier). A column that names one of
+   the five federal categories per code (Indiana's "Federal category") is **Federal category
+   (the state's own)**, not Category.
 4. **Does a code qualify on its own?** One value for the whole file, or per value of a column
    (Louisiana's 0/1/2 "Code Designation"; Montana's tier). Pick "The state says so" or
    "Inferred by us" honestly.

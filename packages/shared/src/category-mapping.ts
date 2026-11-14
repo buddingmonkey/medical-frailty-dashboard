@@ -4,7 +4,9 @@ import { type CodeSystem, type FederalCategory, federalCategories } from './enum
 import { icd10cmChapterOf } from './icd-chapters'
 
 // Which federal categories an entry counts under (docs/data-model.md, "Federal categories").
-// One rule for the admin screens and the public pages (project lead, 2026-11-02: "Federal
+// One rule for the admin screens and the public pages. First, an entry whose state published
+// its federal categories (Indiana's column, `entries.state_federal_categories`; project lead,
+// 2026-11-13) counts under exactly those. Else (project lead, 2026-11-02: "Federal
 // category should be pre mapped"): the federal parents of the published unified categories
 // the entry is placed in (`entry_unified`), each once, so a code in two unified categories
 // with different parents counts under both. An entry placed nowhere falls back to the M2 rule:
@@ -36,8 +38,9 @@ function mappedFederalCategory(
 }
 
 /**
- * The federal categories an entry counts under, in federal order: the parents of its unified
- * categories (`unifiedParents`, repeats allowed), else the M2 mapping as the only one.
+ * The federal categories an entry counts under, in federal order: the ones the state published
+ * for it (`stateFederalCategories`), else the parents of its unified categories
+ * (`unifiedParents`, repeats allowed), else the M2 mapping as the only one.
  */
 export function federalCategoriesOf(
   entry: {
@@ -45,11 +48,18 @@ export function federalCategoriesOf(
     codeNorm: string
     stateCategory: string
     stateSubcategory: string
+    /** The state's own federal categories for the entry; empty or left out: none. */
+    stateFederalCategories?: readonly FederalCategory[]
   },
   unifiedParents: readonly FederalCategory[],
   mappings: ReadonlyMap<string, FederalCategory>,
   chapterOverrides: ReadonlyMap<number, FederalCategory>,
 ): FederalCategory[] {
+  const stated = entry.stateFederalCategories ?? []
+  if (stated.length > 0) {
+    const listed = new Set(stated)
+    return federalCategories.filter((f) => listed.has(f))
+  }
   if (unifiedParents.length > 0) {
     const parents = new Set(unifiedParents)
     return federalCategories.filter((f) => parents.has(f))
@@ -101,8 +111,15 @@ export const stateCategoriesResponseSchema = z.object({
       publishedEntries: z.number().int().nonnegative(),
       draftEntries: z.number().int().nonnegative(),
       /**
-       * Published entries placed in a published unified category: their federal categories
-       * are those categories' parents (`placedFederal`), and the mapping here does not apply.
+       * Published entries whose state published their federal categories (`statedFederal`,
+       * "Stated by the state"): neither placements nor the mapping here apply to them.
+       */
+      statedEntries: z.number().int().nonnegative(),
+      statedFederal: z.array(z.enum(federalCategories)),
+      /**
+       * Other published entries placed in a published unified category: their federal
+       * categories are those categories' parents (`placedFederal`), and the mapping here does
+       * not apply.
        */
       placedEntries: z.number().int().nonnegative(),
       placedFederal: z.array(z.enum(federalCategories)),

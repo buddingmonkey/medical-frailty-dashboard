@@ -47,11 +47,15 @@ Plus two of our own:
 `federalCategoriesOf()` in `packages/shared/src/category-mapping.ts`, one rule for admin and
 public pages):
 
-1. **Placed entries** (rows in `entry_unified`, below): the distinct federal parents
+1. **Entries the state gave federal categories** (`entries.state_federal_categories`, project
+   lead 2026-11-13; Indiana publishes one per code, 3 rows name two): exactly those, ahead of
+   everything below. Only the five law categories; never `state_specific` or `unmapped`.
+   Read by the ingest column role "Federal category (the state's own)" (`docs/ingestion.md`).
+2. **Placed entries** (rows in `entry_unified`, below): the distinct federal parents
    (`unified_categories.federal_category`) of the **published** unified categories the entry is
    placed in. A code in two unified categories with different parents counts under **both**.
    Admins manage only state → unified; each unified category's parent is fixed.
-2. **Entries placed nowhere** fall back to the M2 rule: an ICD-10-CM chapter override of the
+3. **Entries placed nowhere** fall back to the M2 rule: an ICD-10-CM chapter override of the
    state (`chapter_mappings`) wins, then the mapping of the entry's state category
    (`category_mappings`), else `unmapped`.
 
@@ -66,14 +70,21 @@ What this means where counts are shown:
   `federalCategories` (a list). The code-table CSV's per-state column likewise.
 - The code table (`/compare/codes`) shows an entry in the table of **any** of its federal
   categories; "filed under" names the state's category, or the federal labels joined by `; `.
-- **Confirmed** (state pages, `mappingsConfirmed`): a placed entry is confirmed when every one of
-  its placements is reviewed (`entry_unified.reviewed`); an unplaced one when its M2 mapping is
+- **Confirmed** (state pages, `mappingsConfirmed`): an entry with state-published federal
+  categories is always confirmed, and its category rows show "Stated by the state" (`stated` in
+  the API, provisional wording) when every entry in the row is stated. Otherwise a placed entry is
+  confirmed when every one of its placements is reviewed (`entry_unified.reviewed`); an unplaced one when its M2 mapping is
   `manual` or a chapter override applies. A state's mappings are confirmed when all its entries
   are.
-- Public reads stay lookups: two correlated subqueries per entry on `entry_unified` joined to
+- Public reads stay lookups: the entry's own `state_federal_categories` column
+  (`stateFederalSql`), plus two correlated subqueries per entry on `entry_unified` joined to
   `unified_categories` (`apps/api/src/db/federal.ts`), never CCSR work per request.
-- The admin categories screen shows, per state category, how many published entries follow their
-  unified categories and under which federal categories; its mapping covers the rest.
+- The admin categories screen shows, per state category, how many published entries the state
+  gave federal categories ("stated by the state") and how many follow their unified categories,
+  and under which federal categories; its mapping covers the rest. The bulk remap preview says
+  which entries stay because the state named their federal category.
+- A changed state federal category shows in the draft diff as a category change: the label
+  becomes "Category (state's federal category: …)".
 
 ## Unified categories (M5)
 
@@ -349,7 +360,11 @@ entries             id, version_id, code_system, raw_code, code_norm, match_kind
                     qualification ('standalone'|'needs_support'|'supporting_only'|'unknown'),
                     qualification_basis ('published'|'inferred'), 
                     source_document_id, source_locator (page/sheet/row),
-                    source_part (the table or sheet: `draft_parts.part`)
+                    source_part (the table or sheet: `draft_parts.part`),
+                    state_federal_categories (the state's own federal categories for the row,
+                    e.g. Indiana's "Federal category" column: law categories in federal order
+                    joined by ",", NULL for none; a column CHECK, migration 0016, allows only
+                    the five law categories, each once)
 
 category_mappings   id, state_id, state_category, state_subcategory, federal_category,
                     method ('auto'|'manual'), confidence, mapped_by, mapped_at
