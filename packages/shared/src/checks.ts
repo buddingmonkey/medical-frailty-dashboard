@@ -111,9 +111,13 @@ export interface CheckReport {
 /** One code, wildcard or range, whatever category it sits under. */
 const codeKey = (e: CheckEntry) =>
   [e.codeSystem, e.matchKind, e.codeNorm, e.rangeEndNorm ?? ''].join('|')
+/** The state's own category, without its federal category (the "category missing" check). */
+const stateCategoryLabel = (e: CheckEntry) =>
+  e.stateSubcategory ? `${e.stateCategory} / ${e.stateSubcategory}` : e.stateCategory
+
 /** The state's category, and its own federal category when it names one (so a change shows). */
 function categoryLabel(e: CheckEntry): string {
-  const label = e.stateSubcategory ? `${e.stateCategory} / ${e.stateSubcategory}` : e.stateCategory
+  const label = stateCategoryLabel(e)
   const federal = e.stateFederalCategories ?? []
   return federal.length === 0
     ? label
@@ -291,8 +295,8 @@ export function runChecks(input: CheckInput): CheckReport {
     lostSystems.length,
   )
 
-  const draftCategories = new Set(entries.map(categoryLabel))
-  const lostCategories = sortedUnique(prior.map(categoryLabel)).filter(
+  const draftCategories = new Set(entries.map(stateCategoryLabel))
+  const lostCategories = sortedUnique(prior.map(stateCategoryLabel)).filter(
     (c) => !draftCategories.has(c),
   )
   add(

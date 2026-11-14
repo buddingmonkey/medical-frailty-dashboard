@@ -25,6 +25,20 @@ ingest it or whether it needs the AI cleanup flow, and load the Tier 1 codes to 
 5. Read and map, review, draft and publish ran locally with no code changes: 127 decisions
    made in two bulk actions, 4,250 of 4,250 rows ready, all 12 checks passed.
 6. The project lead loaded the same CSV on production through the admin screens.
+7. The project lead approved reading the state's own federal category column. A builder added
+   the `stateFederal` column role, `entries.state_federal_categories` (migration 0016), and
+   rule 1 "Stated by the state".
+8. The project lead asked to use Indiana's list to sort other states' unclassified codes by
+   code. A second builder added per-code suggestions (migration 0017,
+   `entry_federal_suggestions`). They match the exact code, then the 3-character category,
+   then the chapter. The chapter step runs only where at least 90% of Indiana's codes (at least
+   20) share one category, and never for F codes. The builder also added an admin "Re-run
+   automatic suggestions" button with a preview. It ranked a *reviewed* suggestion above a
+   manual category mapping. Otherwise "Confirm all guesses" would turn auto mappings into
+   manual ones and hide the suggestions just confirmed. The lead agreed.
+9. A local trial found a bug: re-uploading Indiana with the federal column mapped made the
+   "categories missing" check list all 159 categories. The check's label included the
+   federal category. The lead fixed it, test first.
 
 ## Decisions
 | Decision | Why | Who decided |
@@ -52,9 +66,21 @@ ingest it or whether it needs the AI cleanup flow, and load the Tier 1 codes to 
 - 4,250 entries, 159 state categories, 0 rows that cannot be read, 0 codes outside the CMS
   lists.
 - After publishing: 2,319 entries "Not yet classified" for federal category.
+- Re-upload with the federal column (local): 0 entries "Not yet classified" for Indiana.
+- Re-run suggestions (local seed, up to 300 real entries per state): GA 272, LA 114, MT 193,
+  NE 231 entries gained a suggestion. Public counts moved little, because most of those
+  entries were already classified by higher rules. LA's "Not yet classified" fell from 29 to
+  26. NE's 36 stayed: they are CPT and HCPCS codes, and Indiana lists only diagnoses.
+- Montana's "State's own category" fell from 44 to 18. Indiana's suggestions outrank the
+  unreviewed auto mapping of Tier 2 "Frailty indicators". Confirm that mapping by hand to
+  keep it.
 - AI cost: not measured. Hosting cost: none added.
 
 ## Open threads
 - Map Indiana's categories on production.
-- The project lead chose to read the state's own federal category column (being built on
-  `state-federal-category`), and not to note on the site that Tier 2 has no codes.
+- After the release on production: re-upload Indiana with "Federal category" mapped to the new
+  role, then press "Re-run automatic suggestions" for GA, LA, MT and NE. Check Montana's
+  Tier 2 mapping.
+- Tech lesson: in a one-table drizzle query, `${entries.id}` placed directly in a selected
+  field is written without its table name. Inside a subquery that joins `states`, it matched
+  the wrong `id`. Nest the fragment.

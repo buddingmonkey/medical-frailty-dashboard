@@ -140,6 +140,18 @@ describe('runChecks', () => {
     expect(check?.message).toContain('SUD')
   })
 
+  it('does not call a category lost when only the state’s federal category is new', () => {
+    // Indiana re-uploaded with its "Federal category" column mapped (2026-11-13): every
+    // category was listed as missing because the label carried the federal category.
+    const input = base()
+    input.draft = {
+      ...input.draft,
+      entries: codes(100).map((e) => ({ ...e, stateFederalCategories: ['sud'] as const })),
+    }
+    const check = runChecks(input).checks.find((c) => c.id === 'category_missing')
+    expect(check).toMatchObject({ triggered: false })
+  })
+
   it('asks for confirmation when more than 10% of ICD-10-CM codes are not in ref_codes', () => {
     const input = base()
     input.knownIcd10cm = new Set(input.draft.entries.slice(0, 89).map((e) => e.codeNorm)) // 11 unknown
