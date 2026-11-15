@@ -76,6 +76,7 @@ const georgia: PublicStateDetail = {
       stateSubcategory: 'Psychosis',
       federalCategory: 'disabling_mental_disorder',
       confirmed: true,
+      stated: false,
       entries: 47,
     },
     {
@@ -83,6 +84,7 @@ const georgia: PublicStateDetail = {
       stateSubcategory: '',
       federalCategory: 'unmapped',
       confirmed: false,
+      stated: false,
       entries: 6000,
     },
   ],
@@ -148,6 +150,25 @@ describe('/states/:slug', () => {
       within(counts).getByRole('row', { name: 'Serious or complex medical condition 10' }),
     ).toBeTruthy()
     expect(screen.getByText(FEDERAL_OVERLAP_NOTE)).toBeTruthy()
+  })
+
+  it('marks federal categories the state published itself as stated by the state', async () => {
+    const stated = {
+      stateCategory: 'Leukemia',
+      stateSubcategory: '',
+      federalCategory: 'serious_complex_medical' as const,
+      confirmed: true,
+      stated: true,
+      entries: 12,
+    }
+    serve('ga', { ...georgia, categories: [stated] })
+
+    await renderRoute('/states/ga')
+
+    const cats = await screen.findByRole('table', { name: 'Georgia’s categories' })
+    const [row] = within(cats).getAllByRole('row').slice(1)
+    expect(row?.textContent).toContain('Stated by the state')
+    expect(row?.textContent).not.toContain('Reviewed')
   })
 
   it('shows the summary, counts, categories, sources, versions and notes', async () => {

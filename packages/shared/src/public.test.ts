@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { codeSystems, federalCategories } from './enums'
-import { federalCountsOverlap, publicStateSummarySchema, zeroCounts } from './public'
+import {
+  federalCountsOverlap,
+  publicStateSummarySchema,
+  reviewStatusText,
+  zeroCounts,
+} from './public'
 
 describe('public state summary', () => {
   it('zeroCounts has a zero for every value', () => {
@@ -39,5 +44,16 @@ describe('federalCountsOverlap', () => {
     const counts = { ...zeroCounts(federalCategories), sud: 3, serious_complex_medical: 2 }
     expect(federalCountsOverlap({ totalEntries: 5, byFederalCategory: counts })).toBe(false)
     expect(federalCountsOverlap({ totalEntries: 4, byFederalCategory: counts })).toBe(true)
+  })
+})
+
+describe('reviewStatusText', () => {
+  it('names the reference state of an unreviewed suggestion by code', () => {
+    expect(reviewStatusText(false, false, ['Indiana'])).toBe(
+      'Not yet reviewed (suggested from Indiana’s list)',
+    )
+    expect(reviewStatusText(false)).toBe('Not yet reviewed (automatic suggestion)')
+    expect(reviewStatusText(true, false, ['Indiana'])).toBe('Reviewed')
+    expect(reviewStatusText(false, true, ['Indiana'])).toBe('Stated by the state')
   })
 })

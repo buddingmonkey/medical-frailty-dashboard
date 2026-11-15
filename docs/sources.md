@@ -122,6 +122,46 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   (1.9%), e.g. `F30.0`, `M23.1`, `O75.7`, `R57.2`, `S06.7`; several look like WHO ICD-10 codes.
   189 are header (non-billable) codes.
 
+## Indiana (IN)
+
+| Document | Pages | Notes |
+| --- | --- | --- |
+| [Indiana Medicaid Medical Frailty](https://www.in.gov/fssa/hip/hip-work-requirements/medical-frailty) (FSSA, HIP work requirements) | Web page | `dcterms.modified` 2026-11-04. The code list is **HTML tables on the page**: no PDF or Excel. Sent by an advocate on 2026-11-13 |
+
+- **Three tiers.** Tier 1 "Diagnosis-Based": the page says its tables list ICD diagnoses
+  that "may qualify independently". Tier 2 "Evidence-Based": a diagnosis **plus**
+  utilization evidence (treatment, medication, DME, setting, repeated services). Tier 3:
+  individual clinical review by State staff. **Only Tier 1 has codes.** Tier 2 is described
+  by federal category, with no CPT, HCPCS or DME codes published.
+- Behavioral health diagnoses on their own are **not** Tier 1 (the page says so). They go
+  through Tier 2. The F-chapter Tier 1 codes are substance use disorders plus a few
+  intellectual disability codes.
+- **Tables:** 21, one per ICD-10 chapter. Columns: `Diagnosis code | Description |
+  High-level condition | Federal category`. Codes have **no dots** (`C9021`). 159 high-level
+  conditions, kept as published (including the typo "Acohol-Related Disorders"). The federal
+  category is the state's own: one of the five, and 3 rows name two, separated by "; ".
+- **The counts on the page do not match its tables.** The index says 4,288 codes (F chapter
+  430, R chapter 121). The tables hold 4,250 unique codes (F 393, R 120). Checked against the
+  raw HTML (2026-11-13), so the parser is not dropping rows.
+- **Every code is in ICD-10-CM FY2027.** All 28 bare 3-character codes (`C61`, `F71`) are
+  billable codes with no children. The page says inclusion is code-specific ("only the codes
+  shown in the tables are included"), so they are loaded as "this code only".
+- **Loading it** (local, 2026-11-13; no AI needed): the HTML tables convert to CSV
+  mechanically. The admin upload takes PDF, xlsx, CSV, JSON or text, not HTML. The CSV was
+  stored as the source file, with the page URL and 2026-11-04 as the citation. Read and map:
+  Code, Description, Category = High-level condition, Federal category = **Federal category
+  (the state's own)** (first load: Notes, before that role existed), Tier "Tier 1" for every
+  row, Enough by itself (stated by the state). Review: 99 undotted codes that are
+  also valid HCPCS shapes (`C9021`) were set to ICD-10-CM, plus the 28 bare categories to
+  "this code only". After that, 4,250 of 4,250 rows were ready, 0 were not in the CMS lists,
+  and the draft checks passed with nothing blocking.
+- **After publishing** the first load, the automatic federal guesses left 2,319 entries "Not
+  yet classified", because the guess works from category names and the 159 condition names
+  rarely match. The site now reads the state's own federal category (role "Federal category
+  (the state's own)", 2026-11-13): re-upload the CSV, map "Federal category" to that role and
+  publish. Every entry then counts under the category Indiana names, shown as "Stated by the
+  state".
+
 ## Montana (MT)
 
 | Document | Pages | Notes |

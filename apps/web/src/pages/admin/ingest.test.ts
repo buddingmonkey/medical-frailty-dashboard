@@ -143,6 +143,20 @@ describe('/admin/ingest', () => {
     expect(within(columns).getByText('F20.0, F32.9')).toBeTruthy()
   })
 
+  it('reads Indiana’s “Federal category” column as the state’s own federal category', async () => {
+    fakeApi()
+    await start(
+      'Diagnosis code\tDescription\tHigh-level condition\tFederal category\n' +
+        'C9021\tLeukemia\tLeukemia\tSerious or complex medical condition\n',
+    )
+    expect((role('Federal category') as HTMLSelectElement).value).toBe('stateFederal')
+    expect(
+      within(role('Federal category')).getByRole('option', {
+        name: 'Federal category (the state’s own)',
+      }),
+    ).toBeTruthy()
+  })
+
   it('maps rows, reports skipped rows and values the rule does not cover', async () => {
     fakeApi()
     await start()

@@ -10,6 +10,7 @@ import {
   codeSystems,
   conditionGroupStatuses,
   federalCategories,
+  lawCategories,
   mappingBases,
   mappingConfidences,
   mappingMethods,
@@ -19,6 +20,7 @@ import {
   qualificationBases,
   qualifications,
   stateStatuses,
+  suggestionLevels,
   unifiedMappingStatuses,
   unifiedStatuses,
   versionStatuses,
@@ -235,6 +237,14 @@ export const entries = sqliteTable(
     sourceLocator: text('source_locator'),
     /** The table or sheet of the source the entry came from (`draft_parts.part`). */
     sourcePart: text('source_part').notNull().default(''),
+    /**
+     * The state's own federal categories for this row (Indiana's "Federal category" column):
+     * law categories in federal order joined by ",", NULL when the state names none
+     * (`encodeStateFederal`). They decide the entry's federal categories ahead of everything
+     * else (docs/data-model.md, "Federal categories"). Migration 0016 adds a column CHECK that
+     * Drizzle cannot express: only the five law categories, each once.
+     */
+    stateFederalCategories: text('state_federal_categories'),
   },
   (t) => [
     index('entries_version_code_idx').on(t.versionId, t.codeNorm),
@@ -598,6 +608,38 @@ export const chapterMappings = sqliteTable(
     primaryKey({ columns: [t.stateId, t.chapter] }),
     check('chapter_mappings_chapter_check', sql`${t.chapter} BETWEEN 1 AND 22`),
     check('chapter_mappings_federal_check', oneOf(t.federalCategory, federalCategories)),
+  ],
+)
+
+/**
+ * Federal categories suggested by code from another state's list (docs/data-model.md, "Federal
+ * categories", rule 6; src/db/federal-suggestions.ts): one row per entry and suggested
+ * category. Written on publish for the new version, and by the admin button "Re-run automatic
+ * suggestions". `reviewed` 1: an admin confirmed it (then it ranks above a manual mapping, and a
+ * re-run leaves it alone). Rows of older versions stay, so a rollback finds its own.
+ */
+export const entryFederalSuggestions = sqliteTable(
+  'entry_federal_suggestions',
+  {
+    entryId: integer('entry_id')
+      .notNull()
+      .references(() => entries.id, { onDelete: 'cascade' }),
+    federalCategory: text('federal_category', { enum: lawCategories }).notNull(),
+    /** How specific the match was: the same code, its 3-character category, or its chapter. */
+    level: text('level', { enum: suggestionLevels }).notNull(),
+    /** The reference state the category came from (the first by id when several agree). */
+    referenceStateId: text('reference_state_id')
+      .notNull()
+      .references(() => states.id),
+    reviewed: integer('reviewed').notNull().default(0),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: text('reviewed_at'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.federalCategory] }),
+    check('entry_federal_suggestions_federal_check', oneOf(t.federalCategory, lawCategories)),
+    check('entry_federal_suggestions_level_check', oneOf(t.level, suggestionLevels)),
+    check('entry_federal_suggestions_reviewed_check', isBoolean(t.reviewed)),
   ],
 )
 

@@ -24,6 +24,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 150,
       placedFederal: ['disabling_mental_disorder', 'serious_complex_medical'],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: {
         federalCategory: 'disabling_mental_disorder',
         method: 'auto',
@@ -40,6 +42,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: {
         federalCategory: 'sud',
         method: 'manual',
@@ -56,6 +60,8 @@ const data = {
       draftEntries: 2,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 4,
+      statedFederal: ['blind_or_disabled'],
       mapping: null,
       suggestion: null,
     },
@@ -68,6 +74,8 @@ const data = {
       draftEntries: 3,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: null,
       suggestion: { federalCategory: 'state_specific', keyword: 'tier', confidence: 0.5 },
     },
@@ -80,6 +88,8 @@ const data = {
       draftEntries: 0,
       placedEntries: 0,
       placedFederal: [],
+      statedEntries: 0,
+      statedFederal: [],
       mapping: null,
       suggestion: {
         federalCategory: 'serious_complex_medical',
@@ -105,6 +115,7 @@ const previewBody = (token: string) => ({
       movingTotal: 50,
       already: 0,
       alreadyIn: [],
+      stated: { n: 0, federal: [] },
       placed: { n: 150, federal: ['serious_complex_medical'] },
       chapterOverride: [],
       sample: [
@@ -128,6 +139,7 @@ const previewBody = (token: string) => ({
       movingTotal: 10,
       already: 0,
       alreadyIn: [],
+      stated: { n: 0, federal: [] },
       placed: { n: 0, federal: [] },
       chapterOverride: [],
       sample: [],
@@ -208,6 +220,15 @@ describe('/admin/categories', () => {
       '150 follow their unified categories: Disabling mental disorder; Serious or complex medical condition',
     )
     expect(rowOf(table, 'SUD').textContent).not.toContain('unified')
+  })
+
+  it('says which entries the state gave their own federal category', async () => {
+    fakeApi()
+    const table = await open()
+    expect(rowOf(table, 'Miscellaneous').textContent).toContain(
+      '4 stated by the state: Blind or disabled',
+    )
+    expect(rowOf(table, 'SMI').textContent).not.toContain('stated by the state')
   })
 
   it('confirms a stored guess at once, since no entry moves', async () => {
@@ -437,5 +458,102 @@ describe('/admin/categories', () => {
     expect(previews).toEqual([
       { categories: [], chapters: [{ chapter: 5, federalCategory: null }] },
     ])
+  })
+})
+
+describe('/admin/categories: suggestions by code', () => {
+  const withSuggestions = {
+    ...data,
+    categories: data.categories.map((c) =>
+      c.stateCategory === 'Cancer'
+        ? {
+            ...c,
+            codeSuggested: {
+              entries: 3,
+              pending: 3,
+              federal: ['serious_complex_medical'],
+              referenceNames: ['Indiana'],
+            },
+          }
+        : c,
+    ),
+  }
+
+  function fakeSuggestions() {
+    const api = fakeApi()
+    const confirms: unknown[] = []
+    const runs: unknown[] = []
+    server.use(
+      http.get('/api/admin/states/LA/categories', () => HttpResponse.json(withSuggestions)),
+      http.post('/api/admin/states/LA/categories/suggestions/confirm', async ({ request }) => {
+        confirms.push(await request.json())
+        return HttpResponse.json({ ok: true, confirmed: 3 })
+      }),
+      http.post('/api/admin/states/LA/categories/suggestions/preview', () =>
+        HttpResponse.json({
+          token: 'run-1',
+          reference: ['Indiana'],
+          entries: 40,
+          gain: 2,
+          change: 1,
+          lose: 0,
+          unchanged: 30,
+          keptReviewed: 3,
+          byCategory: [{ federalCategory: 'serious_complex_medical', gain: 3, lose: 1 }],
+          sample: [
+            {
+              code: 'C50.911',
+              description: 'Breast cancer',
+              before: [],
+              after: ['serious_complex_medical'],
+            },
+          ],
+        }),
+      ),
+      http.post('/api/admin/states/LA/categories/suggestions/run', async ({ request }) => {
+        runs.push(await request.json())
+        return HttpResponse.json({ ok: true })
+      }),
+    )
+    return { ...api, confirms, runs }
+  }
+
+  it('says which entries follow a suggestion from another state’s list, and confirms them', async () => {
+    const { confirms } = fakeSuggestions()
+    const table = await open()
+    const row = rowOf(table, 'Cancer')
+    expect(row.textContent).toContain(
+      '3 suggested from Indiana’s list: Serious or complex medical condition (3 not reviewed)',
+    )
+    await user.click(within(row).getByRole('button', { name: 'Confirm suggestions for Cancer' }))
+    expect(await screen.findByText('Confirmed 3 suggestions for Cancer.')).toBeTruthy()
+    expect(confirms).toEqual([{ items: [{ stateCategory: 'Cancer', stateSubcategory: '' }] }])
+  })
+
+  it('confirms pending suggestions with "Confirm all guesses"', async () => {
+    const { confirms, saves } = fakeSuggestions()
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Confirm all 3 guesses' }))
+    await waitFor(() => {
+      expect(saves).toHaveLength(1)
+    })
+    expect(confirms).toEqual([{ items: [{ stateCategory: 'Cancer', stateSubcategory: '' }] }])
+  })
+
+  it('previews a re-run of the automatic suggestions, then saves it with the token', async () => {
+    const { runs } = fakeSuggestions()
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Re-run automatic suggestions' }))
+    const region = await screen.findByRole('region', {
+      name: 'Check the automatic suggestions before saving',
+    })
+    expect(await within(region).findByText('2 entries gain a suggestion.')).toBeTruthy()
+    expect(
+      within(region).getByText(/3 entries keep the suggestion an admin confirmed/),
+    ).toBeTruthy()
+    expect(within(region).getByRole('rowheader', { name: 'C50.911' })).toBeTruthy()
+    await user.click(within(region).getByRole('button', { name: 'Save suggestions' }))
+    expect(await screen.findByText('Saved the automatic suggestions for Louisiana.')).toBeTruthy()
+    expect(runs).toEqual([{ token: 'run-1' }])
   })
 })

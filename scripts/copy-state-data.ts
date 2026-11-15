@@ -38,6 +38,7 @@ export const COPY_TABLES = [
   'chapter_mappings',
   'unified_mappings',
   'entry_unified',
+  'entry_federal_suggestions',
   'state_similarity',
   'audit_log',
 ] as const
