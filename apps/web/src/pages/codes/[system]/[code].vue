@@ -227,8 +227,9 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
           :class="g.status === 'narrower' ? 'flex-col' : ''"
         >
           <li v-for="s in g.states" :key="s.id">
-            <RouterLink :to="`/states/${s.slug}`" class="text-link">{{ s.name }}</RouterLink
-            ><span v-if="g.status === 'narrower'" class="text-muted-foreground"
+            <RouterLink :to="`/states/${s.slug}`" class="text-link">{{ s.name }}</RouterLink><span
+              v-if="g.status === 'narrower'"
+              class="text-muted-foreground"
               >: {{ codeDetailNarrowerText(s.narrowerCount) }}</span
             >
           </li>
