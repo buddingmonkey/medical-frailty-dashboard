@@ -17,7 +17,7 @@
     "@mfcd/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
     "fflate": "0.8.3",
-    "hono": "4.13.17",
+    "hono": "4.13.18",
     "jose": "6.2.17"
   },
   "devDependencies": {

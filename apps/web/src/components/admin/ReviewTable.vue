@@ -380,8 +380,7 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
                   >Edited</span
                 >
                 <p v-for="p in r.problems" :key="p.raw + p.problem" class="text-danger">
-                  <span class="font-mono">{{ p.raw }}</span
-                  >: {{ p.message }}
+                  <span class="font-mono">{{ p.raw }}</span>: {{ p.message }}
                 </p>
                 <div v-for="f in r.openFlags" :key="f" class="flex flex-wrap items-center gap-1">
                   <span>{{ reviewFlagLabels[f] }}</span>
