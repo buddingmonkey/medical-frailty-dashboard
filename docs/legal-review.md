@@ -225,13 +225,25 @@ Every string below is live and provisional. Please mark any you want changed.
 ### State pages
 
 - Categories intro
-- Review status heading, with "Reviewed" / "Not yet reviewed (automatic suggestion)"
+- Review status heading, with "Reviewed" / "Not yet reviewed (automatic suggestion)" /
+  "Stated by the state" (added 2026-11-13, provisional: the state's own list names the federal
+  category, as Indiana's does)
+- Review status "Not yet reviewed (suggested from Indiana’s list)" (added 2026-11-13,
+  provisional; the state is named from the reference list, not fixed): the site suggested the
+  federal category from another state's per-code list. Also the categories intro sentence
+  "Where another state’s list names a federal category for the same code, or for codes like it,
+  this site may suggest that one instead (“suggested from” that state’s list).", and the About
+  page's glossary entry "Not yet reviewed (suggested from another state’s list)"
+- The categories intro sentence "Where the state’s list names a federal category for a code,
+  this site uses it (“Stated by the state”)." (added 2026-11-13, provisional), and the About
+  page's glossary entry for "Stated by the state"
 - Source document date labels
 - The sentences shown for a state with no list on the site
 
 ### Compare tabs
 
-- Tab labels: Overview, Categories, Map, States side by side, Single codes
+- Tab labels: Overview, Categories, Map, Overlaps, States side by side, Single codes (Overlaps
+  added 2026-11-12)
 - Each tab's heading, intro and search-engine description
 - Buttons and prompts: "Start from your state", "Your state", "Choose 2 to 4 states", "Show
   similar states", "Choose states to compare", "Sort by [category]"
@@ -244,6 +256,12 @@ Every string below is live and provisional. Please mark any you want changed.
 - "Overall (average)"
 - "Reading this table" notes: counts use billable ICD-10-CM codes only; a plain average;
   "* Not yet reviewed"
+- The card shown when a reader pauses on a cell (added 2026-11-12, provisional): "Covers N of
+  the category’s D diagnosis codes" (or, for † categories, "N of the D distinct entries any
+  state lists here"); "N entries placed here; Q are enough by themselves (P%)" or "none is
+  enough by itself"; "Every placement here was reviewed" or "Not yet reviewed: some entries
+  were placed here automatically, by the CCSR group of their code"; "Select the number to see
+  the codes". Since 2026-11-13 the Map tab's tiles show the same card.
 
 ### Category drill-down
 
@@ -256,6 +274,18 @@ Every string below is live and provisional. Please mark any you want changed.
 ### Map tab
 
 - "One category, every state", intro, caption, "None", and the not-reviewed note
+
+### Overlaps tab (added 2026-11-12, provisional)
+
+- Heading "Which states list the same codes", intro, count note and search-engine description
+- Row headers: "N codes listed by exactly these K states: …", "… listed only by [state]", and
+  "… listed by all K states that list codes in this category" (that row does not name the
+  states)
+- Table headings "Group of states", "Codes", "The codes"; "In this group" / "Not in this
+  group" (read to screen readers); "Show the codes"; "Show all N groups" / "Show the top 20"
+- "No state includes any code in this category yet."
+- Question: the word "exactly" matters here (a row's codes are listed by those states and by no
+  other). Is the heading clear enough without it?
 
 ### States side by side
 
@@ -279,6 +309,12 @@ Cell words and legend, shown under every code table:
 
 Also: "As published by [state]", "No description from CMS or the state", "State’s category:",
 "Download this table (CSV, N rows)" (item 6: the CSV carries state descriptions in bulk).
+
+State picker (provisional, 2026-11-13; `COMPARE_STATES` in `packages/shared/src/compare.ts`):
+"States to compare: None chosen", "States to compare: 3 chosen (Georgia, Montana, Nebraska)",
+"… (Alabama, Alaska, Arizona and 12 more)", "All states with a list", "Clear", "Filter states",
+"12 states shown", "Show the table" (the form without JavaScript), and "To compare a state’s
+own category, turn on JavaScript or start from the state’s page."
 
 ### Code pages (one page per code)
 

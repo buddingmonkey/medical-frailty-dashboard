@@ -11,6 +11,7 @@ describe('compare tabs', () => {
       ['Overview', '/compare'],
       ['Categories', '/compare/categories'],
       ['Map', '/compare/map'],
+      ['Overlaps', '/compare/overlaps'],
       ['States side by side', '/compare/states'],
       ['Single codes', '/compare/codes'],
     ])
@@ -34,6 +35,7 @@ describe('compare tabs', () => {
     expect(marks('/compare')).toEqual({ Overview: 'page' })
     expect(marks('/compare/categories')).toEqual({ Categories: 'page' })
     expect(marks('/compare/map')).toEqual({ Map: 'page' })
+    expect(marks('/compare/overlaps')).toEqual({ Overlaps: 'page' })
     expect(marks('/compare/states')).toEqual({ 'States side by side': 'page' })
     expect(marks('/compare/codes')).toEqual({ 'Single codes': 'page' })
     expect(marks('/compare/map/')).toEqual({ Map: 'page' })

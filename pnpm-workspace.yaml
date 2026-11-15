@@ -5,6 +5,11 @@ packages:
 # Refuse packages published less than 3 days ago (4320 minutes). Most hijacked releases
 # are caught and pulled within that window.
 minimumReleaseAge: 4320
+# Temporary exemption (project lead, 2026-11-12): ui-sdk 0.1.0-beta.1 was first published that
+# day. Remove these entries after 2026-11-15, when the pinned versions pass the 3-day rule.
+minimumReleaseAgeExclude:
+  - '@ui-sdk/vue'
+  - '@ui-sdk/core'
 
 # Exact versions only.
 saveExact: true

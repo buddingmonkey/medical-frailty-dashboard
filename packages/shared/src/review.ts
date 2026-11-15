@@ -12,9 +12,14 @@ import {
 import type { CodeSystem, Qualification } from './enums'
 import type { MappedRow } from './ingest'
 import type { ReferenceIndex, RefSystem } from './reference'
+import { type LawCategory, parseStateFederalCell } from './state-federal'
 
 /** Needs the admin's decision before the row is ready. */
-export type ReviewFlag = CodeFlag | 'multiline_description'
+export type ReviewFlag =
+  | CodeFlag
+  | 'multiline_description'
+  /** The state's federal category cell has text that is not one of the five (accept: ignore it). */
+  | 'state_federal_unknown'
 /** Shown, but never blocks. Duplicates are merged when the draft is built. */
 export type ReviewNote =
   | 'wildcard'
@@ -30,6 +35,7 @@ export const reviewFlagLabels: Record<ReviewFlag, string> = {
   system_ambiguous: 'ICD-10-CM or HCPCS?',
   mixed_wildcard_range: 'Wildcard on one end only, read as whole categories',
   multiline_description: 'Description has a line break',
+  state_federal_unknown: 'State’s federal category not recognized; accept to ignore it',
 }
 
 export const reviewNoteLabels: Record<ReviewNote, string> = {
@@ -44,6 +50,7 @@ export const reviewNoteLabels: Record<ReviewNote, string> = {
 export const acceptableFlags: readonly ReviewFlag[] = [
   'mixed_wildcard_range',
   'multiline_description',
+  'state_federal_unknown',
 ]
 
 /** The admin's changes to one row. Fields left out keep the mapped value. */
@@ -53,6 +60,8 @@ export interface RowEdit {
   category?: string
   subcategory?: string
   tier?: string
+  /** The state's federal category cell (`;` between two). */
+  stateFederal?: string
   qualification?: Qualification
   /** `''` reads the system from the code's shape and ignores the source's column. */
   codeSystem?: CodeSystem | ''
@@ -83,6 +92,11 @@ export interface ReviewRow {
   /** The code system the code was read as, if one was set (column or edit). */
   codeSystem: CodeSystem | null
   codes: ParsedCode[]
+  /**
+   * The state's own federal categories for the row. Empty when the cell is empty, or has text
+   * that is not one of the five (flagged until accepted, which means "ignore it").
+   */
+  stateFederalCategories: LawCategory[]
   problems: CodeProblem[]
   openFlags: ReviewFlag[]
   acceptedFlags: ReviewFlag[]
@@ -152,7 +166,14 @@ export function reviewKeys(rows: readonly MappedRow[]): string[] {
   })
 }
 
-const EDITABLE = ['rawCode', 'description', 'category', 'subcategory', 'tier'] as const
+const EDITABLE = [
+  'rawCode',
+  'description',
+  'category',
+  'subcategory',
+  'tier',
+  'stateFederal',
+] as const
 
 function applyEdit(source: MappedRow, edit: RowEdit): MappedRow {
   const row = { ...source }
@@ -266,6 +287,8 @@ export function buildReview(
 
     const flags = new Set<ReviewFlag>(codes.flatMap((c) => c.flags))
     if (row.description.includes('\n')) flags.add('multiline_description')
+    const stateFederal = parseStateFederalCell(row.stateFederal)
+    if (stateFederal.unknown.length > 0) flags.add('state_federal_unknown')
     const accepted = new Set(edit.accepted ?? [])
     const openFlags = [...flags].filter((f) => !accepted.has(f))
     const acceptedFlags = [...flags].filter((f) => accepted.has(f))
@@ -302,6 +325,7 @@ export function buildReview(
       row,
       codeSystem,
       codes,
+      stateFederalCategories: stateFederal.unknown.length > 0 ? [] : stateFederal.categories,
       problems: parsed.problems,
       openFlags,
       acceptedFlags,

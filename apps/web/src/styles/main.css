@@ -1,3 +1,6 @@
+/* ui-sdk adds the little CSS its behaviours need (hidden closed popups) in this layer at runtime.
+ * Declared first so every other style wins over it. We do not load its theme, web.css. */
+@layer ui-sdk;
 @import 'tailwindcss';
 
 /*

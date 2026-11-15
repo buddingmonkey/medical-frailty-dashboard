@@ -190,6 +190,7 @@ const showRule = computed(() => data.value?.showQualification !== 'none')
                   <td v-if="showRule" class="px-3 py-2">
                     <QualificationBadge
                       v-if="e.qualification && e.qualificationBasis"
+                      focusable
                       :match="{
                         qualification: e.qualification,
                         qualificationBasis: e.qualificationBasis,

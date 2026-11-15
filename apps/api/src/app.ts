@@ -34,6 +34,7 @@ import { publicCodeDetailRoute } from './routes/public/code-detail'
 import { publicCodeSearchRoute } from './routes/public/code-search'
 import { publicCompareRoute } from './routes/public/compare'
 import { health } from './routes/public/health'
+import { publicOverlapsRoute } from './routes/public/overlaps'
 import { publicOverviewRoute } from './routes/public/overview'
 import { publicStates } from './routes/public/states'
 import { publicStatesCompareRoute } from './routes/public/states-compare'
@@ -76,6 +77,8 @@ export function createApp({ getJwks, aiComplete = claudeComplete }: AppDeps) {
   app.route('/api/public/compare', publicCompareRoute)
   app.use('/api/public/overview', publicCache)
   app.route('/api/public/overview', publicOverviewRoute)
+  app.use('/api/public/overlaps', publicCache)
+  app.route('/api/public/overlaps', publicOverlapsRoute)
   app.use('/api/public/categories/*', publicCache)
   app.route('/api/public/categories', publicCategoriesRoute)
   app.use('/api/public/states-compare', publicCache)

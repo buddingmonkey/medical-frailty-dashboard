@@ -22,10 +22,16 @@ import {
 /**
  * Slugs a unified category may not take, because the site uses them under `/compare/` (the
  * category drill-down lives at `/compare/<slug>`): `codes` is the M4 code table (M5 step 5),
- * `states` the state comparison (`/compare/states/ga-vs-la`, M5 step 7), `categories` and `map`
- * the compare tabs' list of categories and tile map (`compareTabs` in compare-tabs.ts).
+ * `states` the state comparison (`/compare/states/ga-vs-la`, M5 step 7), `categories`, `map` and
+ * `overlaps` the compare tabs' list of categories, tile map and overlaps view (`compareTabs` in compare-tabs.ts).
  */
-export const reservedUnifiedSlugs: readonly string[] = ['codes', 'states', 'categories', 'map']
+export const reservedUnifiedSlugs: readonly string[] = [
+  'codes',
+  'states',
+  'categories',
+  'map',
+  'overlaps',
+]
 
 export const isReservedUnifiedSlug = (slug: string): boolean => reservedUnifiedSlugs.includes(slug)
 

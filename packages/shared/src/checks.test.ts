@@ -140,6 +140,18 @@ describe('runChecks', () => {
     expect(check?.message).toContain('SUD')
   })
 
+  it('does not call a category lost when only the state’s federal category is new', () => {
+    // Indiana re-uploaded with its "Federal category" column mapped (2026-11-13): every
+    // category was listed as missing because the label carried the federal category.
+    const input = base()
+    input.draft = {
+      ...input.draft,
+      entries: codes(100).map((e) => ({ ...e, stateFederalCategories: ['sud'] as const })),
+    }
+    const check = runChecks(input).checks.find((c) => c.id === 'category_missing')
+    expect(check).toMatchObject({ triggered: false })
+  })
+
   it('asks for confirmation when more than 10% of ICD-10-CM codes are not in ref_codes', () => {
     const input = base()
     input.knownIcd10cm = new Set(input.draft.entries.slice(0, 89).map((e) => e.codeNorm)) // 11 unknown
@@ -246,6 +258,36 @@ describe('diff', () => {
       before: 'SMI',
       after: 'Severe neurological',
     })
+  })
+
+  it('shows a changed state federal category as a category change (Indiana re-upload)', () => {
+    const published = [entry('F200', { stateCategory: 'Schizophrenia' }), entry('F201')]
+    const draft = [
+      entry('F200', { stateCategory: 'Schizophrenia', stateFederalCategories: ['sud'] }),
+      entry('F201'),
+    ]
+    const { diff } = runChecks(
+      base({
+        draft: {
+          entries: draft,
+          invalidRowCount: 0,
+          incompleteSources: [],
+          sourceSha256s: [],
+          namedStateIds: [],
+        },
+        published: { entries: published, sourceSha256s: [] },
+      }),
+    )
+    expect(diff.totals.categoryChanged).toBe(1)
+    expect(diff.changes).toEqual([
+      {
+        kind: 'category_changed',
+        codeSystem: 'icd10cm',
+        code: 'F20.0',
+        before: 'Schizophrenia',
+        after: 'Schizophrenia (state’s federal category: Substance use disorder)',
+      },
+    ])
   })
 
   it('treats a range and an exact code with the same start as different codes', () => {

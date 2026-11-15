@@ -23,16 +23,19 @@ import {
   qualificationBasisLabels,
   qualificationLabels,
   SITE_NAME,
+  sortStateIds,
   STATES_COMPARE_MAX,
   STATES_COMPARE_MIN,
   statesComparePath,
   statesCompareQueryFromRecord,
+  tileMapCategory,
 } from '@mfcd/shared'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, isNotNull } from 'drizzle-orm'
 import { type Context, Hono } from 'hono'
 
 import { createDb } from '../db/client'
 import { publicCode } from '../db/public-code'
+import { publicOverlaps } from '../db/public-overlaps'
 import { includedCodeCount, includedCodePage, listsUpdatedAt } from '../db/public-code-sitemap'
 import { publicCompare } from '../db/public-compare'
 import { publicDrill, publicDrillCsv, publicDrillDetail } from '../db/public-drill'
@@ -40,16 +43,18 @@ import { publicOverview } from '../db/public-overview'
 import { publicStateDetail, publishedEntriesForDownload } from '../db/public-state'
 import { publicStatesCompare, publicStatesCompareCsv } from '../db/public-states-compare'
 import { publicSummaries } from '../db/public-summary'
-import { unifiedCategories } from '../db/schema'
+import { states, unifiedCategories } from '../db/schema'
 import { cachePublic, publicCache } from '../middleware/public-cache'
 import {
   categoriesPage,
   categoryNotFoundPage,
+  type CompareFormValues,
   comparePage,
   drillPage,
   downloadName,
   homePage,
   mapPage,
+  overlapsPage,
   notFoundPage,
   overviewPage,
   type PageParts,
@@ -185,6 +190,65 @@ function compareQueryOf(c: Context<AppEnv>) {
   return compareQuerySchema.safeParse(raw)
 }
 
+/** The form's choices that may come back empty ("All code systems", no category yet). */
+const compareFormOptional = new Set(['category', 'system', 'alone', 'page'])
+
+/**
+ * The no-JavaScript form on `/compare/codes` sends `states=GA&states=MT` and empty choices:
+ * 302 to the canonical URL, one `states=` sorted by name and no empty choices. Null when the
+ * URL is already in that shape. Like the States side by side redirect below.
+ */
+function compareFormRedirect(c: Context<AppEnv>) {
+  const url = new URL(c.req.url)
+  const sent = c.req.queries('states') ?? []
+  const empty = [...new Set(url.searchParams.keys())].filter(
+    (key) =>
+      compareFormOptional.has(key) && url.searchParams.getAll(key).every((v) => v.trim() === ''),
+  )
+  if (sent.length <= 1 && empty.length === 0) return null
+  const ids = sortStateIds([
+    ...new Set(
+      sent
+        .flatMap((v) => v.split(','))
+        .map((v) => v.trim().toUpperCase())
+        .filter((v) => /^[A-Z]{2}$/.test(v)),
+    ),
+  ])
+  const out = new URLSearchParams()
+  if (ids.length > 0) out.set('states', ids.join(','))
+  for (const [key, value] of url.searchParams) {
+    if (key !== 'states' && !empty.includes(key)) out.append(key, value)
+  }
+  const search = out.toString().replaceAll('%2C', ',')
+  return c.redirect(`/compare/codes${search === '' ? '' : `?${search}`}`, 302)
+}
+
+/** What the no-JavaScript form shows as chosen: from the URL, valid or not. */
+function compareFormValues(
+  raw: Record<string, string>,
+  parsed: ReturnType<typeof compareQueryOf>,
+): CompareFormValues {
+  const own = raw['ownState'] !== undefined
+  const ids = parsed?.success
+    ? parsed.data.states.filter((id) => id !== parsed.data.ownState)
+    : (raw['states'] ?? '').split(',').map((v) => v.trim().toUpperCase())
+  return {
+    states: ids,
+    category: own ? '' : (raw['category'] ?? ''),
+    system: raw['system'] ?? '',
+    alone: raw['alone'] === '1' || raw['alone'] === 'true',
+    own,
+  }
+}
+
+/** The states the form offers: those with a list, by name. */
+const compareChoices = (c: Context<AppEnv>) =>
+  createDb(c.env.DB)
+    .select({ id: states.id, name: states.name })
+    .from(states)
+    .where(isNotNull(states.publishedVersionId))
+    .orderBy(asc(states.name))
+
 export const pagesRoute = new Hono<AppEnv>()
   .get('/', async (c, next) => {
     // Before the cache: a redirect is not a page.
@@ -244,11 +308,30 @@ export const pagesRoute = new Hono<AppEnv>()
     const data = await publicOverview(createDb(c.env.DB), c.get('dataVersion') ?? 0)
     return sendPage(c, mapPage(data, origin(c), c.req.query()))
   })
+  .get('/compare/overlaps', pageCache, async (c) => {
+    const db = createDb(c.env.DB)
+    const dataVersion = c.get('dataVersion') ?? 0
+    const { categories } = await publicOverview(db, dataVersion)
+    const current = tileMapCategory(categories, c.req.query())
+    if (!current) return sendPage(c, overlapsPage(origin(c), null))
+    const data = await publicOverlaps(db, current.slug, dataVersion)
+    return sendPage(c, overlapsPage(origin(c), { categories, current, data }))
+  })
+  // Before the cache: a redirect is not a page.
+  .get('/compare/codes', async (c, next) => compareFormRedirect(c) ?? next())
   .get('/compare/codes', pageCache, async (c) => {
+    const raw = c.req.query()
     const parsed = compareQueryOf(c)
-    if (parsed === null) return sendPage(c, comparePage(origin(c), null))
+    const form = { choices: await compareChoices(c), values: compareFormValues(raw, parsed) }
+    // No states yet, or neither kind of category: the form came back half filled in.
+    const incomplete =
+      raw['states'] === undefined ||
+      (raw['category'] === undefined && raw['ownState'] === undefined)
+    if (parsed === null || (!parsed.success && incomplete)) {
+      return sendPage(c, comparePage(origin(c), null, form))
+    }
     if (!parsed.success) {
-      return sendPage(c, comparePage(origin(c), { error: COMPARE_INVALID_LINK }))
+      return sendPage(c, comparePage(origin(c), { error: COMPARE_INVALID_LINK }, form))
     }
     const load = await publicCompare(createDb(c.env.DB), parsed.data)
     return sendPage(
@@ -258,6 +341,7 @@ export const pagesRoute = new Hono<AppEnv>()
         load.ok
           ? { query: parsed.data, result: load.result }
           : { error: compareUnknownStatesText(load.unknownStates) },
+        form,
       ),
     )
   })
@@ -491,6 +575,7 @@ export const pagesRoute = new Hono<AppEnv>()
       // The compare tabs that are indexed (`/compare/states` is not; docs/seo.md).
       url(`${base}/compare/categories`, newest),
       url(`${base}/compare/map`, newest),
+      url(`${base}/compare/overlaps`, newest),
       // A category page changes with its own edits and with any state's list.
       ...categories.map((u) => {
         const day = u.updatedAt.slice(0, 10)

@@ -79,6 +79,16 @@ describe('home page', () => {
     expect(screen.getByText('1 of the 50 states and DC have a list on this site.')).toBeTruthy()
   })
 
+  it('shows no generic hover tooltip on the map (an SVG title would); the card names the state', async () => {
+    serve([alabama, georgia, montana])
+    await renderRoute('/')
+    const map = await screen.findByRole('group', {
+      name: 'Map of state medical frailty code lists',
+    })
+    expect(map.querySelector('title')).toBeNull()
+    expect(map.querySelector('[title]')).toBeNull()
+  })
+
   it('shows a state’s counts when it gets keyboard focus', async () => {
     serve([alabama, georgia, montana])
     const user = userEvent.setup()

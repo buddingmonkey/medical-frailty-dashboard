@@ -262,6 +262,12 @@ importers:
       '@tanstack/vue-query':
         specifier: 5.105.0
         version: 5.105.0(vue@3.5.44(typescript@6.0.3))
+      '@ui-sdk/core':
+        specifier: 0.1.0-beta.1
+        version: 0.1.0-beta.1
+      '@ui-sdk/vue':
+        specifier: 0.1.0-beta.1
+        version: 0.1.0-beta.1(@ui-sdk/core@0.1.0-beta.1)(vue@3.5.44(typescript@6.0.3))
       pdfjs-dist:
         specifier: 6.4.299
         version: 6.4.299
@@ -1375,6 +1381,25 @@ packages:
   '@typescript-eslint/visitor-keys@8.72.1':
     resolution: {integrity: sha512-SB8xqipSzZHUePCCLNeYxqnxq83X61/qzNhjQGbTfjxGZIeOEP7tBgWYX05Tcd6CgE02WdTJnh5b8kMZJ/+bnQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@ui-sdk/core@0.1.0-beta.1':
+    resolution: {integrity: sha512-sWsZW8RN6Gviir7REQYuDIafm9hierHQE31OJ+2g+1Pp3lDVKp/dk0+0dxFvqOQRmBveRvlE9FiARgNlQ9dMFw==}
+
+  '@ui-sdk/vue@0.1.0-beta.1':
+    resolution: {integrity: sha512-Wpdmhe9Xa9wpCdPBW9Zb40fzWjoOBd2Y+u1PpYOTB8Edm/ain+OqtwLTvcdqas+8yN+8kzLtjGE9EGXe1htpHQ==}
+    peerDependencies:
+      '@nuxt/kit': ^4.0.0 || ^5.0.0-0
+      '@nuxt/schema': ^4.0.0 || ^5.0.0-0
+      '@ui-sdk/core': ^0.1.0-beta.1
+      nuxt: ^4.0.0 || ^5.0.0-0
+      vue: '>=3.5'
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+      '@nuxt/schema':
+        optional: true
+      nuxt:
+        optional: true
 
   '@vitejs/plugin-vue@6.0.10':
     resolution: {integrity: sha512-b80aUQh3n+qEzzZm5oQp3rT2QImeCx58K6eFl/RkJ3d65KW0kTuv5lNsLRVAjbW9YRUpo/wzmvzMgV34bTAItA==}
@@ -3992,6 +4017,13 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.72.1
       eslint-visitor-keys: 5.0.1
+
+  '@ui-sdk/core@0.1.0-beta.1': {}
+
+  '@ui-sdk/vue@0.1.0-beta.1(@ui-sdk/core@0.1.0-beta.1)(vue@3.5.44(typescript@6.0.3))':
+    dependencies:
+      '@ui-sdk/core': 0.1.0-beta.1
+      vue: 3.5.44(typescript@6.0.3)
 
   '@vitejs/plugin-vue@6.0.10(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vue@3.5.44(typescript@6.0.3))':
     dependencies:

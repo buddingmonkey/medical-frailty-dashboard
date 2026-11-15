@@ -227,6 +227,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/compare/overlaps': RouteRecordInfo<
+      '/compare/overlaps',
+      '/compare/overlaps',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/compare/states/': RouteRecordInfo<
       '/compare/states/',
       '/compare/states',
@@ -507,6 +514,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/compare/map.vue': {
       routes:
         | '/compare/map'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/compare/overlaps.vue': {
+      routes:
+        | '/compare/overlaps'
       views:
         | never
       pathParamNames:

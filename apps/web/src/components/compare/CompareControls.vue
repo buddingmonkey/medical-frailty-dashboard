@@ -3,6 +3,7 @@ import {
   codeSystemLabels,
   codeSystems,
   COMPARE_ALONE_LABEL,
+  COMPARE_STATES,
   federalCategories,
   federalCategoryInfo,
   type PublicStateSummary,
@@ -12,6 +13,7 @@ import { computed } from 'vue'
 
 import type { CompareSelection } from '../../lib/public-compare'
 import { usePublicState } from '../../lib/public-states'
+import CompareStatesField from './CompareStatesField.vue'
 
 // The compare page's choices. Every change goes straight to the model; the page turns a
 // complete selection into the URL.
@@ -66,15 +68,18 @@ function chooseOwnCategory(value: string) {
   update({ ownCategory: picked?.category ?? null, ownSubcategory: picked?.subcategory ?? '' })
 }
 
-function toggleState(id: string, on: boolean) {
-  const rest = selection.value.states.filter((s) => s !== id)
-  update({ states: on ? [...rest, id] : rest })
-}
+/** The other states: CompareStatesField keeps them alphabetical by name. */
+const chosenStates = computed({
+  get: () => selection.value.states,
+  set: (states: string[]) => {
+    update({ states })
+  },
+})
 
 const otherStates = computed(() =>
-  withList.value.filter(
-    (s) => selection.value.mode === 'federal' || s.id !== selection.value.ownState,
-  ),
+  withList.value
+    .filter((s) => selection.value.mode === 'federal' || s.id !== selection.value.ownState)
+    .map((s) => ({ id: s.id, name: s.name })),
 )
 
 const valueOf = (e: Event) => (e.target as HTMLInputElement | HTMLSelectElement).value
@@ -176,23 +181,15 @@ const checkedOf = (e: Event) => (e.target as HTMLInputElement).checked
       </div>
     </div>
 
-    <fieldset class="space-y-2">
-      <legend class="font-semibold">
-        {{ selection.mode === 'own' ? 'States to compare with' : 'States to compare' }}
-      </legend>
-      <p v-if="withList.length === 0" class="text-sm text-muted-foreground">
-        No state has a list on this site yet.
-      </p>
-      <div class="flex flex-wrap gap-x-6 gap-y-2">
-        <label v-for="s in otherStates" :key="s.id" class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            :checked="selection.states.includes(s.id)"
-            @change="toggleState(s.id, checkedOf($event))"
-          />{{ s.name }}
-        </label>
-      </div>
-    </fieldset>
+    <p v-if="withList.length === 0" class="text-sm text-muted-foreground">
+      {{ COMPARE_STATES.noList }}
+    </p>
+    <CompareStatesField
+      v-else
+      v-model:states="chosenStates"
+      :choices="otherStates"
+      :legend="selection.mode === 'own' ? COMPARE_STATES.legendOwn : COMPARE_STATES.legend"
+    />
 
     <label class="flex items-center gap-2">
       <input

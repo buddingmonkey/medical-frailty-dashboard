@@ -7,6 +7,7 @@ export const compareTabs = [
   { label: 'Overview', path: '/compare' },
   { label: 'Categories', path: '/compare/categories' },
   { label: 'Map', path: '/compare/map' },
+  { label: 'Overlaps', path: '/compare/overlaps' },
   { label: 'States side by side', path: '/compare/states' },
   { label: 'Single codes', path: '/compare/codes' },
 ] as const

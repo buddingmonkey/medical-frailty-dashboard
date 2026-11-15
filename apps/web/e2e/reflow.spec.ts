@@ -13,6 +13,8 @@ const paths = [
   '/compare/categories',
   '/compare/map?category=test-psychoses',
   '/compare/states',
+  // The state picker starts open with nothing chosen (2026-11-13).
+  '/compare/codes',
   '/compare/codes?states=MT,NE&category=sud',
   '/compare/test-psychoses',
   '/compare/states/ne-vs-mt',

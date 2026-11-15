@@ -146,6 +146,7 @@ These AI-assistant skills were installed by the project lead before M0. Their fo
 | --- | --- | --- | --- |
 | `tailwind-design-system` | GitHub `wshobson/agents`, path `plugins/frontend-mobile-development/skills/tailwind-design-system/SKILL.md` | skills CLI (`npx skills add`, which writes `skills-lock.json`) | `.agents/skills/tailwind-design-system/` |
 | `unslop` | GitHub `theclaymethod/unslop` (`SKILL.md` at repo root) | skills CLI | `.agents/skills/unslop/`, symlinked from `.claude/skills/unslop` |
+| `ui-sdk` | GitHub `vercel-labs/ui` (2026-11-12) | `npx skills add vercel-labs/ui --skill ui-sdk` | `.agents/skills/ui-sdk/`, symlinked from `.claude/skills/ui-sdk` |
 | `vue-development` | Claude Code plugin from marketplace GitHub `alexanderop/claude-skill-vue-development` (v0.1.0) | `/plugin marketplace add alexanderop/claude-skill-vue-development`, then `/plugin install vue-development`, project-local scope | Claude Code plugin cache (outside the repo) |
 
 Claude Code reads project skills from `.claude/skills/`. The skills CLI linked only `unslop`

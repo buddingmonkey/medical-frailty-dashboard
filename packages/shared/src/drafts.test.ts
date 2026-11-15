@@ -23,6 +23,7 @@ const row = (rawCode: string, extra: Partial<MappedRow> = {}): MappedRow => ({
   qualificationValue: '',
   included: true,
   notes: '',
+  stateFederal: '',
   ...extra,
 })
 
@@ -73,6 +74,42 @@ describe('toDraftEntries', () => {
       includesChildren: null,
       attributes: { flags: ['category_scope'] },
     })
+  })
+
+  it('carries the state’s own federal categories, and leaves them out when there are none', () => {
+    const review = buildReview(
+      [
+        row('F20.0', { stateFederal: 'Serious or complex medical condition; Blind or disabled' }),
+        row('F20.1'),
+        row('F20.2', { stateFederal: 'Unknown words' }),
+      ],
+      {},
+      { undottedIcd: false },
+    )
+    const { entries } = toDraftEntries(review)
+    expect(entries.map((e) => e.stateFederalCategories)).toEqual([
+      ['blind_or_disabled', 'serious_complex_medical'],
+      undefined,
+      undefined,
+    ])
+    // The unanswered question travels with the entry, like the others.
+    expect(entries[2]?.attributes.flags).toEqual(['state_federal_unknown'])
+    expect(
+      draftRowsRequestSchema.safeParse({ sourceDocumentId: 1, part: 'p', entries }).success,
+    ).toBe(true)
+  })
+
+  it('accepts only the five law categories, each once, from the browser', () => {
+    const send = (stateFederalCategories: unknown) =>
+      draftRowsRequestSchema.safeParse({
+        sourceDocumentId: 1,
+        part: 'p',
+        entries: [{ ...entry(), stateFederalCategories }],
+      }).success
+    expect(send(['sud'])).toBe(true)
+    expect(send(undefined)).toBe(true)
+    expect(send(['unmapped'])).toBe(false)
+    expect(send(['sud', 'sud'])).toBe(false)
   })
 
   it('stores an empty description as null and keeps excluded rows marked', () => {

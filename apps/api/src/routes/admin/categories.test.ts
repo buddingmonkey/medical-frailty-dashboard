@@ -160,6 +160,20 @@ describe('/api/admin/states/:stateId/categories', () => {
     ])
   })
 
+  it('says how many published entries the state gave federal categories, and which', async () => {
+    await db
+      .update(entries)
+      .set({ stateFederalCategories: 'physical_idd_adl,serious_complex_medical' })
+      .where(eq(entries.codeNorm, 'F200'))
+    const { categories: list } = await categories()
+    expect(list.map((c) => [c.stateCategory, c.statedEntries, c.statedFederal])).toEqual([
+      // The draft's F20.0 is not counted: only published entries.
+      ['SMI', 1, ['physical_idd_adl', 'serious_complex_medical']],
+      ['SUD', 0, []],
+      ['Tier 2 - Frailty Indicators', 0, []],
+    ])
+  })
+
   it('counts ICD-10-CM entries per chapter, for chapter overrides', async () => {
     const { chapters } = await categories()
     expect(chapters).toHaveLength(22)

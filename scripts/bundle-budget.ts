@@ -45,6 +45,13 @@ export const BUDGETS: readonly Budget[] = [
   { group: 'pdf.js', brotli: 271_000, gzip: 323_000 },
   { group: 'pdf.worker.min.mjs', brotli: 355_000, gzip: 432_000 },
   { group: 'worker.js', brotli: 59_000, gzip: 68_000 },
+  // ui-sdk (2026-11-12): the tooltips, matrix hover cards and Overlaps rows. Loaded on demand
+  // by the compare and code pages only, never in the first load. The bundler names the two
+  // shared pieces after ui-sdk's own modules, so a ui-sdk update that renames them fails here
+  // ("no file in the build") and the new names need their budget. Grouping them into one named
+  // chunk was tried and pulled all of ui-sdk into the first load.
+  { group: 'popup.js', brotli: 17_600, gzip: 19_300 },
+  { group: 'create-parts.js', brotli: 11_300, gzip: 12_400 },
 ]
 
 /** `assets/runtime-core.esm-bundler-GIwZZenQ.js` → `runtime-core.esm-bundler.js`. */

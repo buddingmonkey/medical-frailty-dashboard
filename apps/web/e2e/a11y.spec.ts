@@ -15,6 +15,11 @@ const pages = [
   { path: '/compare', heading: 'How much of each category each state lists' },
   { path: '/compare/categories', heading: null },
   { path: '/compare/map', heading: null },
+  { path: '/compare/overlaps', heading: 'Which states list the same codes' },
+  {
+    path: '/compare/overlaps?category=test-psychoses',
+    heading: 'Which states list the same codes',
+  },
   { path: '/compare/states', heading: null },
   { path: '/compare/codes', heading: 'Compare single codes' },
   { path: '/compare/codes?states=MT,NE&category=sud', heading: 'Compare single codes' },
@@ -87,6 +92,25 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await a11yViolations(page)).toEqual([])
     })
 
+    test('the overlaps tab with a row open, and at 320px with no sideways scroll', async ({
+      page,
+    }) => {
+      await page.goto('/compare/overlaps?category=test-psychoses')
+      await ready(page, 'Which states list the same codes')
+      const table = page.getByRole('table', { name: /groups of states that list exactly/ })
+      const first = table.getByRole('rowheader').first().getByRole('button')
+      await first.click()
+      await expect(first).toHaveAttribute('aria-expanded', 'true')
+      expect(await a11yViolations(page)).toEqual([])
+
+      await page.setViewportSize({ width: 320, height: 800 })
+      const sideways = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      )
+      expect(sideways).toBe(false)
+      expect(await a11yViolations(page)).toEqual([])
+    })
+
     test('search while loading and after an error', async ({ page }) => {
       let release: () => void = () => undefined
       const held = new Promise<void>((resolve) => {
@@ -143,3 +167,21 @@ test.describe('with scripts blocked', () => {
     }
   }
 })
+
+// The state picker on Compare single codes (2026-11-13): open, with every state chosen and a
+// filter typed, in both themes.
+for (const theme of ['light', 'dark'] as const) {
+  test(`the compare state picker, open and filtered, has no violations (${theme})`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme })
+    await page.goto('/compare/codes?states=MT&category=sud')
+    await ready(page, 'Compare single codes')
+    await page.getByText('States to compare:').click()
+    await page.getByRole('button', { name: 'All states with a list' }).click()
+    await page.getByLabel('Filter states').fill('mon')
+    // Both are checked, so both stay in view.
+    await expect(page.getByText('2 states shown')).toBeVisible()
+    expect(await a11yViolations(page)).toEqual([])
+  })
+}

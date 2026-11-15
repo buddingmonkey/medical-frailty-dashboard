@@ -15,7 +15,6 @@ const props = defineProps<{ states: readonly PublicStateSummary[] }>()
 const active = defineModel<string | null>('active', { required: true })
 
 const router = useRouter()
-const titleId = useId()
 const hatchId = useId()
 
 const shapes = computed(() => {
@@ -60,10 +59,11 @@ function open(event: MouseEvent, href: string) {
   <svg
     :viewBox="`0 0 ${String(usMap.width)} ${String(usMap.height)}`"
     role="group"
-    :aria-labelledby="titleId"
+    aria-label="Map of state medical frailty code lists"
     class="h-auto w-full"
   >
-    <title :id="titleId">Map of state medical frailty code lists</title>
+    <!-- No <title>: browsers show it as a tooltip on every state, and it only repeated the map's
+         name (project lead, 2026-11-13). The card beside the map names the hovered state. -->
     <defs>
       <pattern
         :id="hatchId"

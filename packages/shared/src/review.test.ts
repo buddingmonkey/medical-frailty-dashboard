@@ -23,6 +23,7 @@ const row = (rawCode: string, extra: Partial<MappedRow> = {}): MappedRow => ({
   qualificationValue: '',
   included: true,
   notes: '',
+  stateFederal: '',
   ...extra,
 })
 
@@ -179,6 +180,44 @@ describe('buildReview', () => {
   it('splits a multi-code cell into several codes (NE “33230 and 33240”)', () => {
     const [r] = review([row('33230 and 33240')]).rows
     expect(r?.codes.map((c) => c.codeNorm)).toEqual(['33230', '33240'])
+  })
+
+  describe('the state’s own federal category (Indiana)', () => {
+    it('reads it from the cell; an empty cell is none', () => {
+      const result = review([
+        row('F20.0', {
+          stateFederal:
+            'Physical, intellectual or developmental disability; Serious or complex medical condition',
+        }),
+        row('F20.1'),
+      ])
+      expect(result.rows.map((r) => [r.stateFederalCategories, r.status])).toEqual([
+        [['physical_idd_adl', 'serious_complex_medical'], 'ready'],
+        [[], 'ready'],
+      ])
+    })
+
+    it('flags text it does not know, and accepting ignores the state’s federal category', () => {
+      const rows = [row('F20.0', { stateFederal: 'Frailty; Substance use disorder' })]
+      const flagged = review(rows).rows[0]
+      expect(flagged?.openFlags).toEqual(['state_federal_unknown'])
+      expect(flagged?.status).toBe('needs_review')
+      expect(flagged?.stateFederalCategories).toEqual([])
+
+      const accepted = review(rows, { 'row F20.0': { accepted: ['state_federal_unknown'] } })
+        .rows[0]
+      expect(accepted?.status).toBe('ready')
+      expect(accepted?.stateFederalCategories).toEqual([])
+    })
+
+    it('can be edited, which clears the flag', () => {
+      const rows = [row('F20.0', { stateFederal: 'Frailty' })]
+      const edited = review(rows, { 'row F20.0': { stateFederal: 'Substance use disorder' } })
+        .rows[0]
+      expect(edited?.openFlags).toEqual([])
+      expect(edited?.stateFederalCategories).toEqual(['sud'])
+      expect(edited?.edited).toBe(true)
+    })
   })
 
   it('ignores accepted flags the row no longer has', () => {

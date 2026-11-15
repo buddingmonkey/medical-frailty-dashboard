@@ -357,8 +357,9 @@ Restore paths, from smallest to largest:
 **Left out of the full backup** (also in its `notes`): reference tables (`ref_codes`,
 `ref_ccsr`, `ref_ccsr_categories`: reload from the pinned files), derived tables
 (`entry_unified`, `unified_universe`, `state_similarity`: Rebuild coverage recreates them), and
-the FTS tables (`entries_fts`, `ref_codes_fts`). A test fails when a new table is in neither
-list. Source files are not in it. The manual download leaves out their R2 keys
+the FTS tables (`entries_fts`, `ref_codes_fts`). `entry_federal_suggestions` is in it,
+although a re-run recreates most of it, because it holds admins' reviews (2026-11-13). A test
+fails when a new table is in neither list. Source files are not in it. The manual download leaves out their R2 keys
 (`docs/security.md`); the weekly dump keeps them, and its download is admin-only like the rest.
 
 **Measured on the local 51-state seed** (2026-11-03, `wrangler dev`): 13,735 rows (12,153
