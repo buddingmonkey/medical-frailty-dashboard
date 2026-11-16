@@ -15,7 +15,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 
-import SourceDetailsForm from '../../components/admin/SourceDetailsForm.vue'
+import SourceDetailsForm, { sourceFieldHelp } from '../../components/admin/SourceDetailsForm.vue'
+import InfoTip from '../../components/ui/InfoTip.vue'
 import { formatIsoDate, formatTimestampDate } from '../../lib/admin-watch'
 import { apiRequest, getJson, sendJson } from '../../lib/api'
 
@@ -249,17 +250,19 @@ const inputClass =
 
         <template v-if="picked && !picked.duplicate">
           <div>
-            <label :for="`${id}-title`" class="font-medium">Title</label>
+            <label :for="`${id}-title`" class="font-medium">Title</label
+            ><InfoTip label="Title" :text="sourceFieldHelp.title" />
             <input :id="`${id}-title`" v-model="title" type="text" :class="inputClass" />
           </div>
           <div>
             <label :for="`${id}-url`" class="font-medium"
               >State’s URL for this file (optional)</label
-            >
+            ><InfoTip label="State’s URL for this file" :text="sourceFieldHelp.url" />
             <input :id="`${id}-url`" v-model="url" type="url" :class="inputClass" />
           </div>
           <div class="max-w-xs">
-            <label :for="`${id}-date`" class="font-medium">Date on the document (optional)</label>
+            <label :for="`${id}-date`" class="font-medium">Date on the document (optional)</label
+            ><InfoTip label="Date on the document" :text="sourceFieldHelp.date" />
             <input :id="`${id}-date`" v-model="publisherDate" type="date" :class="inputClass" />
           </div>
           <p v-if="upload.error.value" role="alert" class="text-danger">

@@ -16,6 +16,7 @@ import { z } from 'zod'
 
 import RemapPreview from '../../components/admin/RemapPreview.vue'
 import SuggestionRun from '../../components/admin/SuggestionRun.vue'
+import InfoTip from '../../components/ui/InfoTip.vue'
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
 
@@ -336,6 +337,23 @@ function previewChapter(ch: Chapter) {
 const n = (value: number) => value.toLocaleString('en-US')
 const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+/** What the columns and actions do, in their info buttons' tooltips (one per column, not per row). */
+const help = {
+  federalCategory:
+    'Where this state category’s entries count when nothing more specific decides: the state’s own federal category, a published unified category, a chapter override or a confirmed suggestion by code all come first. Confirming makes the mapping manual, which also wins over unreviewed suggestions.',
+  entries:
+    'Published entries, and those in drafts. The lines under the count say how many the state classified itself, how many follow their unified categories and how many follow a suggestion from another state’s list; the mapping covers the rest. Confirm suggestions marks the suggestions that decide entries now as reviewed, which moves nothing.',
+  confirmAll:
+    'Confirms, up to 200 at a time, every guessed mapping whose confirmation moves no published entry, and every unreviewed suggestion by code that decides an entry now. Changes that would move entries are left for a preview.',
+  rerun:
+    'Works the suggestions by code out again from the published lists that name a federal category for each code, for example after such a list changes. A preview comes first; saving writes only the differences and never changes a suggestion an admin confirmed.',
+  remap:
+    'Gives every selected category the same federal category, as a confirmed mapping. The preview shows which published entries move; entries the state classified, placed in a unified category, under a chapter override or with a confirmed suggestion stay where they are.',
+  overrideSeveral:
+    'Sets the same override on every selected chapter, or removes it with “Use the category mapping”. A preview shows which published entries move before anything is saved.',
+  override:
+    'Applies to the state’s ICD-10-CM entries in this chapter that the state did not classify itself and that are in no published unified category. It wins over a reviewed suggestion by code and over the category mapping.',
+}
 </script>
 
 <template>
@@ -390,18 +408,26 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       <template v-else>
         <div class="flex flex-wrap items-center gap-3">
           <p>{{ summary }}</p>
-          <button
-            v-if="allGuesses > 0"
-            type="button"
-            :class="smallButton"
-            :disabled="busy"
-            @click="confirmAll.mutate()"
-          >
-            Confirm all {{ allGuesses }} guesses
-          </button>
-          <button type="button" :class="smallButton" :disabled="rerun !== null" @click="openRerun">
-            Re-run automatic suggestions
-          </button>
+          <span v-if="allGuesses > 0">
+            <button
+              type="button"
+              :class="smallButton"
+              :disabled="busy"
+              @click="confirmAll.mutate()"
+            >
+              Confirm all {{ allGuesses }} guesses</button
+            ><InfoTip label="Confirm all guesses" :text="help.confirmAll" />
+          </span>
+          <span>
+            <button
+              type="button"
+              :class="smallButton"
+              :disabled="rerun !== null"
+              @click="openRerun"
+            >
+              Re-run automatic suggestions</button
+            ><InfoTip label="Re-run automatic suggestions" :text="help.rerun" />
+          </span>
         </div>
         <SuggestionRun
           v-if="rerun !== null"
@@ -430,14 +456,16 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             <option value="" disabled>Choose a federal category</option>
             <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
           </select>
-          <button
-            type="button"
-            :class="smallButton"
-            :disabled="selected.size === 0 || !bulkCategory"
-            @click="previewCategories"
-          >
-            Preview remap
-          </button>
+          <span>
+            <button
+              type="button"
+              :class="smallButton"
+              :disabled="selected.size === 0 || !bulkCategory"
+              @click="previewCategories"
+            >
+              Preview remap</button
+            ><InfoTip label="Remap several categories" :text="help.remap" />
+          </span>
         </fieldset>
         <RemapPreview
           v-if="remap && remap.from === 'categories'"
@@ -462,9 +490,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                   <span class="sr-only">Select</span>
                 </th>
                 <th scope="col" class="py-2 pr-4 font-medium">State category</th>
-                <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
+                <th scope="col" class="py-2 pr-4 text-right font-medium">
+                  Entries<InfoTip label="Entries" :text="help.entries" />
+                </th>
                 <th scope="col" class="py-2 pr-4 font-medium">Now</th>
-                <th scope="col" class="py-2 font-medium">Federal category</th>
+                <th scope="col" class="py-2 font-medium">
+                  Federal category<InfoTip label="Federal category" :text="help.federalCategory" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -571,14 +603,16 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
             <option value="clear">Use the category mapping</option>
             <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
           </select>
-          <button
-            type="button"
-            :class="smallButton"
-            :disabled="selectedChapters.size === 0 || !bulkChapter"
-            @click="previewChapters"
-          >
-            Preview chapter overrides
-          </button>
+          <span>
+            <button
+              type="button"
+              :class="smallButton"
+              :disabled="selectedChapters.size === 0 || !bulkChapter"
+              @click="previewChapters"
+            >
+              Preview chapter overrides</button
+            ><InfoTip label="Override several chapters" :text="help.overrideSeveral" />
+          </span>
         </fieldset>
         <RemapPreview
           v-if="remap && remap.from === 'chapters'"
@@ -601,7 +635,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                 </th>
                 <th scope="col" class="py-2 pr-4 font-medium">Chapter</th>
                 <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
-                <th scope="col" class="py-2 font-medium">Override</th>
+                <th scope="col" class="py-2 font-medium">
+                  Override<InfoTip label="Override" :text="help.override" />
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -84,6 +84,33 @@ describe('SourceDetailsForm', () => {
     expect(cancelled()).toBe(1)
   })
 
+  it('explains where each detail shows on the public pages, and keeps the URL hint wired', () => {
+    renderForm(empty)
+
+    expect(
+      screen.getByRole('button', { name: 'About Title', description: /citation/ }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', {
+        name: 'About State’s URL for this file',
+        description: /link/,
+      }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', {
+        name: 'About Date on the document',
+        description: /not the day it was uploaded/,
+      }),
+    ).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Title' })).toBeTruthy()
+    expect(
+      screen.getByRole('textbox', {
+        name: 'State’s URL for this file',
+        description: /Leave blank if the state has no public copy/,
+      }),
+    ).toBeTruthy()
+  })
+
   it('disables save while saving', () => {
     renderForm(empty, { saving: true })
     expect(screen.getByRole('button', { name: 'Saving…' }).hasAttribute('disabled')).toBe(true)

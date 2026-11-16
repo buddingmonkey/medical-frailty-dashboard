@@ -22,6 +22,7 @@ import { z } from 'zod'
 
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // Restore path 2 (docs/deployment.md, "Backups and restore"): read a backup in the browser (the
 // full download's .zip, or a per-publish .json from R2), pick one state and one version, and
@@ -253,6 +254,13 @@ async function send() {
 
 const n = (value: number) => value.toLocaleString('en-US')
 const inputClass = 'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5'
+/** What the restore choices do, in their info buttons' tooltips. */
+const help = {
+  version:
+    'The state’s versions in the file. “public then” was the published one when the backup was written and is chosen first; “earlier” ones were replaced. Any of them becomes a new draft, so nothing public changes until you publish it.',
+  mappings:
+    'Unlike the entries, this applies at once: the state’s public pages use the backup’s category mappings and chapter overrides as soon as the draft is made, before it is published. All the current ones and the column profiles are replaced, and the change is written to the audit log.',
+}
 const statusLabels: Record<string, string> = {
   draft: 'draft',
   published: 'public then',
@@ -335,7 +343,8 @@ const statusLabels: Record<string, string> = {
           </select>
         </div>
         <div v-if="stateId">
-          <label :for="`${id}-version`" class="font-medium">Version</label>
+          <label :for="`${id}-version`" class="font-medium">Version</label
+          ><InfoTip label="Version" :text="help.version" />
           <select :id="`${id}-version`" v-model="versionId" :class="inputClass">
             <option v-for="v in versionsOfState" :key="v.version.id" :value="v.version.id">
               v{{ v.version.versionNo }}, {{ statusLabels[v.version.status] ?? v.version.status }},
@@ -376,14 +385,17 @@ const statusLabels: Record<string, string> = {
         </div>
 
         <div v-if="fileMappings" class="space-y-2">
-          <label class="flex items-start gap-2">
-            <input v-model="restoreMappings" type="checkbox" class="mt-1" />
-            <span>
-              Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
-              column profiles with the backup’s
-              <span class="text-muted-foreground">(default: keep the current ones)</span>
-            </span>
-          </label>
+          <div class="flex items-start">
+            <label class="flex items-start gap-2">
+              <input v-model="restoreMappings" type="checkbox" class="mt-1" />
+              <span>
+                Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
+                column profiles with the backup’s
+                <span class="text-muted-foreground">(default: keep the current ones)</span>
+              </span>
+            </label>
+            <InfoTip label="replacing the mappings" :text="help.mappings" class="shrink-0" />
+          </div>
           <template v-if="restoreMappings">
             <p v-if="currentMappings.isPending.value" role="status">Loading current mappings…</p>
             <p v-else-if="currentMappings.error.value" role="alert" class="text-danger">

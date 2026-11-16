@@ -10,6 +10,7 @@ import { computed, onMounted, ref, useId, useTemplateRef } from 'vue'
 import { z } from 'zod'
 
 import { ApiError, sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // "Re-run automatic suggestions" (docs/add-state-source.md, step 8): the server's preview of
 // what a run would change for the state's published entries, then a save that sends the
@@ -63,6 +64,9 @@ const changed = computed(() => {
   return p ? p.gain + p.change + p.lose : 0
 })
 const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
+/** What saving does, in the info button beside it. */
+const saveHelp =
+  'Writes only the differences this preview shows and never changes a suggestion an admin confirmed. The public pages change at once and the run is written to the audit log. If anything changed since the preview, nothing is saved and a new preview appears.'
 </script>
 
 <template>
@@ -172,14 +176,16 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
       Could not save: {{ save.error.value.message }}
     </p>
     <div class="flex flex-wrap gap-3">
-      <button
-        type="button"
-        class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
-        :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
-        @click="confirm"
-      >
-        Save suggestions
-      </button>
+      <span class="inline-flex items-center">
+        <button
+          type="button"
+          class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
+          :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
+          @click="confirm"
+        >
+          Save suggestions</button
+        ><InfoTip label="Save suggestions" :text="saveHelp"
+      /></span>
       <button type="button" :class="button" @click="emit('cancel')">Cancel</button>
     </div>
   </section>

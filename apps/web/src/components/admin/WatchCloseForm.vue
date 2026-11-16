@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue'
 
+import InfoTip from '../ui/InfoTip.vue'
+
 defineProps<{ saving?: boolean }>()
 
 const emit = defineEmits<{
@@ -12,6 +14,12 @@ const id = useId()
 const status = ref<'done' | 'dismissed'>('done')
 const note = ref('')
 const problem = ref(false)
+/** What closing does, in the info buttons' tooltips. */
+const help = {
+  outcome:
+    'Done: it was dealt with. Dismissed: it no longer needs doing. Either way the item moves to History, and a repeating item opens its next one.',
+  note: 'Required. Kept with the item in History and written to the audit log with who closed it. Up to 4,000 characters.',
+}
 
 function submit() {
   problem.value = note.value.trim() === ''
@@ -24,7 +32,7 @@ function submit() {
     <p v-if="problem" :id="`${id}-problem`" role="alert" class="text-danger">
       Write a resolution note: what happened, and how you checked.
     </p>
-    <fieldset class="flex gap-4">
+    <fieldset class="flex items-center gap-4">
       <legend class="sr-only">Outcome</legend>
       <label class="flex items-center gap-1">
         <input v-model="status" type="radio" :name="`${id}-status`" value="done" /> Done
@@ -33,9 +41,11 @@ function submit() {
         <input v-model="status" type="radio" :name="`${id}-status`" value="dismissed" />
         Dismissed
       </label>
+      <InfoTip label="Outcome" :text="help.outcome" />
     </fieldset>
     <div>
-      <label :for="`${id}-note`" class="font-medium">Resolution note</label>
+      <label :for="`${id}-note`" class="font-medium">Resolution note</label
+      ><InfoTip label="Resolution note" :text="help.note" />
       <textarea
         :id="`${id}-note`"
         v-model="note"

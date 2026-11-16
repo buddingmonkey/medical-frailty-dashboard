@@ -10,6 +10,7 @@ import { computed, ref, useId, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { formatTimestampDate } from '../../lib/admin-watch'
+import InfoTip from '../../components/ui/InfoTip.vue'
 import { getJson, sendJson } from '../../lib/api'
 
 // A state's versions, and rollback (docs/data-model.md): an earlier version becomes the public
@@ -63,6 +64,9 @@ const rollback = useMutation({
 
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+/** What Restore does, in the info button at the head of the actions column. */
+const restoreHelp =
+  'Makes an earlier version the state’s public list again, at once, after a second click. The version public now becomes an earlier one, which can be restored the same way. The change is written to the audit log.'
 </script>
 
 <template>
@@ -117,7 +121,14 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
               <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
               <th scope="col" class="py-2 pr-4 font-medium">Started</th>
               <th scope="col" class="py-2 pr-4 font-medium">Published</th>
-              <th scope="col" class="py-2 font-medium"><span class="sr-only">Actions</span></th>
+              <th scope="col" class="py-2 font-medium">
+                <span class="sr-only">Actions</span>
+                <InfoTip
+                  v-if="versionsQuery.data.value.some((v) => v.status === 'superseded')"
+                  label="Restore"
+                  :text="restoreHelp"
+                />
+              </th>
             </tr>
           </thead>
           <tbody>

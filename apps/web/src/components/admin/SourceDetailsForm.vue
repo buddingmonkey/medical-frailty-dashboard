@@ -1,6 +1,18 @@
+<script lang="ts">
+/** What each source detail does, in its info button's tooltip; the upload form uses it too. */
+export const sourceFieldHelp = {
+  title:
+    'Names the file in the citation on the public pages, next to the codes taken from it. Up to 200 characters.',
+  url: 'On the public pages the file’s title links to this address, so readers can open the original the state published. Without one, the state page says “link not known”.',
+  date: 'The date the state printed on or published the document, shown with the citation on the public pages. It is not the day it was uploaded, which is kept separately.',
+}
+</script>
+
 <script setup lang="ts">
 import { type SourceDetails, type SourceDetailsDraft, sourceDetailsSchema } from '@mfcd/shared'
 import { ref, useId } from 'vue'
+
+import InfoTip from '../ui/InfoTip.vue'
 
 defineProps<{
   /** Accessible name of the form, e.g. `Edit details of “GA list”`. */
@@ -51,7 +63,8 @@ const inputClass =
     @submit.prevent="submit"
   >
     <div>
-      <label :for="`${id}-title`" class="font-medium">Title</label>
+      <label :for="`${id}-title`" class="font-medium">Title</label
+      ><InfoTip label="Title" :text="sourceFieldHelp.title" />
       <input
         :id="`${id}-title`"
         v-model="draft.title"
@@ -66,7 +79,8 @@ const inputClass =
       </p>
     </div>
     <div>
-      <label :for="`${id}-url`" class="font-medium">State’s URL for this file</label>
+      <label :for="`${id}-url`" class="font-medium">State’s URL for this file</label
+      ><InfoTip label="State’s URL for this file" :text="sourceFieldHelp.url" />
       <input
         :id="`${id}-url`"
         v-model="draft.url"
@@ -83,7 +97,8 @@ const inputClass =
       </p>
     </div>
     <div class="max-w-xs">
-      <label :for="`${id}-date`" class="font-medium">Date on the document</label>
+      <label :for="`${id}-date`" class="font-medium">Date on the document</label
+      ><InfoTip label="Date on the document" :text="sourceFieldHelp.date" />
       <input
         :id="`${id}-date`"
         v-model="draft.publisherDate"

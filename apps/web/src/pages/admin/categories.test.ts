@@ -485,6 +485,38 @@ describe('/admin/categories', () => {
   })
 })
 
+describe('/admin/categories field help', () => {
+  const about = (name: string, description: RegExp) =>
+    screen.getByRole('button', { name: `About ${name}`, description })
+
+  it('explains the columns and the actions once each, not per row', async () => {
+    fakeApi()
+    const table = await open()
+
+    expect(about('Federal category', /chapter override/)).toBeTruthy()
+    expect(about('Entries', /Confirm suggestions/)).toBeTruthy()
+    expect(about('Confirm all guesses', /moves no published entry/)).toBeTruthy()
+    expect(about('Re-run automatic suggestions', /never changes a suggestion/)).toBeTruthy()
+    expect(about('Remap several categories', /confirmed mapping/)).toBeTruthy()
+    expect(about('Override several chapters', /Use the category mapping/)).toBeTruthy()
+    expect(about('Override', /reviewed suggestion/)).toBeTruthy()
+    expect(within(table).getAllByRole('button', { name: /^About / })).toHaveLength(2)
+    // The selects keep their own names.
+    expect(within(table).getByRole('combobox', { name: 'Federal category for SMI' })).toBeTruthy()
+  })
+
+  it('explains what saving a previewed remap does', async () => {
+    fakeApi()
+    const table = await open()
+    await user.selectOptions(within(table).getByLabelText('Federal category for SMI'), 'sud')
+    await user.click(within(table).getByRole('button', { name: 'Preview change for SMI' }))
+    const region = await screen.findByRole('region', { name: 'Check the remap before saving' })
+    expect(
+      within(region).getByRole('button', { name: 'About Save remap', description: /audit log/ }),
+    ).toBeTruthy()
+  })
+})
+
 describe('/admin/categories: suggestions by code', () => {
   const withSuggestions = {
     ...data,
@@ -576,6 +608,12 @@ describe('/admin/categories: suggestions by code', () => {
       within(region).getByText(/3 entries keep the suggestion an admin confirmed/),
     ).toBeTruthy()
     expect(within(region).getByRole('rowheader', { name: 'C50.911' })).toBeTruthy()
+    expect(
+      within(region).getByRole('button', {
+        name: 'About Save suggestions',
+        description: /never changes a suggestion an admin confirmed/,
+      }),
+    ).toBeTruthy()
     await user.click(within(region).getByRole('button', { name: 'Save suggestions' }))
     expect(await screen.findByText('Saved the automatic suggestions for Louisiana.')).toBeTruthy()
     expect(runs).toEqual([{ token: 'run-1' }])
