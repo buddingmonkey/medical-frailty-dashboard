@@ -12,11 +12,6 @@ updates:
       default-days: 3
       semver-major-days: 7
     open-pull-requests-limit: 5
-    # Held back (2026-11-14): workerd 1.20261110 rejects the state-similarity statement.
-    # Remove after it is rewritten (docs/status.md, "Known limits").
-    ignore:
-      - dependency-name: wrangler
-      - dependency-name: '@cloudflare/vitest-plugin'
     groups:
       minor-and-patch:
         update-types: [minor, patch]
