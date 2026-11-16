@@ -210,7 +210,31 @@ describe('/admin/categories', () => {
     expect(screen.getByText(/5 categories: 1 confirmed, 2 guessed, 2 not mapped/)).toBeTruthy()
     expect(within(rowOf(table, 'SMI')).getByText(/Guessed from “smi”/)).toBeTruthy()
     expect(within(rowOf(table, 'SUD')).getByText(/Confirmed by admin@example.org/)).toBeTruthy()
-    expect(within(rowOf(table, 'Miscellaneous')).getByText('Not mapped')).toBeTruthy()
+    expect(
+      within(rowOf(table, 'Miscellaneous')).getByText(
+        'Not mapped · 4 of 12 entries classified by code',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('says no mapping is needed when every entry has a federal category by code', async () => {
+    fakeApi()
+    server.use(
+      http.get('/api/admin/states/LA/categories', () =>
+        HttpResponse.json({
+          ...data,
+          categories: data.categories.map((c) =>
+            c.stateCategory === 'Miscellaneous' ? { ...c, statedEntries: 12 } : c,
+          ),
+        }),
+      ),
+    )
+    const table = await open()
+    expect(
+      within(rowOf(table, 'Miscellaneous')).getByText(
+        'Not needed: every entry is classified by code',
+      ),
+    ).toBeTruthy()
   })
 
   it('says which entries follow their unified categories instead of this mapping', async () => {
