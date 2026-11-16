@@ -121,6 +121,12 @@ function status(c: Category): string {
       ? keyword
       : `${keyword} (${String(Math.round(confidence * 100))}% sure)`
   }
+  // Entries the state, a unified category or a suggestion by code already classifies need no
+  // category mapping (Nebraska has no categories, so its one row would always say "Not mapped").
+  const total = c.publishedEntries + c.draftEntries
+  const byCode = Math.min(total, c.statedEntries + c.placedEntries + c.codeSuggested.entries)
+  if (total > 0 && byCode === total) return 'Not needed: every entry is classified by code'
+  if (byCode > 0) return `Not mapped · ${n(byCode)} of ${n(total)} entries classified by code`
   return 'Not mapped'
 }
 
