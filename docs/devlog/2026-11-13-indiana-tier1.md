@@ -78,8 +78,8 @@ ingest it or whether it needs the AI cleanup flow, and load the Tier 1 codes to 
 
 ## Open threads
 - Map Indiana's categories on production.
-- After the release on production: re-upload Indiana with "Federal category" mapped to the new
-  role, then press "Re-run automatic suggestions" for GA, LA, MT and NE. Check Montana's
+- After the release on production: read Indiana's stored file again in Read and map, with
+  "Federal category" mapped to the new role (not a new upload), then press "Re-run automatic suggestions" for GA, LA, MT and NE. Check Montana's
   Tier 2 mapping.
 - Tech lesson: in a one-table drizzle query, `${entries.id}` placed directly in a selected
   field is written without its table name. Inside a subquery that joins `states`, it matched
