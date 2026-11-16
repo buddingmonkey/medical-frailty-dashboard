@@ -2,11 +2,14 @@
 import type { CcsrCategoryListResponse } from '@mfcd/shared'
 import { computed, ref, useId } from 'vue'
 
+import InfoTip from '../ui/InfoTip.vue'
+
 type CcsrOption = CcsrCategoryListResponse['items'][number]
 
 // Picks CCSR groups for a unified category: search by id or name, results grouped by body
-// system, the chosen groups as removable chips.
-const props = defineProps<{ options: readonly CcsrOption[] }>()
+// system, the chosen groups as removable chips. `help` adds an info button beside the legend; the
+// fieldset is named by the legend's text alone, not the button.
+const props = defineProps<{ options: readonly CcsrOption[]; help?: string }>()
 const selected = defineModel<string[]>({ required: true })
 
 const id = useId()
@@ -45,8 +48,11 @@ const inputClass =
 </script>
 
 <template>
-  <fieldset class="space-y-3">
-    <legend class="font-medium">CCSR groups</legend>
+  <fieldset class="space-y-3" :aria-labelledby="`${id}-legend`">
+    <legend class="font-medium">
+      <span :id="`${id}-legend`">CCSR groups</span
+      ><InfoTip v-if="help" label="CCSR groups" :text="help" />
+    </legend>
     <p class="text-sm text-muted-foreground">
       The ICD-10-CM codes in these groups belong to the category.
     </p>

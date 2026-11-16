@@ -13,6 +13,7 @@ import {
 import { computed, reactive, ref, useId, watch } from 'vue'
 
 import { unifiedStatusLabels } from '../../lib/admin-unified'
+import InfoTip from '../ui/InfoTip.vue'
 import CcsrPicker from './CcsrPicker.vue'
 
 const props = defineProps<{
@@ -71,6 +72,26 @@ const fieldLabels: Record<string, string> = {
   sortOrder: 'Sort order',
   ccsr: 'CCSR groups',
 }
+/** What each field changes, in its info button's tooltip (adds to any help shown below it). */
+const fieldHelp = {
+  label:
+    'The category’s name on the public site, where it is called a comparison category: its own page, the list of categories and the overview table.',
+  slug: 'The last part of the category’s public address, /compare/<slug>. A new category’s slug follows its label until you edit it; codes, states, categories, map and overlaps are taken by other pages.',
+  definition:
+    'Says what the category covers. Shown under its name on its public page and in the list of comparison categories.',
+  includes:
+    'Optional. Shown as “Includes:” on the category’s public page. Text only: the CCSR groups decide which codes are in the category.',
+  excludes:
+    'Optional. Shown as “Excludes:” on the category’s public page. Text only: it removes no codes.',
+  federalCategory:
+    'The federal category this one sits under on public pages. Codes placed in this category count under that federal category.',
+  status:
+    'Only published categories show on the public site and have codes placed in them; draft and retired ones are hidden and count nothing.',
+  sortOrder:
+    'Orders the comparison categories under each federal parent on public pages, such as the list of categories and the overview table. Lower numbers come first; equal numbers go by label. A whole number from 0 to 100,000.',
+  ccsr: 'These groups make the category’s reference list on its public page and drive the mapping suggestions. They also place the codes of state categories mapped “by its CCSR group”. Changing them on a category out of draft recounts every state.',
+}
+
 /** Fields that failed the last Save; each is marked aria-invalid and points at the message. */
 const invalid = ref<ReadonlySet<string>>(new Set())
 const problems = computed(() =>
@@ -136,7 +157,8 @@ const inputClass =
 
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-label`" class="font-medium">Label</label>
+        <label :for="`${id}-label`" class="font-medium">Label</label
+        ><InfoTip label="Label" :text="fieldHelp.label" />
         <input
           :id="`${id}-label`"
           v-model="draft.label"
@@ -148,7 +170,7 @@ const inputClass =
       <div>
         <label :for="`${id}-slug`" class="font-medium"
           >Slug <span class="font-normal text-muted-foreground">(URL: /compare/…)</span></label
-        >
+        ><InfoTip label="Slug" :text="fieldHelp.slug" />
         <input
           :id="`${id}-slug`"
           v-model="draft.slug"
@@ -164,7 +186,8 @@ const inputClass =
     </div>
 
     <div>
-      <label :for="`${id}-definition`" class="font-medium">Definition</label>
+      <label :for="`${id}-definition`" class="font-medium">Definition</label
+      ><InfoTip label="Definition" :text="fieldHelp.definition" />
       <textarea
         :id="`${id}-definition`"
         v-model="draft.definition"
@@ -175,7 +198,8 @@ const inputClass =
     </div>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-includes`" class="font-medium">Includes</label>
+        <label :for="`${id}-includes`" class="font-medium">Includes</label
+        ><InfoTip label="Includes" :text="fieldHelp.includes" />
         <textarea
           :id="`${id}-includes`"
           v-model="draft.includes"
@@ -185,7 +209,8 @@ const inputClass =
         />
       </div>
       <div>
-        <label :for="`${id}-excludes`" class="font-medium">Excludes</label>
+        <label :for="`${id}-excludes`" class="font-medium">Excludes</label
+        ><InfoTip label="Excludes" :text="fieldHelp.excludes" />
         <textarea
           :id="`${id}-excludes`"
           v-model="draft.excludes"
@@ -198,7 +223,8 @@ const inputClass =
 
     <div class="flex flex-wrap gap-4">
       <div>
-        <label :for="`${id}-parent`" class="font-medium">Federal parent</label>
+        <label :for="`${id}-parent`" class="font-medium">Federal parent</label
+        ><InfoTip label="Federal parent" :text="fieldHelp.federalCategory" />
         <select
           :id="`${id}-parent`"
           v-model="draft.federalCategory"
@@ -212,7 +238,8 @@ const inputClass =
         </select>
       </div>
       <div>
-        <label :for="`${id}-status`" class="font-medium">Status</label>
+        <label :for="`${id}-status`" class="font-medium">Status</label
+        ><InfoTip label="Status" :text="fieldHelp.status" />
         <select
           :id="`${id}-status`"
           v-model="draft.status"
@@ -223,7 +250,8 @@ const inputClass =
         </select>
       </div>
       <div>
-        <label :for="`${id}-sort`" class="font-medium">Sort order</label>
+        <label :for="`${id}-sort`" class="font-medium">Sort order</label
+        ><InfoTip label="Sort order" :text="fieldHelp.sortOrder" />
         <input
           :id="`${id}-sort`"
           v-model="draft.sortOrder"
@@ -241,7 +269,7 @@ const inputClass =
       A draft that will not be published can be retired.
     </p>
 
-    <CcsrPicker v-model="draft.ccsr" :options="ccsrOptions" />
+    <CcsrPicker v-model="draft.ccsr" :options="ccsrOptions" :help="fieldHelp.ccsr" />
 
     <div class="flex gap-2">
       <button

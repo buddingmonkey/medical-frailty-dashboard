@@ -20,6 +20,7 @@ import {
   stateCategoryName,
   targetRelations,
 } from '../../lib/admin-unified'
+import InfoTip from '../ui/InfoTip.vue'
 
 type TargetRelation = (typeof targetRelations)[number]
 
@@ -157,6 +158,15 @@ function submit(approve: boolean) {
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+/** What the record fields mean, in their info buttons' tooltips. */
+const fieldHelp = {
+  basis:
+    'Why the mapping holds: the state’s own text, an admin’s judgement, the CCSR groups of its codes agreeing, or inferred. A record for reviewers; it does not change counts.',
+  confidence: 'How sure the mapper is. A record for reviewers; it does not change counts.',
+  rationale: 'A note on why, for the next admin. Up to 4,000 characters.',
+  citation:
+    'Where the evidence is, such as a page or section of the state’s document. Up to 1,000 characters.',
+}
 const relationOption: Record<TargetRelation, string> = {
   exact: 'Exact (the same codes)',
   close: 'Close (nearly the same)',
@@ -254,13 +264,15 @@ const relationOption: Record<TargetRelation, string> = {
 
     <div v-if="mode === 'byCode'" class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-c-basis`" class="font-medium">Basis</label>
+        <label :for="`${id}-c-basis`" class="font-medium">Basis</label
+        ><InfoTip label="Basis" :text="fieldHelp.basis" />
         <select :id="`${id}-c-basis`" v-model="byCode.basis" :class="inputClass">
           <option v-for="b in mappingBases" :key="b" :value="b">{{ basisLabels[b] }}</option>
         </select>
       </div>
       <div>
-        <label :for="`${id}-c-confidence`" class="font-medium">Confidence</label>
+        <label :for="`${id}-c-confidence`" class="font-medium">Confidence</label
+        ><InfoTip label="Confidence" :text="fieldHelp.confidence" />
         <select :id="`${id}-c-confidence`" v-model="byCode.confidence" :class="inputClass">
           <option v-for="c in mappingConfidences" :key="c" :value="c">
             {{ confidenceLabels[c] }}
@@ -268,7 +280,8 @@ const relationOption: Record<TargetRelation, string> = {
         </select>
       </div>
       <div>
-        <label :for="`${id}-c-rationale`" class="font-medium">Rationale</label>
+        <label :for="`${id}-c-rationale`" class="font-medium">Rationale</label
+        ><InfoTip label="Rationale" :text="fieldHelp.rationale" />
         <textarea
           :id="`${id}-c-rationale`"
           v-model="byCode.rationale"
@@ -277,7 +290,8 @@ const relationOption: Record<TargetRelation, string> = {
         />
       </div>
       <div>
-        <label :for="`${id}-c-citation`" class="font-medium">Citation</label>
+        <label :for="`${id}-c-citation`" class="font-medium">Citation</label
+        ><InfoTip label="Citation" :text="fieldHelp.citation" />
         <input :id="`${id}-c-citation`" v-model="byCode.citation" type="text" :class="inputClass" />
       </div>
     </div>
@@ -322,7 +336,7 @@ const relationOption: Record<TargetRelation, string> = {
           <div>
             <label :for="`${id}-t${i}-b`" class="text-sm font-medium"
               >Basis for target {{ i + 1 }}</label
-            >
+            ><InfoTip :label="`Basis for target ${i + 1}`" :text="fieldHelp.basis" />
             <select :id="`${id}-t${i}-b`" v-model="t.basis" :class="inputClass">
               <option v-for="b in mappingBases" :key="b" :value="b">{{ basisLabels[b] }}</option>
             </select>
@@ -330,7 +344,7 @@ const relationOption: Record<TargetRelation, string> = {
           <div>
             <label :for="`${id}-t${i}-c`" class="text-sm font-medium"
               >Confidence for target {{ i + 1 }}</label
-            >
+            ><InfoTip :label="`Confidence for target ${i + 1}`" :text="fieldHelp.confidence" />
             <select :id="`${id}-t${i}-c`" v-model="t.confidence" :class="inputClass">
               <option v-for="c in mappingConfidences" :key="c" :value="c">
                 {{ confidenceLabels[c] }}
@@ -340,13 +354,13 @@ const relationOption: Record<TargetRelation, string> = {
           <div>
             <label :for="`${id}-t${i}-ra`" class="text-sm font-medium"
               >Rationale for target {{ i + 1 }}</label
-            >
+            ><InfoTip :label="`Rationale for target ${i + 1}`" :text="fieldHelp.rationale" />
             <textarea :id="`${id}-t${i}-ra`" v-model="t.rationale" rows="2" :class="inputClass" />
           </div>
           <div>
             <label :for="`${id}-t${i}-ci`" class="text-sm font-medium"
               >Citation for target {{ i + 1 }}</label
-            >
+            ><InfoTip :label="`Citation for target ${i + 1}`" :text="fieldHelp.citation" />
             <input :id="`${id}-t${i}-ci`" v-model="t.citation" type="text" :class="inputClass" />
           </div>
         </div>
