@@ -87,8 +87,9 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
     </p>
     <template v-else-if="preview.data.value">
       <p v-if="preview.data.value.reference.length === 0">
-        No published list names a federal category for each code yet, so there is nothing to suggest
-        from.
+        Suggestions come from a published list that gives each code its federal category, and none
+        is published yet. To make one, open the state’s file in Read and map, set its federal column
+        to “Federal category (the state’s own)”, and publish it. Then run this again.
       </p>
       <template v-else>
         <p>
