@@ -1,8 +1,8 @@
 # Status
 
-_Last updated: 2026-11-15. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.10.0` (Indiana's own federal categories,
-per-code suggestions from Indiana's list, dependency updates, 2026-11-15)._
+_Last updated: 2026-11-16. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.10.3` (admin field help, classified-by-code
+status, state-similarity SQL rewrite, wrangler 4.162, 2026-11-16)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -72,7 +72,9 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.9.3` | 2026-11-05 | Admin and getting-started text corrected |
 | `v0.9.4` | 2026-11-05 | Admin pages no longer mention the preview site |
 | `v0.9.5` | 2026-11-13 | Badge tooltips, matrix and map hover cards, Overlaps tab, state picker, Zod jitless |
-| `v0.10.0` | 2026-11-15 | Migrations 0016 and 0017: state's own federal category, per-code suggestions; dependencies (wrangler and the vitest plugin held back) (live) |
+| `v0.10.0` | 2026-11-15 | Migrations 0016 and 0017: state's own federal category, per-code suggestions; dependencies (wrangler and the vitest plugin held back) |
+| `v0.10.1` | 2026-11-15 | Clearer suggestion and re-read messages; e2e and Windows test fixes |
+| `v0.10.3` | 2026-11-16 | Info tooltips on admin fields; "classified by code" status; open-draft count by join; similarity SQL rewrite; wrangler 4.162 (`v0.10.2` cancelled before deploy) (live) |
 
 ## For the project lead
 

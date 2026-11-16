@@ -60,8 +60,12 @@ lead run the Indiana steps on production, and fix what was confusing on the way.
 - `pnpm check:full` at the end: 792 unit, 401 component, 653 api, 287 e2e.
 
 ## Open threads
-- Rewrite the state-similarity statement so the new workerd can come in; then drop the
-  Dependabot `ignore`.
 - Publish the 19 starter comparison categories on production (Compare tabs are empty).
 - Idea, not approved: a states × federal category table on Compare, with "Not yet classified".
-- Release #129–#131 (next tag).
+
+## Later the same day
+- Rewrote the state-similarity statement to expand `sets` 3 times, took wrangler 4.162 and
+  dropped the Dependabot `ignore` (#134). Admin categories now count open drafts with a join,
+  so more than 100 drafts no longer hits D1's bound-parameter limit (#133).
+- `v0.10.2` was cancelled before deploy; `v0.10.3` (#129–#131, #133, #134) deployed after the
+  project lead approved. No migrations; Worker version `1d03e288`.
