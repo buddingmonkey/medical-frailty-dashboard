@@ -27,8 +27,9 @@ export default defineProject({
     // Windows CI runs this stage about 12x slower than Linux (≈430 s against ≈36 s, 2026-11-05),
     // and now and then one test's setup (a reset and seed of D1) stalls past 30 s. A different
     // test each time, so the limit on Windows is generous; a real hang still fails. Not
-    // antivirus: the runner image already excludes both drives from Defender scans.
-    testTimeout: 20_000,
+    // antivirus: the runner image already excludes both drives from Defender scans. Tests get the
+    // same allowance as hooks: placement tests take 27–48 s there (2026-11-16) and failed at 20 s.
+    testTimeout: process.platform === 'win32' ? 120_000 : 20_000,
     hookTimeout: process.platform === 'win32' ? 120_000 : 30_000,
   },
 })
