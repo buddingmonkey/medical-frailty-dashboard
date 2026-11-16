@@ -95,6 +95,13 @@ function pairFilter(scope: SimilarityScope): SQL {
  * The upsert: every pair in scope with its counts, written only when they changed. Exported for
  * the migration test (migrations/0010_state_similarity.sql fills the table with the same
  * statement for every pair).
+ *
+ * Every FROM or JOIN of a CTE expands its body again, MATERIALIZED or not, and workerd
+ * 1.20261110 refused a statement that expands `sets` 4 times ("VIEWs and/or subqueries nested
+ * too deep"). So `sets` is read 3 times: once by `sizes`, twice by `common`. `pairs` takes its
+ * states from `pub` and both sizes from one IN join of `sizes` (a pair with no shared code still
+ * has a row; a state with an empty set has no `sizes` row, so `count(*) = 2` drops its pairs).
+ * The similarity test checks the count.
  */
 export function similarityUpsert(scope: SimilarityScope): SQL {
   const filter = pairFilter(scope)
@@ -107,10 +114,13 @@ export function similarityUpsert(scope: SimilarityScope): SQL {
     WHERE o.code = x.code AND ${filter}
     GROUP BY x.state_id, o.state_id),
   pairs AS (
-    SELECT x.state_id AS x, o.state_id AS o, x.n AS n_x, o.n AS n_o, coalesce(c.n, 0) AS shared
-    FROM sizes x CROSS JOIN sizes o
+    SELECT x.state_id AS x, o.state_id AS o,
+      max(CASE WHEN s.state_id = x.state_id THEN s.n END) AS n_x,
+      max(CASE WHEN s.state_id = o.state_id THEN s.n END) AS n_o, coalesce(max(c.n), 0) AS shared
+    FROM pub x CROSS JOIN pub o JOIN sizes s ON s.state_id IN (x.state_id, o.state_id)
     LEFT JOIN common c ON c.x = x.state_id AND c.o = o.state_id
-    WHERE ${filter})
+    WHERE ${filter}
+    GROUP BY x.state_id, o.state_id HAVING count(*) = 2)
   INSERT INTO state_similarity (state_a, state_b, shared, only_a, only_b, jaccard, computed_at)
   SELECT min(x, o), max(x, o), shared,
     CASE WHEN x < o THEN n_x ELSE n_o END - shared,

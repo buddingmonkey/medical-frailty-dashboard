@@ -320,7 +320,10 @@ state_similarity  state_a → states, state_b → states (state_a < state_b), sh
 - **In SQL**: each published entry finds its codes by a primary-key range scan of `ref_codes`
   (entries read first, MATERIALIZED, then CROSS JOIN, so SQLite never scans `ref_codes` per
   entry of every version); `sets` (state, code) is materialized once and the target state's
-  codes are joined to it on code. Locally, Nebraska (8,182 entries) against the other three
+  codes are joined to it on code. A statement may expand `sets` at most 3 times (each FROM or
+  JOIN of a CTE expands it again, MATERIALIZED or not; workerd 1.20261110 refused 4), so `pairs`
+  reads both states' sizes from one IN join of `sizes`; `similarity.test.ts` checks the count.
+  Locally, Nebraska (8,182 entries) against the other three
   seed states: about 50 ms, 3 rows written, ~293k rows read; 51 states (simulated by pointing
   every state at one of the four lists): 0.5 s per state, 2.7 s for every pair.
 

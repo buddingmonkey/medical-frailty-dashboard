@@ -124,11 +124,11 @@ Open items, with the date each was raised. Close them here when done.
 - The real Claude API call in "Ask Claude" is untested; tests use a fake. The button stays off
   until `ANTHROPIC_API_KEY` is set (about $5–6 for Nebraska's whole file on Opus 5.5).
 - GA-B page 60 has a row with no code (`docs/sources.md`).
-- `wrangler` (4.156.0) and `@cloudflare/vitest-plugin` (1.4.11) are held back. workerd
-  1.20261110 rejects the state-similarity statement (migration 0010, `similarityUpsert('all')`)
-  with "VIEWs and/or subqueries nested too deep": it expands the `sets` CTE four times, and
-  three is the most that works. Hosted D1 still accepts it (2026-11-14). Rewrite the statement
-  before taking the new runtime, then remove the `ignore` entries in `.github/dependabot.yml`.
+- workerd 1.20261110 refused statements that expand one CTE 4 times ("VIEWs and/or subqueries
+  nested too deep"); 1.20261113 (wrangler 4.162.0, taken 2026-11-16) accepts them again. The
+  state-similarity statement was rewritten to expand `sets` 3 times (`similarity.test.ts` checks
+  it). The compare queries (`/compare/...`, about 35 API tests) still fail on 1.20261110 only;
+  hosted D1 may adopt that limit, so they may need the same rewrite.
 
 ## Decisions
 

@@ -18,6 +18,10 @@ CREATE TABLE `state_similarity` (
 -- Every pair of states with a list, from the lists already published: the statement
 -- similarityUpsert('all') in src/db/similarity.ts builds (src/db/similarity.test.ts checks that
 -- they agree). Later publishes and rollbacks recompute their state's pairs.
+-- Rewritten 2026-11-16 (same rows): workerd 1.20261110 refused the first version with "VIEWs
+-- and/or subqueries nested too deep", because it expanded `sets` 4 times (`sizes` twice in
+-- `pairs`, `common` twice). `pairs` now reads `sizes` once, by an IN join, so `sets` expands 3
+-- times. D1 tracks migrations by name, so databases that already applied 0010 are unchanged.
 WITH
   pub AS (SELECT id AS state_id, published_version_id AS vid FROM states
           WHERE published_version_id IS NOT NULL),
@@ -65,10 +69,13 @@ WITH
     WHERE o.code = x.code AND o.state_id > x.state_id
     GROUP BY x.state_id, o.state_id),
   pairs AS (
-    SELECT x.state_id AS x, o.state_id AS o, x.n AS n_x, o.n AS n_o, coalesce(c.n, 0) AS shared
-    FROM sizes x CROSS JOIN sizes o
+    SELECT x.state_id AS x, o.state_id AS o,
+      max(CASE WHEN s.state_id = x.state_id THEN s.n END) AS n_x,
+      max(CASE WHEN s.state_id = o.state_id THEN s.n END) AS n_o, coalesce(max(c.n), 0) AS shared
+    FROM pub x CROSS JOIN pub o JOIN sizes s ON s.state_id IN (x.state_id, o.state_id)
     LEFT JOIN common c ON c.x = x.state_id AND c.o = o.state_id
-    WHERE o.state_id > x.state_id)
+    WHERE o.state_id > x.state_id
+    GROUP BY x.state_id, o.state_id HAVING count(*) = 2)
   INSERT INTO state_similarity (state_a, state_b, shared, only_a, only_b, jaccard, computed_at)
   SELECT min(x, o), max(x, o), shared,
     CASE WHEN x < o THEN n_x ELSE n_o END - shared,

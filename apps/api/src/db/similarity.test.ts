@@ -1,13 +1,14 @@
 import type { D1Migration } from 'cloudflare:test'
 import { env } from 'cloudflare:workers'
 import { and, asc, eq } from 'drizzle-orm'
+import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADMIN } from '../test/access-fixtures'
 import { draftWith, entry, publishAll, send, sourceIds } from '../test/draft-fixtures'
 import { resetDb } from '../test/reset-db'
 import { createDb } from './client'
-import { recomputeSimilarity } from './similarity'
+import { recomputeSimilarity, type SimilarityScope, similarityUpsert } from './similarity'
 import { appMeta, refCodes, sourceDocuments, states, stateSimilarity } from './schema'
 
 // Pair similarity (roadmap M5 step 7; docs/data-model.md, "Pair similarity"): each state's set
@@ -22,6 +23,31 @@ import { appMeta, refCodes, sourceDocuments, states, stateSimilarity } from './s
 // MT–NE: shared 3, only 1 / 2, 3/6 = 0.5. GA–MT: 0, 4 / 4, 0. GA–NE: 2, 2 / 3, 2/7.
 
 const db = createDb(env.DB)
+
+/**
+ * How many times a statement expands the CTE `target`: each FROM or JOIN of a CTE expands its
+ * body again, MATERIALIZED or not. workerd 1.20261110 refuses a statement that expands `sets`
+ * 4 times ("VIEWs and/or subqueries nested too deep"); 3 works (bisected 2026-11-14).
+ */
+function expansions(statement: string, target: string): number {
+  const bodies = new Map<string, string>()
+  const head = /(\w+) AS (?:MATERIALIZED )?\(/g
+  let end = 0
+  for (let m = head.exec(statement); m; m = head.exec(statement)) {
+    let depth = 1
+    let i = head.lastIndex
+    for (; depth > 0; i++) depth += statement[i] === '(' ? 1 : statement[i] === ')' ? -1 : 0
+    bodies.set(m[1] ?? '', statement.slice(head.lastIndex, i - 1))
+    head.lastIndex = end = i
+  }
+  const count = (text: string): number =>
+    [...text.matchAll(/\b(?:FROM|JOIN)\s+(\w+)/g)].reduce((n, [, name = '']) => {
+      if (name === target) return n + 1
+      const body = bodies.get(name)
+      return body === undefined ? n : n + count(body)
+    }, 0)
+  return count(statement.slice(end))
+}
 
 async function pairs() {
   const rows = await db
@@ -176,6 +202,16 @@ describe('pair similarity (state_similarity)', () => {
     expect(await pairs()).toEqual([])
   })
 
+  it('gives a state whose list covers no code no pairs', async () => {
+    await publish('MT', mtList)
+    await publish('NE', neList)
+    // F20.8 is deleted: GA's set is empty.
+    await publish('GA', [entry('F20.8')])
+    expect(await pairs()).toEqual([['MT', 'NE', 3, 1, 2, 0.5]])
+    await recomputeSimilarity(db, 'all')
+    expect(await pairs()).toEqual([['MT', 'NE', 3, 1, 2, 0.5]])
+  })
+
   it('agrees with the fill in migration 0010 (every pair)', async () => {
     await publish('MT', mtList)
     await publish('NE', neList)
@@ -191,6 +227,18 @@ describe('pair similarity (state_similarity)', () => {
     await db.delete(stateSimilarity)
     await recomputeSimilarity(db, 'all')
     expect(await pairs()).toEqual(expected)
+  })
+
+  it('expands sets at most 3 times in every statement (the runtime refuses 4)', () => {
+    const { TEST_MIGRATIONS } = env as Env & { TEST_MIGRATIONS: D1Migration[] }
+    const migration = TEST_MIGRATIONS.find((m) => m.name.startsWith('0010_'))
+    const fill = migration?.queries.find((q) => q.includes('INSERT INTO state_similarity')) ?? ''
+    const scopes: SimilarityScope[] = ['all', { pairsAfter: 'GA' }, { stateIds: ['GA', 'MT'] }]
+    const statements = [
+      fill,
+      ...scopes.map((s) => new SQLiteSyncDialect().sqlToQuery(similarityUpsert(s)).sql),
+    ]
+    expect(statements.map((q) => expansions(q, 'sets'))).toEqual([3, 3, 3, 3])
   })
 
   it('computes every pair one state per statement', async () => {
