@@ -556,4 +556,35 @@ describe('/admin/categories: suggestions by code', () => {
     expect(await screen.findByText('Saved the automatic suggestions for Louisiana.')).toBeTruthy()
     expect(runs).toEqual([{ token: 'run-1' }])
   })
+
+  it('says how to get a reference list when no published list names federal categories', async () => {
+    fakeSuggestions()
+    server.use(
+      http.post('/api/admin/states/LA/categories/suggestions/preview', () =>
+        HttpResponse.json({
+          token: 'run-0',
+          reference: [],
+          entries: 0,
+          gain: 0,
+          change: 0,
+          lose: 0,
+          unchanged: 0,
+          keptReviewed: 0,
+          byCategory: [],
+          sample: [],
+        }),
+      ),
+    )
+    await open()
+    await user.click(screen.getByRole('button', { name: 'Re-run automatic suggestions' }))
+    const region = await screen.findByRole('region', {
+      name: 'Check the automatic suggestions before saving',
+    })
+    expect(
+      await within(region).findByText(
+        /Suggestions come from a published list that gives each code its federal category/,
+      ),
+    ).toBeTruthy()
+    expect(within(region).getByText(/Federal category \(the state’s own\)/)).toBeTruthy()
+  })
 })
