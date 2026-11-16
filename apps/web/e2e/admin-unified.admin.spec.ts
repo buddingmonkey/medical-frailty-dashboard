@@ -26,7 +26,9 @@ test('creates a unified category, maps a state category to it and approves', asy
   const form = await createUnified(page, label)
   expect(await seriousA11yViolations(page)).toEqual([])
   await form.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('status')).toContainText(`Saved ${label}`)
+  await expect(page.getByRole('status').filter({ hasText: `Saved ${label}` })).toContainText(
+    `Saved ${label}`,
+  )
   await expect(page.getByRole('rowheader', { name: label })).toBeVisible()
 
   await page
@@ -45,7 +47,9 @@ test('creates a unified category, maps a state category to it and approves', asy
   expect(await seriousA11yViolations(page)).toEqual([])
   await mapForm.getByRole('button', { name: 'Save and approve' }).click()
 
-  await expect(page.getByRole('status')).toContainText('Behavioral Health: Reviewed by one admin')
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Behavioral Health: Reviewed by one admin' }),
+  ).toContainText('Behavioral Health: Reviewed by one admin')
   const row = table
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader', { name: 'Behavioral Health' }) })
