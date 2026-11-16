@@ -3,6 +3,7 @@ import { type WatchCreate, type WatchItem, watchCreateSchema, watchKinds } from 
 import { computed, reactive, ref, useId } from 'vue'
 
 import { watchKindLabels } from '../../lib/admin-watch'
+import InfoTip from '../ui/InfoTip.vue'
 
 const props = defineProps<{
   /** The item being edited; omit to add a new one. */
@@ -67,6 +68,17 @@ function submit() {
   emit('save', result.data)
 }
 
+/** What the less obvious fields do, in their info buttons' tooltips. */
+const fieldHelp = {
+  dueDate:
+    'Puts the item under Overdue, Due within 14 days or Later, by your computer’s date, and counts it in the banner on every admin page when it is overdue or due soon. Leave it blank for an item waiting on someone: it goes under No date yet.',
+  repeatDays:
+    'Optional, 1 to 3,650. Closing the item opens a new one due this many days after this one’s due date. If that day has already passed, or there is no due date, it is due this many days after the close date (UTC).',
+  approximate:
+    'Shows “approximate” next to the date, for an estimate such as an appeal deadline before the judgment date is known. It does not change where the item is listed.',
+  why: 'Shown on the item as plain text, and copied to the next item of a repeating one. Up to 4,000 characters.',
+}
+
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 </script>
@@ -107,7 +119,8 @@ const inputClass =
         </select>
       </div>
       <div>
-        <label :for="`${id}-due`" class="font-medium">Due date</label>
+        <label :for="`${id}-due`" class="font-medium">Due date</label
+        ><InfoTip label="Due date" :text="fieldHelp.dueDate" />
         <input
           :id="`${id}-due`"
           v-model="draft.dueDate"
@@ -117,7 +130,8 @@ const inputClass =
         />
       </div>
       <div>
-        <label :for="`${id}-repeat`" class="font-medium">Repeat every (days)</label>
+        <label :for="`${id}-repeat`" class="font-medium">Repeat every (days)</label
+        ><InfoTip label="Repeat every (days)" :text="fieldHelp.repeatDays" />
         <input
           :id="`${id}-repeat`"
           v-model="draft.repeatDays"
@@ -131,11 +145,13 @@ const inputClass =
 
     <div class="flex items-center gap-2">
       <input :id="`${id}-approx`" v-model="draft.dateIsApproximate" type="checkbox" />
-      <label :for="`${id}-approx`">The date is approximate</label>
+      <label :for="`${id}-approx`">The date is approximate</label
+      ><InfoTip label="The date is approximate" :text="fieldHelp.approximate" />
     </div>
 
     <div>
-      <label :for="`${id}-why`" class="font-medium">Why it matters</label>
+      <label :for="`${id}-why`" class="font-medium">Why it matters</label
+      ><InfoTip label="Why it matters" :text="fieldHelp.why" />
       <textarea
         :id="`${id}-why`"
         v-model="draft.whyMd"

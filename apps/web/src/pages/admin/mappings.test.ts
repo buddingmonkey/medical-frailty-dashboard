@@ -177,6 +177,9 @@ describe('/admin/mappings', () => {
     expect(within(none).getByText(/Proposed/)).toBeTruthy()
     expect(within(none).getByText(/Place each code by its CCSR group/)).toBeTruthy()
     expect(within(rowOf(table, 'Pharmacy')).getByText('Not mapped')).toBeTruthy()
+    expect(
+      within(table).getByRole('button', { name: 'About Suggestion', description: /CCSR groups/ }),
+    ).toBeTruthy()
   })
 
   it('adds a suggested target and saves the mapping as approved', async () => {

@@ -14,6 +14,7 @@ import { computed, ref, useId, watch } from 'vue'
 import type { ParseInput } from '../../ingest/parse'
 import { runParser } from '../../ingest/run-parser'
 import { getJson, sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // AI cleanup (docs/ingestion.md, "AI cleanup"): for a file the adapters cannot read, build a
 // prompt per part for any AI assistant, and read its JSON answer back as a table. With the
@@ -130,6 +131,12 @@ const ask = useMutation({
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+/** What the fields do, in their info buttons' tooltips. */
+const fieldHelp = {
+  part: 'A long file is split into parts small enough for one answer. Each answer you read becomes its own table, mapped, reviewed and sent to the draft on its own.',
+  answer:
+    'Text around the JSON, such as code fences, is ignored. An answer that does not match the prompt’s format is refused, with the reason.',
+}
 </script>
 
 <template>
@@ -157,7 +164,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
     <template v-if="part">
       <div class="max-w-xs">
-        <label :for="`${id}-part`" class="font-medium">Part</label>
+        <label :for="`${id}-part`" class="font-medium">Part</label
+        ><InfoTip label="Part" :text="fieldHelp.part" />
         <select :id="`${id}-part`" v-model="partNo" :class="inputClass">
           <option v-for="p in parts" :key="p.number" :value="p.number">
             Part {{ p.number }} of {{ p.count }} ({{ pagesLabel(p) }})
@@ -203,7 +211,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         </div>
       </div>
       <div>
-        <label :for="`${id}-answer`" class="font-medium">The assistant’s answer</label>
+        <label :for="`${id}-answer`" class="font-medium">The assistant’s answer</label
+        ><InfoTip label="The assistant’s answer" :text="fieldHelp.answer" />
         <textarea
           :id="`${id}-answer`"
           v-model="answer"

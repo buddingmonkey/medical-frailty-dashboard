@@ -22,7 +22,7 @@ async function sendToDraft(page: Page, state: string) {
   const file = csvFile()
   await page.goto('/admin/sources')
   await page.getByLabel('State').selectOption(state)
-  await page.getByLabel('File').setInputFiles(file)
+  await page.getByLabel('File', { exact: true }).setInputFiles(file)
   await page.getByRole('button', { name: 'Upload' }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Stored' })).toContainText('Stored')
 
@@ -30,7 +30,7 @@ async function sendToDraft(page: Page, state: string) {
   await page.getByLabel('State').selectOption(state)
   await page.getByLabel('File', { exact: true }).setInputFiles(file)
   const panel = page.getByRole('region', { name: 'Send to a draft' })
-  await expect(panel.getByLabel('Source document')).toHaveValue(/\d+/)
+  await expect(panel.getByLabel('Source document', { exact: true })).toHaveValue(/\d+/)
   await panel.getByRole('button', { name: 'Send to draft' }).click()
   await panel.getByRole('link', { name: /Open draft v\d+/ }).click()
   await expect(
@@ -83,7 +83,7 @@ test('publishes two drafts and restores the first from Versions', async ({ page 
   await expect(
     page.getByRole('status').filter({ hasText: `v${first ?? ''} is public again` }),
   ).toContainText(`v${first ?? ''} is public again`)
-  const row = page.getByRole('row').filter({ hasText: 'Public now' })
+  const row = page.getByRole('row', { name: /^Public now/ })
   await expect(row).toContainText(`v${first ?? ''}`)
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])
@@ -111,7 +111,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
   const change = table.getByRole('button', { name: 'Preview change for (no category)' })
   if (await change.isVisible()) {
     await change.click()
-    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await preview.getByRole('button', { name: 'Save remap', exact: true }).click()
     await expect(
       page.getByRole('status').filter({ hasText: 'Remapped 1 item in Montana.' }),
     ).toContainText('Remapped 1 item in Montana.')
@@ -129,7 +129,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
   if (await chapterButton.isEnabled()) {
     await chapterButton.click()
     await expect(preview).toContainText('ICD-10-CM chapter 5')
-    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await preview.getByRole('button', { name: 'Save remap', exact: true }).click()
     await expect(
       page.getByRole('status').filter({ hasText: 'Remapped 1 item in Montana.' }),
     ).toContainText('Remapped 1 item in Montana.')

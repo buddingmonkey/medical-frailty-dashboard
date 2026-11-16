@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 
 import MappingForm from '../../components/admin/MappingForm.vue'
+import InfoTip from '../../components/ui/InfoTip.vue'
 import { percent, relationLabels, stateCategoryName } from '../../lib/admin-unified'
 import { formatTimestampDate } from '../../lib/admin-watch'
 import { getJson, sendJson } from '../../lib/api'
@@ -131,6 +132,9 @@ async function refresh() {
 }
 
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+/** What the suggestion column shows, in its info button. */
+const suggestionHelp =
+  'The unified category whose CCSR groups cover the most of this category’s ICD-10-CM entries, with the share it covers, then the most common CCSR groups and how many entries fall in each. A hint for the mapping: it changes nothing until a mapping is saved.'
 </script>
 
 <template>
@@ -189,7 +193,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
               <th scope="col" class="py-2 pr-4 font-medium">State category</th>
               <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
               <th scope="col" class="py-2 pr-4 font-medium">Mapping</th>
-              <th scope="col" class="py-2 pr-4 font-medium">Suggestion</th>
+              <th scope="col" class="py-2 pr-4 font-medium">
+                Suggestion<InfoTip label="Suggestion" :text="suggestionHelp" />
+              </th>
               <th scope="col" class="py-2 font-medium"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>

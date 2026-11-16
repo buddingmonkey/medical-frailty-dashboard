@@ -43,6 +43,9 @@ export const BUDGETS: readonly Budget[] = [
   // Admin only, loaded on demand. pdf.js counts both copies (the page's and the worker's).
   { group: 'ingest.js', brotli: 26_000, gzip: 30_000 },
   { group: 'pdf.js', brotli: 271_000, gzip: 323_000 },
+  // Two chunks share the name: the admin Federal categories page (most of it, with its field help
+  // since 2026-11-16) and the public compare categories list (about 1 KB).
+  { group: 'categories.js', brotli: 9_400, gzip: 10_600 },
   { group: 'pdf.worker.min.mjs', brotli: 355_000, gzip: 432_000 },
   { group: 'worker.js', brotli: 59_000, gzip: 68_000 },
   // ui-sdk (2026-11-12): the tooltips, matrix hover cards and Overlaps rows. Loaded on demand

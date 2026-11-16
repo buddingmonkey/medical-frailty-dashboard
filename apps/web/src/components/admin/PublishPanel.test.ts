@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
+import '../../test/ui-sdk-stubs'
 import { server } from '../../test/msw-server'
 import PublishPanel from './PublishPanel.vue'
 
@@ -104,5 +105,18 @@ describe('PublishPanel', () => {
     )
     await user.click(publishButton())
     expect((await screen.findByRole('alert')).textContent).toContain('Run the checks again')
+  })
+})
+
+describe('PublishPanel field help', () => {
+  it('explains the confirmations, and the fieldset keeps its legend as its name', () => {
+    setup()
+    expect(
+      screen.getByRole('button', {
+        name: 'About Confirm what the checks found',
+        description: /changed since the checks ran/,
+      }),
+    ).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Confirm what the checks found' })).toBeTruthy()
   })
 })

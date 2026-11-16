@@ -14,6 +14,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { z } from 'zod'
 
 import PublishPanel from '../../../components/admin/PublishPanel.vue'
+import InfoTip from '../../../components/ui/InfoTip.vue'
 import { formatTimestampDate } from '../../../lib/admin-watch'
 import { ApiError, getJson, sendJson } from '../../../lib/api'
 import { diffToCsv } from '../../../lib/diff-csv'
@@ -128,6 +129,8 @@ const discard = useMutation({
 
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
+const changesHelp =
+  'A code is its code system and the code or range as written, so a range and one code inside it are different codes. A code that moves to another state category is Category changed, not a removal and an addition.'
 </script>
 
 <template>
@@ -282,7 +285,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
         <div class="flex flex-wrap items-end gap-3">
           <div>
-            <label :for="`${id}-kind`" class="text-sm font-medium">Show changes</label>
+            <label :for="`${id}-kind`" class="text-sm font-medium">Show changes</label
+            ><InfoTip label="Show changes" :text="changesHelp" />
             <select
               :id="`${id}-kind`"
               v-model="kind"

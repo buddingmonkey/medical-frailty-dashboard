@@ -404,3 +404,26 @@ describe('/admin/ingest', () => {
     expect(screen.queryByLabelText('Wrapped lines')).toBeNull()
   })
 })
+
+describe('/admin/ingest field help', () => {
+  beforeEach(() => {
+    user = userEvent.setup()
+  })
+
+  it('explains the column roles, the qualification rule, its source and the tier', async () => {
+    fakeApi()
+    await start()
+
+    const help = (name: string, description: RegExp) =>
+      screen.getByRole('button', { name: `About ${name}`, description })
+    expect(help('File', /does not store the file/)).toBeTruthy()
+    expect(help('Means', /exactly one Code column/)).toBeTruthy()
+    expect(help('Qualification rule', /Not set/)).toBeTruthy()
+    expect(help('Source of this rule', /labels the value as inferred/)).toBeTruthy()
+    expect(help('Tier for every row', /tier label/)).toBeTruthy()
+    // The fieldset keeps its legend as its name, without the button's.
+    expect(screen.getByRole('group', { name: 'Does a code qualify on its own?' })).toBeTruthy()
+    // The fields keep their own names.
+    expect(screen.getByLabelText('Tier for every row')).toBeTruthy()
+  })
+})
