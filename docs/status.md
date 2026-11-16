@@ -86,8 +86,8 @@ Open items, with the date each was raised. Close them here when done.
 - **Indiana on production** (2026-11-13): map its 159 categories on `/admin/categories` and
   `/admin/mappings`. 2,319 entries are "Not yet classified" because the guess works from
   names. After the release with the state's own federal category column and suggestions by code
-  (project lead, 2026-11-13), re-upload Indiana's CSV with the federal column mapped and publish
-  it, then press **Re-run automatic suggestions** on `/admin/categories` for GA, LA, MT and NE,
+  (project lead, 2026-11-13), open Indiana's stored CSV again in **Read and map** (uploading it again
+  is refused as a duplicate), map the federal column and publish it, then press **Re-run automatic suggestions** on `/admin/categories` for GA, LA, MT and NE,
   and review their suggestions. The state page will not mention Indiana's Tier 2, which has no
   published codes (project lead, 2026-11-13).
 - **Georgia sources on production:** set the URL (DCH public notices page) and publisher date

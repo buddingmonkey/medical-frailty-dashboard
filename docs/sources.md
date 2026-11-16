@@ -158,8 +158,8 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
 - **After publishing** the first load, the automatic federal guesses left 2,319 entries "Not
   yet classified", because the guess works from category names and the 159 condition names
   rarely match. The site now reads the state's own federal category (role "Federal category
-  (the state's own)", 2026-11-13): re-upload the CSV, map "Federal category" to that role and
-  publish. Every entry then counts under the category Indiana names, shown as "Stated by the
+  (the state's own)", 2026-11-13): open the stored CSV again in Read and map (the same file is not
+  uploaded twice), map "Federal category" to that role and publish. Every entry then counts under the category Indiana names, shown as "Stated by the
   state".
 
 ## Montana (MT)
