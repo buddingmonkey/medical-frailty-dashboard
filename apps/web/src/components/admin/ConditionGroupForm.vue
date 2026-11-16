@@ -13,6 +13,8 @@ import {
 } from '@mfcd/shared'
 import { computed, reactive, ref, useId, watch } from 'vue'
 
+import InfoTip from '../ui/InfoTip.vue'
+
 // Create or edit one condition group (roadmap M6 step 4). A save sends the whole member list.
 
 const props = defineProps<{
@@ -65,6 +67,13 @@ const fieldLabels: Record<string, string> = {
 }
 const problems = ref<string[]>([])
 
+/** What the less obvious fields do, in their info buttons' tooltips. */
+const fieldHelp = {
+  name: 'The group’s name in the “Like codes” section of public code pages.',
+  slug: 'A short id that tells the groups apart. It is not part of any public address.',
+  definition: 'What the group covers, for admins. Public code pages show only the group’s name.',
+}
+
 function submit() {
   const result = conditionGroupBodySchema.safeParse({
     name: draft.name,
@@ -113,11 +122,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-name`" class="font-medium">Name</label>
+        <label :for="`${id}-name`" class="font-medium">Name</label
+        ><InfoTip label="Name" :text="fieldHelp.name" />
         <input :id="`${id}-name`" v-model="draft.name" type="text" :class="inputClass" />
       </div>
       <div>
-        <label :for="`${id}-slug`" class="font-medium">Slug</label>
+        <label :for="`${id}-slug`" class="font-medium">Slug</label
+        ><InfoTip label="Slug" :text="fieldHelp.slug" />
         <input
           :id="`${id}-slug`"
           v-model="draft.slug"
@@ -133,7 +144,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </div>
 
     <div>
-      <label :for="`${id}-definition`" class="font-medium">Definition</label>
+      <label :for="`${id}-definition`" class="font-medium">Definition</label
+      ><InfoTip label="Definition" :text="fieldHelp.definition" />
       <textarea :id="`${id}-definition`" v-model="draft.definition" rows="2" :class="inputClass" />
     </div>
     <div>

@@ -87,6 +87,9 @@ state's diagnosis codes. Check the suggestion, save, and approve. Until a catego
 the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
 readiness) needs at least 2 states whose every category is approved and shows "Reviewed".
 
+Not sure what a field means? The small (i) button beside it says what the field does (hover,
+focus or tap it). The unified category and condition group forms have the same buttons.
+
 ## 8. Check the federal categories (Admin → Federal categories)
 
 A code's federal category follows its comparison categories. The mapping here is the fallback
