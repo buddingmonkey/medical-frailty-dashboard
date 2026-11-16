@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 
+import '../../test/ui-sdk-stubs'
+
 import ReviewTable from './ReviewTable.vue'
 
 const row = (locator: string, rawCode: string, extra: Partial<MappedRow> = {}): MappedRow => ({
@@ -235,5 +237,30 @@ describe('ReviewTable', () => {
     await user.type(screen.getByLabelText('Search'), 'page 295')
     expect(bodyRows()).toHaveLength(1)
     expect(rowFor('F31.0')).toBeTruthy()
+  })
+})
+
+describe('ReviewTable field help', () => {
+  it('explains the undotted codes box, the filters, the bulk controls and the review column', () => {
+    setup([row('r1', 'F20'), row('r2', 'SMI')])
+
+    const help = (name: string, description: RegExp) =>
+      screen.getByRole('button', { name: `About ${name}`, description })
+    expect(help('codes without dots', /read as HCPCS/)).toBeTruthy()
+    expect(help('Show', /bulk actions/)).toBeTruthy()
+    expect(help('Code system for the rows shown', /except dropped rows/)).toBeTruthy()
+    expect(help('Whole category or this code only', /every code under it/)).toBeTruthy()
+    expect(help('Review', /2%/)).toBeTruthy()
+    // The box keeps its own name.
+    expect(screen.getByRole('checkbox', { name: /written without dots/ })).toBeTruthy()
+  })
+
+  it('explains the code system choice of the row being edited', async () => {
+    const { user } = setup([row('r1', 'F20')])
+    await user.click(screen.getByRole('button', { name: 'Edit row r1' }))
+    expect(
+      screen.getByRole('button', { name: 'About Code system', description: /ignores/ }),
+    ).toBeTruthy()
+    expect(screen.getByLabelText('Code system')).toBeTruthy()
   })
 })

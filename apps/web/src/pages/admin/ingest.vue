@@ -35,6 +35,7 @@ import { z } from 'zod'
 import AiCleanupPanel from '../../components/admin/AiCleanupPanel.vue'
 import ReviewTable from '../../components/admin/ReviewTable.vue'
 import SendToDraft from '../../components/admin/SendToDraft.vue'
+import InfoTip from '../../components/ui/InfoTip.vue'
 import type { ParseInput } from '../../ingest/parse'
 import type { WrapDirection } from '../../ingest/pdf-layout'
 import { runParser } from '../../ingest/run-parser'
@@ -343,6 +344,21 @@ watch(profile, () => {
 
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
+/** What the less obvious fields do, in their info buttons' tooltips. */
+const fieldHelp = {
+  file: 'Read here in your browser; this does not store the file. A draft cites only a file stored on Source files.',
+  wrap: 'Changing it reads the PDF again, so the column roles go back to the guesses (or the saved column profile) and review edits start over.',
+  table:
+    'Each table is mapped, reviewed and sent on its own. Sending a table again replaces only its rows in the draft.',
+  roles:
+    'What each column holds: choose exactly one Code column; Ignore leaves a column out. In an Included (Yes/No) column, No, N, False, 0 or Excluded marks a row excluded: it is stored but never shown as a frail code.',
+  rule: 'Sets each row’s qualification, which the public site shows as the state’s rule. From a column’s value maps each value of the Qualification or Tier column; a value left Not set shows as “State doesn’t say”.',
+  basis:
+    'Stated: the state’s document says it. Inferred: this site deduced it, and the public site labels the value as inferred.',
+  category:
+    'Stored as each row’s state category. After publishing, each state category is classified on Federal categories and mapped on Mappings.',
+  tier: 'Stored as each row’s tier; the public site shows it as the state’s own tier label. The same code in two tiers is not a duplicate.',
+}
 </script>
 
 <template>
@@ -368,7 +384,8 @@ const inputClass =
 
     <div v-if="stateId" class="grid max-w-4xl gap-6 md:grid-cols-2">
       <div>
-        <label :for="`${id}-file`" class="font-medium">File</label>
+        <label :for="`${id}-file`" class="font-medium">File</label
+        ><InfoTip label="File" :text="fieldHelp.file" />
         <input
           :id="`${id}-file`"
           type="file"
@@ -419,7 +436,8 @@ const inputClass =
 
     <template v-if="table && stateId">
       <div v-if="pdfWrap" class="max-w-prose">
-        <label :for="`${id}-wrap`" class="font-medium">Wrapped lines</label>
+        <label :for="`${id}-wrap`" class="font-medium">Wrapped lines</label
+        ><InfoTip label="Wrapped lines" :text="fieldHelp.wrap" />
         <select
           :id="`${id}-wrap`"
           v-model="wrapChoice"
@@ -439,7 +457,9 @@ const inputClass =
       </div>
 
       <div v-if="tables.length > 1" class="max-w-xs">
-        <label :for="`${id}-sheet`" class="font-medium">{{ pdfWrap ? 'Table' : 'Sheet' }}</label>
+        <label :for="`${id}-sheet`" class="font-medium">{{
+          pdfWrap ? 'Table' : 'Sheet'
+        }}</label><InfoTip :label="pdfWrap ? 'Table' : 'Sheet'" :text="fieldHelp.table" />
         <select :id="`${id}-sheet`" v-model="tableIndex" :class="inputClass">
           <option v-for="(t, i) in tables" :key="i" :value="i">{{ t.name }}</option>
         </select>
@@ -457,7 +477,9 @@ const inputClass =
           <thead class="border-b border-border text-muted-foreground">
             <tr>
               <th scope="col" class="py-2 pr-4 font-medium">Column</th>
-              <th scope="col" class="py-2 pr-4 font-medium">Means</th>
+              <th scope="col" class="py-2 pr-4 font-medium">
+                Means<InfoTip label="Means" :text="fieldHelp.roles" />
+              </th>
               <th scope="col" class="py-2 font-medium">Sample values</th>
             </tr>
           </thead>
@@ -490,8 +512,14 @@ const inputClass =
         </table>
       </div>
 
-      <fieldset class="max-w-3xl space-y-3 rounded border border-border p-4">
-        <legend class="px-1 font-medium">Does a code qualify on its own?</legend>
+      <fieldset
+        class="max-w-3xl space-y-3 rounded border border-border p-4"
+        :aria-labelledby="`${id}-rule-legend`"
+      >
+        <legend class="px-1 font-medium">
+          <span :id="`${id}-rule-legend`">Does a code qualify on its own?</span
+          ><InfoTip label="Qualification rule" :text="fieldHelp.rule" />
+        </legend>
         <div class="flex flex-wrap gap-4">
           <label class="flex items-center gap-1">
             <input v-model="ruleMode" type="radio" :name="`${id}-mode`" value="fixed" />
@@ -542,7 +570,9 @@ const inputClass =
         </div>
 
         <div class="flex flex-wrap gap-4 text-sm">
-          <span>Source of this rule:</span>
+          <span
+            >Source of this rule:<InfoTip label="Source of this rule" :text="fieldHelp.basis"
+          /></span>
           <label v-for="b in qualificationBasisOptions" :key="b" class="flex items-center gap-1">
             <input v-model="basis" type="radio" :name="`${id}-basis`" :value="b" />
             {{ qualificationBasisLabels[b] }}
@@ -551,7 +581,8 @@ const inputClass =
       </fieldset>
 
       <div v-if="!roles.includes('category')" class="max-w-md">
-        <label :for="`${id}-category`" class="font-medium">Category for every row</label>
+        <label :for="`${id}-category`" class="font-medium">Category for every row</label
+        ><InfoTip label="Category for every row" :text="fieldHelp.category" />
         <input :id="`${id}-category`" v-model="defaultCategory" type="text" :class="inputClass" />
         <p class="mt-1 text-sm text-muted-foreground">
           This file has no category column (e.g. Georgia). Categories can be refined in the mapping
@@ -560,7 +591,8 @@ const inputClass =
       </div>
 
       <div v-if="!roles.includes('tier')" class="max-w-md">
-        <label :for="`${id}-tier`" class="font-medium">Tier for every row</label>
+        <label :for="`${id}-tier`" class="font-medium">Tier for every row</label
+        ><InfoTip label="Tier for every row" :text="fieldHelp.tier" />
         <input :id="`${id}-tier`" v-model="defaultTier" type="text" :class="inputClass" />
         <p class="mt-1 text-sm text-muted-foreground">
           For a state that publishes each tier as its own file (Georgia: “Attachment A”, “Attachment

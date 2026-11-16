@@ -14,6 +14,7 @@ import { RouterLink } from 'vue-router'
 import { z } from 'zod'
 
 import { getJson, sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // Sends the reviewed rows to a draft version (docs/ingestion.md, step 6): pick the stored
 // source document and a draft (new, or an open one: Georgia's A and B are one version), then
@@ -170,6 +171,12 @@ async function send() {
 
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
+/** What the fields do, in their info buttons' tooltips. */
+const fieldHelp = {
+  source:
+    'The stored file these entries cite: its title, URL and date. A file read from disk is chosen for you when its contents match a stored file; a pasted table needs one chosen by hand.',
+  draft: 'A draft is not public until it is published from its draft page, after the checks.',
+}
 </script>
 
 <template>
@@ -202,7 +209,8 @@ const inputClass =
 
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-source`" class="font-medium">Source document</label>
+        <label :for="`${id}-source`" class="font-medium">Source document</label
+        ><InfoTip label="Source document" :text="fieldHelp.source" />
         <select :id="`${id}-source`" v-model="sourceId" :class="inputClass">
           <option value="" disabled>Choose a stored file</option>
           <option v-for="s in sources" :key="s.id" :value="s.id">
@@ -216,7 +224,8 @@ const inputClass =
         </p>
       </div>
       <div>
-        <label :for="`${id}-draft`" class="font-medium">Draft</label>
+        <label :for="`${id}-draft`" class="font-medium">Draft</label
+        ><InfoTip label="Draft" :text="fieldHelp.draft" />
         <select :id="`${id}-draft`" v-model="draftChoice" :class="inputClass">
           <option value="new">New draft</option>
           <option v-for="d in drafts" :key="d.id" :value="d.id">

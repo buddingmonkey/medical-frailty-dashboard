@@ -22,7 +22,7 @@ async function sendToDraft(page: Page, state: string) {
   const file = csvFile()
   await page.goto('/admin/sources')
   await page.getByLabel('State').selectOption(state)
-  await page.getByLabel('File').setInputFiles(file)
+  await page.getByLabel('File', { exact: true }).setInputFiles(file)
   await page.getByRole('button', { name: 'Upload' }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Stored' })).toContainText('Stored')
 
@@ -30,7 +30,7 @@ async function sendToDraft(page: Page, state: string) {
   await page.getByLabel('State').selectOption(state)
   await page.getByLabel('File', { exact: true }).setInputFiles(file)
   const panel = page.getByRole('region', { name: 'Send to a draft' })
-  await expect(panel.getByLabel('Source document')).toHaveValue(/\d+/)
+  await expect(panel.getByLabel('Source document', { exact: true })).toHaveValue(/\d+/)
   await panel.getByRole('button', { name: 'Send to draft' }).click()
   await panel.getByRole('link', { name: /Open draft v\d+/ }).click()
   await expect(

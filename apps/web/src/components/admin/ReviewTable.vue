@@ -19,6 +19,8 @@ import {
 } from '@mfcd/shared'
 import { computed, reactive, ref, useId, watch } from 'vue'
 
+import InfoTip from '../ui/InfoTip.vue'
+
 // Review of mapped rows (docs/ingestion.md, step 5): flags, inline edits, drops. The edits are
 // a v-model so the page can send the reviewed rows to a draft (step 7).
 // The page builds the review (buildReview) from the rows, these edits and the CMS lookups, so
@@ -250,6 +252,20 @@ function parsedText(r: ReviewRow): string {
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-2 py-1 text-foreground'
 const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-surface'
+/** What the less obvious controls do, in their info buttons' tooltips. */
+const fieldHelp = {
+  undotted:
+    'When on, a code shaped like A0103 may be ICD-10-CM (A01.03) or HCPCS, so the review asks, or settles it from the CMS lists. When off, such codes are read as HCPCS. It starts as a guess from the file.',
+  show: 'Filters the table, and the bulk actions apply only to the rows it shows. Needs attention is Cannot be read plus Needs a decision.',
+  bulkSystem:
+    'Sets the code system of every row the filters show, except dropped rows. Guess from each code ignores the file’s code-system column and goes by each code’s shape and the CMS lists.',
+  scope:
+    'For a bare three-character code such as F20, or a range of them. Whole category also covers every code under it; This code only covers just the codes listed.',
+  review:
+    'Cannot be read: edit the code or drop the row; such rows count as invalid, and above 2% publishing is blocked. Needs a decision: answer the question or Accept it; questions left open go to the draft and the checks ask about them.',
+  editSystem:
+    'As in the file: the file’s code-system column decides; without one, the code’s shape and the CMS lists do. Guess from the code ignores that column.',
+}
 </script>
 
 <template>
@@ -257,14 +273,18 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
     <h3 :id="`${id}-title`" class="font-display text-xl font-medium text-heading">Review rows</h3>
     <p aria-live="polite" class="text-foreground">{{ summaryText }}</p>
 
-    <label class="flex items-center gap-2">
-      <input v-model="undottedIcd" type="checkbox" />
-      ICD-10-CM codes are written without dots (e.g. Nebraska’s <code>A0103</code>)
-    </label>
+    <div class="flex items-center">
+      <label class="flex items-center gap-2">
+        <input v-model="undottedIcd" type="checkbox" />
+        ICD-10-CM codes are written without dots (e.g. Nebraska’s <code>A0103</code>)
+      </label>
+      <InfoTip label="codes without dots" :text="fieldHelp.undotted" />
+    </div>
 
     <div class="flex flex-wrap items-end gap-4">
       <div>
-        <label :for="`${id}-show`" class="text-sm font-medium">Show</label>
+        <label :for="`${id}-show`" class="text-sm font-medium">Show</label
+        ><InfoTip label="Show" :text="fieldHelp.show" />
         <select :id="`${id}-show`" v-model="show" :class="inputClass">
           <option v-for="(label, value) in showLabels" :key="value" :value="value">
             {{ label }}
@@ -297,7 +317,7 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
       <div>
         <label :for="`${id}-bulk-system`" class="text-sm font-medium"
           >Code system for the {{ plural(live.length, 'row', 'rows') }} shown</label
-        >
+        ><InfoTip label="Code system for the rows shown" :text="fieldHelp.bulkSystem" />
         <select :id="`${id}-bulk-system`" v-model="bulkSystem" :class="inputClass">
           <option value="" disabled>Choose</option>
           <option value="infer">Guess from each code</option>
@@ -319,6 +339,7 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
         <button type="button" :class="smallButton" @click="bulkScope(0)">
           This code only for all shown
         </button>
+        <InfoTip label="Whole category or this code only" :text="fieldHelp.scope" />
       </template>
       <button v-if="acceptRows.length > 0" type="button" :class="smallButton" @click="bulkAccept">
         Accept flags for all shown
@@ -343,7 +364,9 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
             <th scope="col" class="py-2 pr-3 font-medium">Description</th>
             <th scope="col" class="py-2 pr-3 font-medium">Category</th>
             <th scope="col" class="py-2 pr-3 font-medium">Qualification</th>
-            <th scope="col" class="py-2 pr-3 font-medium">Review</th>
+            <th scope="col" class="py-2 pr-3 font-medium">
+              Review<InfoTip label="Review" :text="fieldHelp.review" />
+            </th>
             <th scope="col" class="py-2 font-medium">Actions</th>
           </tr>
         </thead>
@@ -462,7 +485,8 @@ const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-s
                     <input :id="`${id}-e-code`" v-model="draft.rawCode" :class="inputClass" />
                   </div>
                   <div>
-                    <label :for="`${id}-e-system`" class="text-sm">Code system</label>
+                    <label :for="`${id}-e-system`" class="text-sm">Code system</label
+                    ><InfoTip label="Code system" :text="fieldHelp.editSystem" />
                     <select :id="`${id}-e-system`" v-model="draft.codeSystem" :class="inputClass">
                       <option value="file">As in the file</option>
                       <option value="infer">Guess from the code</option>

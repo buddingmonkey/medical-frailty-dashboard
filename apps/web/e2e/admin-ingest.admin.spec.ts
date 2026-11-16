@@ -26,7 +26,7 @@ test('reads a PDF in the browser and maps its rows', async ({ page }) => {
   const errors = collectErrors(page)
   await page.goto('/admin/ingest')
   await page.getByLabel('State').selectOption('Montana')
-  await page.getByLabel('File').setInputFiles({
+  await page.getByLabel('File', { exact: true }).setInputFiles({
     name: 'mt.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(pdf),
@@ -34,9 +34,9 @@ test('reads a PDF in the browser and maps its rows', async ({ page }) => {
 
   const rows = page.getByRole('table', { name: 'Mapped rows (first 20)' })
   await expect(rows.getByText('Paranoid schizophrenia with a second line')).toBeVisible()
-  await expect(page.getByLabel('Wrapped lines')).toHaveValue('auto')
+  await expect(page.getByLabel('Wrapped lines', { exact: true })).toHaveValue('auto')
 
-  await page.getByLabel('Wrapped lines').selectOption('above')
+  await page.getByLabel('Wrapped lines', { exact: true }).selectOption('above')
   await expect(rows.getByText('with a second line Disorganized schizophrenia')).toBeVisible()
 
   const review = page.getByRole('region', { name: 'Review rows' })
@@ -51,7 +51,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/admin/ingest')
     await page.getByLabel('State').selectOption('Montana')
-    await page.getByLabel('File').setInputFiles({
+    await page.getByLabel('File', { exact: true }).setInputFiles({
       name: 'mt.pdf',
       mimeType: 'application/pdf',
       buffer: Buffer.from(pdf),
@@ -69,7 +69,7 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   const errors = collectErrors(page)
   await page.goto('/admin/ingest')
   await page.getByLabel('State').selectOption('Montana')
-  await page.getByLabel('File').setInputFiles({
+  await page.getByLabel('File', { exact: true }).setInputFiles({
     name: 'mt.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(pdf),
@@ -85,7 +85,7 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   await expect(panel.getByRole('tooltip')).toHaveText(/needs an Anthropic API key/)
 
   await panel
-    .getByLabel('The assistant’s answer')
+    .getByLabel('The assistant’s answer', { exact: true })
     .fill('{"rows":[{"code":"F31.0","description":"Bipolar"}]}')
   await panel.getByRole('button', { name: 'Read the answer' }).click()
   await expect(panel.getByRole('status')).toContainText('Read 1 row')

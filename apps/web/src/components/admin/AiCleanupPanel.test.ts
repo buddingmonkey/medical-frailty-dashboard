@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
+import '../../test/ui-sdk-stubs'
 import type { ParseInput } from '../../ingest/parse'
 import { server } from '../../test/msw-server'
 import AiCleanupPanel from './AiCleanupPanel.vue'
@@ -109,5 +110,23 @@ describe('AiCleanupPanel', () => {
       },
     ])
     expect(emitted()['table']).toHaveLength(1)
+  })
+})
+
+describe('AiCleanupPanel field help', () => {
+  it('explains the parts and the answer', async () => {
+    const { user } = setup(csv(10))
+    await user.click(screen.getByRole('button', { name: 'Prepare the prompt' }))
+    await screen.findByLabelText('Part')
+
+    expect(
+      screen.getByRole('button', { name: 'About Part', description: /its own table/ }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', {
+        name: 'About The assistant’s answer',
+        description: /is ignored/,
+      }),
+    ).toBeTruthy()
   })
 })

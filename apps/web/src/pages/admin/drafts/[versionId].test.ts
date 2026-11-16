@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { server } from '../../../test/msw-server'
 import { renderRoute } from '../../../test/render-route'
 
+import '../../../test/ui-sdk-stubs'
 const detail = (status = 'draft') => ({
   id: 7,
   stateId: 'MT',
@@ -193,5 +194,23 @@ describe('/admin/drafts/[versionId]', () => {
     )
     await renderRoute('/admin/drafts/7')
     expect(await screen.findByText(/No draft with this number/)).toBeTruthy()
+  })
+})
+
+describe('/admin/drafts/:id field help', () => {
+  beforeEach(() => {
+    user = userEvent.setup()
+  })
+
+  it('explains what counts as a change', async () => {
+    fakeApi()
+    await renderRoute('/admin/drafts/7')
+    await screen.findByLabelText('Show changes')
+    expect(
+      screen.getByRole('button', {
+        name: 'About Show changes',
+        description: /another state category/,
+      }),
+    ).toBeTruthy()
   })
 })

@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, reactive, useId, watch } from 'vue'
 
 import { sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // Publish a draft (docs/data-model.md, "Replacing a state's list"): every check that asks for
 // a confirmation gets a tick, the strongest ones the state code typed. The API checks the same
@@ -68,6 +69,9 @@ const publish = useMutation({
     await queryClient.invalidateQueries({ queryKey: ['admin'] })
   },
 })
+
+const confirmHelp =
+  'Publishing checks these again and refuses if the draft’s rows changed since the checks ran: run the checks again after sending more rows. The typed state code ignores case and spaces.'
 </script>
 
 <template>
@@ -85,8 +89,11 @@ const publish = useMutation({
         first and can be restored from “Versions”.
       </p>
 
-      <fieldset v-if="toConfirm.length > 0" class="space-y-3">
-        <legend class="font-medium">Confirm what the checks found</legend>
+      <fieldset v-if="toConfirm.length > 0" class="space-y-3" :aria-labelledby="`${id}-confirm`">
+        <legend class="font-medium">
+          <span :id="`${id}-confirm`">Confirm what the checks found</span
+          ><InfoTip label="Confirm what the checks found" :text="confirmHelp" />
+        </legend>
         <div v-for="check in toConfirm" :key="check.id">
           <label v-if="check.level === 'confirm'" class="flex items-start gap-2">
             <input v-model="ticked[check.id]" type="checkbox" class="mt-1" />

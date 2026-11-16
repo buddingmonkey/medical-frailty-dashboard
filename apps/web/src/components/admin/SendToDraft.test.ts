@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 
+import '../../test/ui-sdk-stubs'
 import { server } from '../../test/msw-server'
 import SendToDraft from './SendToDraft.vue'
 
@@ -202,5 +203,20 @@ describe('SendToDraft', () => {
     // The retry reuses the draft it made and starts the source over.
     expect(calls.created).toHaveLength(1)
     expect(calls.sources).toHaveLength(2)
+  })
+})
+
+describe('SendToDraft field help', () => {
+  it('explains the source document and the draft', async () => {
+    fakeApi()
+    setup(smallReview())
+    await screen.findByLabelText('Source document')
+
+    expect(
+      screen.getByRole('button', { name: 'About Source document', description: /cite/ }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: 'About Draft', description: /not public until/ }),
+    ).toBeTruthy()
   })
 })
