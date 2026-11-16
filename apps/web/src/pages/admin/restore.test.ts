@@ -231,6 +231,15 @@ describe('/admin/restore', () => {
     await renderRoute('/admin/restore')
     await user.upload(await screen.findByLabelText('Backup file'), zipFile(fullBackup()))
     await user.selectOptions(await screen.findByLabelText('State'), 'MT')
+    expect(
+      screen.getByRole('button', { name: 'About Version', description: /chosen first/ }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', {
+        name: 'About replacing the mappings',
+        description: /at once/,
+      }),
+    ).toBeTruthy()
 
     await user.click(
       screen.getByRole('checkbox', { name: /Also replace Montana’s category mappings/ }),

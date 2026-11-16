@@ -111,7 +111,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
   const change = table.getByRole('button', { name: 'Preview change for (no category)' })
   if (await change.isVisible()) {
     await change.click()
-    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await preview.getByRole('button', { name: 'Save remap', exact: true }).click()
     await expect(
       page.getByRole('status').filter({ hasText: 'Remapped 1 item in Montana.' }),
     ).toContainText('Remapped 1 item in Montana.')
@@ -129,7 +129,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
   if (await chapterButton.isEnabled()) {
     await chapterButton.click()
     await expect(preview).toContainText('ICD-10-CM chapter 5')
-    await preview.getByRole('button', { name: 'Save remap' }).click()
+    await preview.getByRole('button', { name: 'Save remap', exact: true }).click()
     await expect(
       page.getByRole('status').filter({ hasText: 'Remapped 1 item in Montana.' }),
     ).toContainText('Remapped 1 item in Montana.')

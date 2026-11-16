@@ -37,7 +37,7 @@ test('previews a bulk remap with the keyboard, cancels, then saves it', async ({
   await expect(previewButton).toBeFocused()
 
   await previewButton.click()
-  await region.getByRole('button', { name: 'Save remap' }).click()
+  await region.getByRole('button', { name: 'Save remap', exact: true }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Remapped' })).toContainText(
     /Remapped \d+ items? in Louisiana\./,
   )
@@ -59,6 +59,7 @@ test('no serious accessibility problems in the remap preview (dark)', async ({ p
   await expect(
     page.getByRole('region', { name: 'Check the remap before saving' }).getByRole('button', {
       name: 'Save remap',
+      exact: true,
     }),
   ).toBeEnabled()
   expect(await seriousA11yViolations(page)).toEqual([])

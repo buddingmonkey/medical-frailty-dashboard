@@ -140,6 +140,9 @@ describe('/admin/sources', () => {
       'https://dphhs.mt.gov/list.pdf',
     )
     await user.type(screen.getByLabelText('Date on the document (optional)'), '2026-09-29')
+    for (const field of ['Title', 'State’s URL for this file', 'Date on the document']) {
+      expect(screen.getByRole('button', { name: `About ${field}` })).toBeTruthy()
+    }
     await user.click(screen.getByRole('button', { name: 'Upload' }))
 
     expect((await screen.findByRole('status')).textContent).toContain('Stored')
