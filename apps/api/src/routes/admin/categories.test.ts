@@ -118,6 +118,24 @@ describe('/api/admin/states/:stateId/categories', () => {
     expect(list[2]?.suggestion?.federalCategory).toBe('state_specific')
   })
 
+  it('lists categories when a state has more open drafts than D1 allows bound parameters (100)', async () => {
+    const more = Array.from({ length: 101 }, (_, i) => ({
+      stateId: 'MT',
+      versionNo: 3 + i,
+      status: 'draft' as const,
+      createdBy: ADMIN,
+    }))
+    for (let i = 0; i < more.length; i += 10) {
+      await db.insert(datasetVersions).values(more.slice(i, i + 10))
+    }
+    const { categories: list } = await categories()
+    expect(list.map((c) => [c.stateCategory, c.publishedEntries, c.draftEntries])).toEqual([
+      ['SMI', 2, 1],
+      ['SUD', 1, 0],
+      ['Tier 2 - Frailty Indicators', 0, 1],
+    ])
+  })
+
   it('says how many published entries follow their unified categories, and under what', async () => {
     const category = (slug: string, federalCategory: 'sud' | 'serious_complex_medical') => ({
       slug,

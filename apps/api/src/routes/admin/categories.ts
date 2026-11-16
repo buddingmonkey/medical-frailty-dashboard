@@ -23,7 +23,7 @@ import {
   suggestionRunPreviewSchema,
   suggestionRunSaveSchema,
 } from '@mfcd/shared'
-import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, eq, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { auditInsert } from '../../db/audit'
@@ -175,29 +175,28 @@ export const categoriesRoute = new Hono<AppEnv>()
     const db = createDb(c.env.DB)
     const state = await findStateParam(db, c)
     if (!state) return notFound(c)
-    const drafts = await db
-      .select({ id: datasetVersions.id })
-      .from(datasetVersions)
-      .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
-    const draftIds = drafts.map((d) => d.id)
-
-    const countBy = (versionIds: number[]) =>
-      versionIds.length === 0
-        ? Promise.resolve([])
-        : db
-            .select({
-              category: entries.stateCategory,
-              subcategory: entries.stateSubcategory,
-              icd: icdCategory,
-              n: count(),
-            })
+    const countFields = {
+      category: entries.stateCategory,
+      subcategory: entries.stateSubcategory,
+      icd: icdCategory,
+      n: count(),
+    }
+    const published =
+      state.publishedVersionId === null
+        ? []
+        : await db
+            .select(countFields)
             .from(entries)
-            .where(inArray(entries.versionId, versionIds))
+            .where(eq(entries.versionId, state.publishedVersionId))
             .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
-    const published = await countBy(
-      state.publishedVersionId === null ? [] : [state.publishedVersionId],
-    )
-    const inDrafts = await countBy(draftIds)
+    // Open drafts by a join, not a list of their ids: a state can have more drafts than D1's 100
+    // bound parameters (a long-lived local database had 101 for Montana, 2026-11-16).
+    const inDrafts = await db
+      .select(countFields)
+      .from(entries)
+      .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
+      .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
+      .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
     // Published entries whose state published their federal category count under it; the
     // others placed in a published unified category take its federal parent; the M2 mapping on
     // this screen is only the fallback for the rest (docs/data-model.md).
