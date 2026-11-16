@@ -1,8 +1,8 @@
 # Status
 
-_Last updated: 2026-11-13. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.9.5` (ui-sdk tooltips and
-hover cards, the Overlaps tab, the new state picker, 2026-11-13)._
+_Last updated: 2026-11-15. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.10.0` (Indiana's own federal categories,
+per-code suggestions from Indiana's list, dependency updates, 2026-11-15)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -71,7 +71,8 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.9.2` | 2026-11-04 | Paced, resumable Rebuild coverage; pre-launch review fixes |
 | `v0.9.3` | 2026-11-05 | Admin and getting-started text corrected |
 | `v0.9.4` | 2026-11-05 | Admin pages no longer mention the preview site |
-| `v0.9.5` | 2026-11-13 | Badge tooltips, matrix and map hover cards, Overlaps tab, state picker, Zod jitless (live) |
+| `v0.9.5` | 2026-11-13 | Badge tooltips, matrix and map hover cards, Overlaps tab, state picker, Zod jitless |
+| `v0.10.0` | 2026-11-15 | Migrations 0016 and 0017: state's own federal category, per-code suggestions; dependencies (wrangler and the vitest plugin held back) (live) |
 
 ## For the project lead
 
@@ -123,6 +124,11 @@ Open items, with the date each was raised. Close them here when done.
 - The real Claude API call in "Ask Claude" is untested; tests use a fake. The button stays off
   until `ANTHROPIC_API_KEY` is set (about $5–6 for Nebraska's whole file on Opus 5.5).
 - GA-B page 60 has a row with no code (`docs/sources.md`).
+- `wrangler` (4.156.0) and `@cloudflare/vitest-plugin` (1.4.11) are held back. workerd
+  1.20261110 rejects the state-similarity statement (migration 0010, `similarityUpsert('all')`)
+  with "VIEWs and/or subqueries nested too deep": it expands the `sets` CTE four times, and
+  three is the most that works. Hosted D1 still accepts it (2026-11-14). Rewrite the statement
+  before taking the new runtime, then remove the `ignore` entries in `.github/dependabot.yml`.
 
 ## Decisions
 
