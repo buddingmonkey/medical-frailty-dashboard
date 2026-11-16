@@ -83,7 +83,7 @@ test('publishes two drafts and restores the first from Versions', async ({ page 
   await expect(
     page.getByRole('status').filter({ hasText: `v${first ?? ''} is public again` }),
   ).toContainText(`v${first ?? ''} is public again`)
-  const row = page.getByRole('row').filter({ hasText: 'Public now' })
+  const row = page.getByRole('row', { name: /^Public now/ })
   await expect(row).toContainText(`v${first ?? ''}`)
   expect(await seriousA11yViolations(page)).toEqual([])
   expect(errors).toEqual([])
