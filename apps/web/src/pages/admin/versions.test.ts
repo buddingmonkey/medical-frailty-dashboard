@@ -56,7 +56,7 @@ describe('/admin/versions', () => {
     expect(within(draftRow).getByRole('link', { name: 'Open draft v3' })).toBeTruthy()
 
     expect(
-      within(table).getByRole('button', { name: 'About Restore', description: /at once/ }),
+      within(table).getByRole('button', { name: 'About Restore', description: /public now/ }),
     ).toBeTruthy()
     await user.click(within(table).getByRole('button', { name: 'Restore v1' }))
     expect(rollbacks).toEqual([])

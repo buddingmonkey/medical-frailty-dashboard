@@ -254,13 +254,8 @@ async function send() {
 
 const n = (value: number) => value.toLocaleString('en-US')
 const inputClass = 'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5'
-/** What the restore choices do, in their info buttons' tooltips. */
-const help = {
-  version:
-    'The state’s versions in the file. “public then” was the published one when the backup was written and is chosen first; “earlier” ones were replaced. Any of them becomes a new draft, so nothing public changes until you publish it.',
-  mappings:
-    'Unlike the entries, this applies at once: the state’s public pages use the backup’s category mappings and chapter overrides as soon as the draft is made, before it is published. All the current ones and the column profiles are replaced, and the change is written to the audit log.',
-}
+/** What the version choice means, in its info button's tooltip. */
+const versionHelp = '“public then”: the version public when the backup was made.'
 const statusLabels: Record<string, string> = {
   draft: 'draft',
   published: 'public then',
@@ -278,10 +273,8 @@ const statusLabels: Record<string, string> = {
       Restore a state from a backup
     </h3>
     <p class="text-foreground">
-      Pick a backup file: a <code>.zip</code> from Download backup or from the saved backups below,
-      or a <code>.json</code> backup saved before a publish (a developer can fetch these). Choose
-      one version of one state; it becomes a <strong>new draft</strong>. Then open the draft, read
-      its checks and publish it as usual. The public list does not change until you publish.
+      Restore one state’s version from a backup (<code>.zip</code> or <code>.json</code>). It
+      becomes a new draft.
     </p>
     <div>
       <label :for="`${id}-file`" class="font-medium">Backup file</label>
@@ -344,7 +337,7 @@ const statusLabels: Record<string, string> = {
         </div>
         <div v-if="stateId">
           <label :for="`${id}-version`" class="font-medium">Version</label
-          ><InfoTip label="Version" :text="help.version" />
+          ><InfoTip label="Version" :text="versionHelp" />
           <select :id="`${id}-version`" v-model="versionId" :class="inputClass">
             <option v-for="v in versionsOfState" :key="v.version.id" :value="v.version.id">
               v{{ v.version.versionNo }}, {{ statusLabels[v.version.status] ?? v.version.status }},
@@ -374,8 +367,7 @@ const statusLabels: Record<string, string> = {
           </li>
         </ul>
         <p class="text-sm text-muted-foreground">
-          A source this site still has (same SHA-256) is reused. Otherwise its title, link and date
-          are stored without the file, marked “restored from backup, file not available”.
+          Missing source files are restored as citations only.
         </p>
         <div v-if="plan.problems.length > 0" role="alert" class="space-y-1 text-danger">
           <p class="font-medium">These entries would not pass the draft checks:</p>
@@ -385,17 +377,26 @@ const statusLabels: Record<string, string> = {
         </div>
 
         <div v-if="fileMappings" class="space-y-2">
-          <div class="flex items-start">
-            <label class="flex items-start gap-2">
-              <input v-model="restoreMappings" type="checkbox" class="mt-1" />
-              <span>
-                Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
-                column profiles with the backup’s
-                <span class="text-muted-foreground">(default: keep the current ones)</span>
-              </span>
-            </label>
-            <InfoTip label="replacing the mappings" :text="help.mappings" class="shrink-0" />
-          </div>
+          <label class="flex items-start gap-2">
+            <input
+              v-model="restoreMappings"
+              type="checkbox"
+              class="mt-1"
+              :aria-describedby="`${id}-mappings-warning`"
+            />
+            <span>
+              Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
+              column profiles with the backup’s
+              <span class="text-muted-foreground">(default: keep the current ones)</span>
+            </span>
+          </label>
+          <p
+            :id="`${id}-mappings-warning`"
+            class="rounded border-l-4 border-highlight bg-surface px-3 py-1 text-sm text-foreground"
+          >
+            Applies at once, before publishing: replaces {{ nameOf(plan.stateId) }}’s current
+            mappings, overrides and column profiles.
+          </p>
           <template v-if="restoreMappings">
             <p v-if="currentMappings.isPending.value" role="status">Loading current mappings…</p>
             <p v-else-if="currentMappings.error.value" role="alert" class="text-danger">
@@ -453,10 +454,7 @@ const statusLabels: Record<string, string> = {
           Draft v{{ done.draft.versionNo }} holds {{ n(done.entries) }} restored entries.
           <template v-if="done.mappings">Mappings restored.</template>
         </p>
-        <p class="text-sm">
-          Sources: {{ done.reused }} reused, {{ done.created }} stored without the file. Next: open
-          the draft, run its checks and publish it.
-        </p>
+        <p class="text-sm">Sources: {{ done.reused }} reused, {{ done.created }} citation only.</p>
         <RouterLink :to="`/admin/drafts/${done.draft.id}`" class="text-link underline"
           >Open draft v{{ done.draft.versionNo }}</RouterLink
         >

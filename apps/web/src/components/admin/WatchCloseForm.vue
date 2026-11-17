@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue'
 
+import CharCount from '../ui/CharCount.vue'
 import InfoTip from '../ui/InfoTip.vue'
 
 defineProps<{ saving?: boolean }>()
@@ -16,9 +17,8 @@ const note = ref('')
 const problem = ref(false)
 /** What closing does, in the info buttons' tooltips. */
 const help = {
-  outcome:
-    'Done: it was dealt with. Dismissed: it no longer needs doing. Either way the item moves to History, and a repeating item opens its next one.',
-  note: 'Required. Kept with the item in History and written to the audit log with who closed it. Up to 4,000 characters.',
+  outcome: 'Either way the item moves to History; a repeating item opens its next one.',
+  note: 'Required. Kept with the item in History.',
 }
 
 function submit() {
@@ -50,10 +50,12 @@ function submit() {
         :id="`${id}-note`"
         v-model="note"
         rows="2"
+        maxlength="4000"
         :aria-invalid="problem ? 'true' : undefined"
-        :aria-describedby="problem ? `${id}-problem` : undefined"
+        :aria-describedby="`${id}-count${problem ? ` ${id}-problem` : ''}`"
         class="mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground"
       />
+      <CharCount :id="`${id}-count`" :value="note" :max="4000" />
     </div>
     <div class="flex gap-2">
       <button

@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, useId, watch } from 'vue'
 
 import SourceDetailsForm, { sourceFieldHelp } from '../../components/admin/SourceDetailsForm.vue'
+import CharCount from '../../components/ui/CharCount.vue'
 import InfoTip from '../../components/ui/InfoTip.vue'
 import { formatIsoDate, formatTimestampDate } from '../../lib/admin-watch'
 import { apiRequest, getJson, sendJson } from '../../lib/api'
@@ -197,10 +198,7 @@ const inputClass =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Source files</h2>
       <p class="max-w-prose text-muted-foreground">
-        Upload the state’s original file. It is kept unchanged as the record of what the state
-        published, and its title, URL and date become the citation on the public pages. If the file
-        is already stored, the page says so before anything is uploaded. Next, open the file in Read
-        and map.
+        Store the state’s original file. Its title, URL and date become the public citation.
       </p>
     </div>
 
@@ -252,7 +250,15 @@ const inputClass =
           <div>
             <label :for="`${id}-title`" class="font-medium">Title</label
             ><InfoTip label="Title" :text="sourceFieldHelp.title" />
-            <input :id="`${id}-title`" v-model="title" type="text" :class="inputClass" />
+            <input
+              :id="`${id}-title`"
+              v-model="title"
+              type="text"
+              maxlength="200"
+              :aria-describedby="`${id}-title-count`"
+              :class="inputClass"
+            />
+            <CharCount :id="`${id}-title-count`" :value="title" :max="200" />
           </div>
           <div>
             <label :for="`${id}-url`" class="font-medium"

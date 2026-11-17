@@ -65,8 +65,7 @@ const rollback = useMutation({
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 /** What Restore does, in the info button at the head of the actions column. */
-const restoreHelp =
-  'Makes an earlier version the state’s public list again, at once, after a second click. The version public now becomes an earlier one, which can be restored the same way. The change is written to the audit log.'
+const restoreHelp = 'Makes this version public now. The current one becomes an earlier version.'
 </script>
 
 <template>
@@ -74,8 +73,7 @@ const restoreHelp =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Versions</h2>
       <p class="max-w-prose text-muted-foreground">
-        Every list a state has had. One is public at a time; an earlier one can be made public again
-        in one step.
+        Every list a state has had. One is public at a time.
       </p>
     </div>
     <div class="max-w-xs">

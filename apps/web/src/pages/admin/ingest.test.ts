@@ -280,7 +280,7 @@ describe('/admin/ingest', () => {
     expect(within(rows).getByText('Paranoid schizophrenia with a second line')).toBeTruthy()
     expect(within(rows).getByText('page 1, line 1')).toBeTruthy()
     // The title names the state; the send panel says so (the state-mismatch check reads it).
-    expect(screen.getByText(/States named in the file: MT\./)).toBeTruthy()
+    expect(screen.getByText(/File names: MT\./)).toBeTruthy()
     const wrap = screen.getByLabelText<HTMLSelectElement>('Wrapped lines')
     expect(wrap.value).toBe('auto')
     expect(wrap.selectedOptions[0]?.textContent).toContain('found: below the code')
@@ -293,6 +293,8 @@ describe('/admin/ingest', () => {
         'with a second line Disorganized schizophrenia',
       ),
     ).toBeTruthy()
+    // The reset is said when it happens, not in advance.
+    expect(screen.getByText(/review edits were reset/)).toBeTruthy()
   })
 
   it('reviews the mapped rows, and starts the review again for a new file', async () => {
@@ -314,7 +316,7 @@ describe('/admin/ingest', () => {
   it('guesses that a list writes ICD-10-CM codes without dots, and asks CMS’s lists (NE)', async () => {
     const api = fakeApi()
     await start('Code\tDescription\nE09349\tDiabetes\nA0103\tTyphoid\nA9999\tUnknown\n')
-    expect(screen.getByLabelText<HTMLInputElement>(/written without dots/).checked).toBe(true)
+    expect(screen.getByLabelText<HTMLInputElement>(/have no dots/).checked).toBe(true)
     // A0103 is only in ICD-10-CM, so the question “ICD-10-CM or HCPCS?” is settled.
     expect(await screen.findByText(/3 rows: 2 ready, 1 needs a decision/)).toBeTruthy()
     expect(api.lookups.flat().sort()).toEqual(['A0103', 'A9999', 'E09349'])
@@ -340,14 +342,17 @@ describe('/admin/ingest', () => {
       http.post('/api/admin/ref-codes/lookup', () => HttpResponse.json({}, { status: 500 })),
     )
     await start()
-    expect(await screen.findByText(/Could not check the codes against the CMS lists/)).toBeTruthy()
+    expect(await screen.findByText(/Could not check codes against CMS/)).toBeTruthy()
   })
 
   it('sends the reviewed rows of a pasted table to a new draft', async () => {
     const api = fakeApi()
     await start(`Louisiana list\tCode\nx\tF20.0\ny\tF31.0\n`)
     const panel = screen.getByRole('region', { name: 'Send to a draft' })
-    expect(within(panel).getByText(/2 entries from 2 rows/)).toBeTruthy()
+    expect(
+      within(within(panel).getByRole('list', { name: 'What will be sent' })).getByRole('listitem')
+        .textContent,
+    ).toMatch(/2 entries\s+from 2 rows/)
     await within(panel).findByRole('option', { name: 'Louisiana HR1 codes' })
     await user.selectOptions(within(panel).getByLabelText('Source document'), '11')
     await user.click(within(panel).getByRole('button', { name: 'Send to draft' }))
@@ -372,7 +377,9 @@ describe('/admin/ingest', () => {
       new File(['\n'], 'mt.json', { type: 'application/json' }),
     )
     expect(await screen.findByRole('alert')).toBeTruthy()
-    const panel = await screen.findByRole('region', { name: 'Get help from an AI assistant' })
+    // The panel opens by itself when the file cannot be read.
+    const panel = await screen.findByRole('group', { name: 'Get help from an AI assistant' })
+    expect((panel as HTMLDetailsElement).open).toBe(true)
     await user.click(within(panel).getByRole('button', { name: 'Prepare the prompt' }))
     await user.click(await within(panel).findByLabelText('The assistant’s answer'))
     await user.paste('{"rows":[{"code":"F20.0","description":"Paranoid schizophrenia"}]}')
@@ -410,17 +417,22 @@ describe('/admin/ingest field help', () => {
     user = userEvent.setup()
   })
 
-  it('explains the column roles, the qualification rule, its source and the tier', async () => {
+  it('gives each field one help: a tooltip for a consequence, or a hint', async () => {
     fakeApi()
     await start()
 
     const help = (name: string, description: RegExp) =>
       screen.getByRole('button', { name: `About ${name}`, description })
-    expect(help('File', /does not store the file/)).toBeTruthy()
     expect(help('Means', /exactly one Code column/)).toBeTruthy()
     expect(help('Qualification rule', /Not set/)).toBeTruthy()
     expect(help('Source of this rule', /labels the value as inferred/)).toBeTruthy()
-    expect(help('Tier for every row', /tier label/)).toBeTruthy()
+    expect(help('Save column profile', /same headers/)).toBeTruthy()
+    for (const name of ['File', 'Tier for every row', 'Category for every row']) {
+      expect(screen.queryByRole('button', { name: `About ${name}` })).toBeNull()
+    }
+    expect(
+      screen.getByRole('textbox', { name: 'Tier for every row', description: /Leave empty/ }),
+    ).toBeTruthy()
     // The fieldset keeps its legend as its name, without the button's.
     expect(screen.getByRole('group', { name: 'Does a code qualify on its own?' })).toBeTruthy()
     // The fields keep their own names.

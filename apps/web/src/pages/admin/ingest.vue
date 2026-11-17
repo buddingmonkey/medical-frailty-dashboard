@@ -70,6 +70,8 @@ const wrapLabels: Record<WrapDirection, string> = {
   above: 'above the code',
   below: 'below the code',
 }
+/** Set after the PDF is read again another way: roles and review edits started over. */
+const wrapReset = ref(false)
 let lastInput: ParseInput | null = null
 /** The file or paste last read: the AI cleanup panel builds its prompt from it. */
 const source = ref<ParseInput | null>(null)
@@ -80,6 +82,7 @@ async function parse(input: ParseInput, again = false) {
   lastInput = input
   source.value = input
   parseError.value = null
+  wrapReset.value = false
   parsing.value = true
   if (!again) {
     tables.value = []
@@ -126,7 +129,10 @@ function onAiTable(table: RawTable) {
 
 // Read the same PDF again with the admin's choice.
 async function onWrapChange() {
-  if (lastInput?.kind === 'file') await parse({ ...lastInput, wrap: wrapChoice.value }, true)
+  if (lastInput?.kind !== 'file') return
+  await parse({ ...lastInput, wrap: wrapChoice.value }, true)
+  // Said when it happens, not in advance: the roles and review edits start over.
+  wrapReset.value = parseError.value === null
 }
 
 // --- Column mapping ---------------------------------------------------------------------------
@@ -346,18 +352,11 @@ const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  file: 'Read here in your browser; this does not store the file. A draft cites only a file stored on Source files.',
-  wrap: 'Changing it reads the PDF again, so the column roles go back to the guesses (or the saved column profile) and review edits start over.',
-  table:
-    'Each table is mapped, reviewed and sent on its own. Sending a table again replaces only its rows in the draft.',
-  roles:
-    'What each column holds: choose exactly one Code column; Ignore leaves a column out. In an Included (Yes/No) column, No, N, False, 0 or Excluded marks a row excluded: it is stored but never shown as a frail code.',
-  rule: 'Sets each row’s qualification, which the public site shows as the state’s rule. From a column’s value maps each value of the Qualification or Tier column; a value left Not set shows as “State doesn’t say”.',
+  roles: 'Choose exactly one Code column.',
+  rule: 'Sets the state’s rule shown on public pages. Values left Not set show “State doesn’t say”.',
   basis:
     'Stated: the state’s document says it. Inferred: this site deduced it, and the public site labels the value as inferred.',
-  category:
-    'Stored as each row’s state category. After publishing, each state category is classified on Federal categories and mapped on Mappings.',
-  tier: 'Stored as each row’s tier; the public site shows it as the state’s own tier label. The same code in two tiers is not a duplicate.',
+  profile: 'The next file with the same headers is mapped the same way.',
 }
 </script>
 
@@ -366,9 +365,7 @@ const fieldHelp = {
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Read and map a list</h2>
       <p class="max-w-prose text-muted-foreground">
-        Open a state’s file or paste a table. Say what each column means, check the rows, then send
-        them to a draft. Click Save column profile to remember the columns: the next file with the
-        same headers is mapped the same way.
+        Open a file or paste a table, map its columns, review the rows, send them to a draft.
       </p>
     </div>
 
@@ -384,18 +381,17 @@ const fieldHelp = {
 
     <div v-if="stateId" class="grid max-w-4xl gap-6 md:grid-cols-2">
       <div>
-        <label :for="`${id}-file`" class="font-medium">File</label
-        ><InfoTip label="File" :text="fieldHelp.file" />
+        <label :for="`${id}-file`" class="font-medium">File</label>
         <input
           :id="`${id}-file`"
           type="file"
           accept=".csv,.json,.txt,.xlsx,.pdf"
           class="mt-1 block"
+          :aria-describedby="`${id}-file-hint`"
           @change="onFile"
         />
-        <p class="mt-1 text-sm text-muted-foreground">
-          Excel (.xlsx), PDF, CSV, JSON or tab-separated text. Each Excel sheet, and each PDF table
-          with its own header, is its own table.
+        <p :id="`${id}-file-hint`" class="mt-1 text-sm text-muted-foreground">
+          xlsx, PDF, CSV, JSON or TSV.
         </p>
       </div>
       <div>
@@ -405,7 +401,7 @@ const fieldHelp = {
           v-model="pasteText"
           rows="3"
           :class="inputClass"
-          placeholder="Copy the cells in a spreadsheet, header row included"
+          placeholder="Paste cells, header row first"
         />
         <button
           type="button"
@@ -431,13 +427,13 @@ const fieldHelp = {
       :state-id="stateId"
       :state-name="stateName"
       :source="source"
+      :open="parseError !== null"
       @table="onAiTable"
     />
 
     <template v-if="table && stateId">
       <div v-if="pdfWrap" class="max-w-prose">
-        <label :for="`${id}-wrap`" class="font-medium">Wrapped lines</label
-        ><InfoTip label="Wrapped lines" :text="fieldHelp.wrap" />
+        <label :for="`${id}-wrap`" class="font-medium">Wrapped lines</label>
         <select
           :id="`${id}-wrap`"
           v-model="wrapChoice"
@@ -451,15 +447,15 @@ const fieldHelp = {
           <option value="below">Extra lines sit {{ wrapLabels.below }}</option>
         </select>
         <p :id="`${id}-wrap-help`" class="mt-1 text-sm text-muted-foreground">
-          A long cell in a PDF wraps onto extra lines. Check the mapped rows below: if a description
-          is joined to the wrong code, choose the other way.
+          If a description sits on the wrong code, switch this.
+        </p>
+        <p v-if="wrapReset" role="status" class="mt-1 text-sm text-foreground">
+          Read again: column roles and review edits were reset.
         </p>
       </div>
 
       <div v-if="tables.length > 1" class="max-w-xs">
-        <label :for="`${id}-sheet`" class="font-medium">{{
-          pdfWrap ? 'Table' : 'Sheet'
-        }}</label><InfoTip :label="pdfWrap ? 'Table' : 'Sheet'" :text="fieldHelp.table" />
+        <label :for="`${id}-sheet`" class="font-medium">{{ pdfWrap ? 'Table' : 'Sheet' }}</label>
         <select :id="`${id}-sheet`" v-model="tableIndex" :class="inputClass">
           <option v-for="(t, i) in tables" :key="i" :value="i">{{ t.name }}</option>
         </select>
@@ -581,22 +577,30 @@ const fieldHelp = {
       </fieldset>
 
       <div v-if="!roles.includes('category')" class="max-w-md">
-        <label :for="`${id}-category`" class="font-medium">Category for every row</label
-        ><InfoTip label="Category for every row" :text="fieldHelp.category" />
-        <input :id="`${id}-category`" v-model="defaultCategory" type="text" :class="inputClass" />
-        <p class="mt-1 text-sm text-muted-foreground">
-          This file has no category column (e.g. Georgia). Categories can be refined in the mapping
-          step.
+        <label :for="`${id}-category`" class="font-medium">Category for every row</label>
+        <input
+          :id="`${id}-category`"
+          v-model="defaultCategory"
+          type="text"
+          :class="inputClass"
+          :aria-describedby="`${id}-category-hint`"
+        />
+        <p :id="`${id}-category-hint`" class="mt-1 text-sm text-muted-foreground">
+          For a file with no category column.
         </p>
       </div>
 
       <div v-if="!roles.includes('tier')" class="max-w-md">
-        <label :for="`${id}-tier`" class="font-medium">Tier for every row</label
-        ><InfoTip label="Tier for every row" :text="fieldHelp.tier" />
-        <input :id="`${id}-tier`" v-model="defaultTier" type="text" :class="inputClass" />
-        <p class="mt-1 text-sm text-muted-foreground">
-          For a state that publishes each tier as its own file (Georgia: “Attachment A”, “Attachment
-          B”). Leave it empty when the list has no tiers.
+        <label :for="`${id}-tier`" class="font-medium">Tier for every row</label>
+        <input
+          :id="`${id}-tier`"
+          v-model="defaultTier"
+          type="text"
+          :class="inputClass"
+          :aria-describedby="`${id}-tier-hint`"
+        />
+        <p :id="`${id}-tier-hint`" class="mt-1 text-sm text-muted-foreground">
+          For a state that publishes each tier as its own file. Leave empty if none.
         </p>
       </div>
 
@@ -658,8 +662,8 @@ const fieldHelp = {
       </template>
 
       <p v-if="lookupError" role="alert" class="text-danger">
-        Could not check the codes against the CMS lists ({{ lookupError }}). The review still works,
-        but cannot settle “ICD-10-CM or HCPCS?” or show codes CMS does not list.
+        Could not check codes against CMS ({{ lookupError }}). Review works, but can’t settle
+        ICD-10-CM vs HCPCS.
       </p>
       <ReviewTable
         v-if="review && review.rows.length > 0"
@@ -677,6 +681,7 @@ const fieldHelp = {
         >
           Save column profile
         </button>
+        <InfoTip label="Save column profile" :text="fieldHelp.profile" />
         <p v-if="saved" role="status">Saved the column profile for {{ stateName }}.</p>
         <p v-if="save.error.value" role="alert" class="text-danger">
           Could not save: {{ save.error.value.message }}

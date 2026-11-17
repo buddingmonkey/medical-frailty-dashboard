@@ -3,6 +3,7 @@ import { type WatchCreate, type WatchItem, watchCreateSchema, watchKinds } from 
 import { computed, reactive, ref, useId } from 'vue'
 
 import { watchKindLabels } from '../../lib/admin-watch'
+import CharCount from '../ui/CharCount.vue'
 import InfoTip from '../ui/InfoTip.vue'
 
 const props = defineProps<{
@@ -70,13 +71,10 @@ function submit() {
 
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  dueDate:
-    'Puts the item under Overdue, Due within 14 days or Later, by your computer’s date, and counts it in the banner on every admin page when it is overdue or due soon. Leave it blank for an item waiting on someone: it goes under No date yet.',
-  repeatDays:
-    'Optional, 1 to 3,650. Closing the item opens a new one due this many days after this one’s due date. If that day has already passed, or there is no due date, it is due this many days after the close date (UTC).',
-  approximate:
-    'Shows “approximate” next to the date, for an estimate such as an appeal deadline before the judgment date is known. It does not change where the item is listed.',
-  why: 'Shown on the item as plain text, and copied to the next item of a repeating one. Up to 4,000 characters.',
+  dueDate: 'Blank: listed under No date yet.',
+  repeatDays: 'Closing opens the next one this many days later (1 to 3,650).',
+  approximate: 'Shows “approximate” next to the date.',
+  why: 'Copied to the next repeat.',
 }
 
 const inputClass =
@@ -156,9 +154,12 @@ const inputClass =
         :id="`${id}-why`"
         v-model="draft.whyMd"
         rows="3"
+        maxlength="4000"
         :class="inputClass"
-        v-bind="fieldState('whyMd')"
+        :aria-invalid="invalid.has('whyMd') ? 'true' : undefined"
+        :aria-describedby="`${id}-why-count${invalid.has('whyMd') ? ` ${problemsId}` : ''}`"
       />
+      <CharCount :id="`${id}-why-count`" :value="draft.whyMd" :max="4000" />
     </div>
 
     <fieldset class="space-y-2">

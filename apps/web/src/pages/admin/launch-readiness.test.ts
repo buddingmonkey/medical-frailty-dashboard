@@ -53,7 +53,7 @@ describe('/admin/launch-readiness', () => {
 
     const banner = await screen.findByRole('status', { name: 'Launch data gate' })
     expect(banner.textContent).toContain('1 of 2 states ready')
-    expect(banner.textContent).toContain('not passed')
+    expect(banner.textContent).toContain('Data gate: not met')
 
     const table = screen.getByRole('table', { name: 'Launch readiness by state' })
     const [ga, mt] = within(table).getAllByRole('row').slice(1)
@@ -75,7 +75,7 @@ describe('/admin/launch-readiness', () => {
     expect(mt.textContent).toContain('Ready')
     expect(mt.textContent).not.toContain('Not ready')
 
-    expect(screen.getByText(/real users/i).textContent).toContain('not tracked here')
+    expect(screen.getByText(/real users/i).textContent).toContain('tracked elsewhere')
   })
 
   it('says the gate passes with 2 ready states', async () => {
@@ -87,7 +87,7 @@ describe('/admin/launch-readiness', () => {
 
     const banner = await screen.findByRole('status', { name: 'Launch data gate' })
     expect(banner.textContent).toContain('2 of 2 states ready')
-    expect(banner.textContent).toContain('passes')
+    expect(banner.textContent).toMatch(/Data gate: met/)
   })
 
   it('says so when no state has a published list', async () => {

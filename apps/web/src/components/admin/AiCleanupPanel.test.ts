@@ -17,7 +17,7 @@ const csv = (rows: number): ParseInput => ({
   ),
 })
 
-function setup(source: ParseInput, enabled = false) {
+function setup(source: ParseInput, enabled = false, open = false) {
   const posts: unknown[] = []
   server.use(
     http.get('/api/admin/ai-cleanup', () =>
@@ -34,10 +34,18 @@ function setup(source: ParseInput, enabled = false) {
   )
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const rendered = render(AiCleanupPanel, {
-    props: { stateId: 'MT', stateName: 'Montana', source },
+    props: { stateId: 'MT', stateName: 'Montana', source, open },
     global: { plugins: [[VueQueryPlugin, { queryClient }]] },
   })
-  return { user: userEvent.setup(), posts, emitted: () => rendered.emitted() }
+  return {
+    user: userEvent.setup(),
+    posts,
+    emitted: () => rendered.emitted(),
+    details: () => rendered.container.querySelector('details'),
+    unmount: () => {
+      rendered.unmount()
+    },
+  }
 }
 
 describe('AiCleanupPanel', () => {
@@ -87,7 +95,7 @@ describe('AiCleanupPanel', () => {
     expect(button.getAttribute('aria-disabled')).toBe('true')
     await off.user.click(button)
     const tip = screen.getByRole('tooltip')
-    expect(tip.textContent).toContain('needs an Anthropic API key')
+    expect(tip.textContent).toContain('Needs a server API key')
     expect(button.getAttribute('aria-describedby')).toBe(tip.id)
     expect(off.posts).toEqual([])
   })
@@ -113,20 +121,12 @@ describe('AiCleanupPanel', () => {
   })
 })
 
-describe('AiCleanupPanel field help', () => {
-  it('explains the parts and the answer', async () => {
-    const { user } = setup(csv(10))
-    await user.click(screen.getByRole('button', { name: 'Prepare the prompt' }))
-    await screen.findByLabelText('Part')
+describe('AiCleanupPanel disclosure', () => {
+  it('is closed by default and open when the parent asks', () => {
+    const closed = setup(csv(1))
+    expect(closed.details()?.open).toBe(false)
+    closed.unmount()
 
-    expect(
-      screen.getByRole('button', { name: 'About Part', description: /its own table/ }),
-    ).toBeTruthy()
-    expect(
-      screen.getByRole('button', {
-        name: 'About The assistant’s answer',
-        description: /is ignored/,
-      }),
-    ).toBeTruthy()
+    expect(setup(csv(1), false, true).details()?.open).toBe(true)
   })
 })

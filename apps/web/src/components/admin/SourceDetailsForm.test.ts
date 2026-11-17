@@ -84,29 +84,26 @@ describe('SourceDetailsForm', () => {
     expect(cancelled()).toBe(1)
   })
 
-  it('explains where each detail shows on the public pages, and keeps the URL hint wired', () => {
+  it('gives each field one help: a tooltip, or a hint for the URL; the title counts', () => {
     renderForm(empty)
 
     expect(
       screen.getByRole('button', { name: 'About Title', description: /citation/ }),
     ).toBeTruthy()
-    expect(
-      screen.getByRole('button', {
-        name: 'About State’s URL for this file',
-        description: /link/,
-      }),
-    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'About State’s URL for this file' })).toBeNull()
     expect(
       screen.getByRole('button', {
         name: 'About Date on the document',
-        description: /not the day it was uploaded/,
+        description: /not the upload date/,
       }),
     ).toBeTruthy()
-    expect(screen.getByRole('textbox', { name: 'Title' })).toBeTruthy()
+    expect(
+      screen.getByRole('textbox', { name: 'Title', description: '7 / 200 characters' }),
+    ).toBeTruthy()
     expect(
       screen.getByRole('textbox', {
         name: 'State’s URL for this file',
-        description: /Leave blank if the state has no public copy/,
+        description: /link not known/,
       }),
     ).toBeTruthy()
   })
