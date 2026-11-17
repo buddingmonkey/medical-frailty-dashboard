@@ -94,9 +94,9 @@ Open items, with the date each was raised. Close them here when done.
   published codes (project lead, 2026-11-13).
 - **Georgia sources on production:** set the URL (DCH public notices page) and publisher date
   (2026-07-09) on GA's two source documents in `/admin/sources` (2026-11-03).
-- **Publish on production:** the 19 starter comparison categories and the 8 condition groups
-  are still drafts. Check the groups' CPT ranges first: they are numbers only and unchecked
-  (2026-11-03).
+- **Condition groups on production:** the 19 starter comparison categories are published
+  (2026-11-16). Check whether the 8 condition groups' CPT ranges (numbers only, unchecked) are
+  right (2026-11-03).
 - **Web Analytics:** register it and set `CF_BEACON_TOKEN` per environment
   (`docs/deployment.md`, "Web Analytics"; 2026-11-03).
 - **Decide** whether `check (windows)` is a required check (2026-11-03).
@@ -107,8 +107,6 @@ Open items, with the date each was raised. Close them here when done.
 - **Run getting-started.md on a fresh machine:** steps 5, 8 and 14 (GitHub, Claude Code
   sign-in) were never run; the Windows CI job covers only the scripts (2026-11-03).
 - **Try "Run maintenance now"** on preview (Backup and restore page; 2026-11-03).
-- **Watch dates:** close the 2026-11-30 Workers downgrade item in `/admin/watch`; the project
-  lead stays on Workers Paid.
 - **Legal review:** every provisional wording item and rule is in
   [`docs/legal-review.md`](legal-review.md). Add new items there.
 
@@ -207,7 +205,6 @@ Open items, with the date each was raised. Close them here when done.
 | Date | What | Why it matters | Source |
 | --- | --- | --- | --- |
 | ~2026-12-28 | *Massachusetts v. Oz*: CMS appeal deadline (60 days from judgment; exact date depends on when judgment was entered) | An appeal or stay may change the site's ruling note; states may loosen combination rules either way | `docs/sources.md`, "Federal and court rulings" |
-| 2026-11-30 | Downgrade the Cloudflare account from Workers Paid to Free (dropped 2026-11-02) | The $5 was for one month only (reference-code load) | Decisions table |
 | ~2026-12 | CMS posts the January 2027 HCPCS file | Build the diff loader first, so the update loads only new and changed codes (`packages/reference-data/README.md`, "Updating") | CMS HCPCS quarterly update page |
 | ~2027-06 | CMS posts ICD-10-CM FY2028 files (valid 2027-10-01) | Load the changes into `ref_codes`; re-run checks for every state | CMS ICD-10 page |
 | 2027-01-01 | Work requirements take effect | States may publish final or revised lists before this date; re-check all seed states | H.R.1 §71119 |
