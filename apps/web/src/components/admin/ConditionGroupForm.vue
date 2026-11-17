@@ -69,9 +69,8 @@ const problems = ref<string[]>([])
 
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  name: 'The group’s name in the “Like codes” section of public code pages.',
-  slug: 'A short id that tells the groups apart. It is not part of any public address.',
-  definition: 'What the group covers, for admins. Public code pages show only the group’s name.',
+  name: 'Shown in Like codes.',
+  definition: 'Admins only.',
 }
 
 function submit() {
@@ -124,21 +123,27 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       <div>
         <label :for="`${id}-name`" class="font-medium">Name</label
         ><InfoTip label="Name" :text="fieldHelp.name" />
-        <input :id="`${id}-name`" v-model="draft.name" type="text" :class="inputClass" />
+        <input
+          :id="`${id}-name`"
+          v-model="draft.name"
+          type="text"
+          maxlength="120"
+          :class="inputClass"
+        />
       </div>
       <div>
-        <label :for="`${id}-slug`" class="font-medium">Slug</label
-        ><InfoTip label="Slug" :text="fieldHelp.slug" />
+        <label :for="`${id}-slug`" class="font-medium">Slug</label>
         <input
           :id="`${id}-slug`"
           v-model="draft.slug"
           type="text"
+          maxlength="80"
           :class="inputClass"
           :aria-describedby="`${id}-slug-help`"
           @input="slugEdited = true"
         />
         <p :id="`${id}-slug-help`" class="mt-1 text-sm text-muted-foreground">
-          Lowercase letters, digits and hyphens. Must be unique.
+          Lowercase letters, digits and hyphens. Must be unique. Not public.
         </p>
       </div>
     </div>
@@ -146,7 +151,13 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div>
       <label :for="`${id}-definition`" class="font-medium">Definition</label
       ><InfoTip label="Definition" :text="fieldHelp.definition" />
-      <textarea :id="`${id}-definition`" v-model="draft.definition" rows="2" :class="inputClass" />
+      <textarea
+        :id="`${id}-definition`"
+        v-model="draft.definition"
+        rows="2"
+        maxlength="2000"
+        :class="inputClass"
+      />
     </div>
     <div>
       <label :for="`${id}-sources`" class="font-medium">Sources</label>
@@ -154,6 +165,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         :id="`${id}-sources`"
         v-model="draft.sources"
         rows="3"
+        maxlength="4000"
         :class="inputClass"
         :aria-describedby="`${id}-sources-help`"
       />
@@ -170,9 +182,6 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           {{ conditionGroupStatusLabels[s] }}
         </option>
       </select>
-      <p class="mt-1 text-sm text-muted-foreground">
-        Only published groups give like codes on public code pages.
-      </p>
     </div>
 
     <fieldset class="space-y-2">

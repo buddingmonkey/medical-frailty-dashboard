@@ -6,24 +6,15 @@ import '../../test/ui-sdk-stubs'
 
 import UnifiedCategoryForm from './UnifiedCategoryForm.vue'
 
-const fields = [
-  'Label',
-  'Slug',
-  'Definition',
-  'Includes',
-  'Excludes',
-  'Federal parent',
-  'Status',
-  'Sort order',
-  'CCSR groups',
-]
+// Fields with an info button; the others have a visible hint instead (one help per field).
+const fields = ['Label', 'Definition', 'Federal parent', 'Sort order', 'CCSR groups']
 
 function setup() {
   render(UnifiedCategoryForm, { props: { ccsrOptions: [] } })
 }
 
 describe('UnifiedCategoryForm field help', () => {
-  it('gives every field an info button with its own help', () => {
+  it('gives each field one help: an info button or a visible hint, never both', () => {
     setup()
 
     const descriptions = fields.map((field) => {
@@ -32,8 +23,29 @@ describe('UnifiedCategoryForm field help', () => {
       expect(description).toBeTruthy()
       return document.getElementById(description ?? '')?.textContent ?? ''
     })
-    for (const d of descriptions) expect(d.length).toBeGreaterThan(20)
+    for (const d of descriptions) expect(d.length).toBeGreaterThan(5)
     expect(new Set(descriptions).size).toBe(fields.length)
+    for (const field of ['Slug', 'Includes', 'Excludes', 'Status']) {
+      expect(screen.queryByRole('button', { name: `About ${field}` })).toBeNull()
+    }
+    const hint = 'Text only; CCSR groups decide the codes.'
+    expect(screen.getByRole('textbox', { name: /^Includes/, description: hint })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: /^Excludes/, description: hint })).toBeTruthy()
+    expect(
+      screen.getByRole('combobox', { name: 'Status', description: /retire instead/ }),
+    ).toBeTruthy()
+  })
+
+  it('says why a reserved slug is refused', async () => {
+    const user = userEvent.setup()
+    setup()
+
+    await user.type(screen.getByRole('textbox', { name: /^Slug/ }), 'codes')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Slug “codes” is taken by another page.',
+    )
   })
 
   it('explains that sort order orders the public comparison categories', async () => {
@@ -42,13 +54,13 @@ describe('UnifiedCategoryForm field help', () => {
 
     await user.click(screen.getByRole('button', { name: 'About Sort order' }))
 
-    expect(screen.getByRole('tooltip').textContent).toMatch(/lower numbers come first/i)
+    expect(screen.getByRole('tooltip').textContent).toMatch(/lower comes first/i)
   })
 
   it('keeps the fields named by their labels and the slug described by its help', () => {
     setup()
 
-    expect(screen.getByRole('textbox', { name: 'Sort order' })).toBeTruthy()
+    expect(screen.getByRole('spinbutton', { name: 'Sort order' })).toHaveProperty('max', '100000')
     expect(screen.getByRole('group', { name: 'CCSR groups' })).toBeTruthy()
     expect(
       screen.getByRole('textbox', {

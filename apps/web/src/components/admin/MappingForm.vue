@@ -20,7 +20,6 @@ import {
   stateCategoryName,
   targetRelations,
 } from '../../lib/admin-unified'
-import InfoTip from '../ui/InfoTip.vue'
 
 type TargetRelation = (typeof targetRelations)[number]
 
@@ -148,7 +147,7 @@ function submit(approve: boolean) {
     problem.value =
       new Set(ids).size < ids.length
         ? 'Each unified category may be a target once.'
-        : 'Check the fields: a rationale may have up to 4,000 characters, a citation 1,000.'
+        : 'Check the rationale and citation.'
     return
   }
   problem.value = null
@@ -158,15 +157,10 @@ function submit(approve: boolean) {
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
-/** What the record fields mean, in their info buttons' tooltips. */
-const fieldHelp = {
-  basis:
-    'Why the mapping holds: the state’s own text, an admin’s judgement, the CCSR groups of its codes agreeing, or inferred. A record for reviewers; it does not change counts.',
-  confidence: 'How sure the mapper is. A record for reviewers; it does not change counts.',
-  rationale: 'A note on why, for the next admin. Up to 4,000 characters.',
-  citation:
-    'Where the evidence is, such as a page or section of the state’s document. Up to 1,000 characters.',
-}
+/** The record fields' one hint, and their limits (the zod schema's, enforced by the fields). */
+const recordHint = `${id}-record`
+const RATIONALE_MAX = 4000
+const CITATION_MAX = 1000
 const relationOption: Record<TargetRelation, string> = {
   exact: 'Exact (the same codes)',
   close: 'Close (nearly the same)',
@@ -257,42 +251,58 @@ const relationOption: Record<TargetRelation, string> = {
         <label :for="`${id}-mode-c`">Place each code by its CCSR group</label>
       </div>
       <p class="text-sm text-muted-foreground">
-        Choose “by its CCSR group” when the state’s category is not a meaningful group (for example,
-        one list of everything).
+        Use “by its CCSR group” when the category is not a real group, such as one list of
+        everything.
       </p>
     </fieldset>
+    <p :id="recordHint" class="text-sm text-muted-foreground">
+      Basis, confidence, rationale and citation are for the record; they do not change counts.
+    </p>
 
     <div v-if="mode === 'byCode'" class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-c-basis`" class="font-medium">Basis</label
-        ><InfoTip label="Basis" :text="fieldHelp.basis" />
-        <select :id="`${id}-c-basis`" v-model="byCode.basis" :class="inputClass">
+        <label :for="`${id}-c-basis`" class="font-medium">Basis</label>
+        <select
+          :id="`${id}-c-basis`"
+          v-model="byCode.basis"
+          :class="inputClass"
+          :aria-describedby="recordHint"
+        >
           <option v-for="b in mappingBases" :key="b" :value="b">{{ basisLabels[b] }}</option>
         </select>
       </div>
       <div>
-        <label :for="`${id}-c-confidence`" class="font-medium">Confidence</label
-        ><InfoTip label="Confidence" :text="fieldHelp.confidence" />
-        <select :id="`${id}-c-confidence`" v-model="byCode.confidence" :class="inputClass">
+        <label :for="`${id}-c-confidence`" class="font-medium">Confidence</label>
+        <select
+          :id="`${id}-c-confidence`"
+          v-model="byCode.confidence"
+          :class="inputClass"
+          :aria-describedby="recordHint"
+        >
           <option v-for="c in mappingConfidences" :key="c" :value="c">
             {{ confidenceLabels[c] }}
           </option>
         </select>
       </div>
       <div>
-        <label :for="`${id}-c-rationale`" class="font-medium">Rationale</label
-        ><InfoTip label="Rationale" :text="fieldHelp.rationale" />
+        <label :for="`${id}-c-rationale`" class="font-medium">Rationale</label>
         <textarea
           :id="`${id}-c-rationale`"
           v-model="byCode.rationale"
           rows="2"
+          :maxlength="RATIONALE_MAX"
           :class="inputClass"
         />
       </div>
       <div>
-        <label :for="`${id}-c-citation`" class="font-medium">Citation</label
-        ><InfoTip label="Citation" :text="fieldHelp.citation" />
-        <input :id="`${id}-c-citation`" v-model="byCode.citation" type="text" :class="inputClass" />
+        <label :for="`${id}-c-citation`" class="font-medium">Citation</label>
+        <input
+          :id="`${id}-c-citation`"
+          v-model="byCode.citation"
+          type="text"
+          :maxlength="CITATION_MAX"
+          :class="inputClass"
+        />
       </div>
     </div>
 
@@ -336,16 +346,26 @@ const relationOption: Record<TargetRelation, string> = {
           <div>
             <label :for="`${id}-t${i}-b`" class="text-sm font-medium"
               >Basis for target {{ i + 1 }}</label
-            ><InfoTip :label="`Basis for target ${i + 1}`" :text="fieldHelp.basis" />
-            <select :id="`${id}-t${i}-b`" v-model="t.basis" :class="inputClass">
+            >
+            <select
+              :id="`${id}-t${i}-b`"
+              v-model="t.basis"
+              :class="inputClass"
+              :aria-describedby="recordHint"
+            >
               <option v-for="b in mappingBases" :key="b" :value="b">{{ basisLabels[b] }}</option>
             </select>
           </div>
           <div>
             <label :for="`${id}-t${i}-c`" class="text-sm font-medium"
               >Confidence for target {{ i + 1 }}</label
-            ><InfoTip :label="`Confidence for target ${i + 1}`" :text="fieldHelp.confidence" />
-            <select :id="`${id}-t${i}-c`" v-model="t.confidence" :class="inputClass">
+            >
+            <select
+              :id="`${id}-t${i}-c`"
+              v-model="t.confidence"
+              :class="inputClass"
+              :aria-describedby="recordHint"
+            >
               <option v-for="c in mappingConfidences" :key="c" :value="c">
                 {{ confidenceLabels[c] }}
               </option>
@@ -354,14 +374,26 @@ const relationOption: Record<TargetRelation, string> = {
           <div>
             <label :for="`${id}-t${i}-ra`" class="text-sm font-medium"
               >Rationale for target {{ i + 1 }}</label
-            ><InfoTip :label="`Rationale for target ${i + 1}`" :text="fieldHelp.rationale" />
-            <textarea :id="`${id}-t${i}-ra`" v-model="t.rationale" rows="2" :class="inputClass" />
+            >
+            <textarea
+              :id="`${id}-t${i}-ra`"
+              v-model="t.rationale"
+              rows="2"
+              :maxlength="RATIONALE_MAX"
+              :class="inputClass"
+            />
           </div>
           <div>
             <label :for="`${id}-t${i}-ci`" class="text-sm font-medium"
               >Citation for target {{ i + 1 }}</label
-            ><InfoTip :label="`Citation for target ${i + 1}`" :text="fieldHelp.citation" />
-            <input :id="`${id}-t${i}-ci`" v-model="t.citation" type="text" :class="inputClass" />
+            >
+            <input
+              :id="`${id}-t${i}-ci`"
+              v-model="t.citation"
+              type="text"
+              :maxlength="CITATION_MAX"
+              :class="inputClass"
+            />
           </div>
         </div>
         <button
@@ -378,11 +410,7 @@ const relationOption: Record<TargetRelation, string> = {
       </button>
     </div>
 
-    <p class="text-sm text-muted-foreground">
-      One admin’s approval is enough. An approved mapping is shown as “Reviewed by one admin”, with
-      who reviewed it and when.
-    </p>
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <button
         type="submit"
         class="rounded border border-border px-4 py-2 hover:bg-surface disabled:opacity-60"
@@ -394,6 +422,7 @@ const relationOption: Record<TargetRelation, string> = {
         type="button"
         class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
         :disabled="saving"
+        :aria-describedby="`${id}-approve-warn`"
         @click="submit(true)"
       >
         Save and approve
@@ -405,6 +434,7 @@ const relationOption: Record<TargetRelation, string> = {
       >
         Cancel
       </button>
+      <p :id="`${id}-approve-warn`" class="text-sm">Approving changes public pages at once.</p>
     </div>
   </form>
 </template>

@@ -3,6 +3,7 @@ import {
   type CcsrCategoryListResponse,
   federalCategories,
   federalCategoryInfo,
+  isReservedUnifiedSlug,
   type UnifiedCategoryBody,
   unifiedCategoryBodySchema,
   type UnifiedListItem,
@@ -72,24 +73,13 @@ const fieldLabels: Record<string, string> = {
   sortOrder: 'Sort order',
   ccsr: 'CCSR groups',
 }
-/** What each field changes, in its info button's tooltip (adds to any help shown below it). */
+/** What a field changes, in its info button's tooltip; fields with a visible hint have none. */
 const fieldHelp = {
-  label:
-    'The category’s name on the public site, where it is called a comparison category: its own page, the list of categories and the overview table.',
-  slug: 'The last part of the category’s public address, /compare/<slug>. A new category’s slug follows its label until you edit it; codes, states, categories, map and overlaps are taken by other pages.',
-  definition:
-    'Says what the category covers. Shown under its name on its public page and in the list of comparison categories.',
-  includes:
-    'Optional. Shown as “Includes:” on the category’s public page. Text only: the CCSR groups decide which codes are in the category.',
-  excludes:
-    'Optional. Shown as “Excludes:” on the category’s public page. Text only: it removes no codes.',
-  federalCategory:
-    'The federal category this one sits under on public pages. Codes placed in this category count under that federal category.',
-  status:
-    'Only published categories show on the public site and have codes placed in them; draft and retired ones are hidden and count nothing.',
-  sortOrder:
-    'Orders the comparison categories under each federal parent on public pages, such as the list of categories and the overview table. Lower numbers come first; equal numbers go by label. A whole number from 0 to 100,000.',
-  ccsr: 'These groups make the category’s reference list on its public page and drive the mapping suggestions. They also place the codes of state categories mapped “by its CCSR group”. Changing them on a category out of draft recounts every state.',
+  label: 'Public name.',
+  definition: 'Shown under the name on public pages.',
+  federalCategory: 'Its codes count under this federal category.',
+  sortOrder: 'Lower comes first.',
+  ccsr: 'Decide which ICD-10-CM codes are in the category. Changing them recounts every state.',
 }
 
 /** Fields that failed the last Save; each is marked aria-invalid and points at the message. */
@@ -152,6 +142,9 @@ const inputClass =
       class="space-y-1 text-danger"
     >
       <p v-if="problems.length > 0">Fix these fields: {{ problems.join(', ') }}.</p>
+      <p v-if="invalid.has('slug') && isReservedUnifiedSlug(draft.slug)">
+        Slug “{{ draft.slug }}” is taken by another page.
+      </p>
       <p v-if="serverError">Could not save: {{ serverError }}</p>
     </div>
 
@@ -162,6 +155,7 @@ const inputClass =
         <input
           :id="`${id}-label`"
           v-model="draft.label"
+          maxlength="200"
           type="text"
           :class="inputClass"
           v-bind="fieldState('label')"
@@ -170,10 +164,11 @@ const inputClass =
       <div>
         <label :for="`${id}-slug`" class="font-medium"
           >Slug <span class="font-normal text-muted-foreground">(URL: /compare/…)</span></label
-        ><InfoTip label="Slug" :text="fieldHelp.slug" />
+        >
         <input
           :id="`${id}-slug`"
           v-model="draft.slug"
+          maxlength="80"
           type="text"
           :class="inputClass"
           v-bind="fieldState('slug', `${id}-slug-help`)"
@@ -191,6 +186,7 @@ const inputClass =
       <textarea
         :id="`${id}-definition`"
         v-model="draft.definition"
+        maxlength="4000"
         rows="3"
         :class="inputClass"
         v-bind="fieldState('definition')"
@@ -198,27 +194,34 @@ const inputClass =
     </div>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label :for="`${id}-includes`" class="font-medium">Includes</label
-        ><InfoTip label="Includes" :text="fieldHelp.includes" />
+        <label :for="`${id}-includes`" class="font-medium"
+          >Includes <span class="font-normal text-muted-foreground">(optional)</span></label
+        >
         <textarea
           :id="`${id}-includes`"
           v-model="draft.includes"
+          maxlength="4000"
           rows="2"
           :class="inputClass"
-          v-bind="fieldState('includes')"
+          v-bind="fieldState('includes', `${id}-text-help`)"
         />
       </div>
       <div>
-        <label :for="`${id}-excludes`" class="font-medium">Excludes</label
-        ><InfoTip label="Excludes" :text="fieldHelp.excludes" />
+        <label :for="`${id}-excludes`" class="font-medium"
+          >Excludes <span class="font-normal text-muted-foreground">(optional)</span></label
+        >
         <textarea
           :id="`${id}-excludes`"
           v-model="draft.excludes"
+          maxlength="4000"
           rows="2"
           :class="inputClass"
-          v-bind="fieldState('excludes')"
+          v-bind="fieldState('excludes', `${id}-text-help`)"
         />
       </div>
+      <p :id="`${id}-text-help`" class="-mt-2 text-sm text-muted-foreground md:col-span-2">
+        Text only; CCSR groups decide the codes.
+      </p>
     </div>
 
     <div class="flex flex-wrap gap-4">
@@ -238,13 +241,12 @@ const inputClass =
         </select>
       </div>
       <div>
-        <label :for="`${id}-status`" class="font-medium">Status</label
-        ><InfoTip label="Status" :text="fieldHelp.status" />
+        <label :for="`${id}-status`" class="font-medium">Status</label>
         <select
           :id="`${id}-status`"
           v-model="draft.status"
           :class="inputClass"
-          v-bind="fieldState('status')"
+          v-bind="fieldState('status', `${id}-status-help`)"
         >
           <option v-for="s in statuses" :key="s" :value="s">{{ unifiedStatusLabels[s] }}</option>
         </select>
@@ -254,19 +256,19 @@ const inputClass =
         ><InfoTip label="Sort order" :text="fieldHelp.sortOrder" />
         <input
           :id="`${id}-sort`"
-          v-model="draft.sortOrder"
-          type="text"
-          inputmode="numeric"
+          :value="draft.sortOrder"
+          type="number"
+          min="0"
+          max="100000"
+          step="1"
           :class="inputClass"
           v-bind="fieldState('sortOrder')"
+          @input="draft.sortOrder = ($event.target as HTMLInputElement).value"
         />
       </div>
     </div>
-    <p v-if="item && item.status !== 'draft'" class="text-sm text-muted-foreground">
-      Once out of draft, a category cannot go back to draft; retire it instead.
-    </p>
-    <p v-else-if="item" class="text-sm text-muted-foreground">
-      A draft that will not be published can be retired.
+    <p :id="`${id}-status-help`" class="text-sm text-muted-foreground">
+      Draft and retired categories are hidden. Published can’t go back to draft; retire instead.
     </p>
 
     <CcsrPicker v-model="draft.ccsr" :options="ccsrOptions" :help="fieldHelp.ccsr" />

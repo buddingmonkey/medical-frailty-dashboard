@@ -53,10 +53,6 @@ const inputClass =
       <span :id="`${id}-legend`">CCSR groups</span
       ><InfoTip v-if="help" label="CCSR groups" :text="help" />
     </legend>
-    <p class="text-sm text-muted-foreground">
-      The ICD-10-CM codes in these groups belong to the category.
-    </p>
-
     <p v-if="selected.length === 0" class="text-sm">No groups chosen yet.</p>
     <ul v-else :aria-label="'Chosen CCSR groups'" class="flex flex-wrap gap-2">
       <li

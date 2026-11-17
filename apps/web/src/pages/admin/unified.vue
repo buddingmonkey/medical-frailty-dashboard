@@ -162,10 +162,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Unified categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Shared categories that sit between the federal categories and each state’s own, so states
-        can be compared. Each one has a definition and the CCSR groups whose ICD-10-CM codes belong
-        to it. Only published unified categories appear on public pages. Map each state’s categories
-        to them in Mappings.
+        The categories states are compared by, called comparison categories on the public site. Only
+        published ones are public.
       </p>
     </div>
 
@@ -259,10 +257,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         Rebuild coverage
       </h3>
       <p class="max-w-prose text-muted-foreground">
-        Recalculates every unified category’s full code list, which unified categories each state’s
-        codes fall in, and how alike the states’ lists are. Saving a unified category or a mapping,
-        and publishing a list, already does this for what changed. Use it after a new CCSR or
-        ICD-10-CM release, or when a save says coverage could not be updated.
+        Use after a CCSR or ICD-10-CM release, or when a save says coverage was not updated. Takes a
+        few minutes; keep the page open.
       </p>
       <button
         type="button"
@@ -272,12 +268,6 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       >
         {{ rebuild.isPending.value ? 'Rebuilding…' : 'Rebuild coverage' }}
       </button>
-      <p class="max-w-prose text-muted-foreground">
-        It runs in three steps (full code lists, placements, state similarity) and shows its
-        progress. Keep the page open: it can take a few minutes. If the database is overloaded, the
-        page waits and tries again, up to three times. If it stops, press the button again. It
-        starts over, but changes only what is still out of date.
-      </p>
       <p v-if="rebuild.isPending.value && progress" role="status">
         {{ coverageRebuildProgressText(progress) }}
       </p>

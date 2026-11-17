@@ -207,14 +207,15 @@ describe('/admin/categories', () => {
   it('shows each category’s mapping, and how many an admin has confirmed', async () => {
     fakeApi()
     const table = await open()
-    expect(screen.getByText(/5 categories: 1 confirmed, 2 guessed, 2 not mapped/)).toBeTruthy()
-    expect(within(rowOf(table, 'SMI')).getByText(/Guessed from “smi”/)).toBeTruthy()
-    expect(within(rowOf(table, 'SUD')).getByText(/Confirmed by admin@example.org/)).toBeTruthy()
-    expect(
-      within(rowOf(table, 'Miscellaneous')).getByText(
-        'Not mapped · 4 of 12 entries classified by code',
-      ),
-    ).toBeTruthy()
+    expect(screen.getByText(/^5 categories:/).textContent).toMatch(
+      /5 categories:\s*1 confirmed\s*2 guessed\s*2 not mapped/,
+    )
+    expect(within(rowOf(table, 'SMI')).getByText(/^Guess \d+%$/)).toBeTruthy()
+    expect(within(rowOf(table, 'SMI')).getByText('“smi”')).toBeTruthy()
+    expect(within(rowOf(table, 'SUD')).getByText('Confirmed')).toBeTruthy()
+    expect(within(rowOf(table, 'SUD')).getByText(/^admin@example.org/)).toBeTruthy()
+    expect(within(rowOf(table, 'Miscellaneous')).getByText('Not mapped')).toBeTruthy()
+    expect(within(rowOf(table, 'Miscellaneous')).getByText('4 of 12 by code')).toBeTruthy()
   })
 
   it('says no mapping is needed when every entry has a federal category by code', async () => {
@@ -230,11 +231,8 @@ describe('/admin/categories', () => {
       ),
     )
     const table = await open()
-    expect(
-      within(rowOf(table, 'Miscellaneous')).getByText(
-        'Not needed: every entry is classified by code',
-      ),
-    ).toBeTruthy()
+    expect(within(rowOf(table, 'Miscellaneous')).getByText('Not needed')).toBeTruthy()
+    expect(within(rowOf(table, 'Miscellaneous')).getByText('all by code')).toBeTruthy()
   })
 
   it('says which entries follow their unified categories instead of this mapping', async () => {
@@ -300,7 +298,7 @@ describe('/admin/categories', () => {
   it('confirms every guess that moves no published entry at once, as many as the summary says', async () => {
     const { saves, previews } = fakeApi()
     await open()
-    expect(screen.getByText(/2 guessed/)).toBeTruthy()
+    expect(screen.getByText('2 guessed')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Confirm all 2 guesses' }))
     expect(saves).toEqual([
       {
@@ -328,7 +326,9 @@ describe('/admin/categories', () => {
       ),
     )
     await open()
-    expect(screen.getByText(/3 categories: 1 confirmed, 0 guessed, 2 not mapped/)).toBeTruthy()
+    expect(screen.getByText(/^3 categories:/).textContent).toMatch(
+      /3 categories:\s*1 confirmed\s*0 guessed\s*2 not mapped/,
+    )
     expect(screen.queryByRole('button', { name: /Confirm all/ })).toBeNull()
   })
 
@@ -493,26 +493,30 @@ describe('/admin/categories field help', () => {
     fakeApi()
     const table = await open()
 
-    expect(about('Federal category', /chapter override/)).toBeTruthy()
-    expect(about('Entries', /Confirm suggestions/)).toBeTruthy()
-    expect(about('Confirm all guesses', /moves no published entry/)).toBeTruthy()
-    expect(about('Re-run automatic suggestions', /never changes a suggestion/)).toBeTruthy()
-    expect(about('Remap several categories', /confirmed mapping/)).toBeTruthy()
-    expect(about('Override several chapters', /Use the category mapping/)).toBeTruthy()
-    expect(about('Override', /reviewed suggestion/)).toBeTruthy()
+    expect(about('Federal category', /nothing more specific/)).toBeTruthy()
+    expect(about('Entries', /draft entries/)).toBeTruthy()
+    expect(about('Confirm all guesses', /move no published entry/)).toBeTruthy()
+    expect(about('Re-run automatic suggestions', /Never changes a confirmed one/)).toBeTruthy()
+    expect(about('Remap several categories', /every selected row/)).toBeTruthy()
+    expect(about('Override', /this chapter’s ICD-10-CM codes/)).toBeTruthy()
+    // The precedence is explained once, in a disclosure.
+    expect(screen.getByText('How a code gets its federal category')).toBeTruthy()
     expect(within(table).getAllByRole('button', { name: /^About / })).toHaveLength(2)
     // The selects keep their own names.
     expect(within(table).getByRole('combobox', { name: 'Federal category for SMI' })).toBeTruthy()
   })
 
-  it('explains what saving a previewed remap does', async () => {
+  it('warns beside Save remap that public pages change at once', async () => {
     fakeApi()
     const table = await open()
     await user.selectOptions(within(table).getByLabelText('Federal category for SMI'), 'sud')
     await user.click(within(table).getByRole('button', { name: 'Preview change for SMI' }))
     const region = await screen.findByRole('region', { name: 'Check the remap before saving' })
     expect(
-      within(region).getByRole('button', { name: 'About Save remap', description: /audit log/ }),
+      within(region).getByRole('button', {
+        name: 'Save remap',
+        description: 'Public pages change at once.',
+      }),
     ).toBeTruthy()
   })
 })
@@ -603,15 +607,14 @@ describe('/admin/categories: suggestions by code', () => {
     const region = await screen.findByRole('region', {
       name: 'Check the automatic suggestions before saving',
     })
-    expect(await within(region).findByText('2 entries gain a suggestion.')).toBeTruthy()
-    expect(
-      within(region).getByText(/3 entries keep the suggestion an admin confirmed/),
-    ).toBeTruthy()
+    const counts = await within(region).findByRole('table', { name: 'Entries' })
+    expect(within(counts).getByRole('row', { name: 'Gain a suggestion 2' })).toBeTruthy()
+    expect(within(counts).getByRole('row', { name: 'Kept (confirmed by an admin) 3' })).toBeTruthy()
     expect(within(region).getByRole('rowheader', { name: 'C50.911' })).toBeTruthy()
     expect(
       within(region).getByRole('button', {
-        name: 'About Save suggestions',
-        description: /never changes a suggestion an admin confirmed/,
+        name: 'Save suggestions',
+        description: 'Public pages change at once.',
       }),
     ).toBeTruthy()
     await user.click(within(region).getByRole('button', { name: 'Save suggestions' }))
@@ -643,10 +646,11 @@ describe('/admin/categories: suggestions by code', () => {
       name: 'Check the automatic suggestions before saving',
     })
     expect(
-      await within(region).findByText(
-        /Suggestions come from a published list that gives each code its federal category/,
-      ),
+      await within(region).findByText(/No published list names federal categories by code yet/),
     ).toBeTruthy()
-    expect(within(region).getByText(/Federal category \(the state’s own\)/)).toBeTruthy()
+    expect(within(region).getByRole('link', { name: 'How to add one' })).toHaveProperty(
+      'pathname',
+      '/admin/guide',
+    )
   })
 })
