@@ -56,7 +56,7 @@ export function statesPage(items: readonly PublicStateSummary[], origin: string)
     jsonLd: [],
     dataUpdatedAt: dataLastUpdated(items),
     body: html`<h1>All states</h1>
-      <p>${statesWithListText(withList)} Choose a state to see its list, sources and history.</p>
+      <p>${statesWithListText(withList)}</p>
       <p>${ENTRY_DEFINITION}</p>
       ${stateListTable(items)}`,
   }

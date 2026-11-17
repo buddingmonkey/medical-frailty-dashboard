@@ -65,16 +65,13 @@ export const publicStateSummarySchema = z.object({
 })
 export type PublicStateSummary = z.infer<typeof publicStateSummarySchema>
 
-/** The words above a state's category table, in the Vue page and the server-rendered HTML. */
+/**
+ * The words above a state's category table, in the Vue page and the server-rendered HTML. How a
+ * federal category is assigned is on About (`#review`), linked beside it. Shortened 2026-11-17
+ * (docs/legal-review.md, Part 2).
+ */
 export const stateCategoriesIntro = (stateName: string): string =>
-  `How ${stateName}’s own categories line up with the five federal categories in the law. ` +
-  'Where the state’s list names a federal category for a code, this site uses it (“Stated by ' +
-  'the state”). Otherwise it gives each entry the federal category of the comparison category ' +
-  'its code falls in; a code in no comparison category takes the federal category mapped to ' +
-  'the state’s own category. Where another state’s list names a federal category for the same ' +
-  'code, or for codes like it, this site may suggest that one instead (“suggested from” that ' +
-  'state’s list). “Not yet reviewed” means this site suggested the mapping automatically and ' +
-  'nobody has checked it yet.'
+  `How ${stateName}’s categories line up with the five federal categories in the law.`
 
 /** Review status of federal categories the state published itself (Indiana's column). */
 export const STATED_BY_STATE = 'Stated by the state'
@@ -96,23 +93,19 @@ export const reviewStatusText = (
   return 'Not yet reviewed (automatic suggestion)'
 }
 
-/** On the home card when some of a state's mappings are not reviewed. */
-export const MAPPINGS_NOT_REVIEWED_NOTE =
-  'This site has not yet reviewed how all of this state’s categories fit the federal ones, so ' +
-  'some of the federal counts above come from automatic suggestions.'
+/** On the home card when some of a state's mappings are not reviewed: the * on its federal counts. */
+export const MAPPINGS_NOT_REVIEWED_NOTE = '* Includes automatic suggestions, not yet reviewed.'
 
 /** In the home map's card cell when no state is active (no hover or focus yet, and no list). */
 export const MAP_CARD_PLACEHOLDER = 'Point at a state on the map, or tab to it, to see its list.'
 
-/** What an entry is: under the state counts on the home, states and state pages. */
+/** What an entry is: a tooltip on "entries" on the home, states and state pages. */
 export const ENTRY_DEFINITION =
   'An entry is one line of a state’s list: a single code, or a group of codes written with a ' +
   'wildcard or a range.'
 
 /** Under the federal counts when an entry counts under more than one federal category. */
-export const FEDERAL_OVERLAP_NOTE =
-  'A code can count under more than one federal category, so these numbers can add up to more ' +
-  'than the number of entries.'
+export const FEDERAL_OVERLAP_NOTE = 'Codes can count under more than one category.'
 
 /** The federal counts add up to more than the entries (a code under two federal categories). */
 export function federalCountsOverlap(p: {
@@ -251,16 +244,20 @@ export const statesWithListText = (n: number): string =>
 
 /** The home page's introduction, in the Vue page and the server-rendered HTML. */
 export const HOME_INTRO =
-  'Under H.R.1 (Pub. L. 119-21), Medicaid members who are medically frail are excluded from the ' +
-  'new community engagement (work) requirements. States are publishing lists of the diagnosis ' +
-  'and service codes they use to identify medically frail members. This site puts those lists ' +
-  'side by side so you can compare them. It does not decide anyone’s eligibility.'
+  'Medically frail Medicaid members are exempt from the H.R.1 work requirements. States publish ' +
+  'the codes they use to identify them; this site puts those lists side by side. It does not ' +
+  'decide anyone’s eligibility.'
 
-/** The footer of every page, in the Vue app and the server-rendered HTML. */
+/**
+ * The footer of every page, in the Vue app and the server-rendered HTML, followed by a link to
+ * the Disclaimer (`FOOTER_DISCLAIMER_LINK`). Shortened 2026-11-17 (docs/legal-review.md, item 5).
+ */
 export const FOOTER_TEXT =
-  'Every code comes from a state’s own published documents, linked on each state’s page. This ' +
-  'site is not a state or federal source and does not determine anyone’s eligibility; check ' +
-  'the state’s document before relying on a code. No patient data.'
+  'Copied from states’ published documents. Not an official source or an eligibility decision. ' +
+  'No patient data.'
+
+/** The link after `FOOTER_TEXT`. */
+export const FOOTER_DISCLAIMER_LINK = { text: 'Disclaimer', href: '/disclaimer' } as const
 
 /** The state pages' status line for a state without a list on this site. */
 export function noListText(stateName: string, announced: boolean): string {

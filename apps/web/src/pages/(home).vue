@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  ENTRY_DEFINITION,
   HOME_INTRO,
   MAP_CARD_PLACEHOLDER,
   pageTitles,
@@ -81,7 +80,6 @@ const legend = [
         <div>
           <h2 id="states-heading" class="font-display text-2xl font-medium text-heading">States</h2>
           <p v-if="data" class="text-muted-foreground">{{ statesWithListText(withList) }}</p>
-          <p class="max-w-prose text-sm text-muted-foreground">{{ ENTRY_DEFINITION }}</p>
         </div>
         <div
           class="inline-flex rounded-md border border-input-border"

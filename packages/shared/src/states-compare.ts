@@ -223,11 +223,14 @@ export const similarityText = (jaccard: number): string => jaccard.toFixed(2)
 export const SIMILARITY_NOTE =
   'Similarity is the share of codes the two lists have in common, from 0 (nothing shared) to 1 ' +
   '(identical). It compares every billable ICD-10-CM code each list includes (listed, or ' +
-  'covered by a wildcard or range) plus each list’s other entries, each counted once. (This is ' +
-  'the Jaccard index: shared codes divided by all codes in either list.)'
+  'covered by a wildcard or range) plus each list’s other entries, each counted once.'
 
 /** The similarity tile's label. */
 export const SIMILARITY_LABEL = 'Similarity (0–1)'
+
+/** The tooltip on `SIMILARITY_LABEL` (moved out of `SIMILARITY_NOTE` 2026-11-17). */
+export const SIMILARITY_HELP =
+  'The Jaccard index: shared codes divided by all codes in either list.'
 
 /** Says a chosen state has no list, so nothing is compared. */
 export function statesCompareNoListText(names: readonly string[]): string {
@@ -314,12 +317,10 @@ export const STATES_COMPARE_BASIS_NOTE =
   'counts.'
 
 /** The intro under the heading. */
+/** Shortened 2026-11-17; keeps the "State doesn't say" rule (docs/legal-review.md, item 10). */
 export const STATES_COMPARE_INTRO =
-  'Where these states’ medical frailty code lists differ, grouped by the same comparison ' +
-  'categories as the overview. A code differs when some of these states include it (listed, or ' +
-  'covered by a wildcard or range) and others do not, or when all include it but with ' +
-  'different rules on whether it is enough by itself. When a state does not say whether a code ' +
-  'is enough by itself, that is not treated as a difference.'
+  'Where these states’ lists differ, by comparison category. “State doesn’t say” is not ' +
+  'counted as a difference.'
 
 /** The row mark and the group count when codes differ. */
 export const STATES_COMPARE_DIFFERS = 'Differs'

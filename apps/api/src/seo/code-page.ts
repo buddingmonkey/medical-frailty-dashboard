@@ -307,6 +307,6 @@ export function searchPage(origin: string): PageParts {
     noindex: true,
     jsonLd: [],
     body: html`<h1>${SEARCH_PAGE.heading}</h1>
-      <p>${SEARCH_PAGE.intro}</p>`,
+      <p>${SEARCH_PAGE.lead}</p>`,
   }
 }

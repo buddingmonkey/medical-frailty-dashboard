@@ -7,6 +7,7 @@ import {
   STATES_COMPARE_NOT_FOUND_DESCRIPTION,
   type PublicStateDetail,
   type PublicStateSummary,
+  SIMILARITY_HELP,
   SIMILARITY_LABEL,
   SIMILARITY_NOTE,
   similarityText,
@@ -138,7 +139,7 @@ export function statesComparePage(
     </dl>
     <p>
       ${STATES_COMPARE_SUMMARY_NOTE}
-      ${summary.similarity ? `${STATES_COMPARE_BASIS_NOTE} ${SIMILARITY_NOTE}` : ''}
+      ${summary.similarity ? `${STATES_COMPARE_BASIS_NOTE} ${SIMILARITY_NOTE} ${SIMILARITY_HELP}` : ''}
       ${summary.similarity ? learnMoreHtml(learnMore.similarity) : null}
     </p>`
 

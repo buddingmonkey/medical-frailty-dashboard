@@ -7,7 +7,6 @@ import {
   downloadTableText,
   DRILL_ABOUT,
   DRILL_COUNT_NOTE,
-  DRILL_DETAILS_PLACEHOLDER,
   DRILL_UNIVERSE_LABEL,
   drillCaption,
   drillCcsrHeading,
@@ -288,18 +287,19 @@ const codeTablePath = computed(() => {
           </nav>
           <StatusLegend />
         </div>
-        <aside aria-label="Code details" class="xl:sticky xl:top-4 xl:self-start">
+        <aside
+          v-if="code !== null"
+          aria-label="Code details"
+          class="xl:sticky xl:top-4 xl:self-start"
+        >
           <DrillDetails
-            v-if="code !== null && detail.data.value"
+            v-if="detail.data.value"
             :detail="detail.data.value"
             :take-focus="takeFocus"
             @close="code = null"
           />
-          <p v-else-if="code !== null && detail.error.value" role="alert" class="text-danger">
+          <p v-else-if="detail.error.value" role="alert" class="text-danger">
             The details could not be loaded.
-          </p>
-          <p v-else class="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            {{ DRILL_DETAILS_PLACEHOLDER }}
           </p>
         </aside>
       </div>

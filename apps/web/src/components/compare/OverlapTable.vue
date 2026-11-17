@@ -45,7 +45,6 @@ const rowText = (row: OverlapsResponse['intersections'][number]) =>
 
 <template>
   <div class="space-y-3">
-    <p class="max-w-prose text-sm text-muted-foreground">{{ OVERLAPS_COUNT_NOTE }}</p>
     <p class="text-sm" aria-live="polite">{{ overlapsStatusText(data, rows.length) }}</p>
     <div
       class="relative max-w-full overflow-x-auto rounded-lg border border-border"
@@ -105,5 +104,6 @@ const rowText = (row: OverlapsResponse['intersections'][number]) =>
     >
       {{ overlapsToggleText(all, data.intersections.length) }}
     </button>
+    <p class="max-w-prose text-sm text-muted-foreground">{{ OVERLAPS_COUNT_NOTE }}</p>
   </div>
 </template>

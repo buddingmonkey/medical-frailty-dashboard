@@ -5,6 +5,7 @@ import {
   OVERVIEW_NOT_REVIEWED,
   type PublicOverviewResponse,
   TILE_MAP_NOT_REVIEWED_NOTE,
+  TILE_MAP_UNION_NOTE,
   tileMapCaption,
   type TileMapShade,
   tileMapTiles,
@@ -137,6 +138,9 @@ const tileClass =
       </ul>
     </div>
     <OverviewCellCard :controller="tileCard" />
+    <p v-if="current.coverageBasis === 'union'" class="max-w-prose text-sm text-muted-foreground">
+      {{ TILE_MAP_UNION_NOTE }}
+    </p>
     <p v-if="anyNotReviewed" class="max-w-prose text-sm text-muted-foreground">
       {{ TILE_MAP_NOT_REVIEWED_NOTE }}
     </p>

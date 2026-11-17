@@ -9,12 +9,13 @@ import {
   OVERVIEW_HEADING,
   OVERVIEW_INTRO,
   OVERVIEW_OVERALL_ORDER,
+  OVERVIEW_READING_HINT,
   overviewReadingNotes,
   pageTitles,
   learnMore,
   OVERVIEW_DESCRIPTION,
 } from '@mfcd/shared'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import CompareTabs from '../../components/compare/CompareTabs.vue'
@@ -65,6 +66,15 @@ const orderChoice = computed({
 })
 
 const caption = OVERVIEW_CAPTION
+
+// "Reading this table" starts open on wide screens and closed on small ones (copy review,
+// 2026-11-17); without JavaScript it stays open.
+const readingOpen = ref(true)
+onMounted(() => {
+  if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 639px)').matches) {
+    readingOpen.value = false
+  }
+})
 </script>
 
 <template>
@@ -106,14 +116,24 @@ const caption = OVERVIEW_CAPTION
         </p>
       </div>
 
+      <p class="max-w-prose text-sm text-muted-foreground">{{ OVERVIEW_READING_HINT }}</p>
       <OverviewMatrix v-model:order="order" :data="data" :caption="caption" />
 
-      <section aria-labelledby="overview-reading" class="max-w-prose space-y-2 text-sm">
-        <h2 id="overview-reading" class="font-display text-xl font-medium text-heading">
-          Reading this table
-        </h2>
-        <p v-for="note in overviewReadingNotes" :key="note">{{ note }}</p>
-        <p><AboutLinkView :link="learnMore.overview" /></p>
+      <section aria-labelledby="overview-reading" class="max-w-prose text-sm">
+        <details
+          :open="readingOpen"
+          @toggle="readingOpen = ($event.target as HTMLDetailsElement).open"
+        >
+          <summary class="cursor-pointer">
+            <h2 id="overview-reading" class="inline font-display text-xl font-medium text-heading">
+              Reading this table
+            </h2>
+          </summary>
+          <div class="mt-2 space-y-2">
+            <p v-for="note in overviewReadingNotes" :key="note">{{ note }}</p>
+            <p><AboutLinkView :link="learnMore.overview" /></p>
+          </div>
+        </details>
       </section>
     </template>
   </article>
