@@ -60,7 +60,6 @@ lead run the Indiana steps on production, and fix what was confusing on the way.
 - `pnpm check:full` at the end: 792 unit, 401 component, 653 api, 287 e2e.
 
 ## Open threads
-- Publish the 19 starter comparison categories on production (Compare tabs are empty).
 - Idea, not approved: a states × federal category table on Compare, with "Not yet classified".
 
 ## Later the same day
@@ -69,3 +68,5 @@ lead run the Indiana steps on production, and fix what was confusing on the way.
   so more than 100 drafts no longer hits D1's bound-parameter limit (#133).
 - `v0.10.2` was cancelled before deploy; `v0.10.3` (#129–#131, #133, #134) deployed after the
   project lead approved. No migrations; Worker version `1d03e288`.
+- The project lead published the 19 comparison categories on production and dropped the
+  2026-11-30 Workers downgrade.
