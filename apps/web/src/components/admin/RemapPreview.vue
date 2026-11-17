@@ -14,7 +14,6 @@ import { onMounted, ref, useId, useTemplateRef } from 'vue'
 import { z } from 'zod'
 
 import { ApiError, sendJson } from '../../lib/api'
-import InfoTip from '../ui/InfoTip.vue'
 
 // The confirm step of a bulk remap (roadmap M7 step 3): the server's preview of what the
 // changes do to the state's published entries, then a save that sends the preview's token back.
@@ -86,9 +85,6 @@ function titleOf(change: RemapChange): string {
   return `${name} → ${change.to === null ? '' : label(change.to)}`
 }
 const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
-/** What saving does, in the info button beside it. */
-const saveHelp =
-  'Saves exactly what this preview shows. The public pages change at once and the change is written to the audit log. If anything changed since the preview, nothing is saved and a new preview appears.'
 </script>
 
 <template>
@@ -184,18 +180,18 @@ const saveHelp =
     <p v-if="save.error.value && !stale" role="alert" class="text-danger">
       Could not save: {{ save.error.value.message }}
     </p>
-    <div class="flex flex-wrap gap-3">
-      <span class="inline-flex items-center">
-        <button
-          type="button"
-          class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
-          :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
-          @click="confirm"
-        >
-          Save remap</button
-        ><InfoTip label="Save remap" :text="saveHelp"
-      /></span>
+    <div class="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
+        :aria-describedby="`${id}-warn`"
+        :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
+        @click="confirm"
+      >
+        Save remap
+      </button>
       <button type="button" :class="button" @click="emit('cancel')">Cancel</button>
+      <p :id="`${id}-warn`" class="text-sm">Public pages change at once.</p>
     </div>
   </section>
 </template>

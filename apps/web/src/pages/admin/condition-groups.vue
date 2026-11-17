@@ -65,11 +65,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Condition groups</h2>
       <p class="max-w-prose text-muted-foreground">
-        Short lists of codes in several code systems that point at one condition, such as cancer
-        diagnoses, chemotherapy services and chemotherapy drugs. On a code’s page, a state that does
-        not list the code but lists another code system’s code in the same group is shown under
-        “Like codes”. There is no official crosswalk, so these lists are ours. Only published groups
-        appear on public pages.
+        Code groups across code systems for one condition. They power “Like codes” on public code
+        pages. Only published groups are public.
       </p>
     </div>
 

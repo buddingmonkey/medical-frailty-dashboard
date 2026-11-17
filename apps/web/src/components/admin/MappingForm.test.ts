@@ -22,29 +22,47 @@ function setup() {
   return { user }
 }
 
+const recordHint =
+  'Basis, confidence, rationale and citation are for the record; they do not change counts.'
+
 describe('MappingForm field help', () => {
-  it('explains basis, confidence, rationale and citation of a target', () => {
+  it('says once that the record fields change no counts, and lets the fields enforce lengths', () => {
     setup()
 
-    for (const field of ['Basis', 'Confidence', 'Rationale', 'Citation']) {
-      expect(screen.getByRole('button', { name: `About ${field} for target 1` })).toBeTruthy()
-    }
+    expect(screen.getAllByText(recordHint)).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: /^About / })).toBeNull()
     expect(
-      screen.getByRole('button', {
-        name: 'About Basis for target 1',
-        description: /does not change/,
-      }),
+      screen.getByRole('combobox', { name: 'Basis for target 1', description: recordHint }),
     ).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Rationale for target 1' })).toHaveProperty(
+      'maxLength',
+      4000,
+    )
+    expect(screen.getByRole('textbox', { name: 'Citation for target 1' })).toHaveProperty(
+      'maxLength',
+      1000,
+    )
+    expect(screen.queryByText(/characters/)).toBeNull()
   })
 
-  it('explains the same fields when placing each code by its CCSR group', async () => {
+  it('keeps the same hint and limits when placing each code by its CCSR group', async () => {
     const { user } = setup()
 
     await user.click(screen.getByRole('radio', { name: 'Place each code by its CCSR group' }))
 
-    for (const field of ['Basis', 'Confidence', 'Rationale', 'Citation']) {
-      expect(screen.getByRole('button', { name: `About ${field}` })).toBeTruthy()
-    }
-    expect(screen.getByRole('combobox', { name: 'Basis' })).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Basis', description: recordHint })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Rationale' })).toHaveProperty('maxLength', 4000)
+    expect(screen.getByRole('textbox', { name: 'Citation' })).toHaveProperty('maxLength', 1000)
+  })
+
+  it('warns beside Save and approve that public pages change at once', () => {
+    setup()
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Save and approve',
+        description: 'Approving changes public pages at once.',
+      }),
+    ).toBeTruthy()
   })
 })

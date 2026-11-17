@@ -178,7 +178,7 @@ describe('/admin/mappings', () => {
     expect(within(none).getByText(/Place each code by its CCSR group/)).toBeTruthy()
     expect(within(rowOf(table, 'Pharmacy')).getByText('Not mapped')).toBeTruthy()
     expect(
-      within(table).getByRole('button', { name: 'About Suggestion', description: /CCSR groups/ }),
+      within(table).getByRole('button', { name: 'About Suggestion', description: /CCSR match/ }),
     ).toBeTruthy()
   })
 
@@ -263,6 +263,7 @@ describe('/admin/mappings', () => {
     await user.click(
       within(rowOf(table, '(no category)')).getByRole('button', {
         name: 'Approve the proposal for (no category)',
+        description: 'Approve changes public pages at once.',
       }),
     )
     expect(approvals).toEqual([{ stateCategory: '', stateSubcategory: '' }])

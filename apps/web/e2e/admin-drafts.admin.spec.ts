@@ -121,7 +121,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
       page.getByRole('status').filter({ hasText: 'Confirmed (no category)' }),
     ).toContainText('Confirmed (no category)')
   }
-  await expect(table.getByText(/Confirmed by e2e-admin@localhost/)).toBeVisible()
+  await expect(table.getByText(/^e2e-admin@localhost/)).toBeVisible()
 
   const chapters = page.getByRole('table', { name: 'ICD-10-CM chapters' })
   await chapters.getByLabel('Override for chapter 5').selectOption('disabling_mental_disorder')
