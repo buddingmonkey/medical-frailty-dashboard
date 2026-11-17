@@ -75,10 +75,7 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
 <template>
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Watch dates</h2>
-    <p class="max-w-prose text-muted-foreground">
-      Deadlines and re-check dates: court appeal windows, federal effective dates, state list
-      re-checks. Closing an item needs a note and is recorded in the audit log.
-    </p>
+    <p class="max-w-prose text-muted-foreground">Deadlines and re-check dates.</p>
 
     <div role="tablist" aria-label="Watch items" class="flex gap-1 border-b border-border">
       <button

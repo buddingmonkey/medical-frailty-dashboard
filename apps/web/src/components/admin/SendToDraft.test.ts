@@ -1,6 +1,6 @@
 import { buildReview, type MappedRow, type ReviewResult } from '@mfcd/shared'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
-import { render, screen } from '@testing-library/vue'
+import { render, screen, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -121,8 +121,12 @@ describe('SendToDraft', () => {
     const select = await screen.findByLabelText<HTMLSelectElement>('Source document')
     expect(await screen.findByRole('option', { name: /MT list \(September\)/ })).toBeTruthy()
     expect(select.value).toBe('11')
-    expect(screen.getByText(/3 entries from 2 rows/)).toBeTruthy()
-    expect(screen.getByText(/1 row cannot be read/)).toBeTruthy()
+    const counts = screen.getByRole('list', { name: 'What will be sent' })
+    expect(
+      within(counts)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent.replace(/\s+/g, ' ').trim()),
+    ).toEqual(['3 entries from 2 rows', '1 invalid (blocks publishing above 2%)'])
   })
 
   it('asks to store a file that is not stored yet', async () => {
@@ -207,16 +211,17 @@ describe('SendToDraft', () => {
 })
 
 describe('SendToDraft field help', () => {
-  it('explains the source document and the draft', async () => {
+  it('explains the source document in a tooltip and the draft in a hint', async () => {
     fakeApi()
     setup(smallReview())
     await screen.findByLabelText('Source document')
 
     expect(
-      screen.getByRole('button', { name: 'About Source document', description: /cite/ }),
+      screen.getByRole('button', { name: 'About Source document', description: /citation/ }),
     ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'About Draft' })).toBeNull()
     expect(
-      screen.getByRole('button', { name: 'About Draft', description: /not public until/ }),
+      screen.getByRole('combobox', { name: 'Draft', description: /replaces its rows/ }),
     ).toBeTruthy()
   })
 })

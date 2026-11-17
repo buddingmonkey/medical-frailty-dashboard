@@ -258,6 +258,28 @@ The public site changes only when the project lead approves a release.
 - **Ask a reviewer to read as one specific person.** "Could a state Medicaid analyst misread
   this?" found that "covers" and "qualifies" sounded like eligibility decisions. "Is this
   clear?" would not have (same devlog).
+- **Watch for agent padding in UI text.** AI builders add an intro above every control, hints
+  that restate labels and the same caveat on every screen. A 2026-11-17 review found 5,600
+  words on the admin screens alone (`docs/devlog/2026-11-17-copy-trim.md`). Hold UI text to the
+  house style below.
+
+### House style for UI text
+
+1. **The label is the instruction.** A hint adds only format, limit or consequence.
+2. **One help per field:** a visible hint (12 words or fewer) or an (i) tooltip (20 or fewer),
+   never both.
+3. **One-sentence page intro, 20 words or fewer.** How-to goes in the admin Guide.
+4. **Say it once.** Facts such as "changes go to the audit log" live in the Guide, not on every
+   screen.
+5. **Numbers and badges over sentences.** Sentences are for errors and warnings.
+6. **Warn next to the button, visibly,** when an action changes public pages at once or can't
+   be undone. Never only in a tooltip.
+7. **Let the control enforce the rule** (`maxlength` with a counter, `min`/`max`). Don't
+   describe a limit the field enforces.
+8. **Errors and empty states:** what happened, then what to do, in 2 short sentences or fewer.
+9. **Front-load; no parentheticals, no "e.g. [state]", no implementation detail.**
+10. **Public wording:** change it together with `docs/legal-review.md` (Part 2) and
+    `wording.test.ts`, and mark the change for legal.
 
 ## 7. Common tasks
 

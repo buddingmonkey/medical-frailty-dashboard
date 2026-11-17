@@ -33,13 +33,7 @@ const draftsQuery = useQuery({
 
 <template>
   <section class="space-y-6">
-    <div class="space-y-2">
-      <h2 class="font-display text-2xl font-medium text-heading">Drafts</h2>
-      <p class="max-w-prose text-muted-foreground">
-        A draft holds a state’s new list until it is published. Nothing in a draft is public. To
-        start one, send rows from Read and map. Open a draft to read its checks and publish it.
-      </p>
-    </div>
+    <h2 class="font-display text-2xl font-medium text-heading">Drafts</h2>
     <div class="max-w-xs">
       <label :for="`${id}-state`" class="font-medium">State</label>
       <select
@@ -56,6 +50,7 @@ const draftsQuery = useQuery({
     <template v-if="stateId && draftsQuery.data.value">
       <p v-if="draftsQuery.data.value.length === 0" class="text-muted-foreground">
         No open drafts for {{ stateName }}.
+        <RouterLink to="/admin/ingest">Read and map</RouterLink> to start one.
       </p>
       <ul v-else class="space-y-2">
         <li v-for="d in draftsQuery.data.value" :key="d.id">

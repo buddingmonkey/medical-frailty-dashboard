@@ -1,10 +1,9 @@
 <script lang="ts">
 /** What each source detail does, in its info button's tooltip; the upload form uses it too. */
 export const sourceFieldHelp = {
-  title:
-    'Names the file in the citation on the public pages, next to the codes taken from it. Up to 200 characters.',
-  url: 'On the public pages the file’s title links to this address, so readers can open the original the state published. Without one, the state page says “link not known”.',
-  date: 'The date the state printed on or published the document, shown with the citation on the public pages. It is not the day it was uploaded, which is kept separately.',
+  title: 'Shown in the public citation.',
+  url: 'Public link to the original. Blank shows “link not known”.',
+  date: 'The date on the state’s document, not the upload date.',
 }
 </script>
 
@@ -12,6 +11,7 @@ export const sourceFieldHelp = {
 import { type SourceDetails, type SourceDetailsDraft, sourceDetailsSchema } from '@mfcd/shared'
 import { ref, useId } from 'vue'
 
+import CharCount from '../ui/CharCount.vue'
 import InfoTip from '../ui/InfoTip.vue'
 
 defineProps<{
@@ -72,15 +72,15 @@ const inputClass =
         maxlength="200"
         :class="inputClass"
         :aria-invalid="problems.title ? 'true' : undefined"
-        :aria-describedby="problems.title ? `${id}-title-problem` : undefined"
+        :aria-describedby="`${id}-title-count${problems.title ? ` ${id}-title-problem` : ''}`"
       />
+      <CharCount :id="`${id}-title-count`" :value="draft.title" :max="200" />
       <p v-if="problems.title" :id="`${id}-title-problem`" class="mt-1 text-sm text-danger">
         {{ problems.title }}
       </p>
     </div>
     <div>
-      <label :for="`${id}-url`" class="font-medium">State’s URL for this file</label
-      ><InfoTip label="State’s URL for this file" :text="sourceFieldHelp.url" />
+      <label :for="`${id}-url`" class="font-medium">State’s URL for this file</label>
       <input
         :id="`${id}-url`"
         v-model="draft.url"
@@ -90,7 +90,7 @@ const inputClass =
         :aria-describedby="`${id}-url-hint${problems.url ? ` ${id}-url-problem` : ''}`"
       />
       <p :id="`${id}-url-hint`" class="mt-1 text-sm text-muted-foreground">
-        Starts with https://. Leave blank if the state has no public copy.
+        Starts with https://. Blank shows “link not known”.
       </p>
       <p v-if="problems.url" :id="`${id}-url-problem`" class="mt-1 text-sm text-danger">
         {{ problems.url }}

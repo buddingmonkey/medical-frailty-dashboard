@@ -74,9 +74,11 @@ export function searchReady(q: string): boolean {
 export const SEARCH_PAGE = {
   title: `Search codes | ${SITE_NAME}`,
   heading: 'Search codes',
+  /** The meta description (and llms.txt); the page itself shows `lead`. */
   intro:
     'Find a diagnosis or service code and see which states list it as a sign of medical ' +
     'frailty. Type a code number or words from its description.',
+  lead: 'Find a code and see which states list it.',
   inputLabel: 'Code number or words',
   filtersLabel: 'Filters',
   systemLabel: 'Code system',

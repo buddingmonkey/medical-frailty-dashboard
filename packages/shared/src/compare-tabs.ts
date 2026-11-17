@@ -22,12 +22,10 @@ export const COMPARE_TABS_LABEL = 'Compare views'
 
 export const CATEGORIES_HEADING = 'Comparison categories'
 
+/** Shortened 2026-11-17; how they are built is on About (`learnMore.categories`). */
 export const CATEGORIES_INTRO =
-  'These comparison categories are this site’s own grouping, built so that every state’s list ' +
-  'can be measured the same way. They are not a state’s or CMS’s categories. Most are built ' +
-  'from AHRQ’s CCSR diagnosis groups; a state’s own category can also be mapped to one, which ' +
-  'brings in its other codes, such as service codes. Each is filed under a federal category. ' +
-  'Choose one to see its codes and how many states include each.'
+  'This site’s own categories, used to measure every state’s list the same way. They are not a ' +
+  'state’s or CMS’s categories.'
 
 /** The link text to AHRQ's CCSR page (`CCSR_URL`). */
 export const CCSR_LINK_TEXT = 'About the CCSR (AHRQ)'

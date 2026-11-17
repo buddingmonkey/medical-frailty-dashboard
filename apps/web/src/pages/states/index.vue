@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ENTRY_DEFINITION, pageTitles, statesWithListText, pageDescriptions } from '@mfcd/shared'
+import { pageTitles, statesWithListText, pageDescriptions } from '@mfcd/shared'
 import { computed } from 'vue'
 
 import StateTable from '../../components/home/StateTable.vue'
@@ -18,9 +18,8 @@ const withList = computed(() => data.value?.items.filter((s) => s.published !== 
     <header class="max-w-prose space-y-3">
       <h1 class="font-display text-4xl font-medium text-heading">All states</h1>
       <p v-if="data">
-        {{ statesWithListText(withList) }} Choose a state to see its list, sources and history.
+        {{ statesWithListText(withList) }}
       </p>
-      <p class="text-sm text-muted-foreground">{{ ENTRY_DEFINITION }}</p>
     </header>
     <p v-if="isPending" class="text-muted-foreground">Loading…</p>
     <p v-else-if="isError" role="alert" class="text-danger">

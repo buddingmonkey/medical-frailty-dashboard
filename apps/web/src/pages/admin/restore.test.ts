@@ -232,12 +232,13 @@ describe('/admin/restore', () => {
     await user.upload(await screen.findByLabelText('Backup file'), zipFile(fullBackup()))
     await user.selectOptions(await screen.findByLabelText('State'), 'MT')
     expect(
-      screen.getByRole('button', { name: 'About Version', description: /chosen first/ }),
+      screen.getByRole('button', { name: 'About Version', description: /public then/ }),
     ).toBeTruthy()
+    // The one step that changes public pages at once warns beside the box, not in a tooltip.
     expect(
-      screen.getByRole('button', {
-        name: 'About replacing the mappings',
-        description: /at once/,
+      screen.getByRole('checkbox', {
+        name: /Also replace Montana’s category mappings/,
+        description: /Applies at once, before publishing/,
       }),
     ).toBeTruthy()
 

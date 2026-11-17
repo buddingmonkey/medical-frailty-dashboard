@@ -123,7 +123,7 @@ describe('/admin/drafts/[versionId]', () => {
   it('lists the checks that fired by level, and the ones that passed', async () => {
     fakeApi()
     await renderRoute('/admin/drafts/7')
-    expect(await screen.findByText(/Publishing is blocked/)).toBeTruthy()
+    expect(await screen.findByText(/Blocked: 1 check/)).toBeTruthy()
     const blocking = screen.getByRole('list', { name: 'Blocks publishing' })
     expect(within(blocking).getByText(/Not every row arrived/)).toBeTruthy()
     const confirm = screen.getByRole('list', { name: 'Needs a confirmation' })
@@ -150,7 +150,7 @@ describe('/admin/drafts/[versionId]', () => {
   it('runs the checks again on request', async () => {
     const calls = fakeApi()
     await renderRoute('/admin/drafts/7')
-    await screen.findByText(/Publishing is blocked/)
+    await screen.findByText(/Blocked: 1 check/)
     await user.click(screen.getByRole('button', { name: 'Run the checks again' }))
     await expect.poll(() => calls.checks).toBe(2)
   })
@@ -180,7 +180,8 @@ describe('/admin/drafts/[versionId]', () => {
     await user.click(await screen.findByRole('button', { name: 'Discard this draft' }))
     expect(calls.discards).toBe(0)
     await user.click(screen.getByRole('button', { name: 'Yes, discard draft v3' }))
-    expect(await screen.findByText(/This draft was discarded/)).toBeTruthy()
+    const badge = await screen.findByRole('status', { name: 'Version status' })
+    expect(badge.textContent).toMatch(/Discarded\s*· Read only/)
     expect(calls.discards).toBe(1)
     expect(screen.queryByRole('button', { name: 'Discard this draft' })).toBeNull()
   })
@@ -209,7 +210,7 @@ describe('/admin/drafts/:id field help', () => {
     expect(
       screen.getByRole('button', {
         name: 'About Show changes',
-        description: /another state category/,
+        description: /Category changed/,
       }),
     ).toBeTruthy()
   })

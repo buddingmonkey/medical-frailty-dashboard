@@ -7,10 +7,10 @@ import {
 } from '@mfcd/shared'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, onMounted, ref, useId, useTemplateRef } from 'vue'
+import { RouterLink } from 'vue-router'
 import { z } from 'zod'
 
 import { ApiError, sendJson } from '../../lib/api'
-import InfoTip from '../ui/InfoTip.vue'
 
 // "Re-run automatic suggestions" (docs/add-state-source.md, step 8): the server's preview of
 // what a run would change for the state's published entries, then a save that sends the
@@ -64,9 +64,20 @@ const changed = computed(() => {
   return p ? p.gain + p.change + p.lose : 0
 })
 const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
-/** What saving does, in the info button beside it. */
-const saveHelp =
-  'Writes only the differences this preview shows and never changes a suggestion an admin confirmed. The public pages change at once and the run is written to the audit log. If anything changed since the preview, nothing is saved and a new preview appears.'
+/** The run's counts, one row each (kept-reviewed only when there are any). */
+const counts = computed(() => {
+  const p = preview.data.value
+  if (!p) return []
+  return [
+    { label: 'Gain a suggestion', value: p.gain },
+    { label: 'Get a different one', value: p.change },
+    { label: 'Lose their suggestion', value: p.lose },
+    { label: 'Unchanged', value: p.unchanged },
+    ...(p.keptReviewed > 0
+      ? [{ label: 'Kept (confirmed by an admin)', value: p.keptReviewed }]
+      : []),
+  ]
+})
 </script>
 
 <template>
@@ -91,25 +102,25 @@ const saveHelp =
     </p>
     <template v-else-if="preview.data.value">
       <p v-if="preview.data.value.reference.length === 0">
-        Suggestions come from a published list that gives each code its federal category, and none
-        is published yet. To make one, open the state’s file in Read and map, set its federal column
-        to “Federal category (the state’s own)”, and publish it. Then run this again.
+        No published list names federal categories by code yet.
+        <RouterLink to="/admin/guide" class="text-link underline">How to add one</RouterLink>
       </p>
       <template v-else>
         <p>
           Suggestions come from {{ preview.data.value.reference.join(' and ') }}’s list, for
           {{ entriesText(preview.data.value.entries) }} of {{ stateName }} with ICD-10-CM codes.
         </p>
-        <ul class="list-disc space-y-1 pl-5">
-          <li>{{ entriesText(preview.data.value.gain) }} gain a suggestion.</li>
-          <li>{{ entriesText(preview.data.value.change) }} get a different suggestion.</li>
-          <li>{{ entriesText(preview.data.value.lose) }} lose their suggestion.</li>
-          <li>{{ entriesText(preview.data.value.unchanged) }} keep the same suggestion.</li>
-          <li v-if="preview.data.value.keptReviewed > 0">
-            {{ entriesText(preview.data.value.keptReviewed) }} keep the suggestion an admin
-            confirmed.
-          </li>
-        </ul>
+        <table class="border-collapse text-left text-sm">
+          <caption class="text-left text-muted-foreground">
+            Entries
+          </caption>
+          <tbody>
+            <tr v-for="c in counts" :key="c.label" class="border-b border-border">
+              <th scope="row" class="py-1 pr-6 font-medium">{{ c.label }}</th>
+              <td class="py-1 text-right">{{ n(c.value) }}</td>
+            </tr>
+          </tbody>
+        </table>
         <div v-if="preview.data.value.byCategory.length > 0" class="overflow-x-auto">
           <table class="w-full max-w-xl border-collapse text-left text-sm">
             <caption class="text-left text-muted-foreground">
@@ -175,18 +186,18 @@ const saveHelp =
     <p v-if="save.error.value && !stale" role="alert" class="text-danger">
       Could not save: {{ save.error.value.message }}
     </p>
-    <div class="flex flex-wrap gap-3">
-      <span class="inline-flex items-center">
-        <button
-          type="button"
-          class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
-          :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
-          @click="confirm"
-        >
-          Save suggestions</button
-        ><InfoTip label="Save suggestions" :text="saveHelp"
-      /></span>
+    <div class="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        class="rounded bg-primary px-4 py-2 text-on-primary hover:bg-primary-hover disabled:opacity-60"
+        :aria-describedby="`${id}-warn`"
+        :disabled="!preview.data.value || preview.isFetching.value || save.isPending.value"
+        @click="confirm"
+      >
+        Save suggestions
+      </button>
       <button type="button" :class="button" @click="emit('cancel')">Cancel</button>
+      <p :id="`${id}-warn`" class="text-sm">Public pages change at once.</p>
     </div>
   </section>
 </template>

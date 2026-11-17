@@ -569,9 +569,8 @@ export function compareSubject(
 export const COMPARE_HEADING = 'Compare single codes'
 
 export const COMPARE_INTRO =
-  'Pick a federal category (or one state’s own category) and the states to compare. Each row ' +
-  'is one code, wildcard or range that at least one of them lists there; each state’s column ' +
-  'shows whether its whole list includes that code, and how.'
+  'Pick a category and states. Each row is one code; each column shows whether the state’s list ' +
+  'includes it.'
 
 export const COMPARE_DESCRIPTION =
   'Compare the medical frailty code lists of any number of states, one category at a time: ' +

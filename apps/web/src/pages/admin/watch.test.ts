@@ -239,7 +239,7 @@ describe('/admin/watch', () => {
     expect(alert.textContent).toContain('Write a resolution note')
     const note = screen.getByLabelText('Resolution note')
     expect(note.getAttribute('aria-invalid')).toBe('true')
-    expect(note.getAttribute('aria-describedby')).toBe(alert.id)
+    expect(note.getAttribute('aria-describedby')?.split(' ')).toContain(alert.id)
     expect(api.puts).toEqual([])
 
     await user.click(screen.getByLabelText('Dismissed'))

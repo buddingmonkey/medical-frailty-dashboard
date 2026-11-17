@@ -156,16 +156,16 @@ export const OVERLAPS_DESCRIPTION =
   'For one comparison category at a time: the groups of states whose medical frailty code ' +
   'lists include exactly the same codes, and how many codes each group shares.'
 
-export const OVERLAPS_INTRO =
-  'Choose a comparison category. Each row is a group of states and the codes that exactly ' +
-  'those states include: every state in the group includes them and no other state does. ' +
-  'Each code is counted in one row only. Rows are sorted by how many codes they have.'
+/** Shortened 2026-11-17: the row rules moved to `OVERLAPS_COUNT_NOTE`, under the table. */
+export const OVERLAPS_INTRO = 'Groups of states that list exactly the same codes in one category.'
 
-/** What a code is here: the drill-down's rule (`DRILL_COUNT_NOTE`). */
+/** Under the table: what a row and a code are (the drill-down's rule, `DRILL_COUNT_NOTE`). */
 export const OVERLAPS_COUNT_NOTE =
-  'A state includes a code when its list has the code itself or a wildcard or range that ' +
-  'covers it. A wildcard or range placed in the category counts as one code. Only states ' +
-  'that include at least one code in the category are shown.'
+  'Every state in a row includes its codes and no other state does; each code is in one row ' +
+  'only, and rows are sorted by how many codes they have. A state includes a code when its list ' +
+  'has the code itself or a wildcard or range that covers it. A wildcard or range placed in the ' +
+  'category counts as one code. Only states that include at least one code in the category are ' +
+  'shown.'
 
 export const OVERLAPS_EMPTY = 'No state includes any code in this category yet.'
 

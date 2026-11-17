@@ -254,17 +254,13 @@ const inputClass =
 const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-surface'
 /** What the less obvious controls do, in their info buttons' tooltips. */
 const fieldHelp = {
-  undotted:
-    'When on, a code shaped like A0103 may be ICD-10-CM (A01.03) or HCPCS, so the review asks, or settles it from the CMS lists. When off, such codes are read as HCPCS. It starts as a guess from the file.',
-  show: 'Filters the table, and the bulk actions apply only to the rows it shows. Needs attention is Cannot be read plus Needs a decision.',
-  bulkSystem:
-    'Sets the code system of every row the filters show, except dropped rows. Guess from each code ignores the file’s code-system column and goes by each code’s shape and the CMS lists.',
-  scope:
-    'For a bare three-character code such as F20, or a range of them. Whole category also covers every code under it; This code only covers just the codes listed.',
+  undotted: 'Codes like A0103 could be ICD-10-CM or HCPCS; the review asks. Off: read as HCPCS.',
+  show: 'Bulk actions apply to the rows shown.',
+  /** One string for the bulk and the per-row code-system selects. */
+  system: 'Guess ignores the file’s code-system column.',
+  scope: 'Whole category includes every code under F20; This code only does not.',
   review:
-    'Cannot be read: edit the code or drop the row; such rows count as invalid, and above 2% publishing is blocked. Needs a decision: answer the question or Accept it; questions left open go to the draft and the checks ask about them.',
-  editSystem:
-    'As in the file: the file’s code-system column decides; without one, the code’s shape and the CMS lists do. Guess from the code ignores that column.',
+    'Cannot be read: edit or drop. Over 2% blocks publishing. Needs a decision: answer or Accept.',
 }
 </script>
 
@@ -276,7 +272,7 @@ const fieldHelp = {
     <div class="flex items-center">
       <label class="flex items-center gap-2">
         <input v-model="undottedIcd" type="checkbox" />
-        ICD-10-CM codes are written without dots (e.g. Nebraska’s <code>A0103</code>)
+        ICD-10-CM codes have no dots (<code>A0103</code>)
       </label>
       <InfoTip label="codes without dots" :text="fieldHelp.undotted" />
     </div>
@@ -317,7 +313,7 @@ const fieldHelp = {
       <div>
         <label :for="`${id}-bulk-system`" class="text-sm font-medium"
           >Code system for the {{ plural(live.length, 'row', 'rows') }} shown</label
-        ><InfoTip label="Code system for the rows shown" :text="fieldHelp.bulkSystem" />
+        ><InfoTip label="Code system for the rows shown" :text="fieldHelp.system" />
         <select :id="`${id}-bulk-system`" v-model="bulkSystem" :class="inputClass">
           <option value="" disabled>Choose</option>
           <option value="infer">Guess from each code</option>
@@ -486,7 +482,7 @@ const fieldHelp = {
                   </div>
                   <div>
                     <label :for="`${id}-e-system`" class="text-sm">Code system</label
-                    ><InfoTip label="Code system" :text="fieldHelp.editSystem" />
+                    ><InfoTip label="Code system" :text="fieldHelp.system" />
                     <select :id="`${id}-e-system`" v-model="draft.codeSystem" :class="inputClass">
                       <option value="file">As in the file</option>
                       <option value="infer">Guess from the code</option>
@@ -533,8 +529,7 @@ const fieldHelp = {
                       :class="inputClass"
                     />
                     <p :id="`${id}-e-federal-hint`" class="mt-1 text-xs text-muted-foreground">
-                      One of the five federal categories in the law, as the state wrote it. Put “;”
-                      between two. Leave empty when the state names none.
+                      As the state wrote it. Separate two with “;”.
                     </p>
                   </div>
                   <div class="flex gap-2 md:col-span-3">

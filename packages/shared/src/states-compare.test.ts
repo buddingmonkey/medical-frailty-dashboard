@@ -169,9 +169,7 @@ describe('words', () => {
 
 describe('state comparison wording', () => {
   it('names which categories group the codes, and says what one code is', () => {
-    expect(STATES_COMPARE_INTRO).toContain(
-      'grouped by the same comparison categories as the overview.',
-    )
+    expect(STATES_COMPARE_INTRO).toContain('by comparison category.')
     expect(STATES_COMPARE_SUMMARY_NOTE).toBe(
       'These counts are entries from the chosen lists (a single code, a wildcard or a range each). ' +
         'A state includes an entry when its list has it or covers it with a wildcard or range.',

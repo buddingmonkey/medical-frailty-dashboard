@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { InfoPage } from '@mfcd/shared'
+import { type InfoPage, SECTION_SHOW_TEXT } from '@mfcd/shared'
 import { nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -47,7 +47,11 @@ watch(
       class="scroll-mt-4 space-y-3"
     >
       <h2 :id="s.id" class="font-display text-2xl font-medium text-heading">{{ s.heading }}</h2>
-      <AboutBlocks :blocks="s.blocks" />
+      <details v-if="s.collapsed" :open="route.hash === `#${s.id}`" class="space-y-3">
+        <summary class="cursor-pointer font-semibold text-link">{{ SECTION_SHOW_TEXT }}</summary>
+        <AboutBlocks :blocks="s.blocks" />
+      </details>
+      <AboutBlocks v-else :blocks="s.blocks" />
     </section>
   </article>
 </template>

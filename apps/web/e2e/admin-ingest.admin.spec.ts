@@ -74,7 +74,9 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
     mimeType: 'application/pdf',
     buffer: Buffer.from(pdf),
   })
-  const panel = page.getByRole('region', { name: 'Get help from an AI assistant' })
+  // A closed disclosure until opened (it opens by itself only when a file can't be read).
+  const panel = page.getByRole('group', { name: 'Get help from an AI assistant' })
+  await panel.getByText('Get help from an AI assistant').click()
   await panel.getByRole('button', { name: 'Prepare the prompt' }).click()
   // The text comes from pdf.js in the parser worker, one line per printed line.
   await expect(panel.getByLabel('Prompt for part 1')).toHaveValue(
@@ -82,7 +84,7 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   )
   // No API key on this Worker: the Claude button is there but disabled, with a tooltip.
   await expect(panel.getByRole('button', { name: /Ask Claude/ })).toBeDisabled()
-  await expect(panel.getByRole('tooltip')).toHaveText(/needs an Anthropic API key/)
+  await expect(panel.getByRole('tooltip')).toHaveText(/Needs a server API key/)
 
   await panel
     .getByLabel('The assistant’s answer', { exact: true })

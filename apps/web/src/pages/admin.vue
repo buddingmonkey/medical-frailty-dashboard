@@ -29,22 +29,43 @@ const signInProblem = computed(() => {
   return 'Could not confirm your sign-in. Reload the page to try again.'
 })
 
-const sections = [
-  { to: '/admin', label: 'Overview' },
-  { to: '/admin/sources', label: 'Source files' },
-  { to: '/admin/ingest', label: 'Read and map' },
-  { to: '/admin/drafts', label: 'Drafts' },
-  { to: '/admin/versions', label: 'Versions' },
-  { to: '/admin/restore', label: 'Backup and restore' },
-  { to: '/admin/categories', label: 'Federal categories' },
-  { to: '/admin/unified', label: 'Unified categories' },
-  { to: '/admin/mappings', label: 'Mappings' },
-  { to: '/admin/condition-groups', label: 'Condition groups' },
-  { to: '/admin/guide', label: 'Guide' },
-  { to: '/admin/launch-readiness', label: 'Launch readiness' },
-  { to: '/admin/watch', label: 'Watch dates' },
-  { to: '/admin/audit', label: 'Audit log' },
+// Grouped in the order of the Overview's steps: add a list, then map its categories.
+const groups = [
+  {
+    id: 'add',
+    label: 'Add a list',
+    links: [
+      { to: '/admin/sources', label: 'Source files' },
+      { to: '/admin/ingest', label: 'Read and map' },
+      { to: '/admin/drafts', label: 'Drafts' },
+      { to: '/admin/versions', label: 'Versions' },
+    ],
+  },
+  {
+    id: 'categories',
+    label: 'Categories',
+    links: [
+      { to: '/admin/mappings', label: 'Mappings' },
+      { to: '/admin/categories', label: 'Federal categories' },
+      { to: '/admin/unified', label: 'Unified categories' },
+      { to: '/admin/condition-groups', label: 'Condition groups' },
+    ],
+  },
+  {
+    id: 'site',
+    label: 'Site',
+    links: [
+      { to: '/admin/launch-readiness', label: 'Launch readiness' },
+      { to: '/admin/watch', label: 'Watch dates' },
+      { to: '/admin/restore', label: 'Backup and restore' },
+      { to: '/admin/audit', label: 'Audit log' },
+      { to: '/admin/guide', label: 'Guide' },
+    ],
+  },
 ] as const
+
+const linkClass = 'block rounded px-3 py-1.5 text-foreground no-underline hover:bg-surface'
+const activeClass = 'bg-surface font-medium text-heading'
 </script>
 
 <template>
@@ -72,18 +93,28 @@ const sections = [
     <WatchBanner />
 
     <div class="flex flex-col gap-8 md:flex-row">
-      <nav aria-label="Admin" class="md:w-48 md:shrink-0">
-        <ul class="flex flex-wrap gap-2 md:flex-col md:gap-1">
-          <li v-for="section in sections" :key="section.to">
-            <RouterLink
-              :to="section.to"
-              exact-active-class="bg-surface font-medium text-heading"
-              class="block rounded px-3 py-1.5 text-foreground no-underline hover:bg-surface"
-            >
-              {{ section.label }}
-            </RouterLink>
-          </li>
-        </ul>
+      <nav aria-label="Admin" class="space-y-4 md:w-48 md:shrink-0">
+        <RouterLink to="/admin" :exact-active-class="activeClass" :class="linkClass">
+          Overview
+        </RouterLink>
+        <div v-for="group in groups" :key="group.id">
+          <p
+            :id="`admin-nav-${group.id}`"
+            class="px-3 pb-1 text-sm font-medium text-muted-foreground"
+          >
+            {{ group.label }}
+          </p>
+          <ul
+            :aria-labelledby="`admin-nav-${group.id}`"
+            class="flex flex-wrap gap-2 md:flex-col md:gap-1"
+          >
+            <li v-for="link in group.links" :key="link.to">
+              <RouterLink :to="link.to" :exact-active-class="activeClass" :class="linkClass">
+                {{ link.label }}
+              </RouterLink>
+            </li>
+          </ul>
+        </div>
       </nav>
       <div class="min-w-0 flex-1">
         <RouterView />

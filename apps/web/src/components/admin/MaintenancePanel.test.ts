@@ -89,7 +89,12 @@ describe('MaintenancePanel', () => {
   it('warns what it deletes, runs on click and shows the new run', async () => {
     const { user, posts } = setup({ last: null, weekly: [] })
     await screen.findByText('Maintenance has not run yet.')
-    expect(screen.getByText(/deletes open drafts with no activity for 30 days/)).toBeTruthy()
+    expect(screen.getByText(/Deletes drafts idle over 30 days/)).toBeTruthy()
+    // The schedule is a key/value list, not a paragraph.
+    const keeps = screen.getByText('Keeps', { selector: 'dt' })
+    expect(keeps.nextElementSibling?.textContent).toMatch(
+      /\d+ weekly, \d+ manual, \d+ per state before publish/,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Run maintenance now' }))
 

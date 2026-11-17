@@ -14,6 +14,7 @@ import {
   overviewDrillDownPath,
   overviewOrderFromQuery,
   overviewOverall,
+  OVERVIEW_READING_HINT,
   overviewReadingNotes,
   orderOverviewStates,
   pageTitles,
@@ -122,10 +123,14 @@ export function overviewPage(
         canonical: `${origin}/compare`,
       }),
     ],
-    body: html`${intro} ${table}
-      <h2>Reading this table</h2>
-      ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
-      <p>${learnMoreHtml(learnMore.overview)}</p>
+    body: html`${intro}
+      <p>${OVERVIEW_READING_HINT}</p>
+      ${table}
+      <details open>
+        <summary><h2>Reading this table</h2></summary>
+        ${overviewReadingNotes.map((p) => html`<p>${p}</p>`)}
+        <p>${learnMoreHtml(learnMore.overview)}</p>
+      </details>
       <p>
         Shades:
         ${[...(['high', 'mid', 'low', 'none'] as const).map((b) => coverageBandLabels[b]), OVERVIEW_NO_LIST].join('; ')}.

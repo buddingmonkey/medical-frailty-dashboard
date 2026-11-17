@@ -130,7 +130,17 @@ const discard = useMutation({
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 const changesHelp =
-  'A code is its code system and the code or range as written, so a range and one code inside it are different codes. A code that moves to another state category is Category changed, not a removal and an addition.'
+  'A range and a code inside it are different codes. A code that changes category shows as Category changed.'
+/** Badge beside the heading for a version that can no longer change. */
+const statusLabels: Record<string, string> = {
+  discarded: 'Discarded',
+  published: 'Public',
+  superseded: 'Earlier',
+}
+const blocking = computed(
+  () => report.value?.checks.filter((c) => c.triggered && c.level === 'block').length ?? 0,
+)
+const badge = 'rounded bg-surface px-2 py-0.5 text-sm font-medium'
 </script>
 
 <template>
@@ -142,24 +152,23 @@ const changesHelp =
 
     <template v-if="draft">
       <div class="space-y-1">
-        <h2 class="font-display text-2xl font-medium text-heading">
-          {{ stateName || draft.stateId }}: draft v{{ draft.versionNo }}
-        </h2>
+        <div class="flex flex-wrap items-baseline gap-3">
+          <h2 class="font-display text-2xl font-medium text-heading">
+            {{ stateName || draft.stateId }}: draft v{{ draft.versionNo }}
+          </h2>
+          <span
+            v-if="draft.status !== 'draft'"
+            role="status"
+            aria-label="Version status"
+            :class="badge"
+          >
+            {{ statusLabels[draft.status] ?? draft.status }} · Read only ·
+            <RouterLink to="/admin/versions">Versions</RouterLink>
+          </span>
+        </div>
         <p class="text-muted-foreground">
           {{ n(draft.rowCount) }} entries · started {{ formatTimestampDate(draft.createdAt) }} by
           {{ draft.createdBy }}
-        </p>
-        <p v-if="draft.status === 'discarded'" role="status" class="font-medium">
-          This draft was discarded. It is kept for the record and can no longer change.
-        </p>
-        <p v-else-if="draft.status === 'published'" role="status" class="font-medium">
-          This is {{ stateName || draft.stateId }}’s public list. It can no longer change; an
-          earlier list can be restored from
-          <RouterLink to="/admin/versions" class="text-link underline">Versions</RouterLink>.
-        </p>
-        <p v-else-if="draft.status !== 'draft'" role="status" class="font-medium">
-          This version is {{ draft.status }}; it can no longer change. See
-          <RouterLink to="/admin/versions" class="text-link underline">Versions</RouterLink>.
         </p>
         <p v-if="publishWarning" role="alert" class="text-danger">{{ publishWarning }}</p>
       </div>
@@ -225,13 +234,13 @@ const changesHelp =
         </p>
         <template v-if="report">
           <p
-            class="rounded border-l-4 px-4 py-2"
-            :class="report.canPublish ? 'border-primary bg-surface' : 'border-danger bg-surface'"
+            class="inline-block rounded border-l-4 bg-surface px-3 py-1 font-medium"
+            :class="report.canPublish ? 'border-primary' : 'border-danger'"
           >
-            <template v-if="report.canPublish">
-              Nothing blocks publishing. Publishing asks for the confirmations below.
+            <template v-if="report.canPublish">Ready to publish</template>
+            <template v-else>
+              Blocked: {{ blocking }} {{ blocking === 1 ? 'check' : 'checks' }}
             </template>
-            <template v-else>Publishing is blocked until the checks marked below pass.</template>
           </p>
           <div v-for="group in fired" :key="group.level" class="space-y-1">
             <h4 :id="`${id}-level-${group.level}`" class="font-medium">{{ group.label }}</h4>

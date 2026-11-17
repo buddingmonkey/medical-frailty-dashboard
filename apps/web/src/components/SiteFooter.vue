@@ -3,6 +3,7 @@ import {
   AMA_NOTICE_SHORT,
   dataLastUpdated,
   dataUpdatedText,
+  FOOTER_DISCLAIMER_LINK,
   FOOTER_NAV_LABEL,
   FOOTER_TEXT,
   footerLinks,
@@ -33,7 +34,7 @@ const updatedAt = computed(() => (data.value ? dataLastUpdated(data.value.items)
         </ul>
       </nav>
       <p v-if="updatedAt">{{ dataUpdatedText(updatedAt) }}</p>
-      <p class="max-w-prose">{{ FOOTER_TEXT }}</p>
+      <p class="max-w-prose">{{ FOOTER_TEXT }} <AboutLinkView :link="FOOTER_DISCLAIMER_LINK" /></p>
       <p>
         <a :href="STATUTE_URL" rel="noopener noreferrer external" class="text-link">{{
           STATUTE_LINK_TEXT

@@ -108,15 +108,10 @@ describe('PublishPanel', () => {
   })
 })
 
-describe('PublishPanel field help', () => {
-  it('explains the confirmations, and the fieldset keeps its legend as its name', () => {
+describe('PublishPanel confirmations', () => {
+  it('names the fieldset by its legend, with no tooltip: a refusal explains itself', () => {
     setup()
-    expect(
-      screen.getByRole('button', {
-        name: 'About Confirm what the checks found',
-        description: /changed since the checks ran/,
-      }),
-    ).toBeTruthy()
     expect(screen.getByRole('group', { name: 'Confirm what the checks found' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^About / })).toBeNull()
   })
 })

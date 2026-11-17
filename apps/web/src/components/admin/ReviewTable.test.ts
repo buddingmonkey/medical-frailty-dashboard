@@ -95,7 +95,7 @@ describe('ReviewTable', () => {
   it('re-reads every code when the “written without dots” box changes', async () => {
     const { user } = setup([row('r1', 'A0103')])
     expect(screen.getByText(/1 row: 1 ready/)).toBeTruthy()
-    await user.click(screen.getByLabelText(/ICD-10-CM codes are written without dots/))
+    await user.click(screen.getByLabelText(/ICD-10-CM codes have no dots/))
     expect(screen.getByText(/1 row: 0 ready, 1 needs a decision/)).toBeTruthy()
   })
 
@@ -247,12 +247,12 @@ describe('ReviewTable field help', () => {
     const help = (name: string, description: RegExp) =>
       screen.getByRole('button', { name: `About ${name}`, description })
     expect(help('codes without dots', /read as HCPCS/)).toBeTruthy()
-    expect(help('Show', /bulk actions/)).toBeTruthy()
-    expect(help('Code system for the rows shown', /except dropped rows/)).toBeTruthy()
-    expect(help('Whole category or this code only', /every code under it/)).toBeTruthy()
+    expect(help('Show', /Bulk actions/)).toBeTruthy()
+    expect(help('Code system for the rows shown', /ignores the file/)).toBeTruthy()
+    expect(help('Whole category or this code only', /every code under F20/)).toBeTruthy()
     expect(help('Review', /2%/)).toBeTruthy()
     // The box keeps its own name.
-    expect(screen.getByRole('checkbox', { name: /written without dots/ })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: /have no dots/ })).toBeTruthy()
   })
 
   it('explains the code system choice of the row being edited', async () => {

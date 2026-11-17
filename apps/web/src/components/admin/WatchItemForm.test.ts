@@ -10,23 +10,29 @@ describe('WatchItemForm field help', () => {
     render(WatchItemForm)
 
     expect(
-      screen.getByRole('button', { name: 'About Due date', description: /Overdue/ }),
+      screen.getByRole('button', { name: 'About Due date', description: /No date yet/ }),
     ).toBeTruthy()
     expect(
       screen.getByRole('button', {
         name: 'About Repeat every (days)',
-        description: /after the close date/,
+        description: /days later/,
       }),
     ).toBeTruthy()
     expect(
       screen.getByRole('button', {
         name: 'About The date is approximate',
-        description: /does not change/,
+        description: /“approximate”/,
       }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('button', { name: 'About Why it matters', description: /plain text/ }),
+      screen.getByRole('button', { name: 'About Why it matters', description: /next repeat/ }),
     ).toBeTruthy()
+    // The limit is enforced and counted, not described.
+    const why = screen.getByRole('textbox', {
+      name: 'Why it matters',
+      description: '0 / 4,000 characters',
+    })
+    expect(why.getAttribute('maxlength')).toBe('4000')
   })
 
   it('keeps the fields named by their labels', () => {

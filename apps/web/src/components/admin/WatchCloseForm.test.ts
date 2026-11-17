@@ -13,9 +13,13 @@ describe('WatchCloseForm field help', () => {
       screen.getByRole('button', { name: 'About Outcome', description: /History/ }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('button', { name: 'About Resolution note', description: /audit log/ }),
+      screen.getByRole('button', { name: 'About Resolution note', description: /History/ }),
     ).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'Done' })).toBeTruthy()
-    expect(screen.getByRole('textbox', { name: 'Resolution note' })).toBeTruthy()
+    const note = screen.getByRole('textbox', {
+      name: 'Resolution note',
+      description: '0 / 4,000 characters',
+    })
+    expect(note.getAttribute('maxlength')).toBe('4000')
   })
 })

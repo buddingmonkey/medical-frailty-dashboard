@@ -24,11 +24,6 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
 <template>
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Launch readiness</h2>
-    <p class="max-w-prose text-muted-foreground">
-      The launch data gate passes when at least 2 states with a published list are ready. A state is
-      ready when every category is approved in Mappings and its public page shows “Reviewed” for
-      every category.
-    </p>
 
     <p v-if="query.isPending.value" class="text-muted-foreground">Loading…</p>
     <p
@@ -46,10 +41,8 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
         class="rounded border-l-4 bg-surface px-4 py-3 text-foreground"
         :class="data.gatePassed ? 'border-primary' : 'border-highlight'"
       >
-        <span class="font-medium">
-          {{ data.gatePassed ? 'Launch data gate passes' : 'Launch data gate not passed yet' }}:
-        </span>
-        {{ data.readyCount }} of {{ data.required }} states ready.
+        <span class="font-medium"> Data gate: {{ data.gatePassed ? 'met' : 'not met' }} </span>
+        ({{ data.readyCount }} of {{ data.required }} states ready)
       </p>
 
       <p v-if="data.states.length === 0" class="text-muted-foreground">
@@ -66,8 +59,8 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
               <th scope="col" class="py-2 pr-4 font-medium">State</th>
               <th scope="col" class="py-2 pr-4 font-medium">Published</th>
               <th scope="col" class="py-2 pr-4 font-medium">Categories</th>
-              <th scope="col" class="py-2 pr-4 font-medium">Unified mappings</th>
-              <th scope="col" class="py-2 pr-4 font-medium">Public page</th>
+              <th scope="col" class="py-2 pr-4 font-medium">Mappings approved</th>
+              <th scope="col" class="py-2 pr-4 font-medium">All Reviewed</th>
               <th scope="col" class="py-2 pr-4 font-medium">Federal mappings (information)</th>
               <th scope="col" class="py-2 font-medium">Status</th>
             </tr>
@@ -129,10 +122,7 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
       </div>
 
       <p class="max-w-prose text-sm text-muted-foreground">
-        Follow a count’s link and choose the state to fix it. The federal counts do not block launch
-        on their own. But a code in no unified category shows “Reviewed” only after its federal
-        category is confirmed on Federal categories or set by a chapter override. Testing the site
-        with real users is the other condition for launch. It is not tracked here.
+        Federal counts don’t block launch alone. Testing with real users is tracked elsewhere.
       </p>
     </template>
   </section>

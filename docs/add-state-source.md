@@ -29,13 +29,17 @@ show the new citation right away.
 
 ## 2. Read and map it (Admin → Read and map)
 
-1. Choose the state and the same file. A PDF can take a few seconds.
+1. Choose the state and the same file. A PDF can take a few seconds. The file is read in your
+   browser and not stored here; a draft cites only a file stored on Source files.
 2. If the file has several tables (Nebraska: diagnoses, then a CPT/HCPCS page) or sheets, the
-   **Table** list shows them. Map and send each one; they go to the same draft.
+   **Table** list shows them. Each Excel sheet, and each PDF table with its own header, is its
+   own table. Map and send each one; they go to the same draft, and sending a table again
+   replaces only its rows.
 3. **Columns:** check what each column "means". The guess is usually right; fix it where two
    columns share a name (Montana: the first "Category" is the tier). A column that names one of
    the five federal categories per code (Indiana's "Federal category") is **Federal category
-   (the state's own)**, not Category.
+   (the state's own)**, not Category. In an **Included (Yes/No)** column, No, N, False, 0 or
+   Excluded marks a row excluded: it is stored but never shown as a frail code.
 4. **Does a code qualify on its own?** One value for the whole file, or per value of a column
    (Louisiana's 0/1/2 "Code Designation"; Montana's tier). Pick "The state says so" or
    "Inferred by us" honestly.
@@ -43,7 +47,8 @@ show the new citation right away.
    Georgia publishes each tier as a file: "Attachment A" for one, "Attachment B" for the other.
 6. Click **Save column profile**: the next file with the same headers maps itself.
 7. **PDF wrapped lines:** look at the first mapped rows. If a description sits next to the wrong
-   code, change "Wrapped lines".
+   code, change "Wrapped lines". The PDF is read again, so the column roles and review edits
+   start over.
 
 ## 3. Review the rows
 
@@ -85,12 +90,23 @@ Choose the state. Each of its categories needs one or more comparison categories
 "unified categories" in the admin pages). The page suggests them from the CCSR groups (AHRQ's grouping of diagnosis codes) of the
 state's diagnosis codes. Check the suggestion, save, and approve. Until a category is approved,
 the public state page shows it as "Not yet reviewed". The launch gate (Admin → Launch
-readiness) needs at least 2 states whose every category is approved and shows "Reviewed".
+readiness) needs at least 2 states whose every category is approved and shows "Reviewed". A
+code in no unified category shows "Reviewed" only after its federal category is confirmed on
+Federal categories or set by a chapter override.
 
-Not sure what a field means? The small (i) button beside it says what the field does (hover,
-focus or tap it). The unified category and condition group forms have the same buttons.
+Not sure what a field means? Some fields have a short hint under them, others a small (i)
+button beside the label (hover, focus or tap it). This guide has the full rules.
 
 ## 8. Check the federal categories (Admin → Federal categories)
+
+**How a code gets its federal category**, first match wins (`docs/data-model.md`):
+
+1. The state's own federal category for the code (a column in its file).
+2. The federal parent of each unified (comparison) category it is placed in.
+3. A chapter override.
+4. A confirmed suggestion by code.
+5. A mapping of its state category set by hand.
+6. An unconfirmed suggestion by code, then the guessed mapping of its state category.
 
 A code's federal category follows its comparison categories. The mapping here is the fallback
 for codes in no comparison category. When you publish, the site guesses a federal category from
@@ -111,9 +127,45 @@ confirmed suggestions or anything you set by hand.
 
 ## If a file will not read
 
-Use **Get help from an AI assistant** on the Read and map page: copy each part's prompt into an
-AI assistant, paste its JSON answer back, and review the rows as above. Tested on Montana and
-Nebraska: the answers matched the PDF reader code for code.
+Use **Get help from an AI assistant** on the Read and map page (it opens by itself when a file
+will not read): copy each part's prompt into an AI assistant, paste its JSON answer back, and
+review the rows as above. Tested on Montana and Nebraska: the answers matched the PDF reader
+code for code.
+
+- A long file is split into **parts** small enough for one answer. Each answer becomes its own
+  table, mapped, reviewed and sent on its own.
+- Text around the JSON, such as code fences, is ignored. An answer that does not match the
+  prompt's format is refused, with the reason.
+- **Ask Claude** sends a part straight to Claude. It needs an Anthropic API key on the server, and
+  each use costs money; ask the project lead.
+
+## Backups and restore (Admin → Backup and restore)
+
+**What a backup holds:** every state's lists and versions, the source details (not the files),
+column profiles, mappings, unified categories, condition groups, watch dates and the audit log.
+It leaves out the reference code lists (ICD-10-CM, HCPCS, CCSR), which a developer loads again,
+and the coverage tables, which Rebuild coverage recreates. A saved backup also records where each
+source file is stored, so a developer who rebuilds the database can find the files. Every backup
+holds admin email addresses: keep it private.
+
+**Maintenance** runs every Sunday at 07:00 UTC, or on **Run maintenance now**. It saves a backup,
+removes backups beyond the numbers kept, deletes open drafts idle for 30 days (with their source
+files when no other version uses them) and empties drafts discarded over 30 days ago. Published
+and earlier versions are never touched. A run deletes at most 20 drafts; the rest wait for the
+next run. A new backup replaces any earlier one from the same day (UTC).
+
+**Restoring** takes a `.zip` (Download backup, or a saved backup) or a `.json` backup saved before
+a publish (a developer can fetch these). The chosen version becomes a new draft: open it, read
+its checks and publish as usual. A source this site still has (same SHA-256) is reused; otherwise
+its title, link and date come back without the file, marked "restored from backup, file not
+available". **Also replace mappings** is the exception: it applies at once, before publishing.
+
+## Watch dates (Admin → Watch dates)
+
+Items are grouped as Overdue, Due within 14 days, Later or No date yet, by your computer's date;
+overdue and due-soon items show in the banner on every admin page. Closing a repeating item opens
+the next one, due that many days after the old due date, or after the close date if that has
+passed or there was none (UTC).
 
 ## Asking an AI coding assistant to help
 

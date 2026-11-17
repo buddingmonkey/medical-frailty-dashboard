@@ -40,3 +40,11 @@ overrides:
   # esbuild (<= 0.24.2 and < 0.28.1). Parent: drizzle-kit 0.31 (via the @esbuild-kit loader,
   # and directly). Remove when drizzle-kit requires esbuild >= 0.28.1.
   'esbuild@<0.28.1': 0.28.2
+
+# Audit exemptions (project lead, 2026-11-17). picomatch <= 4.0.7, ReDoS through repeated
+# extglobs (GHSA-fc5q-39xc-vjpf), has no patched version yet. Parent: vue-router's build-time
+# route plugin (unplugin), which matches only this repo's own file paths, never user input.
+# Remove once a patched picomatch ships and the parents allow it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf

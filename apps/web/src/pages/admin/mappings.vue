@@ -133,8 +133,7 @@ async function refresh() {
 
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 /** What the suggestion column shows, in its info button. */
-const suggestionHelp =
-  'The unified category whose CCSR groups cover the most of this category’s ICD-10-CM entries, with the share it covers, then the most common CCSR groups and how many entries fall in each. A hint for the mapping: it changes nothing until a mapping is saved.'
+const suggestionHelp = 'Best CCSR match and its share of the ICD-10-CM entries. A hint only.'
 </script>
 
 <template>
@@ -142,11 +141,8 @@ const suggestionHelp =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Mappings</h2>
       <p class="max-w-prose text-muted-foreground">
-        Map each category of a state’s published list to one or more unified categories. The
-        suggestion comes from the CCSR groups of the category’s ICD-10-CM codes. Save as proposed,
-        then approve, or save and approve in one step. Until a category is approved, the state’s
-        public page shows it as “Not yet reviewed”. A new mapping replaces the old one, and the old
-        one is kept for the record.
+        Map each state category to unified categories. Unapproved ones show “Not yet reviewed” in
+        public.
       </p>
     </div>
     <div class="max-w-xs">
@@ -241,6 +237,7 @@ const suggestionHelp =
                     :class="smallButton"
                     :disabled="approve.isPending.value"
                     :aria-label="`Approve the proposal for ${stateCategoryName(c)}`"
+                    :aria-describedby="`${id}-approve-warn`"
                     @click="approve.mutate(c)"
                   >
                     Approve
@@ -250,6 +247,13 @@ const suggestionHelp =
             </tr>
           </tbody>
         </table>
+        <p
+          v-if="categories.some((c) => proposedOf(c).length > 0)"
+          :id="`${id}-approve-warn`"
+          class="mt-2 text-sm"
+        >
+          Approve changes public pages at once.
+        </p>
       </div>
 
       <div v-if="editing" ref="formRegion">

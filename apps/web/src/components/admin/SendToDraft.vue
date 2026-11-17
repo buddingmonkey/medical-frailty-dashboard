@@ -171,12 +171,8 @@ async function send() {
 
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
-/** What the fields do, in their info buttons' tooltips. */
-const fieldHelp = {
-  source:
-    'The stored file these entries cite: its title, URL and date. A file read from disk is chosen for you when its contents match a stored file; a pasted table needs one chosen by hand.',
-  draft: 'A draft is not public until it is published from its draft page, after the checks.',
-}
+/** What the source field does, in its info button's tooltip. */
+const sourceHelp = 'The citation for these entries. Matched automatically for an opened file.'
 </script>
 
 <template>
@@ -185,32 +181,37 @@ const fieldHelp = {
     :aria-labelledby="`${id}-t`"
   >
     <h3 :id="`${id}-t`" class="font-display text-xl font-medium text-heading">Send to a draft</h3>
-    <p class="text-foreground">
-      {{ plural(payload.entries.length, 'entry', 'entries') }} from
-      {{ plural(counts.sent, 'row', 'rows') }}.
-      <template v-if="review.summary.problems > 0">
-        {{ plural(review.summary.problems, 'row cannot be read', 'rows cannot be read') }} and
-        {{ review.summary.problems === 1 ? 'counts' : 'count' }} as invalid (publishing is blocked
-        above 2%).
-      </template>
-      <template v-if="counts.dropped > 0">
-        {{ plural(counts.dropped, 'dropped row is', 'dropped rows are') }} left out.
-      </template>
-      <template v-if="counts.flagged > 0">
-        {{ plural(counts.flagged, 'row still has', 'rows still have') }} open questions; the checks
-        will ask about them.
-      </template>
-    </p>
+    <ul aria-label="What will be sent" class="flex flex-wrap gap-x-6 gap-y-1 text-foreground">
+      <li>
+        <strong class="font-medium">{{
+          plural(payload.entries.length, 'entry', 'entries')
+        }}</strong>
+        from {{ plural(counts.sent, 'row', 'rows') }}
+      </li>
+      <li v-if="review.summary.problems > 0">
+        <strong class="font-medium"
+          >{{ review.summary.problems.toLocaleString('en-US') }} invalid</strong
+        >
+        (blocks publishing above 2%)
+      </li>
+      <li v-if="counts.dropped > 0">
+        <strong class="font-medium">{{ counts.dropped.toLocaleString('en-US') }} dropped</strong>
+      </li>
+      <li v-if="counts.flagged > 0">
+        <strong class="font-medium">{{
+          plural(counts.flagged, 'open question', 'open questions')
+        }}</strong>
+      </li>
+    </ul>
 
     <p v-if="namedStateIds.length > 0" class="text-sm text-muted-foreground">
-      States named in the file: {{ namedStateIds.join(', ') }}. The checks ask for the state code if
-      one of them is not {{ stateId }}.
+      File names: {{ namedStateIds.join(', ') }}. The checks will confirm the state.
     </p>
 
     <div class="grid gap-4 md:grid-cols-2">
       <div>
         <label :for="`${id}-source`" class="font-medium">Source document</label
-        ><InfoTip label="Source document" :text="fieldHelp.source" />
+        ><InfoTip label="Source document" :text="sourceHelp" />
         <select :id="`${id}-source`" v-model="sourceId" :class="inputClass">
           <option value="" disabled>Choose a stored file</option>
           <option v-for="s in sources" :key="s.id" :value="s.id">
@@ -224,17 +225,20 @@ const fieldHelp = {
         </p>
       </div>
       <div>
-        <label :for="`${id}-draft`" class="font-medium">Draft</label
-        ><InfoTip label="Draft" :text="fieldHelp.draft" />
-        <select :id="`${id}-draft`" v-model="draftChoice" :class="inputClass">
+        <label :for="`${id}-draft`" class="font-medium">Draft</label>
+        <select
+          :id="`${id}-draft`"
+          v-model="draftChoice"
+          :class="inputClass"
+          :aria-describedby="`${id}-draft-hint`"
+        >
           <option value="new">New draft</option>
           <option v-for="d in drafts" :key="d.id" :value="d.id">
             Draft v{{ d.versionNo }} ({{ plural(d.rowCount, 'row', 'rows') }})
           </option>
         </select>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Add to an open draft when a state publishes its list in several files or tables. Sending
-          the same table again replaces its rows.
+        <p :id="`${id}-draft-hint`" class="mt-1 text-sm text-muted-foreground">
+          Add to an open draft for a list in several files. Re-sending a table replaces its rows.
         </p>
       </div>
     </div>

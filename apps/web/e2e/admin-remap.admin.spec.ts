@@ -45,7 +45,7 @@ test('previews a bulk remap with the keyboard, cancels, then saves it', async ({
     .getByRole('table', { name: 'Categories of Louisiana' })
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader', { name: 'Behavioral Health' }) })
-  await expect(row).toContainText('Confirmed by')
+  await expect(row).toContainText('Confirmed')
   expect(errors).toEqual([])
 })
 

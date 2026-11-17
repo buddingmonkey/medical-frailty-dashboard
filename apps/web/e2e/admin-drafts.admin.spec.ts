@@ -61,9 +61,7 @@ async function publish(page: Page) {
   for (const box of await panel.getByRole('checkbox').all()) await box.check()
   for (const input of await panel.getByRole('textbox').all()) await input.fill('NE')
   await panel.getByRole('button', { name: /Publish draft v\d+/ }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'public list' })).toContainText(
-    'Nebraska’s public list',
-  )
+  await expect(page.getByRole('status', { name: 'Version status' })).toContainText('Public')
 }
 
 test('publishes two drafts and restores the first from Versions', async ({ page }) => {
@@ -121,7 +119,7 @@ test('maps a category and overrides a chapter', async ({ page }) => {
       page.getByRole('status').filter({ hasText: 'Confirmed (no category)' }),
     ).toContainText('Confirmed (no category)')
   }
-  await expect(table.getByText(/Confirmed by e2e-admin@localhost/)).toBeVisible()
+  await expect(table.getByText(/^e2e-admin@localhost/)).toBeVisible()
 
   const chapters = page.getByRole('table', { name: 'ICD-10-CM chapters' })
   await chapters.getByLabel('Override for chapter 5').selectOption('disabling_mental_disorder')

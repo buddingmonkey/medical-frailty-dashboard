@@ -7,6 +7,7 @@ import {
   TILE_MAP_HEADING,
   TILE_MAP_INTRO,
   TILE_MAP_NOT_REVIEWED_NOTE,
+  TILE_MAP_UNION_NOTE,
   tileMapCaption,
   tileMapCategory,
   tileMapTiles,
@@ -70,6 +71,7 @@ function tileMapTable(
         })}
       </tbody>
     </table>
+    ${category.coverageBasis === 'union' ? html`<p>${TILE_MAP_UNION_NOTE}</p>` : null}
     ${tiles.some((t) => t.notReviewed) ? html`<p>${TILE_MAP_NOT_REVIEWED_NOTE}</p>` : null}`
 }
 

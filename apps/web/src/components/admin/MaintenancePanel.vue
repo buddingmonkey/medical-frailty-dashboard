@@ -66,12 +66,17 @@ function size(bytes: number): string {
 <template>
   <div class="max-w-3xl space-y-4 rounded border border-border p-4">
     <h3 class="font-display text-xl font-medium text-heading">Maintenance</h3>
-    <p class="text-foreground">
-      Every Sunday at 07:00 UTC the site saves a full backup, removes old backups and cleans up old
-      drafts. It keeps the newest {{ KEEP_WEEKLY_DUMPS }} Sunday backups, the newest
-      {{ KEEP_MANUAL_DUMPS }} backups made with Run maintenance now, and the newest
-      {{ KEEP_PUBLISH_BACKUPS }} backups of each state saved before a publish.
-    </p>
+    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm text-foreground">
+      <dt class="font-medium">Runs</dt>
+      <dd>Sundays 07:00 UTC: saves a backup, removes old ones, expires drafts</dd>
+      <dt class="font-medium">Keeps</dt>
+      <dd>
+        {{ KEEP_WEEKLY_DUMPS }} weekly, {{ KEEP_MANUAL_DUMPS }} manual,
+        {{ KEEP_PUBLISH_BACKUPS }} per state before publish
+      </dd>
+      <dt class="font-medium">Expires drafts</dt>
+      <dd>Idle {{ DRAFT_EXPIRY_DAYS }} days</dd>
+    </dl>
 
     <p v-if="status.isPending.value" class="text-muted-foreground">Loading…</p>
     <p
@@ -110,12 +115,7 @@ function size(bytes: number): string {
 
       <div class="space-y-2">
         <h4 class="font-medium text-heading">Saved backups</h4>
-        <p class="text-sm text-muted-foreground">
-          Sunday backups and those made with Run maintenance now, newest first. Each is the same zip
-          as Download backup, plus where each source file is stored, so a developer who rebuilds the
-          database can find the files. Like the download, it holds admin email addresses. Keep it
-          private.
-        </p>
+        <p class="text-sm text-muted-foreground">Newest first.</p>
         <p v-if="status.data.value.weekly.length === 0" class="text-muted-foreground">
           No saved backups yet.
         </p>
@@ -154,12 +154,7 @@ function size(bytes: number): string {
 
     <div class="space-y-2 rounded border border-border bg-surface p-3">
       <p class="text-foreground">
-        <strong>Run maintenance now</strong> does the same as the Sunday run. It saves a backup and
-        removes backups beyond the numbers kept. It deletes open drafts with no activity for
-        {{ DRAFT_EXPIRY_DAYS }} days, with their source files when no other version uses them. It
-        empties drafts discarded more than {{ DRAFT_EXPIRY_DAYS }} days ago. Published and earlier
-        versions are never touched. Each run deletes at most 20 drafts; any left over go in the next
-        run. A new backup replaces any earlier one from the same day (UTC).
+        Runs the Sunday job now. Deletes drafts idle over {{ DRAFT_EXPIRY_DAYS }} days.
       </p>
       <button
         type="button"
