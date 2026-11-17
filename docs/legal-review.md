@@ -228,14 +228,14 @@ Every string below is live and provisional. Please mark any you want changed.
 
 - Title: "Medical Frailty Coding Dashboard"
 - Tagline: "Compare the code lists US states use to mark Medicaid members as medically frail."
-- Intro (**Changed 2026-11-17**): "Medically frail Medicaid members are exempt from the H.R.1
+- Intro (**Changed 2026-11-17**): "Medically frail Medicaid members are excluded from the H.R.1
   work requirements. States publish the codes they use to identify them; this site puts those
   lists side by side. It does not decide anyone’s eligibility." Old: "Under H.R.1 (Pub. L.
   119-21), Medicaid members who are medically frail are excluded from the new community
   engagement (work) requirements. States are publishing lists of the diagnosis and service codes
   they use to identify medically frail members. This site puts those lists side by side so you
-  can compare them. It does not decide anyone’s eligibility." Question: is "exempt" right, where
-  the old text said "excluded from"?
+  can compare them. It does not decide anyone’s eligibility." It keeps "excluded from", the
+  statute's term ("specified excluded individuals").
 - What an entry is (**Changed 2026-11-17**, moved, wording unchanged): "An entry is one line of a
   state’s list: a single code, or a group of codes written with a wildcard or a range." Now a
   tooltip on the word "entries" (home card and table, All states table, state page) instead of a

@@ -94,8 +94,8 @@ readiness) needs at least 2 states whose every category is approved and shows "R
 code in no unified category shows "Reviewed" only after its federal category is confirmed on
 Federal categories or set by a chapter override.
 
-Not sure what a field means? The small (i) button beside it says what the field does (hover,
-focus or tap it). The unified category and condition group forms have the same buttons.
+Not sure what a field means? Some fields have a short hint under them, others a small (i)
+button beside the label (hover, focus or tap it). This guide has the full rules.
 
 ## 8. Check the federal categories (Admin → Federal categories)
 

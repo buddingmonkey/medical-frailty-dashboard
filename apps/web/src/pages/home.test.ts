@@ -203,6 +203,8 @@ describe('home page', () => {
       screen.queryByRole('group', { name: 'Map of state medical frailty code lists' }),
     ).toBeNull()
     const table = screen.getByRole('table', { name: 'State medical frailty code lists' })
+    // The entries tooltip button must not leak into the column's name.
+    expect(within(table).getByRole('columnheader', { name: 'Entries' })).toBeTruthy()
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows.map((r) => r.querySelector('th')?.textContent.trim())).toEqual([
       'Alabama',

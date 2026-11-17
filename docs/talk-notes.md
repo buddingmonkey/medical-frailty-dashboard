@@ -83,6 +83,7 @@ literacy, little or no coding.
 | 2026-11-03 | The project lead found Georgia's source page; the posted files were byte-identical to what we had loaded | Hash your sources so you can prove it | same |
 | 2026-11-04 | Rebuild coverage failed twice on real data, for two different database limits: one transaction too big, then too much load in a 10-second window. Measuring rows read per step turned the second fix from a guess into numbers | When it fails again, read the new error fresh; it may be a new problem | `devlog/2026-11-04-launch-prep.md` |
 | 2026-11-04 | The admin overview still promised features as "coming next" that had shipped. The first AI audit fixed it but got two facts wrong itself; a second reviewer told to check each claim against the code caught both | Factual text needs a second reviewer who checks sources, not style | same |
+| 2026-11-17 | An adversarial reviewer counted 5,600 words of text on the admin screens; one rule was explained five times on one page. Three builders cut it by more than half in one session | Count the words and the repeats; AI padding is easier to see as a number | `devlog/2026-11-17-copy-trim.md` |
 
 ## Numbers to collect
 

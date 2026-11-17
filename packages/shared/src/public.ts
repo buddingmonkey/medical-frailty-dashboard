@@ -244,9 +244,9 @@ export const statesWithListText = (n: number): string =>
 
 /** The home page's introduction, in the Vue page and the server-rendered HTML. */
 export const HOME_INTRO =
-  'Medically frail Medicaid members are exempt from the H.R.1 work requirements. States publish ' +
-  'the codes they use to identify them; this site puts those lists side by side. It does not ' +
-  'decide anyone’s eligibility.'
+  'Medically frail Medicaid members are excluded from the H.R.1 work requirements. States ' +
+  'publish the codes they use to identify them; this site puts those lists side by side. It does ' +
+  'not decide anyone’s eligibility.'
 
 /**
  * The footer of every page, in the Vue app and the server-rendered HTML, followed by a link to
