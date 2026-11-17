@@ -40,6 +40,7 @@ import { ApiError } from '../../lib/api'
 import { usePageMeta } from '../../lib/page-meta'
 import { usePublicState } from '../../lib/public-states'
 import AboutLinkView from '../../components/about/AboutLinkView.vue'
+import InfoTip from '../../components/ui/InfoTip.vue'
 
 // One state's page (roadmap M3 step 3): summary, counts, its categories and how they map to
 // the federal ones, the states with the most similar lists (M5 step 7), the source documents,
@@ -139,7 +140,9 @@ function categoryName(category: string, subcategory: string) {
         <h2 id="summary-heading" class="sr-only">Summary</h2>
         <dl class="grid gap-4 sm:grid-cols-3">
           <div class="rounded-lg border border-border bg-surface p-4">
-            <dt class="text-sm text-muted-foreground">Entries in the state’s list</dt>
+            <dt class="text-sm text-muted-foreground">
+              Entries in the state’s list<InfoTip label="entries" :text="ENTRY_DEFINITION" />
+            </dt>
             <dd class="text-2xl font-semibold tabular-nums">
               {{ formatCount(published.totalEntries) }}
             </dd>
@@ -160,7 +163,6 @@ function categoryName(category: string, subcategory: string) {
             </dd>
           </div>
         </dl>
-        <p class="max-w-prose text-sm text-muted-foreground">{{ ENTRY_DEFINITION }}</p>
       </section>
 
       <section aria-labelledby="counts-heading" class="space-y-4">

@@ -123,7 +123,7 @@ const announcement = computed(() => {
   <div class="space-y-6">
     <header class="max-w-prose space-y-2">
       <h1 class="font-display text-4xl font-medium text-heading">{{ SEARCH_PAGE.heading }}</h1>
-      <p>{{ SEARCH_PAGE.intro }}</p>
+      <p>{{ SEARCH_PAGE.lead }}</p>
     </header>
 
     <form role="search" class="space-y-4" @submit.prevent="commitNow('replace')">

@@ -28,7 +28,12 @@ export interface AboutSection {
   id: string
   heading: string
   blocks: readonly AboutBlock[]
+  /** Shown closed, as a disclosure under its heading (a long reference section). */
+  collapsed?: boolean
 }
+
+/** The summary of a collapsed section's disclosure. */
+export const SECTION_SHOW_TEXT = 'Show the details'
 
 export interface InfoPage {
   path: string
@@ -280,6 +285,14 @@ const aboutSections: AboutSection[] = [
           'placed by its CCSR group instead. Until an admin approves a mapping, the site places ' +
           'codes automatically by their CCSR group.',
       ),
+      p(
+        'How an entry gets its federal category: where the state’s list names a federal ' +
+          'category for a code, this site uses it (“Stated by the state”). Otherwise the entry ' +
+          'takes the federal category of the comparison category its code falls in; a code in no ' +
+          'comparison category takes the federal category mapped to the state’s own category. ' +
+          'Where another state’s list names a federal category for the same code, or for codes ' +
+          'like it, this site may suggest that one instead (“suggested from” that state’s list).',
+      ),
       dl(
         {
           term: reviewStatusText(true),
@@ -373,6 +386,7 @@ const aboutSections: AboutSection[] = [
   {
     id: 'downloads',
     heading: 'What the downloads contain',
+    collapsed: true,
     blocks: [
       p(
         'Each state page offers its list as CSV and JSON. Every row is one entry of the ' +
@@ -569,10 +583,10 @@ export const disclaimerPage: InfoPage = {
       blocks: [
         p(
           'Lists are checked and reviewed before they are published, but mistakes can happen and ' +
-            'states change their lists. The site’s own categories, mappings and numbers are its ' +
-            'own work, explained on the ',
-          { text: 'About and methodology', href: '/about' },
-          ' page. The site is provided as is, without warranty. ',
+            'states change their lists. The site’s categories, mappings and numbers are its own ' +
+            'work (see ',
+          { text: 'About', href: '/about' },
+          '). The site is provided as is, without warranty. ',
           { text: 'Report a problem', href: REPORT_PROBLEM_URL },
           ' if you find one.',
         ),
@@ -724,7 +738,7 @@ export const learnMore = {
   home: { text: 'How this site counts codes', href: '/about#matching' },
   overview: { text: 'How these numbers are worked out', href: '/about#coverage' },
   categories: { text: 'How the comparison categories were built', href: '/about#categories' },
-  stateCategories: { text: 'How mapping and review work', href: '/about#review' },
+  stateCategories: { text: 'How categories are assigned', href: '/about#review' },
   similarity: { text: 'How similarity is worked out', href: '/about#similarity' },
   downloads: { text: 'What each column means', href: '/about#downloads' },
   badges: { text: 'More on the state’s rule and “inferred”', href: '/about#badges' },

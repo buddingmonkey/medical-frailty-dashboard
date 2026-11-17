@@ -47,8 +47,6 @@ describe('info pages', () => {
     await renderApp('/disclaimer')
     const main = screen.getByRole('main')
     expect(within(main).getByText(/Nothing on this site is legal advice/)).toBeTruthy()
-    expect(
-      within(main).getByRole('link', { name: 'About and methodology' }).getAttribute('href'),
-    ).toBe('/about')
+    expect(within(main).getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about')
   })
 })

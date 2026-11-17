@@ -5,6 +5,7 @@ import {
   type AboutLink,
   type InfoPage,
   isExternalHref,
+  SECTION_SHOW_TEXT,
 } from '@mfcd/shared'
 
 import { type Html, html } from './html'
@@ -77,7 +78,14 @@ export function infoPageParts(page: InfoPage, origin: string): PageParts {
         (s) =>
           html`<section aria-labelledby="${s.id}">
             <h2 id="${s.id}">${s.heading}</h2>
-            ${blocksHtml(s.blocks)}
+            ${
+              s.collapsed
+                ? html`<details>
+                    <summary>${SECTION_SHOW_TEXT}</summary>
+                    ${blocksHtml(s.blocks)}
+                  </details>`
+                : blocksHtml(s.blocks)
+            }
           </section>`,
       )}`,
   }

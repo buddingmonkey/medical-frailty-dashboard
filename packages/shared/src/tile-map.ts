@@ -1,6 +1,7 @@
 import {
   coverageBand,
   type CoverageBand,
+  NOT_REVIEWED_NOTE,
   coverageBandLabels,
   type OverviewCategory,
   overviewCellLabel,
@@ -194,15 +195,15 @@ export const tileMapCaption = (category: OverviewCategory): string =>
     ? `${category.label}: share of the category’s diagnosis codes that each state’s list includes`
     : `${category.label}: each state’s share of the entries any state lists`
 
-/** Under the map when a tile carries the * mark. */
-export const TILE_MAP_NOT_REVIEWED_NOTE =
-  '* Not yet reviewed: some of the state’s entries were put in this category automatically (by ' +
-  'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
-  'own categories. The number may change after review.'
+/** Under the map when a tile carries the * mark: the overview's note. */
+export const TILE_MAP_NOT_REVIEWED_NOTE = NOT_REVIEWED_NOTE
 
-/** The Map tab's introduction, in the Vue page and the server-rendered HTML. */
+/** The Map tab's introduction, in the Vue page and the server-rendered HTML (shortened 2026-11-17). */
 export const TILE_MAP_INTRO =
-  'Pick a comparison category to see every state at once. Each number is the share of the ' +
-  'category’s billable ICD-10-CM diagnosis codes that the state’s list includes (for a category ' +
-  'with no reference list of diagnosis codes, the share of the entries any state lists there); ' +
-  'select a state to see its codes in the category.'
+  'Pick a category to see every state’s share of its diagnosis codes. Select a state to see its ' +
+  'codes.'
+
+/** Under the map for a † category (`coverageBasis` "union"). */
+export const TILE_MAP_UNION_NOTE =
+  '† This category has no reference list of diagnosis codes, so each number is the share of the ' +
+  'entries any state lists there.'

@@ -379,9 +379,8 @@ export const DRILL_RULES_HEADING = 'State rules'
 
 /** Above the table: what the counts count, and what a group is. */
 export const DRILL_COUNT_NOTE =
-  'A state includes a code when its list has the code itself or a wildcard or range that ' +
-  'covers it. The second number is the number of states with a list on this site. Codes are ' +
-  'grouped by their first 3 characters (ICD-10-CM) or by code system.'
+  'A state includes a code when its list has it or a wildcard or range that covers it, out of ' +
+  'the states with a list on this site.'
 
 export const drillCountText = (n: number, m: number): string =>
   `${formatCount(n)} of ${formatCount(m)} ${m === 1 ? 'state' : 'states'}`
@@ -403,11 +402,6 @@ export const DRILL_NOBODY = 'No state includes it'
 
 /** The checkbox that adds the category's codes no state includes. */
 export const DRILL_UNIVERSE_LABEL = 'Also show codes no state includes'
-
-/** The details panel's placeholder. */
-export const DRILL_DETAILS_PLACEHOLDER =
-  'Choose “Details” on a code to see which states include it, how (listed or covered), and ' +
-  'whether it is enough by itself.'
 
 /** In the details panel, under "Not listed". */
 export const DRILL_NOT_LISTED_NOTE = 'States with a list that do not include it'

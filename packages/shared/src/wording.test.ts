@@ -23,27 +23,39 @@ import {
   drillUniverseNote,
 } from './drill'
 import {
+  NOT_REVIEWED_NOTE,
   OVERVIEW_HEADING,
+  OVERVIEW_READING_HINT,
   overviewReadingNotes,
   OVERVIEW_NOT_REVIEWED,
   overviewOrderAnnouncement,
 } from './overview'
 import {
+  FEDERAL_OVERLAP_NOTE,
   FOOTER_TEXT,
   HOME_INTRO,
+  MAPPINGS_NOT_REVIEWED_NOTE,
   pageTitles,
   stateCategoriesIntro,
   statesWithListText,
 } from './public'
 import { qualificationBasisLabels, qualificationHelp, qualificationLabels } from './qualification'
 import {
+  SIMILARITY_HELP,
+  SIMILARITY_NOTE,
   STATES_COMPARE_BASIS_NOTE,
   STATES_COMPARE_INTRO,
   STATES_COMPARE_NONE_LABEL,
   statesCompareAllLabel,
   statesCompareOnlyLabel,
 } from './states-compare'
-import { TILE_MAP_HEADING, TILE_MAP_INTRO, TILE_MAP_NONE } from './tile-map'
+import {
+  TILE_MAP_HEADING,
+  TILE_MAP_INTRO,
+  TILE_MAP_NONE,
+  TILE_MAP_NOT_REVIEWED_NOTE,
+  TILE_MAP_UNION_NOTE,
+} from './tile-map'
 
 // The plain-language pass (M6 step 3b): public words say what the data is (what a state's list
 // includes), never that a code "covers" a member or that a member "qualifies"; every number
@@ -67,10 +79,20 @@ describe('public wording', () => {
 
   it('says the overview share counts billable ICD-10-CM codes only', () => {
     const [first] = overviewReadingNotes
-    expect(first).toMatch(/billable ICD-10-CM/)
+    expect(OVERVIEW_READING_HINT).toMatch(/billable ICD-10-CM/)
     expect(first).toMatch(/CPT/)
     expect(overviewReadingNotes.join(' ')).toMatch(/plain average/)
-    expect(TILE_MAP_INTRO).toMatch(/no reference list/)
+    expect(overviewReadingNotes.join(' ')).toContain(
+      'It is not a measure of how many people the list reaches.',
+    )
+    expect(TILE_MAP_UNION_NOTE).toMatch(/no reference list/)
+    expect(TILE_MAP_INTRO.split(/(?<=\.) /)).toHaveLength(2)
+  })
+
+  it('says "Not yet reviewed" in one shared note on the overview and the map', () => {
+    expect(NOT_REVIEWED_NOTE).toMatch(/^\* Not yet reviewed/)
+    expect(overviewReadingNotes).toContain(NOT_REVIEWED_NOTE)
+    expect(TILE_MAP_NOT_REVIEWED_NOTE).toBe(NOT_REVIEWED_NOTE)
   })
 
   it('says what "n of N" counts: states that include it, out of states with a list', () => {
@@ -88,10 +110,12 @@ describe('public wording', () => {
 
   it('names the site’s own categories "comparison categories"', () => {
     expect(CATEGORIES_HEADING).toBe('Comparison categories')
-    expect(CATEGORIES_INTRO).toMatch(/this site’s own grouping/)
+    expect(CATEGORIES_INTRO).toMatch(/this site’s own categories/i)
+    expect(CATEGORIES_INTRO).toMatch(/not a state’s or CMS’s categories/)
     expect(STATES_COMPARE_NONE_LABEL).toBe('Not in any comparison category')
-    expect(stateCategoriesIntro('Georgia')).toMatch(/comparison category/)
-    expect(stateCategoriesIntro('Georgia')).not.toMatch(/\bour\b|\bwe\b/)
+    expect(stateCategoriesIntro('Georgia')).toBe(
+      'How Georgia’s categories line up with the five federal categories in the law.',
+    )
   })
 
   it('labels the two federal categories that are not in the law', () => {
@@ -103,7 +127,9 @@ describe('public wording', () => {
   })
 
   it('states the state-comparison rules, including the "State doesn’t say" rule', () => {
-    expect(STATES_COMPARE_INTRO).toMatch(/not treated as a difference/)
+    expect(STATES_COMPARE_INTRO).toMatch(/“State doesn’t say” is not counted as a difference/)
+    expect(SIMILARITY_NOTE).not.toMatch(/Jaccard/)
+    expect(SIMILARITY_HELP).toMatch(/Jaccard/)
     expect(STATES_COMPARE_BASIS_NOTE).toMatch(/different basis/)
     expect(statesCompareOnlyLabel('Georgia')).toBe('Only Georgia includes')
     expect(statesCompareAllLabel(2)).toBe('Both include')
@@ -111,9 +137,11 @@ describe('public wording', () => {
   })
 
   it('gives the home page and footer context and a disclaimer', () => {
-    expect(HOME_INTRO).toMatch(/does not decide anyone’s eligibility/)
+    expect(HOME_INTRO).toMatch(/It does not decide anyone’s eligibility\.$/)
     expect(FOOTER_TEXT).toMatch(/No patient data/)
-    expect(FOOTER_TEXT).toMatch(/eligibility/)
+    expect(FOOTER_TEXT).toMatch(/Not an official source or an eligibility decision/)
+    expect(MAPPINGS_NOT_REVIEWED_NOTE).toMatch(/^\* /)
+    expect(FEDERAL_OVERLAP_NOTE).toMatch(/more than one category/)
     expect(statesWithListText(4)).toBe('4 of the 50 states and DC have a list on this site.')
     expect(pageTitles.home).toMatch(/medical frailty code lists/)
   })

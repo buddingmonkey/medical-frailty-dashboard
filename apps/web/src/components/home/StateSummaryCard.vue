@@ -2,6 +2,7 @@
 import {
   type CodeSystem,
   codeSystemLabels,
+  ENTRY_DEFINITION,
   type FederalCategory,
   FEDERAL_OVERLAP_NOTE,
   federalCategoryInfo,
@@ -16,7 +17,11 @@ import {
 import { computed, useId } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import InfoTip from '../ui/InfoTip.vue'
+
 // The hover/focus card next to the map: one state's counts by code system and federal category.
+// What an entry is sits in a tooltip on "entries"; a * on the federal heading points to the
+// not-reviewed footnote (copy review, 2026-11-17).
 
 const props = defineProps<{ state: PublicStateSummary }>()
 
@@ -55,7 +60,7 @@ const byCategory = computed(() => {
         <span class="font-semibold tabular-nums">{{
           formatCount(state.published.totalEntries)
         }}</span>
-        entries
+        entries<InfoTip label="entries" :text="ENTRY_DEFINITION" />
       </p>
       <p v-if="state.published.sourceDate" class="text-sm">
         {{ SOURCE_DATE_HEADING }}: {{ formatDay(state.published.sourceDate) }}
@@ -72,7 +77,11 @@ const byCategory = computed(() => {
       </div>
 
       <div>
-        <h3 class="text-sm font-semibold text-heading">By federal category</h3>
+        <h3 class="text-sm font-semibold text-heading">
+          By federal category<span v-if="!state.published.mappingsConfirmed" aria-hidden="true"
+            >*</span
+          >
+        </h3>
         <dl class="mt-1 space-y-0.5 text-sm">
           <div v-for="row in byCategory" :key="row.label" class="flex justify-between gap-4">
             <dt>{{ row.label }}</dt>

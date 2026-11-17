@@ -52,8 +52,7 @@ function picker(categories: readonly OverviewCategory[], current: OverviewCatego
 function overlapsTables(data: OverlapsResponse): Html {
   if (data.intersections.length === 0) return html`<p>${OVERLAPS_EMPTY}</p>`
   const names = new Map(data.states.map((s) => [s.id, s.name]))
-  return html`<p>${OVERLAPS_COUNT_NOTE}</p>
-    <table>
+  return html`<table>
       <caption>
         ${overlapsCaption(data.category.label)}
       </caption>
@@ -82,6 +81,7 @@ function overlapsTables(data: OverlapsResponse): Html {
         )}
       </tbody>
     </table>
+    <p>${OVERLAPS_COUNT_NOTE}</p>
     <table>
       <caption>
         ${overlapsStatesCaption(data.category.label)}

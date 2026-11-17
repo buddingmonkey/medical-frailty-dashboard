@@ -314,12 +314,24 @@ export function overviewOrderAnnouncement(
 /** The page's heading (the browser title is `pageTitles.overview`). */
 export const OVERVIEW_HEADING = 'How much of each category each state lists'
 
-/** Under the heading, in the Vue page and the server-rendered HTML. */
+/** Under the heading, in the Vue page and the server-rendered HTML (shortened 2026-11-17). */
 export const OVERVIEW_INTRO =
-  'Each row is a state; each column is one of this site’s comparison categories, grouped under ' +
-  'the federal category it belongs to. A number is the share of the category’s diagnosis codes ' +
-  'that the state’s list includes (see “Reading this table” below). Select a number to open ' +
-  'that category’s codes with the state highlighted.'
+  'The share of each category’s diagnosis codes that each state lists. Select a number to see ' +
+  'the codes.'
+
+/** Above the table, outside the "Reading this table" disclosure: what a number counts. */
+export const OVERVIEW_READING_HINT =
+  'Each number is the share of the category’s billable ICD-10-CM diagnosis codes that the ' +
+  'state’s list includes, either listed one by one or covered by a wildcard or range.'
+
+/**
+ * The "* Not yet reviewed" note, under the overview table and the map (one wording since
+ * 2026-11-17; docs/legal-review.md, Part 2).
+ */
+export const NOT_REVIEWED_NOTE =
+  '* Not yet reviewed: some of the state’s entries were put in the category automatically (by ' +
+  'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
+  'own categories. The number may change after review.'
 
 /** The table's caption. */
 export const OVERVIEW_CAPTION =
@@ -337,11 +349,12 @@ export const OVERVIEW_DESCRIPTION =
   'Every state’s Medicaid medical frailty code list against the same comparison categories: the ' +
   'share of each category’s diagnosis codes that the state’s list includes.'
 
-/** "Reading this table", the same words in the Vue page and the server-rendered HTML. */
+/**
+ * "Reading this table" (a disclosure under `OVERVIEW_READING_HINT`), the same words in the Vue
+ * page and the server-rendered HTML.
+ */
 export const overviewReadingNotes: readonly string[] = [
-  'Each number is the share of the category’s billable ICD-10-CM diagnosis codes that the ' +
-    'state’s list includes, either listed one by one or covered by a wildcard or range. Entries ' +
-    'in other code systems (CPT, HCPCS, drug classes) are not counted here, so a state that ' +
+  'Entries in other code systems (CPT, HCPCS, drug classes) are not counted here, so a state that ' +
     'relies on service codes shows a low number. A category’s codes come from the CCSR groups ' +
     '(AHRQ’s Clinical Classifications Software Refined) this site assigned to it.',
   'Categories marked † have no reference list of diagnosis codes (no CCSR groups), so their ' +
@@ -352,7 +365,5 @@ export const overviewReadingNotes: readonly string[] = [
   'Overall is the plain average of the state’s percentages across every category (each ' +
     'category counts the same, whatever its size). It is not a measure of how many people the ' +
     'list reaches.',
-  '* Not yet reviewed: some of this state’s entries were put in the category automatically (by ' +
-    'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
-    'own categories. The number may change after review.',
+  NOT_REVIEWED_NOTE,
 ]

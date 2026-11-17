@@ -237,7 +237,9 @@ describe('GET / (server-rendered)', () => {
     // The plain-language pass (M6 step 3b): the intro, the law, and the Vue footer's words.
     expect(app).toContain(`<p>${HOME_INTRO} <a href="/about#matching">`)
     expect(app).toContain(`<a href="${STATUTE_URL}" rel="noopener noreferrer external">`)
-    expect(app).toMatch(/<footer>[\s\S]*<p>[^<]*No patient data\.<\/p>/)
+    expect(app).toMatch(
+      /<footer>[\s\S]*<p>[^<]*No patient data\. <a href="\/disclaimer">Disclaimer<\/a><\/p>/,
+    )
     expect(app).toContain(FOOTER_TEXT)
     expect(jsonLd(html)[0]).toMatchObject({
       '@type': 'WebSite',

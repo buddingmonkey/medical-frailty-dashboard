@@ -3,6 +3,7 @@ import {
   formatCount,
   pageTitles,
   parseStatesPair,
+  SIMILARITY_HELP,
   SIMILARITY_LABEL,
   similarityText,
   SIMILARITY_NOTE,
@@ -37,6 +38,7 @@ import { ApiError } from '../../../lib/api'
 import { usePageMeta } from '../../../lib/page-meta'
 import { useStatesCompare } from '../../../lib/public-states-compare'
 import AboutLinkView from '../../../components/about/AboutLinkView.vue'
+import InfoTip from '../../../components/ui/InfoTip.vue'
 
 // Compare 2–4 states (roadmap M5 step 7): `/compare/states/ga-vs-mt`. The path holds the states
 // in column order; the query holds "Show only differences" (`diff=0` turns it off) and the page.
@@ -159,7 +161,9 @@ function open(next: string[]) {
               v-if="data.summary.similarity"
               class="rounded-lg border border-border bg-surface p-3"
             >
-              <dt class="text-sm text-muted-foreground">{{ SIMILARITY_LABEL }}</dt>
+              <dt class="text-sm text-muted-foreground">
+                {{ SIMILARITY_LABEL }}<InfoTip :label="SIMILARITY_LABEL" :text="SIMILARITY_HELP" />
+              </dt>
               <dd class="text-2xl font-semibold tabular-nums">
                 {{ similarityText(data.summary.similarity.jaccard) }}
               </dd>

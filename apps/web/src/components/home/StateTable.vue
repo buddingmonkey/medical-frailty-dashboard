@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  ENTRY_DEFINITION,
   formatCount,
   formatDay,
   type PublicStateSummary,
@@ -7,6 +8,8 @@ import {
   stateStatusLabels,
 } from '@mfcd/shared'
 import { RouterLink } from 'vue-router'
+
+import InfoTip from '../ui/InfoTip.vue'
 
 // The map's data as a table: for screen readers, small screens and anyone who prefers it.
 
@@ -23,7 +26,9 @@ defineProps<{ states: readonly PublicStateSummary[] }>()
         <tr>
           <th scope="col" class="py-2 pr-4">State</th>
           <th scope="col" class="py-2 pr-4">Status</th>
-          <th scope="col" class="py-2 pr-4 text-right">Entries</th>
+          <th scope="col" class="py-2 pr-4 text-right">
+            Entries<InfoTip label="entries" :text="ENTRY_DEFINITION" />
+          </th>
           <th scope="col" class="py-2">{{ SOURCE_DATE_HEADING }}</th>
         </tr>
       </thead>

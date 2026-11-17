@@ -11,6 +11,7 @@ import {
   compareTabs,
   descriptionSourceText,
   type DrillRow,
+  FOOTER_DISCLAIMER_LINK,
   FOOTER_TEXT,
   NO_DESCRIPTION,
   SHARE_IMAGE,
@@ -99,7 +100,7 @@ export function footerHtml(dataUpdatedAt: string | null): Html {
       </ul>
     </nav>
     ${dataUpdatedAt ? html`<p>${dataUpdatedText(dataUpdatedAt)}</p>` : null}
-    <p>${FOOTER_TEXT}</p>
+    <p>${FOOTER_TEXT} ${linkHtml(FOOTER_DISCLAIMER_LINK)}</p>
     <p>${statuteLink()}</p>
     <p>${AMA_NOTICE_SHORT}</p>
   </footer>`
