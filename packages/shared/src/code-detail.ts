@@ -129,12 +129,12 @@ export const codeDetailStatusHelp: Record<CodeDetailStatus, string> = {
  */
 export const CODE_DETAIL_CONFIRMED = {
   heading: 'Included',
-  help: 'Listed, or covered by a wildcard, range or parent code.',
+  help: 'These states’ lists include this code, either listed itself or covered by a wildcard, a range or a parent code.',
 } as const
 
 export const CODE_DETAIL_OTHERS = {
   heading: 'Not included',
-  help: 'More specific codes alone don’t count.',
+  help: 'These states’ lists do not include this code. Listing only more specific codes under it does not count.',
 } as const
 
 export const codeDetailTitle = (display: string): string =>

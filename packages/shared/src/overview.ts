@@ -316,8 +316,9 @@ export const OVERVIEW_HEADING = 'How much of each category each state lists'
 
 /** Under the heading, in the Vue page and the server-rendered HTML (shortened 2026-11-17). */
 export const OVERVIEW_INTRO =
-  'The share of each category’s diagnosis codes that each state lists. Select a number to see ' +
-  'the codes.'
+  'Each row is a state, and each column is one of this site’s comparison categories, grouped ' +
+  'under its federal category. Select a number to open that category’s codes with the state ' +
+  'highlighted.'
 
 /** Above the table, outside the "Reading this table" disclosure: what a number counts. */
 export const OVERVIEW_READING_HINT =
@@ -329,9 +330,9 @@ export const OVERVIEW_READING_HINT =
  * 2026-11-17; docs/legal-review.md, Part 2).
  */
 export const NOT_REVIEWED_NOTE =
-  '* Not yet reviewed: some of the state’s entries were put in the category automatically (by ' +
-  'the CCSR group of their code), and this site has not yet checked that against the state’s ' +
-  'own categories. The number may change after review.'
+  '* Not yet reviewed means that some of the state’s entries were placed in the category ' +
+  'automatically, by the CCSR group of their code, and this site has not yet checked those ' +
+  'placements against the state’s own categories. The number may change after review.'
 
 /** The table's caption. */
 export const OVERVIEW_CAPTION =

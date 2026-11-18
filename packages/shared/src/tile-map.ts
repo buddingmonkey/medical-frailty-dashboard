@@ -200,8 +200,8 @@ export const TILE_MAP_NOT_REVIEWED_NOTE = NOT_REVIEWED_NOTE
 
 /** The Map tab's introduction, in the Vue page and the server-rendered HTML (shortened 2026-11-17). */
 export const TILE_MAP_INTRO =
-  'Pick a category to see every state’s share of its diagnosis codes. Select a state to see its ' +
-  'codes.'
+  'Choose a comparison category to see, for every state, the share of its diagnosis codes that ' +
+  'the state’s list includes. Select a state to see its codes in that category.'
 
 /** Under the map for a † category (`coverageBasis` "union"). */
 export const TILE_MAP_UNION_NOTE =

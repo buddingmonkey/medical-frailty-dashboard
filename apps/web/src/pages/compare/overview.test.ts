@@ -298,7 +298,7 @@ describe('overview matrix', () => {
     ).toEqual(['75% or more', '25–74%', '1–24%', 'None listed', 'No list on this site yet'])
     const notes = screen.getByRole('region', { name: 'Reading this table' })
     expect(notes.textContent).toContain('no matter which of the state’s own categories')
-    expect(notes.textContent).toContain('* Not yet reviewed:')
+    expect(notes.textContent).toContain('* Not yet reviewed means')
     // The Single codes tab replaces the old link to the code table.
     expect(screen.queryByRole('link', { name: /compare single codes/i })).toBeNull()
   })
