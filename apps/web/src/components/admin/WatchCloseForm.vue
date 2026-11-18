@@ -17,8 +17,9 @@ const note = ref('')
 const problem = ref(false)
 /** What closing does, in the info buttons' tooltips. */
 const help = {
-  outcome: 'Either way the item moves to History; a repeating item opens its next one.',
-  note: 'Required. Kept with the item in History.',
+  outcome:
+    'Both outcomes move the item to History. A repeating item then opens its next occurrence.',
+  note: 'A resolution note is required. It is kept with the item in History.',
 }
 
 function submit() {
@@ -30,7 +31,7 @@ function submit() {
 <template>
   <form class="mt-3 space-y-3 rounded border border-border p-3" novalidate @submit.prevent="submit">
     <p v-if="problem" :id="`${id}-problem`" role="alert" class="text-danger">
-      Write a resolution note: what happened, and how you checked.
+      Enter a resolution note that says what happened and how you checked it.
     </p>
     <fieldset class="flex items-center gap-4">
       <legend class="sr-only">Outcome</legend>

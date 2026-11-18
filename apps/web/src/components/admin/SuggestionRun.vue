@@ -94,21 +94,26 @@ const counts = computed(() => {
       Check the automatic suggestions before saving
     </h3>
     <p v-if="stale" role="alert" class="text-danger">
-      Something changed since the preview. This is the new preview: check it and save again.
+      The data changed after the preview was made, so nothing was saved. Check this new preview,
+      then save again.
     </p>
-    <p v-if="preview.isPending.value" role="status">Working out the suggestions…</p>
+    <p v-if="preview.isPending.value" role="status">Preparing the suggestions…</p>
     <p v-else-if="preview.error.value" role="alert" class="text-danger">
-      Could not preview: {{ preview.error.value.message }}
+      The preview could not be prepared: {{ preview.error.value.message }}
     </p>
     <template v-else-if="preview.data.value">
       <p v-if="preview.data.value.reference.length === 0">
-        No published list names federal categories by code yet.
-        <RouterLink to="/admin/guide" class="text-link underline">How to add one</RouterLink>
+        No published list assigns federal categories to its codes yet, so there is nothing to
+        suggest from.
+        <RouterLink to="/admin/guide" class="text-link underline"
+          >Read how to add one in the Guide.</RouterLink
+        >
       </p>
       <template v-else>
         <p>
-          Suggestions come from {{ preview.data.value.reference.join(' and ') }}’s list, for
-          {{ entriesText(preview.data.value.entries) }} of {{ stateName }} with ICD-10-CM codes.
+          The suggestions come from {{ preview.data.value.reference.join(' and ') }}’s list and
+          apply to {{ entriesText(preview.data.value.entries) }} of {{ stateName }} that have
+          ICD-10-CM codes.
         </p>
         <table class="border-collapse text-left text-sm">
           <caption class="text-left text-muted-foreground">
@@ -184,7 +189,7 @@ const counts = computed(() => {
       </template>
     </template>
     <p v-if="save.error.value && !stale" role="alert" class="text-danger">
-      Could not save: {{ save.error.value.message }}
+      The suggestions were not saved: {{ save.error.value.message }}
     </p>
     <div class="flex flex-wrap items-center gap-3">
       <button
@@ -197,7 +202,9 @@ const counts = computed(() => {
         Save suggestions
       </button>
       <button type="button" :class="button" @click="emit('cancel')">Cancel</button>
-      <p :id="`${id}-warn`" class="text-sm">Public pages change at once.</p>
+      <p :id="`${id}-warn`" class="text-sm">
+        Saving applies exactly this preview. Public pages change at once.
+      </p>
     </div>
   </section>
 </template>

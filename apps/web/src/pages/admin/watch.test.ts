@@ -236,7 +236,7 @@ describe('/admin/watch', () => {
     await user.click(screen.getByRole('button', { name: 'Close item' }))
 
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toContain('Write a resolution note')
+    expect(alert.textContent).toContain('Enter a resolution note')
     const note = screen.getByLabelText('Resolution note')
     expect(note.getAttribute('aria-invalid')).toBe('true')
     expect(note.getAttribute('aria-describedby')?.split(' ')).toContain(alert.id)
@@ -246,7 +246,7 @@ describe('/admin/watch', () => {
     await user.type(screen.getByLabelText('Resolution note'), 'Already on Free.')
     await user.click(screen.getByRole('button', { name: 'Close item' }))
 
-    expect(await screen.findByText('Nothing to watch right now.')).toBeTruthy()
+    expect(await screen.findByText('There are no open items right now.')).toBeTruthy()
     expect(api.puts).toEqual([
       { id: '2', body: { action: 'close', status: 'dismissed', resolutionMd: 'Already on Free.' } },
     ])

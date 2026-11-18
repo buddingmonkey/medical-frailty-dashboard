@@ -85,11 +85,13 @@ async function onFile(event: Event) {
 
   const type = fileTypeFromName(file.name)
   if (type === null) {
-    fileProblem.value = 'Use a PDF, Excel (.xlsx), CSV, JSON or text file.'
+    fileProblem.value =
+      'This file type is not accepted. Choose a PDF, Excel (.xlsx), CSV, JSON or text file.'
     return
   }
   if (file.size > MAX_SOURCE_BYTES) {
-    fileProblem.value = 'This file is over 25 MB, the limit for source files.'
+    fileProblem.value =
+      'This file is over 25 MB, the limit for source files. Choose a smaller file.'
     return
   }
 
@@ -105,7 +107,7 @@ async function onFile(event: Event) {
     picked.value = { name: file.name, type, bytes, sha256, duplicate: items[0] ?? null }
     title.value = file.name.slice(0, file.name.lastIndexOf('.'))
   } catch {
-    fileProblem.value = 'Could not read or check this file. Try again.'
+    fileProblem.value = 'This file could not be read or checked. Try again.'
   } finally {
     checking.value = false
   }
@@ -198,7 +200,9 @@ const inputClass =
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Source files</h2>
       <p class="max-w-prose text-muted-foreground">
-        Store the state’s original file. Its title, URL and date become the public citation.
+        Store the state’s original file here. It is kept unchanged as the record of what the state
+        published, and its title, URL and date become the citation on public pages. Then open the
+        file in Read and map.
       </p>
     </div>
 
@@ -232,7 +236,7 @@ const inputClass =
             @change="onFile"
           />
           <p class="mt-1 text-sm text-muted-foreground">
-            PDF, Excel (.xlsx), CSV, JSON or text; up to 25 MB.
+            Choose a PDF, Excel (.xlsx), CSV, JSON or text file of up to 25 MB.
           </p>
         </div>
 
@@ -272,7 +276,7 @@ const inputClass =
             <input :id="`${id}-date`" v-model="publisherDate" type="date" :class="inputClass" />
           </div>
           <p v-if="upload.error.value" role="alert" class="text-danger">
-            Could not upload: {{ upload.error.value.message }}
+            The file was not uploaded: {{ upload.error.value.message }}
           </p>
           <button
             type="submit"
@@ -288,10 +292,10 @@ const inputClass =
 
       <p v-if="sourcesQuery.isPending.value" class="text-muted-foreground">Loading…</p>
       <p v-else-if="sourcesQuery.isError.value" role="alert" class="text-foreground">
-        Could not load the stored files. Reload the page to try again.
+        The stored files could not be loaded. Reload the page to try again.
       </p>
       <p v-else-if="(sourcesQuery.data.value ?? []).length === 0" class="text-muted-foreground">
-        No files stored for {{ stateName }} yet.
+        No files are stored for {{ stateName }} yet.
       </p>
       <div v-else class="overflow-x-auto">
         <table class="w-full border-collapse text-left text-sm">

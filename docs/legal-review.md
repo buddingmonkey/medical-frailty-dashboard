@@ -101,11 +101,11 @@ re-dated? It says "This note is not legal advice."
 
 ### 5. Disclaimer, footer and "not an eligibility decision" wording
 
-Footer text on every page (**Changed 2026-11-17**, shortened from 42 to 16 words, followed by a
-"Disclaimer" link):
+Footer text on every page (**Changed 2026-11-17**, shortened from 42 to 25 words in three full
+sentences, followed by a "Disclaimer" link):
 
-> Copied from states’ published documents. Not an official source or an eligibility decision.
-> No patient data. [Disclaimer]
+> Codes are copied from each state’s published documents. This site is not an official source
+> and does not determine eligibility. It holds no patient data. [Disclaimer]
 
 Old text: "Every code comes from a state’s own published documents, linked on each state’s page.
 This site is not a state or federal source and does not determine anyone’s eligibility; check
@@ -117,7 +117,8 @@ The home page intro still ends: "It does not decide anyone’s eligibility." (in
 
 The Disclaimer page has four sections: Not an official source, Not an eligibility decision, Not
 legal advice, and Accuracy. Full text: appendix. Accuracy **Changed 2026-11-17**: its About
-cross-reference is shorter; "provided as is, without warranty" is unchanged.
+cross-reference names the page "About" instead of "About and methodology"; "provided as is,
+without warranty" is unchanged.
 
 **Question:** Approve, or change the footer and the Disclaimer page?
 
@@ -212,7 +213,9 @@ Every string below is live and provisional. Please mark any you want changed.
 
 > **2026-11-17: wording rewritten for brevity.** A copy review cut the public pages' intros and
 > notes. None of the old wording had been vetted by legal either, so the project lead had the
-> new text applied now. **Legal to sign off on all of it**, changed or not. Each changed item is
+> new text applied now. A second pass the same day set the cut text in complete, formal
+> sentences where the first had left fragments; the text below is the result of both passes,
+> and each "Old" is the text live before 17 November. **Legal to sign off on all of it**, changed or not. Each changed item is
 > marked "Changed 2026-11-17". Every disclaimer keeps its substance: not an official source, not
 > an eligibility decision, not legal advice, no patient data, and the AMA notice. The AMA
 > notice, the code page's CPT note and the CPT licensing rule are unchanged.
@@ -228,9 +231,10 @@ Every string below is live and provisional. Please mark any you want changed.
 
 - Title: "Medical Frailty Coding Dashboard"
 - Tagline: "Compare the code lists US states use to mark Medicaid members as medically frail."
-- Intro (**Changed 2026-11-17**): "Medically frail Medicaid members are excluded from the H.R.1
-  work requirements. States publish the codes they use to identify them; this site puts those
-  lists side by side. It does not decide anyone’s eligibility." Old: "Under H.R.1 (Pub. L.
+- Intro (**Changed 2026-11-17**): "Medicaid members who are medically frail are excluded from
+  the H.R.1 work requirements. States publish lists of the diagnosis and service codes they use
+  to identify these members, and this site places those lists side by side. It does not decide
+  anyone’s eligibility." Old: "Under H.R.1 (Pub. L.
   119-21), Medicaid members who are medically frail are excluded from the new community
   engagement (work) requirements. States are publishing lists of the diagnosis and service codes
   they use to identify medically frail members. This site puts those lists side by side so you
@@ -240,11 +244,12 @@ Every string below is live and provisional. Please mark any you want changed.
   state’s list: a single code, or a group of codes written with a wildcard or a range." Now a
   tooltip on the word "entries" (home card and table, All states table, state page) instead of a
   paragraph.
-- Federal count notes (**Changed 2026-11-17**), on the home card and the state page: "Codes can
-  count under more than one category." (old: "A code can count under more than one federal
-  category, so these numbers can add up to more than the number of entries."). On the home card,
-  when some mappings are not reviewed, a * on "By federal category" and the footnote "* Includes
-  automatic suggestions, not yet reviewed." (old: "This site has not yet reviewed how all of this
+- Federal count notes (**Changed 2026-11-17**), on the home card and the state page: "A code can
+  count under more than one federal category, so these counts can add up to more than the number
+  of entries." (old: "A code can count under more than one federal category, so these numbers
+  can add up to more than the number of entries."). On the home card, when some mappings are not
+  reviewed, a * on "By federal category" and the footnote "* These counts include automatic
+  suggestions that have not yet been reviewed." (old: "This site has not yet reviewed how all of this
   state’s categories fit the federal ones, so some of the federal counts above come from
   automatic suggestions.")
 - "Read the law" links
@@ -253,8 +258,8 @@ Every string below is live and provisional. Please mark any you want changed.
 
 ### State pages
 
-- Categories intro (**Changed 2026-11-17**): "How [state]’s categories line up with the five
-  federal categories in the law." followed by the link "How categories are assigned" (to About,
+- Categories intro (**Changed 2026-11-17**): "This table shows how [state]’s own categories line
+  up with the five federal categories in the law." followed by the link "How categories are assigned" (to About,
   "How mapping and review work"; the link was named after that section before). The rest of the
   old intro, how a federal category is assigned and what "Not yet reviewed" means, moved to that
   About section (appendix). The "Review status" column keeps its labels.
@@ -284,17 +289,22 @@ Every string below is live and provisional. Please mark any you want changed.
 - Buttons and prompts: "Start from your state", "Your state", "Choose 2 to 4 states", "Show
   similar states", "Choose states to compare", "Sort by [category]"
 - "Fewer than 2 states have a list on this site yet."
-- "Comparison categories" heading and intro (**Changed 2026-11-17**): "This site’s own
-  categories, used to measure every state’s list the same way. They are not a state’s or CMS’s
-  categories." followed by the link "How the comparison categories were built". Dropped: how
-  they are built from CCSR groups and state categories (on About, "Categories"), and "Choose one
-  to see its codes and how many states include each."
+- "Comparison categories" heading and intro (**Changed 2026-11-17**): "These are this site’s
+  own categories, used to measure every state’s list the same way. They are not a state’s or
+  CMS’s categories. Choose one to see its codes and how many states include each." followed by
+  the link "How the comparison categories were built". Dropped: how they are built from CCSR
+  groups and state categories (on About, "Categories").
 
 ### Overview ("How much of each category each state lists")
 
 - Heading, intro, table caption and search-engine description. Intro **Changed 2026-11-17**:
-  "The share of each category’s diagnosis codes that each state lists. Select a number to see
-  the codes."
+  "Each row is a state, and each column is one of this site’s comparison categories, grouped
+  under its federal category. Select a number to open that category’s codes with the state
+  highlighted." Old: "Each row is a state; each column is one of this site’s comparison
+  categories, grouped under the federal category it belongs to. A number is the share of the
+  category’s diagnosis codes that the state’s list includes (see “Reading this table” below).
+  Select a number to open that category’s codes with the state highlighted." (What a number
+  counts now sits just above the table.)
 - "Overall (average)"
 - "Reading this table" notes: counts use billable ICD-10-CM codes only; a plain average;
   "* Not yet reviewed". **Changed 2026-11-17** (presentation): the first sentence ("Each number
@@ -303,8 +313,11 @@ Every string below is live and provisional. Please mark any you want changed.
   table; the other notes are in a "Reading this table" disclosure, open on wide screens and
   closed on phones. Wording unchanged, including "It is not a measure of how many people the
   list reaches." The "* Not yet reviewed" note is now one text shared with the Map tab: "* Not
-  yet reviewed: some of the state’s entries were put in the category automatically (by the CCSR
-  group of their code), and this site has not yet checked that against the state’s own
+  yet reviewed means that some of the state’s entries were placed in the category
+  automatically, by the CCSR group of their code, and this site has not yet checked those
+  placements against the state’s own categories. The number may change after review." Old: "*
+  Not yet reviewed: some of this state’s entries were put in the category automatically (by the
+  CCSR group of their code), and this site has not yet checked that against the state’s own
   categories. The number may change after review."
 - The card shown when a reader pauses on a cell (added 2026-11-12, provisional): "Covers N of
   the category’s D diagnosis codes" (or, for † categories, "N of the D distinct entries any
@@ -315,11 +328,19 @@ Every string below is live and provisional. Please mark any you want changed.
 
 ### Category drill-down
 
+- Under the header (**Changed 2026-11-17**): "A comparison category is this site’s own grouping
+  of codes, which lets every state’s list be measured the same way." (old: "A comparison
+  category: this site’s own grouping of codes, so that every state’s list can be measured the
+  same way.")
 - "n of N states", "States that include it", "State’s rule"
 - "Enough by itself: 3 states (1 inferred)", "2 of 4 include any", and the count note
-  (**Changed 2026-11-17**: "A state includes a code when its list has it or a wildcard or range
-  that covers it, out of the states with a list on this site."; the sentence on how codes are
-  grouped is gone, and so is the details panel's placeholder "Choose “Details” on a code…")
+  (**Changed 2026-11-17**: "A state includes a code when its list has the code itself or a
+  wildcard or range that covers it. Each count is out of the states with a list on this
+  site. Codes are grouped by their first three characters (ICD-10-CM) or by code system." Old:
+  "A state includes a code when its list has the code itself or a wildcard or range that covers
+  it. The second number is the number of states with a list on this site. Codes are grouped by
+  their first 3 characters (ICD-10-CM) or by code system." The details panel's placeholder
+  "Choose “Details” on a code…" is gone.)
 - Filters: "Included by every state with a list", "Included by fewer than half", "Included by
   one state only"
 - "Also show codes no state includes" and the reference-list note
@@ -327,8 +348,12 @@ Every string below is live and provisional. Please mark any you want changed.
 ### Map tab
 
 - "One category, every state", intro, caption, "None", and the not-reviewed note
-- Intro **Changed 2026-11-17**: "Pick a category to see every state’s share of its diagnosis
-  codes. Select a state to see its codes." The old parenthetical became a note shown for a †
+- Intro **Changed 2026-11-17**: "Choose a comparison category to see, for every state, the share
+  of its diagnosis codes that the state’s list includes. Select a state to see its codes in that
+  category." Old: "Pick a comparison category to see every state at once. Each number is the
+  share of the category’s billable ICD-10-CM diagnosis codes that the state’s list includes (for
+  a category with no reference list of diagnosis codes, the share of the entries any state lists
+  there); select a state to see its codes in the category." The old parenthetical became a note shown for a †
   category only: "† This category has no reference list of diagnosis codes, so each number is
   the share of the entries any state lists there." The not-reviewed note is the overview's
   (above).
@@ -336,8 +361,11 @@ Every string below is live and provisional. Please mark any you want changed.
 ### Overlaps tab (added 2026-11-12, provisional)
 
 - Heading "Which states list the same codes", intro, count note and search-engine description
-- Intro **Changed 2026-11-17**: "Groups of states that list exactly the same codes in one
-  category." The row rules moved into the count note, now under the table: "Every state in a
+- Intro **Changed 2026-11-17**: "Choose a comparison category to see the groups of states whose
+  lists include exactly the same codes in it." Old: "Choose a comparison category. Each row is a
+  group of states and the codes that exactly those states include: every state in the group
+  includes them and no other state does. Each code is counted in one row only. Rows are sorted
+  by how many codes they have." The row rules moved into the count note, now under the table: "Every state in a
   row includes its codes and no other state does; each code is in one row only, and rows are
   sorted by how many codes they have." followed by the old count note, unchanged.
 - Row headers: "N codes listed by exactly these K states: …", "… listed only by [state]", and
@@ -354,38 +382,46 @@ Every string below is live and provisional. Please mark any you want changed.
 - "Only [state] includes", "Both include", "All 3 include"
 - "Similarity (0–1)" and the similarity note. **Changed 2026-11-17**: "(This is the Jaccard
   index: shared codes divided by all codes in either list.)" left the note; it is now a tooltip
-  on "Similarity (0–1)": "The Jaccard index: shared codes divided by all codes in either list."
+  on "Similarity (0–1)": "This is the Jaccard index, which divides the number of codes both
+  lists include by the number of codes in either list."
   The note is otherwise unchanged (it also shows on state pages).
 - Intro (states the "State doesn’t say" rule from item 10), summary and basis notes. Intro
-  **Changed 2026-11-17**: "Where these states’ lists differ, by comparison category. “State
-  doesn’t say” is not counted as a difference." Old: "Where these states’ medical frailty code
+  **Changed 2026-11-17**: "This page shows where these states’ lists differ, grouped by
+  comparison category. A code differs when some of the states include it and others do not, or
+  when all include it with different rules on whether it is enough by itself. “State doesn’t
+  say” is not counted as a difference." Old: "Where these states’ medical frailty code
   lists differ, grouped by the same comparison categories as the overview. A code differs when
   some of these states include it (listed, or covered by a wildcard or range) and others do not,
   or when all include it but with different rules on whether it is enough by itself. When a
   state does not say whether a code is enough by itself, that is not treated as a difference."
-  Question: is the short form enough, now that it no longer says what "differs" means?
+  The second pass restored what "differs" means.
 - "Not in any comparison category"
 
 ### Single codes ("Compare single codes")
 
-Intro **Changed 2026-11-17**: "Pick a category and states. Each row is one code; each column
-shows whether the state’s list includes it." (old: "Pick a federal category (or one state’s own
+Intro **Changed 2026-11-17**: "Choose a federal category, or one state’s own category, and the
+states to compare. Each row is one code, wildcard or range, and each state’s column shows
+whether that state’s list includes it, and how." (old: "Pick a federal category (or one state’s own
 category) and the states to compare. Each row is one code, wildcard or range that at least one
 of them lists there; each state’s column shows whether its whole list includes that code, and
 how.")
 
-Cell words and legend, shown under every code table. **Changed 2026-11-17** (presentation only,
-wording unchanged): a compact legend, two columns of word and meaning on wide screens; on phones
-a row of words, each meaning in a tooltip. Sign-off is for the change of presentation.
+Cell words and legend, shown under every code table. **Changed 2026-11-17**: a compact legend,
+two columns of word and meaning on wide screens; on phones a row of words, each meaning in a
+tooltip. Each meaning now starts with a capital letter, since it stands alone in a tooltip. The
+"No list on this site" meaning adds "about the code", and the Badges meaning reads "A badge
+shows the state’s rule…" and joins its two clauses with "because" (old: "the state’s rule on
+whether the code is enough by itself. “Inferred” means this site worked the rule out from the
+state’s documents; the state does not say so directly."). The other meanings are unchanged.
 
 | Word | Meaning shown |
 | --- | --- |
-| Listed | the state’s list has this code, wildcard or range itself. |
-| Covered by a broader entry | a wildcard or range on the state’s list includes it. |
-| Narrower codes listed | the state lists some of the more specific codes under it, but not this code itself. |
-| Not listed | the state has a list on this site, and the code is not on it in any form. |
-| No list on this site | this site has no list from the state yet, so nothing is known. |
-| Badges | the state’s rule on whether the code is enough by itself. “Inferred” means this site worked the rule out from the state’s documents; the state does not say so directly. |
+| Listed | The state’s list has this code, wildcard or range itself. |
+| Covered by a broader entry | A wildcard or range on the state’s list includes it. |
+| Narrower codes listed | The state lists some of the more specific codes under it, but not this code itself. |
+| Not listed | The state has a list on this site, and the code is not on it in any form. |
+| No list on this site | This site has no list from the state yet, so nothing is known about the code. |
+| Badges | A badge shows the state’s rule on whether the code is enough by itself. “Inferred” means this site worked the rule out from the state’s documents, because the state does not say so directly. |
 
 Also: "As published by [state]", "No description from CMS or the state", "State’s category:",
 "Download this table (CSV, N rows)" (item 6: the CSV carries state descriptions in bulk).
@@ -406,8 +442,12 @@ own category, turn on JavaScript or start from the state’s page."
     (inferred by this site)."
   - "[State]’s list does not include [code] (itself, but lists n more specific codes under it)."
   - "Last updated on this site [day]."
-- "Included" / "Not included" headings and their help text (**Changed 2026-11-17**: "Listed, or
-  covered by a wildcard, range or parent code." / "More specific codes alone don’t count.")
+- "Included" / "Not included" headings and their help text (**Changed 2026-11-17**: "These states’
+  lists include this code, either listed itself or covered by a wildcard, a range or a parent
+  code." / "These states’ lists do not include this code. Listing only more specific codes under
+  it does not count." Old: "These states’ lists include this code: listed itself, or covered by a
+  wildcard, a range or a parent code." / "These states’ lists do not include this code. Listing
+  more specific codes under it does not count as including it.")
 - Description notes: CMS text; "CPT descriptions are not shown here…"
 - The not-found text
 - For search engines, a CPT code with no CMS text is named by the first listing state's own
@@ -415,8 +455,9 @@ own category, turn on JavaScript or start from the state’s page."
 
 ### Search page
 
-- Heading and intro (**Changed 2026-11-17**: the page shows "Find a code and see which states
-  list it."; the old intro stays as the search-engine description)
+- Heading and intro (**Changed 2026-11-17**: the page shows "Find a diagnosis or service code
+  and see which states list it. Type a code number or words from its description."; the old
+  intro stays as the search-engine description)
 - "Text published by [state]"
 - "Listed by n of N states with a list on this site"
 - Empty, loading and error messages, and the filter labels
@@ -469,7 +510,7 @@ Nothing on this site is legal advice, including the notes on the law and on cour
 
 **Changed 2026-11-17** (old: "The site’s own categories, mappings and numbers are its own work, explained on the About and methodology page.")
 
-Lists are checked and reviewed before they are published, but mistakes can happen and states change their lists. The site’s categories, mappings and numbers are its own work (see About). The site is provided as is, without warranty. [Report a problem](https://github.com/buddingmonkey/medical-frailty-dashboard/issues/new?template=data-error.yml) if you find one.
+Lists are checked and reviewed before they are published, but mistakes can happen and states change their lists. The site’s categories, mappings and numbers are its own work, explained on the About page. The site is provided as is, without warranty. [Report a problem](https://github.com/buddingmonkey/medical-frailty-dashboard/issues/new?template=data-error.yml) if you find one.
 
 ### Privacy (`/privacy`)
 
@@ -529,11 +570,14 @@ Codes are compared without dots or capital letters, so F20.0 and f200 are the sa
 
 For any code, each state shows one of these:
 
-- **Listed:** the state’s list has this code, wildcard or range itself.
-- **Covered by a broader entry:** a wildcard or range on the state’s list includes it.
-- **Narrower codes listed:** the state lists some of the more specific codes under it, but not this code itself.
-- **Not listed:** the state has a list on this site, and the code is not on it in any form.
-- **No list on this site:** this site has no list from the state yet, so nothing is known.
+**Changed 2026-11-17** (capital letters, and "about the code" added to the last; see Part 2,
+"Single codes"):
+
+- **Listed:** The state’s list has this code, wildcard or range itself.
+- **Covered by a broader entry:** A wildcard or range on the state’s list includes it.
+- **Narrower codes listed:** The state lists some of the more specific codes under it, but not this code itself.
+- **Not listed:** The state has a list on this site, and the code is not on it in any form.
+- **No list on this site:** This site has no list from the state yet, so nothing is known about the code.
 
 A narrower code never includes its parent: a state that lists F31.2 does not list F31. “Listed” and “Covered by a broader entry” together are what this site means when it says a state’s list includes a code. Counts of states (“3 of 4 states”) count only states with a list on this site.
 
@@ -581,7 +625,7 @@ CCSR: Clinical Classifications Software Refined (CCSR) for ICD-10-CM Diagnoses, 
 
 Each state’s own categories are mapped to comparison categories by an admin, or the admin decides that the state’s categories are not meaningful groups and each code is placed by its CCSR group instead. Until an admin approves a mapping, the site places codes automatically by their CCSR group.
 
-**Changed 2026-11-17** (moved here from the state page's categories intro): How an entry gets its federal category: where the state’s list names a federal category for a code, this site uses it (“Stated by the state”). Otherwise the entry takes the federal category of the comparison category its code falls in; a code in no comparison category takes the federal category mapped to the state’s own category. Where another state’s list names a federal category for the same code, or for codes like it, this site may suggest that one instead (“suggested from” that state’s list).
+**Changed 2026-11-17** (moved here from the state page's categories intro): Where the state’s list names a federal category for a code, this site uses that category (“Stated by the state”). Otherwise the entry takes the federal category of the comparison category its code falls in; a code in no comparison category takes the federal category mapped to the state’s own category. Where another state’s list names a federal category for the same code, or for codes like it, this site may suggest that one instead (“suggested from” that state’s list).
 
 - **Reviewed:** An admin checked and approved how this state category is mapped.
 - **Not yet reviewed (automatic suggestion):** The site suggested the mapping automatically and nobody has checked it yet. Numbers that depend on it may change after review.

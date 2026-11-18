@@ -133,7 +133,8 @@ async function refresh() {
 
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 /** What the suggestion column shows, in its info button. */
-const suggestionHelp = 'Best CCSR match and its share of the ICD-10-CM entries. A hint only.'
+const suggestionHelp =
+  'The unified category that is the best CCSR match, with its share of the ICD-10-CM entries. It is a hint only and changes nothing.'
 </script>
 
 <template>
@@ -141,8 +142,8 @@ const suggestionHelp = 'Best CCSR match and its share of the ICD-10-CM entries. 
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Mappings</h2>
       <p class="max-w-prose text-muted-foreground">
-        Map each state category to unified categories. Unapproved ones show “Not yet reviewed” in
-        public.
+        Map each state category to one or more unified categories. Until a mapping is approved, its
+        codes show “Not yet reviewed” on public pages.
       </p>
     </div>
     <div class="max-w-xs">
@@ -166,10 +167,10 @@ const suggestionHelp = 'Best CCSR match and its share of the ICD-10-CM entries. 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
     <p v-if="savedWarning" role="alert" class="text-danger">{{ savedWarning }}</p>
     <p v-if="approve.error.value" role="alert" class="text-danger">
-      Could not approve: {{ approve.error.value.message }}
+      The proposal was not approved: {{ approve.error.value.message }}
     </p>
     <p v-if="query.error.value" role="alert" class="text-danger">
-      Could not load the mappings: {{ query.error.value.message }}
+      The mappings could not be loaded: {{ query.error.value.message }}
     </p>
 
     <template v-if="stateId && query.data.value">
@@ -252,7 +253,7 @@ const suggestionHelp = 'Best CCSR match and its share of the ICD-10-CM entries. 
           :id="`${id}-approve-warn`"
           class="mt-2 text-sm"
         >
-          Approve changes public pages at once.
+          Approving a proposal changes public pages at once.
         </p>
       </div>
 

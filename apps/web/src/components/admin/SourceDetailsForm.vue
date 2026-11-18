@@ -1,9 +1,9 @@
 <script lang="ts">
 /** What each source detail does, in its info button's tooltip; the upload form uses it too. */
 export const sourceFieldHelp = {
-  title: 'Shown in the public citation.',
-  url: 'Public link to the original. Blank shows “link not known”.',
-  date: 'The date on the state’s document, not the upload date.',
+  title: 'The document title, shown in the public citation.',
+  url: 'A public link to the state’s original document. If it is left blank, the citation shows “link not known”.',
+  date: 'The date printed on the state’s document, not the date of the upload.',
 }
 </script>
 
@@ -90,7 +90,7 @@ const inputClass =
         :aria-describedby="`${id}-url-hint${problems.url ? ` ${id}-url-problem` : ''}`"
       />
       <p :id="`${id}-url-hint`" class="mt-1 text-sm text-muted-foreground">
-        Starts with https://. Blank shows “link not known”.
+        The URL must start with https://. If it is left blank, the citation shows “link not known”.
       </p>
       <p v-if="problems.url" :id="`${id}-url-problem`" class="mt-1 text-sm text-danger">
         {{ problems.url }}
@@ -111,7 +111,7 @@ const inputClass =
         {{ problems.publisherDate }}
       </p>
     </div>
-    <p v-if="error" role="alert" class="text-danger">Could not save: {{ error }}</p>
+    <p v-if="error" role="alert" class="text-danger">The details were not saved: {{ error }}</p>
     <div class="flex gap-2">
       <button
         type="submit"

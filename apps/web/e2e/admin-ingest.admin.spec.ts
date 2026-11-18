@@ -84,7 +84,7 @@ test('builds an AI prompt from a PDF and reads the pasted answer', async ({ page
   )
   // No API key on this Worker: the Claude button is there but disabled, with a tooltip.
   await expect(panel.getByRole('button', { name: /Ask Claude/ })).toBeDisabled()
-  await expect(panel.getByRole('tooltip')).toHaveText(/Needs a server API key/)
+  await expect(panel.getByRole('tooltip')).toHaveText(/requires an API key on the server/)
 
   await panel
     .getByLabel('The assistant’s answer', { exact: true })

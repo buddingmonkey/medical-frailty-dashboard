@@ -192,7 +192,7 @@ describe('/admin/restore', () => {
     // The version public when the backup was written is chosen first.
     const version = screen.getByLabelText<HTMLSelectElement>('Version')
     expect(version.selectedOptions[0]?.textContent).toMatch(/v2, public then, 2 entries/)
-    expect(screen.getByText(/v2 of Montana: 2 entries in 1 part/)).toBeTruthy()
+    expect(screen.getByText(/Version 2 of Montana holds 2 entries in 1 part/)).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Create draft from v2' }))
     expect(await screen.findByText(/Draft v3 holds 2 restored entries/)).toBeTruthy()
@@ -238,7 +238,7 @@ describe('/admin/restore', () => {
     expect(
       screen.getByRole('checkbox', {
         name: /Also replace Montana’s category mappings/,
-        description: /Applies at once, before publishing/,
+        description: /as soon as the draft is created, before it is published/,
       }),
     ).toBeTruthy()
 
@@ -250,7 +250,7 @@ describe('/admin/restore', () => {
     expect(within(diff).getAllByRole('row')[1]?.textContent).toContain('Category “SMI”')
 
     await user.click(screen.getByRole('button', { name: 'Create draft from v2' }))
-    expect(await screen.findByText(/Mappings restored/)).toBeTruthy()
+    expect(await screen.findByText(/The mappings were restored/)).toBeTruthy()
     const put = calls.find((c) => c.path === '/api/admin/backup/mappings/MT')
     expect(put?.body).toMatchObject({ categoryMappings: [{ stateCategory: 'SMI' }] })
   })
@@ -274,7 +274,7 @@ describe('/admin/restore', () => {
     expect(await screen.findByText('One version, before a publish (format 1)')).toBeTruthy()
     // One version in the file: its state is chosen already.
     expect(screen.getByLabelText<HTMLSelectElement>('State').value).toBe('MT')
-    expect(screen.getByText(/v1 of Montana: 1 entries/)).toBeTruthy()
+    expect(screen.getByText(/Version 1 of Montana holds 1 entry/)).toBeTruthy()
     expect(screen.queryByRole('checkbox')).toBeNull()
   })
 

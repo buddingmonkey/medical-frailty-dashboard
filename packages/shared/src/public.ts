@@ -71,7 +71,8 @@ export type PublicStateSummary = z.infer<typeof publicStateSummarySchema>
  * (docs/legal-review.md, Part 2).
  */
 export const stateCategoriesIntro = (stateName: string): string =>
-  `How ${stateName}’s categories line up with the five federal categories in the law.`
+  `This table shows how ${stateName}’s own categories line up with the five federal categories in ` +
+  'the law.'
 
 /** Review status of federal categories the state published itself (Indiana's column). */
 export const STATED_BY_STATE = 'Stated by the state'
@@ -94,7 +95,8 @@ export const reviewStatusText = (
 }
 
 /** On the home card when some of a state's mappings are not reviewed: the * on its federal counts. */
-export const MAPPINGS_NOT_REVIEWED_NOTE = '* Includes automatic suggestions, not yet reviewed.'
+export const MAPPINGS_NOT_REVIEWED_NOTE =
+  '* These counts include automatic suggestions that have not yet been reviewed.'
 
 /** In the home map's card cell when no state is active (no hover or focus yet, and no list). */
 export const MAP_CARD_PLACEHOLDER = 'Point at a state on the map, or tab to it, to see its list.'
@@ -105,7 +107,9 @@ export const ENTRY_DEFINITION =
   'wildcard or a range.'
 
 /** Under the federal counts when an entry counts under more than one federal category. */
-export const FEDERAL_OVERLAP_NOTE = 'Codes can count under more than one category.'
+export const FEDERAL_OVERLAP_NOTE =
+  'A code can count under more than one federal category, so these counts can add up to more ' +
+  'than the number of entries.'
 
 /** The federal counts add up to more than the entries (a code under two federal categories). */
 export function federalCountsOverlap(p: {
@@ -244,17 +248,18 @@ export const statesWithListText = (n: number): string =>
 
 /** The home page's introduction, in the Vue page and the server-rendered HTML. */
 export const HOME_INTRO =
-  'Medically frail Medicaid members are excluded from the H.R.1 work requirements. States ' +
-  'publish the codes they use to identify them; this site puts those lists side by side. It does ' +
-  'not decide anyone’s eligibility.'
+  'Medicaid members who are medically frail are excluded from the H.R.1 work requirements. ' +
+  'States publish lists of the diagnosis and service codes they use to identify these members, ' +
+  'and this site places those lists side by side. It does not decide anyone’s eligibility.'
 
 /**
  * The footer of every page, in the Vue app and the server-rendered HTML, followed by a link to
- * the Disclaimer (`FOOTER_DISCLAIMER_LINK`). Shortened 2026-11-17 (docs/legal-review.md, item 5).
+ * the Disclaimer (`FOOTER_DISCLAIMER_LINK`). Shortened 2026-11-17 and set in full sentences the
+ * same day (docs/legal-review.md, item 5).
  */
 export const FOOTER_TEXT =
-  'Copied from states’ published documents. Not an official source or an eligibility decision. ' +
-  'No patient data.'
+  'Codes are copied from each state’s published documents. This site is not an official source ' +
+  'and does not determine eligibility. It holds no patient data.'
 
 /** The link after `FOOTER_TEXT`. */
 export const FOOTER_DISCLAIMER_LINK = { text: 'Disclaimer', href: '/disclaimer' } as const

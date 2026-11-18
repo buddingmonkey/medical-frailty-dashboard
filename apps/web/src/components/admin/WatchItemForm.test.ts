@@ -25,7 +25,10 @@ describe('WatchItemForm field help', () => {
       }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('button', { name: 'About Why it matters', description: /next repeat/ }),
+      screen.getByRole('button', {
+        name: 'About Why it matters',
+        description: /next item when the item repeats/,
+      }),
     ).toBeTruthy()
     // The limit is enforced and counted, not described.
     const why = screen.getByRole('textbox', {

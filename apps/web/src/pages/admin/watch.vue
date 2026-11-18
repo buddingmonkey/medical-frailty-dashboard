@@ -75,7 +75,10 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
 <template>
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Watch dates</h2>
-    <p class="max-w-prose text-muted-foreground">Deadlines and re-check dates.</p>
+    <p class="max-w-prose text-muted-foreground">
+      Track deadlines and re-check dates, such as court appeal windows, federal effective dates and
+      state list re-checks. Closing an item requires a resolution note.
+    </p>
 
     <div role="tablist" aria-label="Watch items" class="flex gap-1 border-b border-border">
       <button
@@ -103,7 +106,7 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
       role="alert"
       class="rounded border border-border bg-surface px-4 py-3 text-foreground"
     >
-      Could not save: {{ save.error.value.message }}
+      The item was not saved: {{ save.error.value.message }}
     </p>
 
     <div
@@ -132,10 +135,10 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
 
       <p v-if="open.isPending.value" class="text-muted-foreground">Loading…</p>
       <p v-else-if="open.isError.value" role="alert" class="text-foreground">
-        Could not load the watch items. Reload the page to try again.
+        The watch items could not be loaded. Reload the page to try again.
       </p>
       <p v-else-if="groups.length === 0" class="text-muted-foreground">
-        Nothing to watch right now.
+        There are no open items right now.
       </p>
 
       <section
@@ -210,7 +213,7 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
     >
       <p v-if="closed.isPending.value" class="text-muted-foreground">Loading…</p>
       <p v-else-if="closed.isError.value" role="alert" class="text-foreground">
-        Could not load the history. Reload the page to try again.
+        The history could not be loaded. Reload the page to try again.
       </p>
       <p v-else-if="(closed.data.value ?? []).length === 0" class="text-muted-foreground">
         No closed items yet.

@@ -263,7 +263,7 @@ describe('/admin/mappings', () => {
     await user.click(
       within(rowOf(table, '(no category)')).getByRole('button', {
         name: 'Approve the proposal for (no category)',
-        description: 'Approve changes public pages at once.',
+        description: 'Approving a proposal changes public pages at once.',
       }),
     )
     expect(approvals).toEqual([{ stateCategory: '', stateSubcategory: '' }])

@@ -29,7 +29,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', tim
   <section class="space-y-4">
     <h2 class="font-display text-2xl font-medium text-heading">Audit log</h2>
     <p class="max-w-prose text-muted-foreground">
-      Every admin action, newest first. Entries cannot be edited or deleted.
+      This log records every admin action, newest first. Its entries cannot be edited or deleted.
     </p>
 
     <p v-if="audit.isPending.value" class="text-muted-foreground">Loading…</p>
@@ -38,7 +38,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', tim
       role="alert"
       class="rounded border border-border bg-surface px-4 py-3 text-foreground"
     >
-      Could not load the audit log. Reload the page to try again.
+      The audit log could not be loaded. Reload the page to try again.
     </p>
     <p v-else-if="entries.length === 0" class="text-muted-foreground">No admin actions yet.</p>
 
@@ -79,7 +79,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', tim
       :disabled="audit.isFetchingNextPage.value"
       @click="audit.fetchNextPage()"
     >
-      {{ audit.isFetchingNextPage.value ? 'Loading…' : 'Load older' }}
+      {{ audit.isFetchingNextPage.value ? 'Loading…' : 'Load older entries' }}
     </button>
   </section>
 </template>

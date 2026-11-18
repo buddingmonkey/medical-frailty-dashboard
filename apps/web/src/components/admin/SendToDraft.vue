@@ -162,7 +162,7 @@ async function send() {
     }
     done.value = draft
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Unknown error'
+    error.value = e instanceof Error ? e.message : 'An unexpected error occurred'
   } finally {
     sending.value = false
     await queryClient.invalidateQueries({ queryKey: ['admin', 'drafts', props.stateId] })
@@ -172,7 +172,8 @@ async function send() {
 const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 /** What the source field does, in its info button's tooltip. */
-const sourceHelp = 'The citation for these entries. Matched automatically for an opened file.'
+const sourceHelp =
+  'The stored file whose title, URL and date become the citation for these entries. If the file you opened is already stored, it is chosen automatically.'
 </script>
 
 <template>
@@ -192,7 +193,7 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
         <strong class="font-medium"
           >{{ review.summary.problems.toLocaleString('en-US') }} invalid</strong
         >
-        (blocks publishing above 2%)
+        (these block publishing above 2% of rows)
       </li>
       <li v-if="counts.dropped > 0">
         <strong class="font-medium">{{ counts.dropped.toLocaleString('en-US') }} dropped</strong>
@@ -205,7 +206,8 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
     </ul>
 
     <p v-if="namedStateIds.length > 0" class="text-sm text-muted-foreground">
-      File names: {{ namedStateIds.join(', ') }}. The checks will confirm the state.
+      The file names these states: {{ namedStateIds.join(', ') }}. The draft checks will confirm
+      that the state is correct.
     </p>
 
     <div class="grid gap-4 md:grid-cols-2">
@@ -221,7 +223,7 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
         <p v-if="sha256 !== null && sourcesQuery.isSuccess.value && !matched" class="mt-1 text-sm">
           This file is not stored yet. Store it on
           <RouterLink to="/admin/sources" class="text-link underline">Source files</RouterLink>
-          first: its title, URL and date become the citation.
+          first, then choose it here.
         </p>
       </div>
       <div>
@@ -238,7 +240,8 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
           </option>
         </select>
         <p :id="`${id}-draft-hint`" class="mt-1 text-sm text-muted-foreground">
-          Add to an open draft for a list in several files. Re-sending a table replaces its rows.
+          For a list published in several files, add each file to the same open draft. Sending a
+          table again replaces only that table’s rows.
         </p>
       </div>
     </div>
@@ -257,7 +260,7 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
         {{ payload.entries.length.toLocaleString('en-US') }} entries…
       </p>
       <p v-if="done" role="status">
-        Sent.
+        The rows were sent.
         <RouterLink :to="`/admin/drafts/${done.id}`" class="text-link underline"
           >Open draft v{{ done.versionNo }}</RouterLink
         >
@@ -265,7 +268,7 @@ const sourceHelp = 'The citation for these entries. Matched automatically for an
       </p>
     </div>
     <p v-if="error" role="alert" class="text-danger">
-      Could not send the rows: {{ error }}. Send again to start this file over.
+      The rows were not sent: {{ error }}. Send them again to start this file over.
     </p>
   </section>
 </template>

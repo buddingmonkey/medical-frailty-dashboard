@@ -68,14 +68,17 @@ function size(bytes: number): string {
     <h3 class="font-display text-xl font-medium text-heading">Maintenance</h3>
     <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm text-foreground">
       <dt class="font-medium">Runs</dt>
-      <dd>Sundays 07:00 UTC: saves a backup, removes old ones, expires drafts</dd>
+      <dd>
+        Every Sunday at 07:00 UTC. Each run saves a backup, removes old backups and deletes expired
+        drafts.
+      </dd>
       <dt class="font-medium">Keeps</dt>
       <dd>
-        {{ KEEP_WEEKLY_DUMPS }} weekly, {{ KEEP_MANUAL_DUMPS }} manual,
-        {{ KEEP_PUBLISH_BACKUPS }} per state before publish
+        {{ KEEP_WEEKLY_DUMPS }} weekly backups, {{ KEEP_MANUAL_DUMPS }} manual backups and
+        {{ KEEP_PUBLISH_BACKUPS }} backups per state from before each publish
       </dd>
       <dt class="font-medium">Expires drafts</dt>
-      <dd>Idle {{ DRAFT_EXPIRY_DAYS }} days</dd>
+      <dd>After {{ DRAFT_EXPIRY_DAYS }} days without changes</dd>
     </dl>
 
     <p v-if="status.isPending.value" class="text-muted-foreground">Loading…</p>
@@ -84,7 +87,7 @@ function size(bytes: number): string {
       role="alert"
       class="rounded border border-border bg-surface px-4 py-3 text-foreground"
     >
-      Could not load the maintenance status. Reload the page to try again.
+      The maintenance status could not be loaded. Reload the page to try again.
     </p>
     <template v-else-if="status.data.value">
       <div class="space-y-2">
@@ -94,7 +97,7 @@ function size(bytes: number): string {
         </p>
         <template v-else>
           <p class="text-foreground">
-            {{ status.data.value.last.trigger === 'cron' ? 'Scheduled run' : 'Run by hand' }},
+            {{ status.data.value.last.trigger === 'cron' ? 'Scheduled run' : 'Manual run' }},
             {{ when(status.data.value.last.startedAt) }}
           </p>
           <ul aria-label="Last run, part by part" class="space-y-1 text-sm">
@@ -115,7 +118,7 @@ function size(bytes: number): string {
 
       <div class="space-y-2">
         <h4 class="font-medium text-heading">Saved backups</h4>
-        <p class="text-sm text-muted-foreground">Newest first.</p>
+        <p class="text-sm text-muted-foreground">The newest backup is listed first.</p>
         <p v-if="status.data.value.weekly.length === 0" class="text-muted-foreground">
           No saved backups yet.
         </p>
@@ -154,7 +157,8 @@ function size(bytes: number): string {
 
     <div class="space-y-2 rounded border border-border bg-surface p-3">
       <p class="text-foreground">
-        Runs the Sunday job now. Deletes drafts idle over {{ DRAFT_EXPIRY_DAYS }} days.
+        This button runs the Sunday job now. It also deletes drafts that have had no changes for
+        more than {{ DRAFT_EXPIRY_DAYS }} days.
       </p>
       <button
         type="button"

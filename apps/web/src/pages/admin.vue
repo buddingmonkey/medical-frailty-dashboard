@@ -26,7 +26,7 @@ const signInProblem = computed(() => {
     return 'This account is not an admin of this site.'
   if (error instanceof ApiError && error.status === 401)
     return 'Your sign-in has expired. Reload the page to sign in again.'
-  return 'Could not confirm your sign-in. Reload the page to try again.'
+  return 'Your sign-in could not be confirmed. Reload the page to try again.'
 })
 
 // Grouped in the order of the Overview's steps: add a list, then map its categories.

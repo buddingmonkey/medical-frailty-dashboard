@@ -230,7 +230,8 @@ export const SIMILARITY_LABEL = 'Similarity (0–1)'
 
 /** The tooltip on `SIMILARITY_LABEL` (moved out of `SIMILARITY_NOTE` 2026-11-17). */
 export const SIMILARITY_HELP =
-  'The Jaccard index: shared codes divided by all codes in either list.'
+  'This is the Jaccard index, which divides the number of codes both lists include by the number ' +
+  'of codes in either list.'
 
 /** Says a chosen state has no list, so nothing is compared. */
 export function statesCompareNoListText(names: readonly string[]): string {
@@ -319,8 +320,10 @@ export const STATES_COMPARE_BASIS_NOTE =
 /** The intro under the heading. */
 /** Shortened 2026-11-17; keeps the "State doesn't say" rule (docs/legal-review.md, item 10). */
 export const STATES_COMPARE_INTRO =
-  'Where these states’ lists differ, by comparison category. “State doesn’t say” is not ' +
-  'counted as a difference.'
+  'This page shows where these states’ lists differ, grouped by comparison category. A code ' +
+  'differs when some of the states include it and others do not, or when all include it with ' +
+  'different rules on whether it is enough by itself. “State doesn’t say” is not counted as a ' +
+  'difference.'
 
 /** The row mark and the group count when codes differ. */
 export const STATES_COMPARE_DIFFERS = 'Differs'

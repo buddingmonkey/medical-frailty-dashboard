@@ -146,8 +146,8 @@ function submit(approve: boolean) {
     const ids = targets.value.map((t) => t.unifiedId)
     problem.value =
       new Set(ids).size < ids.length
-        ? 'Each unified category may be a target once.'
-        : 'Check the rationale and citation.'
+        ? 'Each unified category can be a target only once. Remove the duplicate target.'
+        : 'Check the rationale and citation. A rationale can have up to 4,000 characters and a citation up to 1,000.'
     return
   }
   problem.value = null
@@ -179,26 +179,26 @@ const relationOption: Record<TargetRelation, string> = {
   >
     <h3 class="font-display text-xl font-medium text-heading">Map {{ name }}</h3>
     <p class="text-sm text-muted-foreground">
-      {{ category.entries }} {{ category.entries === 1 ? 'entry' : 'entries' }},
-      {{ category.icdEntries }} of them ICD-10-CM.
+      This category has {{ category.entries }} {{ category.entries === 1 ? 'entry' : 'entries' }},
+      and {{ category.icdEntries }} of them are ICD-10-CM codes.
     </p>
 
     <div v-if="problem || serverError" role="alert" class="space-y-1 text-danger">
       <p v-if="problem">{{ problem }}</p>
-      <p v-if="serverError">Could not save: {{ serverError }}</p>
+      <p v-if="serverError">The mapping was not saved: {{ serverError }}</p>
     </div>
 
     <section :aria-labelledby="`${id}-suggest`" class="space-y-2 rounded bg-surface p-3">
       <h4 :id="`${id}-suggest`" class="font-medium text-heading">Suggestion</h4>
       <p v-if="category.icdEntries === 0" class="text-sm">
-        No ICD-10-CM entries, so CCSR has nothing to suggest.
+        This category has no ICD-10-CM entries, so the CCSR groups cannot suggest a mapping.
       </p>
       <template v-else>
         <p class="text-sm">
-          From the CCSR groups of its {{ category.icdEntries }} ICD-10-CM
+          This suggestion is based on the CCSR groups of its {{ category.icdEntries }} ICD-10-CM
           {{ category.icdEntries === 1 ? 'entry' : 'entries'
           }}<template v-if="category.suggestion.withoutCcsr > 0">
-            ({{ category.suggestion.withoutCcsr }} with no group)</template
+            ({{ category.suggestion.withoutCcsr }} of them have no group)</template
           >.
         </p>
         <ul
@@ -213,7 +213,7 @@ const relationOption: Record<TargetRelation, string> = {
           </li>
         </ul>
         <p v-if="category.suggestion.unified.length === 0" class="text-sm">
-          No unified category has these CCSR groups yet.
+          No unified category includes these CCSR groups yet.
         </p>
         <ul v-else class="space-y-1 text-sm" aria-label="Unified categories with these groups">
           <li
@@ -222,8 +222,9 @@ const relationOption: Record<TargetRelation, string> = {
             class="flex flex-wrap items-center gap-2"
           >
             <span
-              >{{ u.label }}<template v-if="u.status !== 'published'"> ({{ u.status }})</template>:
-              covers {{ percent(u.share) }} of the ICD-10-CM entries ({{ u.covered }})</span
+              >{{ u.label
+              }}<template v-if="u.status !== 'published'"> ({{ u.status }})</template> covers
+              {{ percent(u.share) }} of the ICD-10-CM entries ({{ u.covered }})</span
             >
             <button
               type="button"
@@ -251,12 +252,14 @@ const relationOption: Record<TargetRelation, string> = {
         <label :for="`${id}-mode-c`">Place each code by its CCSR group</label>
       </div>
       <p class="text-sm text-muted-foreground">
-        Use “by its CCSR group” when the category is not a real group, such as one list of
-        everything.
+        Choose “Place each code by its CCSR group” when the state’s category is not a meaningful
+        group, for example a single list of every code.
       </p>
     </fieldset>
     <p :id="recordHint" class="text-sm text-muted-foreground">
-      Basis, confidence, rationale and citation are for the record; they do not change counts.
+      Basis, confidence, rationale and citation are kept for the record and do not change any
+      counts. The citation names the page or section of the state’s document that supports the
+      mapping.
     </p>
 
     <div v-if="mode === 'byCode'" class="grid gap-4 md:grid-cols-2">
@@ -319,7 +322,7 @@ const relationOption: Record<TargetRelation, string> = {
               >Unified category for target {{ i + 1 }}</label
             >
             <select :id="`${id}-t${i}-u`" v-model="t.unifiedId" :class="inputClass">
-              <option value="" disabled>Choose</option>
+              <option value="" disabled>Choose a category</option>
               <option v-for="u in choices" :key="u.id" :value="u.id">
                 {{ u.label }}{{ u.status === 'published' ? '' : ` (${u.status})` }}
               </option>
@@ -340,7 +343,7 @@ const relationOption: Record<TargetRelation, string> = {
               </option>
             </select>
             <p :id="`${id}-t${i}-rh`" class="mt-1 text-sm text-muted-foreground">
-              {{ relationLabels[t.relation] }}: {{ relationHelp[t.relation] }}.
+              {{ relationLabels[t.relation] }} means {{ relationHelp[t.relation] }}.
             </p>
           </div>
           <div>
@@ -434,7 +437,9 @@ const relationOption: Record<TargetRelation, string> = {
       >
         Cancel
       </button>
-      <p :id="`${id}-approve-warn`" class="text-sm">Approving changes public pages at once.</p>
+      <p :id="`${id}-approve-warn`" class="text-sm">
+        Approving changes public pages at once. One admin’s approval is enough.
+      </p>
     </div>
   </form>
 </template>

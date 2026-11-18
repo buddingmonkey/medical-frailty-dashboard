@@ -79,7 +79,7 @@ describe('SourceDetailsForm', () => {
     const user = userEvent.setup()
     const { cancelled } = renderForm(empty, { error: 'Not found' })
 
-    expect(screen.getByRole('alert').textContent).toContain('Could not save: Not found')
+    expect(screen.getByRole('alert').textContent).toContain('The details were not saved: Not found')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(cancelled()).toBe(1)
   })
@@ -94,7 +94,7 @@ describe('SourceDetailsForm', () => {
     expect(
       screen.getByRole('button', {
         name: 'About Date on the document',
-        description: /not the upload date/,
+        description: /not the date of the upload/,
       }),
     ).toBeTruthy()
     expect(

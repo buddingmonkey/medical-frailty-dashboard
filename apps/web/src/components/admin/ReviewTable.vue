@@ -254,13 +254,16 @@ const inputClass =
 const smallButton = 'rounded border border-border px-2 py-0.5 text-sm hover:bg-surface'
 /** What the less obvious controls do, in their info buttons' tooltips. */
 const fieldHelp = {
-  undotted: 'Codes like A0103 could be ICD-10-CM or HCPCS; the review asks. Off: read as HCPCS.',
-  show: 'Bulk actions apply to the rows shown.',
+  undotted:
+    'When this is on, a code such as A0103 may be ICD-10-CM or HCPCS, and the review asks which. When it is off, such codes are read as HCPCS.',
+  show: 'This filters the table. Bulk actions apply only to the rows shown; “Needs attention” shows the rows that cannot be read or need a decision.',
   /** One string for the bulk and the per-row code-system selects. */
-  system: 'Guess ignores the file’s code-system column.',
-  scope: 'Whole category includes every code under F20; This code only does not.',
+  system:
+    'A “Guess” option ignores the file’s code-system column and decides from the shape of each code and the CMS lists.',
+  scope:
+    'This applies to a three-character code such as F20. “Whole category” also covers every code under F20; “This code only” covers just the code listed.',
   review:
-    'Cannot be read: edit or drop. Over 2% blocks publishing. Needs a decision: answer or Accept.',
+    'A row that cannot be read must be edited or dropped; above 2% of rows, such rows block publishing. Answer or accept a row that needs a decision; open questions go to the draft checks.',
 }
 </script>
 
@@ -272,7 +275,7 @@ const fieldHelp = {
     <div class="flex items-center">
       <label class="flex items-center gap-2">
         <input v-model="undottedIcd" type="checkbox" />
-        ICD-10-CM codes have no dots (<code>A0103</code>)
+        ICD-10-CM codes have no dots (for example, <code>A0103</code>)
       </label>
       <InfoTip label="codes without dots" :text="fieldHelp.undotted" />
     </div>
@@ -315,7 +318,7 @@ const fieldHelp = {
           >Code system for the {{ plural(live.length, 'row', 'rows') }} shown</label
         ><InfoTip label="Code system for the rows shown" :text="fieldHelp.system" />
         <select :id="`${id}-bulk-system`" v-model="bulkSystem" :class="inputClass">
-          <option value="" disabled>Choose</option>
+          <option value="" disabled>Choose a code system</option>
           <option value="infer">Guess from each code</option>
           <option v-for="s in codeSystems" :key="s" :value="s">{{ codeSystemLabels[s] }}</option>
         </select>
@@ -346,7 +349,7 @@ const fieldHelp = {
       <template v-if="show === 'attention'"
         >No rows need attention. Choose “{{ showLabels.all }}” to see every row.</template
       >
-      <template v-else>No rows match.</template>
+      <template v-else>No rows match these filters.</template>
     </p>
 
     <div v-else class="overflow-x-auto">
@@ -529,7 +532,8 @@ const fieldHelp = {
                       :class="inputClass"
                     />
                     <p :id="`${id}-e-federal-hint`" class="mt-1 text-xs text-muted-foreground">
-                      As the state wrote it. Separate two with “;”.
+                      Enter the category as the state wrote it, and separate two categories with
+                      “;”. Leave it empty if the state names none.
                     </p>
                   </div>
                   <div class="flex gap-2 md:col-span-3">

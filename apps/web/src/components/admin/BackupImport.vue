@@ -56,7 +56,7 @@ async function onFile(event: Event) {
   if (!file) return
   fileName.value = file.name
   if (file.size > MAX_BACKUP_BYTES) {
-    readError.value = `${file.name} is ${mb(file.size)}; the limit is ${mb(MAX_BACKUP_BYTES)}. Use restore path 3 (docs/deployment.md).`
+    readError.value = `${file.name} is ${mb(file.size)}, which is over the ${mb(MAX_BACKUP_BYTES)} limit. Restore it with path 3 in docs/deployment.md instead.`
     return
   }
   reading.value = true
@@ -64,7 +64,9 @@ async function onFile(event: Event) {
     bundle.value = parseBackup(readBackupBytes(new Uint8Array(await file.arrayBuffer())))
   } catch (err) {
     readError.value =
-      err instanceof BackupError ? err.message : 'Could not read the file as a backup.'
+      err instanceof BackupError
+        ? err.message
+        : 'This file could not be read as a backup. Choose a .zip or .json backup downloaded from this site.'
   } finally {
     reading.value = false
   }
@@ -214,7 +216,8 @@ async function send() {
     let sent = 0
     for (const part of p.parts) {
       const sourceDocumentId = sourceMap.get(part.backupSourceId)
-      if (sourceDocumentId === undefined) throw new Error('A source could not be matched.')
+      if (sourceDocumentId === undefined)
+        throw new Error('A source document in the backup could not be matched.')
       await sendJson(
         'PUT',
         `${base}/sources/${String(sourceDocumentId)}`,
@@ -245,7 +248,8 @@ async function send() {
     progress.value = ''
     await queryClient.invalidateQueries({ queryKey: ['admin'] })
   } catch (err) {
-    sendError.value = err instanceof Error ? err.message : 'Could not create the draft.'
+    sendError.value =
+      err instanceof Error ? err.message : 'An unexpected error occurred. Try again.'
     progress.value = ''
   } finally {
     sending.value = false
@@ -255,7 +259,8 @@ async function send() {
 const n = (value: number) => value.toLocaleString('en-US')
 const inputClass = 'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5'
 /** What the version choice means, in its info button's tooltip. */
-const versionHelp = '“public then”: the version public when the backup was made.'
+const versionHelp =
+  '“public then” marks the version that was public when the backup was made. “earlier” marks a version it had replaced.'
 const statusLabels: Record<string, string> = {
   draft: 'draft',
   published: 'public then',
@@ -273,8 +278,9 @@ const statusLabels: Record<string, string> = {
       Restore a state from a backup
     </h3>
     <p class="text-foreground">
-      Restore one state’s version from a backup (<code>.zip</code> or <code>.json</code>). It
-      becomes a new draft.
+      Choose a backup file (<code>.zip</code> or <code>.json</code>) and one state’s version in it.
+      The version is restored as a new draft, which goes through the usual checks before it can be
+      published.
     </p>
     <div>
       <label :for="`${id}-file`" class="font-medium">Backup file</label>
@@ -285,7 +291,9 @@ const statusLabels: Record<string, string> = {
         :class="inputClass"
         @change="onFile"
       />
-      <p class="mt-1 text-sm text-muted-foreground">Up to {{ mb(MAX_BACKUP_BYTES) }}.</p>
+      <p class="mt-1 text-sm text-muted-foreground">
+        The file can be up to {{ mb(MAX_BACKUP_BYTES) }}.
+      </p>
     </div>
     <p v-if="reading" role="status">Reading {{ fileName }}…</p>
     <p v-if="readError" role="alert" class="text-danger">{{ readError }}</p>
@@ -348,17 +356,18 @@ const statusLabels: Record<string, string> = {
       </div>
 
       <p v-if="stateId && statesQuery.isSuccess.value && !onSite" role="alert" class="text-danger">
-        This site has no state {{ stateId }}; it cannot take this version.
+        This site has no state with the code {{ stateId }}, so this version cannot be restored here.
       </p>
 
       <template v-if="plan && chosen">
         <p>
-          v{{ plan.versionNo }} of {{ nameOf(plan.stateId) }}: {{ n(plan.entryCount) }} entries in
-          {{ plan.parts.length }} {{ plan.parts.length === 1 ? 'part' : 'parts' }}, citing
+          Version {{ plan.versionNo }} of {{ nameOf(plan.stateId) }} holds {{ n(plan.entryCount) }}
+          {{ plan.entryCount === 1 ? 'entry' : 'entries' }} in {{ plan.parts.length }}
+          {{ plan.parts.length === 1 ? 'part' : 'parts' }} and cites
           {{ plan.sources.length }} source
           {{ plan.sources.length === 1 ? 'document' : 'documents' }}.
           <template v-if="chosen.version.publishedAt">
-            Published {{ formatTimestampDate(chosen.version.publishedAt) }}.
+            It was published on {{ formatTimestampDate(chosen.version.publishedAt) }}.
           </template>
         </p>
         <ul class="list-disc pl-6 text-sm" aria-label="Source documents in this version">
@@ -367,7 +376,7 @@ const statusLabels: Record<string, string> = {
           </li>
         </ul>
         <p class="text-sm text-muted-foreground">
-          Missing source files are restored as citations only.
+          A source file that is not on this site is restored as a citation only, without the file.
         </p>
         <div v-if="plan.problems.length > 0" role="alert" class="space-y-1 text-danger">
           <p class="font-medium">These entries would not pass the draft checks:</p>
@@ -387,20 +396,22 @@ const statusLabels: Record<string, string> = {
             <span>
               Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
               column profiles with the backup’s
-              <span class="text-muted-foreground">(default: keep the current ones)</span>
+              <span class="text-muted-foreground"
+                >(if this is not ticked, the current ones are kept)</span
+              >
             </span>
           </label>
           <p
             :id="`${id}-mappings-warning`"
             class="rounded border-l-4 border-highlight bg-surface px-3 py-1 text-sm text-foreground"
           >
-            Applies at once, before publishing: replaces {{ nameOf(plan.stateId) }}’s current
-            mappings, overrides and column profiles.
+            This takes effect as soon as the draft is created, before it is published. It replaces
+            {{ nameOf(plan.stateId) }}’s current mappings, overrides and column profiles.
           </p>
           <template v-if="restoreMappings">
             <p v-if="currentMappings.isPending.value" role="status">Loading current mappings…</p>
             <p v-else-if="currentMappings.error.value" role="alert" class="text-danger">
-              Could not load the current mappings: {{ currentMappings.error.value.message }}
+              The current mappings could not be loaded: {{ currentMappings.error.value.message }}
             </p>
             <p v-else-if="mappingDiff?.length === 0">
               The backup’s mappings are the same as the current ones.
@@ -447,14 +458,17 @@ const statusLabels: Record<string, string> = {
 
       <p v-if="progress" role="status">{{ progress }}</p>
       <p v-if="sendError" role="alert" class="text-danger">
-        Could not create the draft: {{ sendError }}
+        The draft was not created: {{ sendError }}
       </p>
       <div v-if="done" role="status" class="space-y-1">
         <p class="font-medium">
           Draft v{{ done.draft.versionNo }} holds {{ n(done.entries) }} restored entries.
-          <template v-if="done.mappings">Mappings restored.</template>
+          <template v-if="done.mappings">The mappings were restored.</template>
         </p>
-        <p class="text-sm">Sources: {{ done.reused }} reused, {{ done.created }} citation only.</p>
+        <p class="text-sm">
+          {{ done.reused }} source documents matched files on this site, and {{ done.created }} were
+          restored as citations only.
+        </p>
         <RouterLink :to="`/admin/drafts/${done.draft.id}`" class="text-link underline"
           >Open draft v{{ done.draft.versionNo }}</RouterLink
         >

@@ -75,7 +75,7 @@ describe('/admin/launch-readiness', () => {
     expect(mt.textContent).toContain('Ready')
     expect(mt.textContent).not.toContain('Not ready')
 
-    expect(screen.getByText(/real users/i).textContent).toContain('tracked elsewhere')
+    expect(screen.getByText(/real users/i).textContent).toContain('is tracked elsewhere')
   })
 
   it('says the gate passes with 2 ready states', async () => {

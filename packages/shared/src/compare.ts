@@ -569,8 +569,9 @@ export function compareSubject(
 export const COMPARE_HEADING = 'Compare single codes'
 
 export const COMPARE_INTRO =
-  'Pick a category and states. Each row is one code; each column shows whether the state’s list ' +
-  'includes it.'
+  'Choose a federal category, or one state’s own category, and the states to compare. Each row ' +
+  'is one code, wildcard or range, and each state’s column shows whether that state’s list ' +
+  'includes it, and how.'
 
 export const COMPARE_DESCRIPTION =
   'Compare the medical frailty code lists of any number of states, one category at a time: ' +
@@ -626,29 +627,30 @@ export function compareStatesSummary(names: readonly string[]): string {
 export const compareLegend: readonly { term: string; text: string }[] = [
   {
     term: compareStatusLabels.exact,
-    text: 'the state’s list has this code, wildcard or range itself.',
+    text: 'The state’s list has this code, wildcard or range itself.',
   },
   {
     term: compareStatusLabels.covered,
-    text: 'a wildcard or range on the state’s list includes it.',
+    text: 'A wildcard or range on the state’s list includes it.',
   },
   {
     term: compareStatusLabels.narrower,
-    text: 'the state lists some of the more specific codes under it, but not this code itself.',
+    text: 'The state lists some of the more specific codes under it, but not this code itself.',
   },
   {
     term: compareStatusLabels.not_listed,
-    text: 'the state has a list on this site, and the code is not on it in any form.',
+    text: 'The state has a list on this site, and the code is not on it in any form.',
   },
   {
     term: compareStatusLabels.no_list,
-    text: 'this site has no list from the state yet, so nothing is known.',
+    text: 'This site has no list from the state yet, so nothing is known about the code.',
   },
   {
     term: 'Badges',
     text:
-      'the state’s rule on whether the code is enough by itself. “Inferred” means this site ' +
-      'worked the rule out from the state’s documents; the state does not say so directly.',
+      'A badge shows the state’s rule on whether the code is enough by itself. “Inferred” means ' +
+      'this site worked the rule out from the state’s documents, because the state does not say ' +
+      'so directly.',
   },
 ]
 
