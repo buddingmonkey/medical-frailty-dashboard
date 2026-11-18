@@ -84,6 +84,7 @@ literacy, little or no coding.
 | 2026-11-04 | Rebuild coverage failed twice on real data, for two different database limits: one transaction too big, then too much load in a 10-second window. Measuring rows read per step turned the second fix from a guess into numbers | When it fails again, read the new error fresh; it may be a new problem | `devlog/2026-11-04-launch-prep.md` |
 | 2026-11-04 | The admin overview still promised features as "coming next" that had shipped. The first AI audit fixed it but got two facts wrong itself; a second reviewer told to check each claim against the code caught both | Factual text needs a second reviewer who checks sources, not style | same |
 | 2026-11-17 | An adversarial reviewer counted 5,600 words of text on the admin screens; one rule was explained five times on one page. Three builders cut it by more than half in one session | Count the words and the repeats; AI padding is easier to see as a number | `devlog/2026-11-17-copy-trim.md` |
+| 2026-11-17 | Hours later the project lead said the cut went too far: tooltips like "Lower comes first." had lost their instructions. A second pass restored full sentences without bringing back the repeats | Cap repetition, not sentence length; brevity is not the same as clarity | `devlog/2026-11-17-copy-trim.md` |
 
 ## Numbers to collect
 

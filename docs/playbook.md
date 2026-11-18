@@ -266,8 +266,10 @@ The public site changes only when the project lead approves a release.
 ### House style for UI text
 
 1. **The label is the instruction.** A hint adds only format, limit or consequence.
-2. **One help per field:** a visible hint (12 words or fewer) or an (i) tooltip (20 or fewer),
-   never both.
+2. **One help per field:** a visible hint or an (i) tooltip, never both. Write it as one or two
+   complete sentences (about 30 words at most) that say what the field does and its limits:
+   "A lower number is shown first. Must be a whole number between 0 and 100,000.", not "Lower
+   comes first."
 3. **One-sentence page intro, 20 words or fewer.** How-to goes in the admin Guide.
 4. **Say it once.** Facts such as "changes go to the audit log" live in the Guide, not on every
    screen.
@@ -278,6 +280,7 @@ The public site changes only when the project lead approves a release.
    describe a limit the field enforces.
 8. **Errors and empty states:** what happened, then what to do, in 2 short sentences or fewer.
 9. **Front-load; no parentheticals, no "e.g. [state]", no implementation detail.**
+   Cut padding and repeats, not grammar: no fragments, slash shorthand or colon telegraphese.
 10. **Public wording:** change it together with `docs/legal-review.md` (Part 2) and
     `wording.test.ts`, and mark the change for legal.
 
