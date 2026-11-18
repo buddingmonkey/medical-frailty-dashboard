@@ -43,7 +43,7 @@ show the new citation right away.
 4. **Does a code qualify on its own?** One value for the whole file, or per value of a column
    (Louisiana's 0/1/2 "Code Designation"; Montana's tier). Pick "The state says so" or
    "Inferred by us" honestly.
-5. **Category for every row / Tier for every row** appear when the file has no such column.
+5. **Category for every row** and **Tier for every row** appear when the file has no such column.
    Georgia publishes each tier as a file: "Attachment A" for one, "Attachment B" for the other.
 6. Click **Save column profile**: the next file with the same headers maps itself.
 7. **PDF wrapped lines:** look at the first mapped rows. If a description sits next to the wrong
@@ -146,7 +146,7 @@ column profiles, mappings, unified categories, condition groups, watch dates and
 It leaves out the reference code lists (ICD-10-CM, HCPCS, CCSR), which a developer loads again,
 and the coverage tables, which Rebuild coverage recreates. A saved backup also records where each
 source file is stored, so a developer who rebuilds the database can find the files. Every backup
-holds admin email addresses: keep it private.
+holds admin email addresses, so keep backups private.
 
 **Maintenance** runs every Sunday at 07:00 UTC, or on **Run maintenance now**. It saves a backup,
 removes backups beyond the numbers kept, deletes open drafts idle for 30 days (with their source

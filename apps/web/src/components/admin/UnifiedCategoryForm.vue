@@ -75,11 +75,12 @@ const fieldLabels: Record<string, string> = {
 }
 /** What a field changes, in its info button's tooltip; fields with a visible hint have none. */
 const fieldHelp = {
-  label: 'Public name.',
-  definition: 'Shown under the name on public pages.',
-  federalCategory: 'Its codes count under this federal category.',
-  sortOrder: 'Lower comes first.',
-  ccsr: 'Decide which ICD-10-CM codes are in the category. Changing them recounts every state.',
+  label: 'The category name shown on public pages.',
+  definition: 'A short description, shown under the category name on public pages.',
+  federalCategory:
+    'The federal exemption category this category belongs to. Its codes are counted under that federal category on public pages.',
+  sortOrder: 'A lower number is shown first. Must be a whole number between 0 and 100,000.',
+  ccsr: 'The CCSR groups decide which ICD-10-CM codes are in the category. A change recounts coverage for every state.',
 }
 
 /** Fields that failed the last Save; each is marked aria-invalid and points at the message. */
@@ -143,9 +144,9 @@ const inputClass =
     >
       <p v-if="problems.length > 0">Fix these fields: {{ problems.join(', ') }}.</p>
       <p v-if="invalid.has('slug') && isReservedUnifiedSlug(draft.slug)">
-        Slug “{{ draft.slug }}” is taken by another page.
+        The slug “{{ draft.slug }}” is reserved for another page. Choose a different slug.
       </p>
-      <p v-if="serverError">Could not save: {{ serverError }}</p>
+      <p v-if="serverError">The category was not saved: {{ serverError }}</p>
     </div>
 
     <div class="grid gap-4 md:grid-cols-2">
@@ -175,7 +176,7 @@ const inputClass =
           @input="slugEdited = true"
         />
         <p :id="`${id}-slug-help`" class="mt-1 text-sm text-muted-foreground">
-          Lowercase letters, digits and hyphens. Must be unique.
+          Use lowercase letters, digits and hyphens only. The slug must be unique.
         </p>
       </div>
     </div>
@@ -220,7 +221,8 @@ const inputClass =
         />
       </div>
       <p :id="`${id}-text-help`" class="-mt-2 text-sm text-muted-foreground md:col-span-2">
-        Text only; CCSR groups decide the codes.
+        Includes and Excludes are descriptive text only. The CCSR groups decide which codes are in
+        the category.
       </p>
     </div>
 
@@ -234,7 +236,7 @@ const inputClass =
           :class="inputClass"
           v-bind="fieldState('federalCategory')"
         >
-          <option value="" disabled>Choose</option>
+          <option value="" disabled>Choose a federal category</option>
           <option v-for="p in parents" :key="p" :value="p">
             {{ federalCategoryInfo[p].label }}
           </option>
@@ -268,7 +270,8 @@ const inputClass =
       </div>
     </div>
     <p :id="`${id}-status-help`" class="text-sm text-muted-foreground">
-      Draft and retired categories are hidden. Published can’t go back to draft; retire instead.
+      Draft and retired categories are not shown on public pages. A published category cannot return
+      to draft; retire it instead.
     </p>
 
     <CcsrPicker v-model="draft.ccsr" :options="ccsrOptions" :help="fieldHelp.ccsr" />

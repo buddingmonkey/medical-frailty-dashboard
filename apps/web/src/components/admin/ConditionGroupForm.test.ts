@@ -13,7 +13,7 @@ describe('ConditionGroupForm field help', () => {
       screen.getByRole('button', { name: 'About Name', description: /Like codes/ }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('button', { name: 'About Definition', description: 'Admins only.' }),
+      screen.getByRole('button', { name: 'About Definition', description: /Only admins see it/ }),
     ).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'About Slug' })).toBeNull()
   })
@@ -24,7 +24,7 @@ describe('ConditionGroupForm field help', () => {
     expect(
       screen.getByRole('textbox', {
         name: 'Sources',
-        description: /For CPT, code numbers only, never the AMA’s descriptions\./,
+        description: /For CPT, list code numbers only, never the AMA’s descriptions\./,
       }),
     ).toHaveProperty('maxLength', 4000)
   })
@@ -36,7 +36,8 @@ describe('ConditionGroupForm field help', () => {
     expect(
       screen.getByRole('textbox', {
         name: 'Slug',
-        description: 'Lowercase letters, digits and hyphens. Must be unique. Not public.',
+        description:
+          'Use lowercase letters, digits and hyphens only. The slug must be unique and is not part of any public address.',
       }),
     ).toBeTruthy()
   })

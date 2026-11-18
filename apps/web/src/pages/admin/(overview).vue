@@ -60,11 +60,23 @@ const rows = computed(() =>
 )
 
 const steps = [
-  { to: '/admin/sources', label: 'Source files', what: 'upload' },
-  { to: '/admin/ingest', label: 'Read and map', what: 'map columns, review rows' },
-  { to: '/admin/drafts', label: 'Drafts', what: 'check and publish' },
-  { to: '/admin/mappings', label: 'Mappings', what: 'approve' },
-  { to: '/admin/categories', label: 'Federal categories', what: 'confirm' },
+  { to: '/admin/sources', label: 'Source files', what: 'Upload the state’s file.' },
+  {
+    to: '/admin/ingest',
+    label: 'Read and map',
+    what: 'Map the file’s columns and review its rows.',
+  },
+  { to: '/admin/drafts', label: 'Drafts', what: 'Check the draft and publish it.' },
+  {
+    to: '/admin/mappings',
+    label: 'Mappings',
+    what: 'Approve how the state’s categories map to unified categories.',
+  },
+  {
+    to: '/admin/categories',
+    label: 'Federal categories',
+    what: 'Confirm the federal category of each state category.',
+  },
 ] as const
 </script>
 
@@ -78,8 +90,12 @@ const steps = [
 
     <div class="space-y-2">
       <h3 id="overview-steps" class="font-display text-xl font-medium text-heading">
-        Add or update a state’s list (<RouterLink to="/admin/guide">Guide</RouterLink>)
+        Add or update a state’s list
       </h3>
+      <p class="max-w-prose text-foreground">
+        Follow these steps in order. The <RouterLink to="/admin/guide">Guide</RouterLink> explains
+        each one in detail.
+      </p>
       <ol aria-label="Steps" class="list-decimal space-y-1 pl-6 text-foreground">
         <li v-for="step in steps" :key="step.to">
           <RouterLink :to="step.to">{{ step.label }}</RouterLink><span class="text-muted-foreground"
@@ -97,7 +113,7 @@ const steps = [
         role="alert"
         class="rounded border border-border bg-surface px-4 py-3 text-foreground"
       >
-        Could not load the status. Reload the page to try again.
+        The status could not be loaded. Reload the page to try again.
       </p>
       <p v-else-if="rows.length === 0" class="text-muted-foreground">
         No state has a published list yet.

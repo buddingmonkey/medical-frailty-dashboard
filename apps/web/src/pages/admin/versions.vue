@@ -65,7 +65,8 @@ const rollback = useMutation({
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 /** What Restore does, in the info button at the head of the actions column. */
-const restoreHelp = 'Makes this version public now. The current one becomes an earlier version.'
+const restoreHelp =
+  'Restore makes an earlier version public at once, after a second click. The version that is public now becomes an earlier one and can be restored the same way.'
 </script>
 
 <template>
@@ -73,7 +74,8 @@ const restoreHelp = 'Makes this version public now. The current one becomes an e
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Versions</h2>
       <p class="max-w-prose text-muted-foreground">
-        Every list a state has had. One is public at a time.
+        This page lists every version of a state’s list. One version is public at a time, and an
+        earlier one can be made public again.
       </p>
     </div>
     <div class="max-w-xs">
@@ -97,12 +99,12 @@ const restoreHelp = 'Makes this version public now. The current one becomes an e
       {{ rollback.data.value.warning }}
     </p>
     <p v-if="rollback.error.value" role="alert" class="text-danger">
-      Could not restore: {{ rollback.error.value.message }}
+      The version was not restored: {{ rollback.error.value.message }}
     </p>
 
     <template v-if="stateId && versionsQuery.data.value">
       <p v-if="versionsQuery.data.value.length === 0" class="text-muted-foreground">
-        No versions for {{ stateName }} yet.
+        {{ stateName }} has no versions yet.
       </p>
       <div v-else class="overflow-x-auto">
         <table class="w-full border-collapse text-left text-sm">

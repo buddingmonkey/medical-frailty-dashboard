@@ -14,6 +14,7 @@ import { computed, ref, useId, watch } from 'vue'
 import type { ParseInput } from '../../ingest/parse'
 import { runParser } from '../../ingest/run-parser'
 import { getJson, sendJson } from '../../lib/api'
+import InfoTip from '../ui/InfoTip.vue'
 
 // AI cleanup (docs/ingestion.md, "AI cleanup"): for a file the adapters cannot read, build a
 // prompt per part for any AI assistant, and read its JSON answer back as a table. With the
@@ -27,6 +28,9 @@ const props = defineProps<{
   open?: boolean
 }>()
 const emit = defineEmits<{ table: [table: RawTable] }>()
+
+const partHelp =
+  'A long file is split into parts that each fit in one answer. Each answer becomes its own table, which is mapped, reviewed and sent to the draft separately.'
 
 const id = useId()
 const status = useQuery({
@@ -75,7 +79,10 @@ async function prepare() {
     parts.value = splitIntoParts(pages)
     partNo.value = 1
   } catch (error) {
-    problem.value = error instanceof Error ? error.message : 'Could not read this file.'
+    problem.value =
+      error instanceof Error
+        ? error.message
+        : 'This file could not be read. Try another copy of the file, or paste the table as text.'
   } finally {
     preparing.value = false
   }
@@ -95,7 +102,8 @@ async function copy() {
     await navigator.clipboard.writeText(prompt.value)
     copied.value = true
   } catch {
-    problem.value = 'Could not copy. Select the prompt and copy it by hand.'
+    problem.value =
+      'The prompt could not be copied. Select the text of the prompt and copy it by hand.'
   }
 }
 
@@ -107,7 +115,10 @@ function read(text: string, source: string) {
     done.value = `Read ${String(table.rows.length)} ${table.rows.length === 1 ? 'row' : 'rows'} from ${source}. Map and review them below.`
     emit('table', table)
   } catch (error) {
-    problem.value = error instanceof Error ? error.message : 'Could not read the answer.'
+    problem.value =
+      error instanceof Error
+        ? error.message
+        : 'The answer could not be read. Check that it is the JSON the prompt asks for, then try again.'
   }
 }
 
@@ -151,7 +162,9 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     </summary>
     <div class="mt-3 space-y-3">
       <p class="max-w-prose text-muted-foreground">
-        For scans or messy tables: copy the prompt to an AI assistant, paste its JSON answer.
+        Use this panel for a scanned file or a table that does not read cleanly. Copy the prompt
+        into any AI assistant, then paste its JSON answer below; the answer is checked and reviewed
+        like any other file.
       </p>
       <button
         v-if="parts.length === 0"
@@ -165,7 +178,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
       <template v-if="part">
         <div class="max-w-xs">
-          <label :for="`${id}-part`" class="font-medium">Part</label>
+          <label :for="`${id}-part`" class="font-medium">Part</label
+          ><InfoTip label="Part" :text="partHelp" />
           <select :id="`${id}-part`" v-model="partNo" :class="inputClass">
             <option v-for="p in parts" :key="p.number" :value="p.number">
               Part {{ p.number }} of {{ p.count }} ({{ pagesLabel(p) }})
@@ -184,7 +198,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           />
           <div class="mt-2 flex flex-wrap items-center gap-2">
             <button type="button" :class="smallButton" @click="copy">Copy the prompt</button>
-            <span v-if="copied" role="status" class="text-sm">Copied.</span>
+            <span v-if="copied" role="status" class="text-sm">The prompt was copied.</span>
             <span class="group relative inline-block">
               <button
                 type="button"
@@ -201,11 +215,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
                 role="tooltip"
                 class="pointer-events-none absolute top-full left-0 z-10 mt-1 w-72 rounded bg-heading px-2 py-1 text-xs text-on-primary opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
               >
-                Needs a server API key (ask the project lead).
+                This button requires an API key on the server. Ask the project lead to set one.
               </span>
             </span>
             <span v-if="ask.isPending.value" role="status" class="text-sm">
-              Asking {{ status.data.value?.model }}… a long part can take a few minutes.
+              Asking {{ status.data.value?.model }}. A long part can take a few minutes.
             </span>
           </div>
         </div>

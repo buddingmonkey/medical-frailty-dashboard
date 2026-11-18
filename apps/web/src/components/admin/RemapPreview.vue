@@ -101,11 +101,12 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
       Check the remap before saving
     </h3>
     <p v-if="stale" role="alert" class="text-danger">
-      Something changed since the preview. This is the new preview: check it and save again.
+      The data changed after the preview was made, so nothing was saved. Check this new preview,
+      then save again.
     </p>
-    <p v-if="preview.isPending.value" role="status">Working out what changes…</p>
+    <p v-if="preview.isPending.value" role="status">Preparing the preview…</p>
     <p v-else-if="preview.error.value" role="alert" class="text-danger">
-      Could not preview: {{ preview.error.value.message }}
+      The preview could not be prepared: {{ preview.error.value.message }}
     </p>
     <template v-else-if="preview.data.value">
       <div
@@ -152,7 +153,7 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
             {{
               stateName
             }}
-            per federal category (an entry placed in two counts under both)
+            in each federal category. An entry placed in two categories is counted in both.
           </caption>
           <thead class="border-b border-border text-muted-foreground">
             <tr>
@@ -178,7 +179,7 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
       </div>
     </template>
     <p v-if="save.error.value && !stale" role="alert" class="text-danger">
-      Could not save: {{ save.error.value.message }}
+      The remap was not saved: {{ save.error.value.message }}
     </p>
     <div class="flex flex-wrap items-center gap-3">
       <button
@@ -191,7 +192,9 @@ const button = 'rounded border border-border px-4 py-2 hover:bg-surface'
         Save remap
       </button>
       <button type="button" :class="button" @click="emit('cancel')">Cancel</button>
-      <p :id="`${id}-warn`" class="text-sm">Public pages change at once.</p>
+      <p :id="`${id}-warn`" class="text-sm">
+        Saving applies exactly this preview. Public pages change at once.
+      </p>
     </div>
   </section>
 </template>

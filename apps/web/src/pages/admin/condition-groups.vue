@@ -65,14 +65,15 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Condition groups</h2>
       <p class="max-w-prose text-muted-foreground">
-        Code groups across code systems for one condition. They power “Like codes” on public code
-        pages. Only published groups are public.
+        A condition group lists codes from several code systems that point to one condition, such as
+        cancer diagnoses and chemotherapy services. The groups supply the “Like codes” section of
+        public code pages.
       </p>
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
     <p v-if="list.error.value" role="alert" class="text-danger">
-      Could not load the condition groups: {{ list.error.value.message }}
+      The condition groups could not be loaded: {{ list.error.value.message }}
     </p>
 
     <div v-if="editing === null">

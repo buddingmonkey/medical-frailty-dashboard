@@ -31,10 +31,15 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
       role="alert"
       class="rounded border border-border bg-surface px-4 py-3 text-foreground"
     >
-      Could not load launch readiness. Reload the page to try again.
+      The launch readiness data could not be loaded. Reload the page to try again.
     </p>
 
     <template v-else-if="data">
+      <p class="max-w-prose text-muted-foreground">
+        The data gate is met when at least {{ data.required }} states with a published list are
+        ready. A state is ready when every category mapping is approved and its public page shows
+        “Reviewed” for every category.
+      </p>
       <p
         role="status"
         aria-label="Launch data gate"
@@ -122,7 +127,9 @@ const fixAt = { unified: '/admin/mappings', federal: '/admin/categories' } as co
       </div>
 
       <p class="max-w-prose text-sm text-muted-foreground">
-        Federal counts don’t block launch alone. Testing with real users is tracked elsewhere.
+        To fix a count, follow its link and choose the state. The federal counts do not block launch
+        on their own, but a code in no unified category shows “Reviewed” only after its federal
+        category is confirmed. Testing with real users is also required and is tracked elsewhere.
       </p>
     </template>
   </section>

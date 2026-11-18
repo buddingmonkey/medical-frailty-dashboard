@@ -135,12 +135,12 @@ function status(c: Category): { badge: string; kind: Badge; detail: string } {
   const total = c.publishedEntries + c.draftEntries
   const byCode = Math.min(total, c.statedEntries + c.placedEntries + c.codeSuggested.entries)
   if (total > 0 && byCode === total) {
-    return { badge: 'Not needed', kind: 'none', detail: 'all by code' }
+    return { badge: 'Not needed', kind: 'none', detail: 'All entries are classified by code.' }
   }
   return {
     badge: 'Not mapped',
     kind: 'none',
-    detail: byCode > 0 ? `${n(byCode)} of ${n(total)} by code` : '',
+    detail: byCode > 0 ? `${n(byCode)} of ${n(total)} entries are classified by code.` : '',
   }
 }
 const badgeClass: Record<Badge, string> = {
@@ -358,12 +358,18 @@ const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 /** One short tooltip per column or action, not per row. */
 const help = {
-  federalCategory: 'Used for entries nothing more specific decides.',
-  entries: 'Published plus draft entries.',
-  confirmAll: 'Confirms guesses that move no published entry.',
-  rerun: 'Recomputes suggestions from other states’ lists. Never changes a confirmed one.',
-  remap: 'Sets one confirmed federal category on every selected row.',
-  override: 'Wins over the category mapping for this chapter’s ICD-10-CM codes.',
+  federalCategory:
+    'Entries count under this federal category when nothing more specific decides theirs. Confirming the choice makes it a manual mapping, which wins over unreviewed suggestions.',
+  entries:
+    'The count includes published and draft entries. The lines under it show how many are already classified by code; the mapping covers the rest.',
+  confirmAll:
+    'This confirms every guessed mapping and suggestion whose confirmation would move no published entry. A change that would move entries needs a preview first.',
+  rerun:
+    'This works out the suggestions by code again from other states’ lists, after a preview. It never changes a suggestion that an admin confirmed.',
+  remap:
+    'This gives every selected row the same federal category as a confirmed mapping. A preview shows which published entries move before anything is saved.',
+  override:
+    'An override wins over the category mapping for this chapter’s ICD-10-CM codes, unless the state classified a code itself or a published unified category includes it.',
 }
 </script>
 
@@ -372,20 +378,25 @@ const help = {
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Federal categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        Map each state category to a federal category. This decides only codes nothing else decides.
+        Map each state category to a federal category. The mapping decides only the codes that
+        nothing more specific decides.
       </p>
       <details class="max-w-prose text-sm">
         <summary class="cursor-pointer font-medium">How a code gets its federal category</summary>
         <ol class="mt-2 list-decimal space-y-1 pl-5">
-          <li>The federal category the state’s list gives the code.</li>
-          <li>Its published unified category’s federal category.</li>
-          <li>A chapter override (ICD-10-CM codes).</li>
+          <li>The federal category that the state’s list gives the code.</li>
+          <li>The federal category of the code’s published unified category.</li>
+          <li>A chapter override, for ICD-10-CM codes.</li>
           <li>A confirmed suggestion by code from another state’s list.</li>
           <li>
-            This mapping. An unreviewed suggestion wins over a guessed mapping, not a confirmed one.
+            This mapping. An unreviewed suggestion wins over a guessed mapping, but not over a
+            confirmed one.
           </li>
         </ol>
-        <p class="mt-2">Guesses are public at once, marked “Not yet reviewed”.</p>
+        <p class="mt-2">
+          A guessed mapping is used on public pages at once and is marked “Not yet reviewed”.
+          Confirm each guess, or confirm them all at once.
+        </p>
       </details>
     </div>
     <div class="max-w-xs">
@@ -403,9 +414,11 @@ const help = {
     </div>
 
     <p v-if="saved" role="status" class="font-medium">{{ saved }}</p>
-    <p v-if="saveError" role="alert" class="text-danger">Could not save: {{ saveError.message }}</p>
+    <p v-if="saveError" role="alert" class="text-danger">
+      The change was not saved: {{ saveError.message }}
+    </p>
     <p v-if="query.error.value" role="alert" class="text-danger">
-      Could not load the categories: {{ query.error.value.message }}
+      The categories could not be loaded: {{ query.error.value.message }}
     </p>
 
     <template v-if="stateId && query.data.value">
@@ -570,7 +583,7 @@ const help = {
                       >Federal category for {{ nameOf(c) }}</label
                     >
                     <select :id="`${id}-c-${i}`" v-model="picked[keyOf(c)]" :class="selectClass">
-                      <option value="" disabled>Choose</option>
+                      <option value="" disabled>Choose a category</option>
                       <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
                     </select>
                     <button
@@ -599,7 +612,7 @@ const help = {
           Override by ICD-10-CM chapter
         </h3>
         <p class="max-w-prose text-muted-foreground">
-          For states that group codes by chapter only.
+          Use an override for a state that groups its codes only by ICD-10-CM chapter.
         </p>
         <fieldset class="flex flex-wrap items-center gap-3 rounded border border-border p-3">
           <legend class="px-1 font-medium">Override several chapters</legend>

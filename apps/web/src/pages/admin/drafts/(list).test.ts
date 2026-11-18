@@ -48,7 +48,7 @@ describe('/admin/drafts', () => {
     expect(within(link.closest('li') ?? link).getByText(/314 entries/)).toBeTruthy()
 
     await user.selectOptions(screen.getByLabelText('State'), 'GA')
-    const empty = await screen.findByText(/No open drafts for Georgia\./)
+    const empty = await screen.findByText(/Georgia has no open drafts\./)
     expect(within(empty).getByRole('link', { name: 'Read and map' }).getAttribute('href')).toBe(
       '/admin/ingest',
     )

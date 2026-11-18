@@ -95,7 +95,7 @@ describe('AiCleanupPanel', () => {
     expect(button.getAttribute('aria-disabled')).toBe('true')
     await off.user.click(button)
     const tip = screen.getByRole('tooltip')
-    expect(tip.textContent).toContain('Needs a server API key')
+    expect(tip.textContent).toContain('requires an API key on the server')
     expect(button.getAttribute('aria-describedby')).toBe(tip.id)
     expect(off.posts).toEqual([])
   })

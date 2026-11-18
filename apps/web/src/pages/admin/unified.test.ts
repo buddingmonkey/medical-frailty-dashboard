@@ -285,7 +285,7 @@ describe('/admin/unified: rebuild coverage', () => {
     await within(region).findByText(/of 19 categories/)
     await wait(1500)
     expect(text(await within(region).findByText(/database is busy/))).toBe(
-      'The database is busy. Waiting, then trying again…',
+      'The database is busy. The page will wait and then try again…',
     )
     expect(within(region).queryByRole('alert')).toBeNull()
     // Backoff: 5 s, then 10 s.
@@ -315,7 +315,7 @@ describe('/admin/unified: rebuild coverage', () => {
     await within(region).findByText(/of 19 categories/)
     await wait(1500 + 5000 + 10_000 + 20_000)
     expect(text(await within(region).findByRole('alert'))).toBe(
-      `Could not rebuild (placements): ${busy}`,
+      `Rebuild coverage stopped during placements: ${busy}`,
     )
     // The first call, then the failed call and its 3 retries.
     expect(calls).toBe(5)
@@ -394,7 +394,7 @@ describe('/admin/unified: rebuild coverage', () => {
     await within(region).findByText(/of 19 categories/)
     await wait(1500)
     expect(text(await within(region).findByRole('alert'))).toBe(
-      `Could not rebuild (placements): ${message}`,
+      `Rebuild coverage stopped during placements: ${message}`,
     )
     // Not a busy database: no retry.
     expect(calls).toBe(2)
@@ -411,7 +411,7 @@ describe('/admin/unified: rebuild coverage', () => {
     const region = screen.getByRole('region', { name: 'Rebuild coverage' })
     await user.click(within(region).getByRole('button', { name: 'Rebuild coverage' }))
     expect(text(await within(region).findByRole('alert'))).toBe(
-      'Could not rebuild (full code lists): Internal error',
+      'Rebuild coverage stopped during full code lists: Internal error',
     )
   })
 })

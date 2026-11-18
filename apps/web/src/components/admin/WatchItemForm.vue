@@ -71,10 +71,11 @@ function submit() {
 
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  dueDate: 'Blank: listed under No date yet.',
-  repeatDays: 'Closing opens the next one this many days later (1 to 3,650).',
-  approximate: 'Shows “approximate” next to the date.',
-  why: 'Copied to the next repeat.',
+  dueDate: 'If the date is left blank, the item is listed under “No date yet”.',
+  repeatDays:
+    'When the item is closed, the next one opens this many days later. Enter a whole number from 1 to 3,650, or leave it blank.',
+  approximate: 'The word “approximate” is shown next to the date.',
+  why: 'This text is copied to the next item when the item repeats.',
 }
 
 const inputClass =

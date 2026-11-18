@@ -78,7 +78,8 @@ const publish = useMutation({
     </p>
     <template v-else>
       <p v-if="!checks.report.canPublish" class="text-danger">
-        A check blocks publishing. Fix the rows and send them again.
+        A check blocks publishing. Correct the rows in the review table, then send them to the draft
+        again.
       </p>
       <p v-else class="max-w-prose text-muted-foreground">
         Publishing replaces {{ stateName }}’s public list in one step. The current list is backed up
@@ -92,7 +93,7 @@ const publish = useMutation({
         <div v-for="check in toConfirm" :key="check.id">
           <label v-if="check.level === 'confirm'" class="flex items-start gap-2">
             <input v-model="ticked[check.id]" type="checkbox" class="mt-1" />
-            <span>I have looked at this: {{ check.message }}</span>
+            <span>I have reviewed this finding: {{ check.message }}</span>
           </label>
           <template v-else>
             <label :for="`${id}-${check.id}`" class="block">
@@ -118,7 +119,7 @@ const publish = useMutation({
         Publish draft v{{ versionNo }}
       </button>
       <p v-if="publish.error.value" role="alert" class="text-danger">
-        Could not publish: {{ publish.error.value.message }}
+        The draft was not published: {{ publish.error.value.message }}
       </p>
     </template>
   </section>

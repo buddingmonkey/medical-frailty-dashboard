@@ -33,7 +33,13 @@ const draftsQuery = useQuery({
 
 <template>
   <section class="space-y-6">
-    <h2 class="font-display text-2xl font-medium text-heading">Drafts</h2>
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl font-medium text-heading">Drafts</h2>
+      <p class="max-w-prose text-muted-foreground">
+        A draft holds a state’s new list until it is published, and nothing in it is public. Open a
+        draft to read its checks and publish it.
+      </p>
+    </div>
     <div class="max-w-xs">
       <label :for="`${id}-state`" class="font-medium">State</label>
       <select
@@ -49,8 +55,8 @@ const draftsQuery = useQuery({
     </div>
     <template v-if="stateId && draftsQuery.data.value">
       <p v-if="draftsQuery.data.value.length === 0" class="text-muted-foreground">
-        No open drafts for {{ stateName }}.
-        <RouterLink to="/admin/ingest">Read and map</RouterLink> to start one.
+        {{ stateName }} has no open drafts. To start one, send rows from
+        <RouterLink to="/admin/ingest">Read and map</RouterLink>.
       </p>
       <ul v-else class="space-y-2">
         <li v-for="d in draftsQuery.data.value" :key="d.id">
@@ -65,7 +71,7 @@ const draftsQuery = useQuery({
       </ul>
     </template>
     <p v-if="draftsQuery.error.value" role="alert" class="text-danger">
-      Could not load the drafts: {{ draftsQuery.error.value.message }}
+      The drafts could not be loaded: {{ draftsQuery.error.value.message }}
     </p>
   </section>
 </template>

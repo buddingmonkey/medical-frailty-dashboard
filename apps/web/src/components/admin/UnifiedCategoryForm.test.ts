@@ -28,11 +28,12 @@ describe('UnifiedCategoryForm field help', () => {
     for (const field of ['Slug', 'Includes', 'Excludes', 'Status']) {
       expect(screen.queryByRole('button', { name: `About ${field}` })).toBeNull()
     }
-    const hint = 'Text only; CCSR groups decide the codes.'
+    const hint =
+      'Includes and Excludes are descriptive text only. The CCSR groups decide which codes are in the category.'
     expect(screen.getByRole('textbox', { name: /^Includes/, description: hint })).toBeTruthy()
     expect(screen.getByRole('textbox', { name: /^Excludes/, description: hint })).toBeTruthy()
     expect(
-      screen.getByRole('combobox', { name: 'Status', description: /retire instead/ }),
+      screen.getByRole('combobox', { name: 'Status', description: /retire it instead/ }),
     ).toBeTruthy()
   })
 
@@ -44,7 +45,7 @@ describe('UnifiedCategoryForm field help', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(screen.getByRole('alert').textContent).toContain(
-      'Slug “codes” is taken by another page.',
+      'The slug “codes” is reserved for another page. Choose a different slug.',
     )
   })
 
@@ -54,7 +55,9 @@ describe('UnifiedCategoryForm field help', () => {
 
     await user.click(screen.getByRole('button', { name: 'About Sort order' }))
 
-    expect(screen.getByRole('tooltip').textContent).toMatch(/lower comes first/i)
+    expect(screen.getByRole('tooltip').textContent).toBe(
+      'A lower number is shown first. Must be a whole number between 0 and 100,000.',
+    )
   })
 
   it('keeps the fields named by their labels and the slug described by its help', () => {
@@ -65,7 +68,7 @@ describe('UnifiedCategoryForm field help', () => {
     expect(
       screen.getByRole('textbox', {
         name: /^Slug/,
-        description: 'Lowercase letters, digits and hyphens. Must be unique.',
+        description: 'Use lowercase letters, digits and hyphens only. The slug must be unique.',
       }),
     ).toBeTruthy()
   })

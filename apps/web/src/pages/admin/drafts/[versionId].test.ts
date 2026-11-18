@@ -194,7 +194,7 @@ describe('/admin/drafts/[versionId]', () => {
       ),
     )
     await renderRoute('/admin/drafts/7')
-    expect(await screen.findByText(/No draft with this number/)).toBeTruthy()
+    expect(await screen.findByText(/No draft has this number/)).toBeTruthy()
   })
 })
 

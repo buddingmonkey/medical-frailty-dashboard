@@ -247,7 +247,7 @@ describe('/admin/sources', () => {
     )
 
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'Use a PDF, Excel (.xlsx), CSV, JSON or text file',
+      'Choose a PDF, Excel (.xlsx), CSV, JSON or text file',
     )
     expect(screen.queryByRole('button', { name: 'Upload' })).toBeNull()
     expect(api.uploads).toEqual([])

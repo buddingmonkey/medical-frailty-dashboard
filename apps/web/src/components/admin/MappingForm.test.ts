@@ -23,7 +23,7 @@ function setup() {
 }
 
 const recordHint =
-  'Basis, confidence, rationale and citation are for the record; they do not change counts.'
+  'Basis, confidence, rationale and citation are kept for the record and do not change any counts. The citation names the page or section of the state’s document that supports the mapping.'
 
 describe('MappingForm field help', () => {
   it('says once that the record fields change no counts, and lets the fields enforce lengths', () => {
@@ -61,7 +61,7 @@ describe('MappingForm field help', () => {
     expect(
       screen.getByRole('button', {
         name: 'Save and approve',
-        description: 'Approving changes public pages at once.',
+        description: 'Approving changes public pages at once. One admin’s approval is enough.',
       }),
     ).toBeTruthy()
   })

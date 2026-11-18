@@ -14,8 +14,8 @@ import MaintenancePanel from '../../components/admin/MaintenancePanel.vue'
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Backup and restore</h2>
       <p class="max-w-prose text-muted-foreground">
-        One zip of all site data except source files and reference code lists.
-        <RouterLink to="/admin/guide">What’s in it</RouterLink>
+        A backup is one zip file of all site data except the source files and the reference code
+        lists. The <RouterLink to="/admin/guide">Guide</RouterLink> lists what it contains.
       </p>
     </div>
     <div class="max-w-3xl space-y-2 rounded border border-border p-4">
@@ -24,7 +24,7 @@ import MaintenancePanel from '../../components/admin/MaintenancePanel.vue'
         class="rounded border-l-4 border-highlight bg-surface px-3 py-1 text-foreground"
         role="note"
       >
-        Every backup, saved ones included, holds admin email addresses. Keep it private.
+        Every backup, including the saved ones, holds admin email addresses. Keep backups private.
       </p>
       <a
         href="/api/admin/backup"

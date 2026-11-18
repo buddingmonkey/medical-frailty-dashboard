@@ -162,8 +162,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Unified categories</h2>
       <p class="max-w-prose text-muted-foreground">
-        The categories states are compared by, called comparison categories on the public site. Only
-        published ones are public.
+        Unified categories are the categories that states are compared by; the public site calls
+        them comparison categories. Only published categories appear on public pages.
       </p>
     </div>
 
@@ -172,10 +172,10 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
       {{ save.data.value.warning }}
     </p>
     <p v-if="list.error.value" role="alert" class="text-danger">
-      Could not load the unified categories: {{ list.error.value.message }}
+      The unified categories could not be loaded: {{ list.error.value.message }}
     </p>
     <p v-if="ccsr.error.value" role="alert" class="text-danger">
-      Could not load the CCSR groups: {{ ccsr.error.value.message }}
+      The CCSR groups could not be loaded: {{ ccsr.error.value.message }}
     </p>
 
     <div v-if="editing === null">
@@ -257,8 +257,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         Rebuild coverage
       </h3>
       <p class="max-w-prose text-muted-foreground">
-        Use after a CCSR or ICD-10-CM release, or when a save says coverage was not updated. Takes a
-        few minutes; keep the page open.
+        Use this after a new CCSR or ICD-10-CM release, or when a save reports that coverage was not
+        updated. A rebuild takes a few minutes, and the page must stay open until it finishes.
       </p>
       <button
         type="button"
@@ -272,11 +272,11 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         {{ coverageRebuildProgressText(progress) }}
       </p>
       <p v-if="rebuild.isPending.value && waitingToRetry" role="status">
-        The database is busy. Waiting, then trying again…
+        The database is busy. The page will wait and then try again…
       </p>
       <p v-if="rebuilt" role="status">{{ rebuilt }}</p>
       <p v-if="rebuild.error.value" role="alert" class="text-danger">
-        Could not rebuild ({{ coverageRebuildStepLabels[currentStep] }}):
+        Rebuild coverage stopped during {{ coverageRebuildStepLabels[currentStep] }}:
         {{ rebuild.error.value.message }}
       </p>
     </section>

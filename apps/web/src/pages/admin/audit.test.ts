@@ -48,7 +48,7 @@ describe('/admin/audit', () => {
     expect(rows[0]?.textContent).toContain('state:MT')
     expect(rows[0]?.textContent).toContain('{"file":"<b>mt.pdf</b>"}')
     expect(table.querySelector('b')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Load older' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Load older entries' })).toBeNull()
   })
 
   it('loads older pages with the cursor', async () => {
@@ -66,12 +66,12 @@ describe('/admin/audit', () => {
     const user = userEvent.setup()
 
     await renderRoute('/admin/audit')
-    await user.click(await screen.findByRole('button', { name: 'Load older' }))
+    await user.click(await screen.findByRole('button', { name: 'Load older entries' }))
 
     expect(await screen.findByText('older.one')).toBeTruthy()
     const table = screen.getByRole('table', { name: 'Audit log' })
     expect(within(table).getAllByRole('row')).toHaveLength(5)
-    expect(screen.queryByRole('button', { name: 'Load older' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Load older entries' })).toBeNull()
   })
 
   it('says when there is nothing yet', async () => {
@@ -95,6 +95,8 @@ describe('/admin/audit', () => {
 
     await renderRoute('/admin/audit')
 
-    expect((await screen.findByRole('alert')).textContent).toContain('Could not load the audit log')
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'The audit log could not be loaded',
+    )
   })
 })

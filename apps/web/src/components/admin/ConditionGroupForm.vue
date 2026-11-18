@@ -69,8 +69,9 @@ const problems = ref<string[]>([])
 
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  name: 'Shown in Like codes.',
-  definition: 'Admins only.',
+  name: 'The group name, shown in the “Like codes” section of public code pages.',
+  definition:
+    'A description of what the group covers. Only admins see it; public pages show only the group name.',
 }
 
 function submit() {
@@ -116,7 +117,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
 
     <div v-if="problems.length > 0 || serverError" role="alert" class="space-y-1 text-danger">
       <p v-for="p in problems" :key="p">{{ p }}</p>
-      <p v-if="serverError">Could not save: {{ serverError }}</p>
+      <p v-if="serverError">The group was not saved: {{ serverError }}</p>
     </div>
 
     <div class="grid gap-4 md:grid-cols-2">
@@ -143,7 +144,8 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
           @input="slugEdited = true"
         />
         <p :id="`${id}-slug-help`" class="mt-1 text-sm text-muted-foreground">
-          Lowercase letters, digits and hyphens. Must be unique. Not public.
+          Use lowercase letters, digits and hyphens only. The slug must be unique and is not part of
+          any public address.
         </p>
       </div>
     </div>
@@ -170,27 +172,34 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         :aria-describedby="`${id}-sources-help`"
       />
       <p :id="`${id}-sources-help`" class="mt-1 text-sm text-muted-foreground">
-        Where the codes come from: code set headings, ICD-10-CM blocks, a state’s category. For CPT,
-        code numbers only, never the AMA’s descriptions.
+        Record where the codes come from, such as code set headings, ICD-10-CM blocks or a state’s
+        category. For CPT, list code numbers only, never the AMA’s descriptions.
       </p>
     </div>
 
     <div>
       <label :for="`${id}-status`" class="font-medium">Status</label>
-      <select :id="`${id}-status`" v-model="draft.status" :class="inputClass">
+      <select
+        :id="`${id}-status`"
+        v-model="draft.status"
+        :class="inputClass"
+        :aria-describedby="`${id}-status-help`"
+      >
         <option v-for="s in conditionGroupStatuses" :key="s" :value="s">
           {{ conditionGroupStatusLabels[s] }}
         </option>
       </select>
+      <p :id="`${id}-status-help`" class="mt-1 text-sm text-muted-foreground">
+        Only a published group adds like codes to public code pages.
+      </p>
     </div>
 
     <fieldset class="space-y-2">
       <legend class="font-medium">Members</legend>
       <p class="text-sm text-muted-foreground">
-        One code, a list, a wildcard (<span class="font-mono">F20.*</span>) or a range (<span
-          class="font-mono"
-          >C00-C96</span
-        >). Each member covers its codes and every code under them.
+        Each member is one code, a list of codes, a wildcard (<span class="font-mono">F20.*</span>)
+        or a range (<span class="font-mono">C00-C96</span>). A member covers its codes and every
+        code under them.
       </p>
       <div v-for="(m, i) in draft.members" :key="m.key" class="flex flex-wrap items-end gap-2">
         <div>
@@ -228,7 +237,7 @@ const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-sur
         :class="smallButton"
         @click="draft.members.push(memberRow('icd10cm', ''))"
       >
-        Add member
+        Add a member
       </button>
     </fieldset>
 

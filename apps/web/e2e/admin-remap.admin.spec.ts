@@ -29,7 +29,7 @@ test('previews a bulk remap with the keyboard, cancels, then saves it', async ({
   await expect(region.getByRole('heading', { name: 'Check the remap before saving' })).toBeFocused()
   await expect(region.getByRole('heading', { name: /Behavioral Health → / })).toBeVisible()
   await expect(region).toContainText(/will move|stay in|already in|No published entry/)
-  await expect(region.getByRole('table', { name: /per federal category/ })).toBeVisible()
+  await expect(region.getByRole('table', { name: /in each federal category/ })).toBeVisible()
   expect(await seriousA11yViolations(page)).toEqual([])
 
   await region.getByRole('button', { name: 'Cancel' }).click()

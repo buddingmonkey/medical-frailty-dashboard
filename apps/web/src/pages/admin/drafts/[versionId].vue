@@ -130,7 +130,7 @@ const discard = useMutation({
 const n = (value: number) => value.toLocaleString('en-US')
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
 const changesHelp =
-  'A range and a code inside it are different codes. A code that changes category shows as Category changed.'
+  'A range and a code inside it count as different codes. A code that moves to another category is listed as Category changed, not as removed and added.'
 /** Badge beside the heading for a version that can no longer change. */
 const statusLabels: Record<string, string> = {
   discarded: 'Discarded',
@@ -145,9 +145,12 @@ const badge = 'rounded bg-surface px-2 py-0.5 text-sm font-medium'
 
 <template>
   <section class="space-y-8">
-    <p v-if="notFound" role="alert">No draft with this number.</p>
+    <p v-if="notFound" role="alert">
+      No draft has this number. Choose a draft on the
+      <RouterLink to="/admin/drafts">Drafts</RouterLink> page.
+    </p>
     <p v-else-if="draftQuery.error.value" role="alert" class="text-danger">
-      Could not load the draft: {{ draftQuery.error.value.message }}
+      The draft could not be loaded: {{ draftQuery.error.value.message }}
     </p>
 
     <template v-if="draft">
@@ -207,7 +210,7 @@ const badge = 'rounded bg-surface px-2 py-0.5 text-sm font-medium'
           </tbody>
         </table>
         <p v-if="draft.parts.length === 0" class="text-muted-foreground">
-          No files yet. Send rows from “Read and map”.
+          This draft has no files yet. Send rows to it from Read and map.
         </p>
       </div>
 
@@ -230,7 +233,7 @@ const badge = 'rounded bg-surface px-2 py-0.5 text-sm font-medium'
           Running the checks…
         </p>
         <p v-if="checksQuery.error.value" role="alert" class="text-danger">
-          Could not run the checks: {{ checksQuery.error.value.message }}
+          The checks could not be run: {{ checksQuery.error.value.message }}
         </p>
         <template v-if="report">
           <p
@@ -390,7 +393,7 @@ const badge = 'rounded bg-surface px-2 py-0.5 text-sm font-medium'
           <button type="button" :class="smallButton" @click="confirming = false">Keep it</button>
         </template>
         <p v-if="discard.error.value" role="alert" class="text-danger">
-          Could not discard: {{ discard.error.value.message }}
+          The draft was not discarded: {{ discard.error.value.message }}
         </p>
       </div>
     </template>

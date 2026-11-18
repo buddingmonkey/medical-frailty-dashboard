@@ -126,7 +126,7 @@ describe('SendToDraft', () => {
       within(counts)
         .getAllByRole('listitem')
         .map((li) => li.textContent.replace(/\s+/g, ' ').trim()),
-    ).toEqual(['3 entries from 2 rows', '1 invalid (blocks publishing above 2%)'])
+    ).toEqual(['3 entries from 2 rows', '1 invalid (these block publishing above 2% of rows)'])
   })
 
   it('asks to store a file that is not stored yet', async () => {
@@ -221,7 +221,10 @@ describe('SendToDraft field help', () => {
     ).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'About Draft' })).toBeNull()
     expect(
-      screen.getByRole('combobox', { name: 'Draft', description: /replaces its rows/ }),
+      screen.getByRole('combobox', {
+        name: 'Draft',
+        description: /replaces only that table’s rows/,
+      }),
     ).toBeTruthy()
   })
 })

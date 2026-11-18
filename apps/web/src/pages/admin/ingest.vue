@@ -96,7 +96,7 @@ async function parse(input: ParseInput, again = false) {
     titleText.value = result.titleText ?? ''
     tableIndex.value = 0
   } catch (error) {
-    parseError.value = error instanceof Error ? error.message : 'Could not read this file.'
+    parseError.value = error instanceof Error ? error.message : 'This file could not be read.'
   } finally {
     parsing.value = false
   }
@@ -297,7 +297,7 @@ watch(lookupCodes, async (codes) => {
     }
   } catch (error) {
     if (run === lookupRun) {
-      lookupError.value = error instanceof Error ? error.message : 'Unknown error'
+      lookupError.value = error instanceof Error ? error.message : 'an unexpected error occurred'
     }
   }
 })
@@ -332,7 +332,7 @@ const summary = computed(() => {
 
 const save = useMutation({
   mutationFn: () => {
-    if (!table.value || !profile.value.success) throw new Error('Nothing to save')
+    if (!table.value || !profile.value.success) throw new Error('There is nothing to save.')
     return sendJson(
       'PUT',
       '/api/admin/column-profiles',
@@ -352,11 +352,12 @@ const inputClass =
   'mt-1 block w-full rounded border border-input-border bg-background px-3 py-1.5 text-foreground'
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
-  roles: 'Choose exactly one Code column.',
-  rule: 'Sets the state’s rule shown on public pages. Values left Not set show “State doesn’t say”.',
+  roles:
+    'This says what each column holds. Choose exactly one Code column, and choose Ignore to leave a column out.',
+  rule: 'This sets each row’s qualification, which public pages show as the state’s rule. A value left at Not set is shown as “State doesn’t say”.',
   basis:
-    'Stated: the state’s document says it. Inferred: this site deduced it, and the public site labels the value as inferred.',
-  profile: 'The next file with the same headers is mapped the same way.',
+    '“Stated” means the state’s document says it. “Inferred” means this site deduced it, and the public site labels the value as inferred.',
+  profile: 'Saving the column profile maps the next file with the same headers in the same way.',
 }
 </script>
 
@@ -365,7 +366,8 @@ const fieldHelp = {
     <div class="space-y-2">
       <h2 class="font-display text-2xl font-medium text-heading">Read and map a list</h2>
       <p class="max-w-prose text-muted-foreground">
-        Open a file or paste a table, map its columns, review the rows, send them to a draft.
+        Open a state’s file or paste a table, then say what each column means and review the rows.
+        When the rows are ready, send them to a draft.
       </p>
     </div>
 
@@ -391,7 +393,8 @@ const fieldHelp = {
           @change="onFile"
         />
         <p :id="`${id}-file-hint`" class="mt-1 text-sm text-muted-foreground">
-          xlsx, PDF, CSV, JSON or TSV.
+          Choose an Excel (.xlsx), PDF, CSV, JSON or tab-separated text file. It is read in your
+          browser and is not stored; each sheet or PDF table is read as a separate table.
         </p>
       </div>
       <div>
@@ -401,7 +404,7 @@ const fieldHelp = {
           v-model="pasteText"
           rows="3"
           :class="inputClass"
-          placeholder="Paste cells, header row first"
+          placeholder="Paste the cells from a spreadsheet, header row first"
         />
         <button
           type="button"
@@ -417,9 +420,9 @@ const fieldHelp = {
     <p v-if="parsing" class="text-muted-foreground">Reading…</p>
     <p v-if="parseError" role="alert" class="text-danger">{{ parseError }}</p>
     <p v-if="parseError" class="max-w-prose">
-      Can’t read this file? Follow
-      <RouterLink to="/admin/guide" class="text-link underline">the guide</RouterLink>, or ask an AI
-      assistant below.
+      If the file cannot be read, follow the steps in
+      <RouterLink to="/admin/guide" class="text-link underline">the guide</RouterLink> or use the AI
+      assistant panel below.
     </p>
 
     <AiCleanupPanel
@@ -447,10 +450,11 @@ const fieldHelp = {
           <option value="below">Extra lines sit {{ wrapLabels.below }}</option>
         </select>
         <p :id="`${id}-wrap-help`" class="mt-1 text-sm text-muted-foreground">
-          If a description sits on the wrong code, switch this.
+          A long cell in a PDF wraps onto extra lines. If a description is joined to the wrong code
+          in the mapped rows below, choose the other option.
         </p>
         <p v-if="wrapReset" role="status" class="mt-1 text-sm text-foreground">
-          Read again: column roles and review edits were reset.
+          The PDF was read again, so the column roles and review edits were reset.
         </p>
       </div>
 
@@ -586,7 +590,8 @@ const fieldHelp = {
           :aria-describedby="`${id}-category-hint`"
         />
         <p :id="`${id}-category-hint`" class="mt-1 text-sm text-muted-foreground">
-          For a file with no category column.
+          Use this when the file has no category column. The categories can be refined in the
+          mapping step.
         </p>
       </div>
 
@@ -600,7 +605,8 @@ const fieldHelp = {
           :aria-describedby="`${id}-tier-hint`"
         />
         <p :id="`${id}-tier-hint`" class="mt-1 text-sm text-muted-foreground">
-          For a state that publishes each tier as its own file. Leave empty if none.
+          Use this when a state publishes each tier as its own file. Leave empty if the list has no
+          tiers.
         </p>
       </div>
 
@@ -615,7 +621,7 @@ const fieldHelp = {
           role="alert"
           class="rounded border-l-4 border-highlight bg-surface px-4 py-2 text-foreground"
         >
-          No qualification chosen for:
+          No qualification is chosen for these values:
           {{ mapping.unmappedQualificationValues.map((v) => v || '(blank)').join(', ') }}. Those
           rows will show “{{ qualificationLabels.unknown }}”.
         </p>
@@ -662,8 +668,8 @@ const fieldHelp = {
       </template>
 
       <p v-if="lookupError" role="alert" class="text-danger">
-        Could not check codes against CMS ({{ lookupError }}). Review works, but can’t settle
-        ICD-10-CM vs HCPCS.
+        The codes could not be checked against the CMS lists ({{ lookupError }}). The review still
+        works, but it cannot settle whether a code is ICD-10-CM or HCPCS.
       </p>
       <ReviewTable
         v-if="review && review.rows.length > 0"
@@ -684,7 +690,7 @@ const fieldHelp = {
         <InfoTip label="Save column profile" :text="fieldHelp.profile" />
         <p v-if="saved" role="status">Saved the column profile for {{ stateName }}.</p>
         <p v-if="save.error.value" role="alert" class="text-danger">
-          Could not save: {{ save.error.value.message }}
+          The column profile was not saved: {{ save.error.value.message }}
         </p>
       </div>
       <SendToDraft

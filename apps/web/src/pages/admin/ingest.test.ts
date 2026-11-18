@@ -239,8 +239,8 @@ describe('/admin/ingest', () => {
     fakeApi()
     await start(`${laPaste}\nPhysical\tSMI\tG2\t\tBlank designation\tF33.9`)
     expect(
-      (await screen.findByText(/No qualification chosen for/)).textContent.replace(/\s+/g, ' '),
-    ).toContain('No qualification chosen for: (blank), 0, 2.')
+      (await screen.findByText(/No qualification is chosen for/)).textContent.replace(/\s+/g, ' '),
+    ).toContain('No qualification is chosen for these values: (blank), 0, 2.')
   })
 
   it('needs exactly one code column before it maps or saves', async () => {
@@ -280,7 +280,7 @@ describe('/admin/ingest', () => {
     expect(within(rows).getByText('Paranoid schizophrenia with a second line')).toBeTruthy()
     expect(within(rows).getByText('page 1, line 1')).toBeTruthy()
     // The title names the state; the send panel says so (the state-mismatch check reads it).
-    expect(screen.getByText(/File names: MT\./)).toBeTruthy()
+    expect(screen.getByText(/The file names these states: MT\./)).toBeTruthy()
     const wrap = screen.getByLabelText<HTMLSelectElement>('Wrapped lines')
     expect(wrap.value).toBe('auto')
     expect(wrap.selectedOptions[0]?.textContent).toContain('found: below the code')
@@ -342,7 +342,9 @@ describe('/admin/ingest', () => {
       http.post('/api/admin/ref-codes/lookup', () => HttpResponse.json({}, { status: 500 })),
     )
     await start()
-    expect(await screen.findByText(/Could not check codes against CMS/)).toBeTruthy()
+    expect(
+      await screen.findByText(/The codes could not be checked against the CMS lists/),
+    ).toBeTruthy()
   })
 
   it('sends the reviewed rows of a pasted table to a new draft', async () => {

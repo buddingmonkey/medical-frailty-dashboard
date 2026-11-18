@@ -86,9 +86,10 @@ const inputClass =
       />
       <p :id="`${id}-count`" class="mt-1 text-sm text-muted-foreground" aria-live="polite">
         <template v-if="search.trim() === ''"
-          >Type an id (MBD001) or part of a name. {{ options.length }} groups.</template
+          >Type a group ID, such as MBD001, or part of a group name. There are
+          {{ options.length }} groups.</template
         >
-        <template v-else-if="matches.length === 0">No group matches.</template>
+        <template v-else-if="matches.length === 0">No group matches this search.</template>
         <template v-else
           >{{ matches.length }}{{ matches.length === MAX_RESULTS ? '+' : '' }}
           {{ matches.length === 1 ? 'match' : 'matches' }}</template
