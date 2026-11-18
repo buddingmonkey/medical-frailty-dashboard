@@ -286,8 +286,8 @@ const aboutSections: AboutSection[] = [
           'codes automatically by their CCSR group.',
       ),
       p(
-        'How an entry gets its federal category: where the state’s list names a federal ' +
-          'category for a code, this site uses it (“Stated by the state”). Otherwise the entry ' +
+        'Where the state’s list names a federal category for a code, this site uses that ' +
+          'category (“Stated by the state”). Otherwise the entry ' +
           'takes the federal category of the comparison category its code falls in; a code in no ' +
           'comparison category takes the federal category mapped to the state’s own category. ' +
           'Where another state’s list names a federal category for the same code, or for codes ' +
@@ -584,9 +584,9 @@ export const disclaimerPage: InfoPage = {
         p(
           'Lists are checked and reviewed before they are published, but mistakes can happen and ' +
             'states change their lists. The site’s categories, mappings and numbers are its own ' +
-            'work (see ',
+            'work, explained on the ',
           { text: 'About', href: '/about' },
-          '). The site is provided as is, without warranty. ',
+          ' page. The site is provided as is, without warranty. ',
           { text: 'Report a problem', href: REPORT_PROBLEM_URL },
           ' if you find one.',
         ),

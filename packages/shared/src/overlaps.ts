@@ -157,7 +157,9 @@ export const OVERLAPS_DESCRIPTION =
   'lists include exactly the same codes, and how many codes each group shares.'
 
 /** Shortened 2026-11-17: the row rules moved to `OVERLAPS_COUNT_NOTE`, under the table. */
-export const OVERLAPS_INTRO = 'Groups of states that list exactly the same codes in one category.'
+export const OVERLAPS_INTRO =
+  'Choose a comparison category to see the groups of states whose lists include exactly the ' +
+  'same codes in it.'
 
 /** Under the table: what a row and a code are (the drill-down's rule, `DRILL_COUNT_NOTE`). */
 export const OVERLAPS_COUNT_NOTE =

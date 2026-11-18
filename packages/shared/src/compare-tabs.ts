@@ -24,8 +24,9 @@ export const CATEGORIES_HEADING = 'Comparison categories'
 
 /** Shortened 2026-11-17; how they are built is on About (`learnMore.categories`). */
 export const CATEGORIES_INTRO =
-  'This site’s own categories, used to measure every state’s list the same way. They are not a ' +
-  'state’s or CMS’s categories.'
+  'These are this site’s own categories, used to measure every state’s list the same way. They ' +
+  'are not a state’s or CMS’s categories. Choose one to see its codes and how many states ' +
+  'include each.'
 
 /** The link text to AHRQ's CCSR page (`CCSR_URL`). */
 export const CCSR_LINK_TEXT = 'About the CCSR (AHRQ)'

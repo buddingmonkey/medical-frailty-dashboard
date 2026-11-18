@@ -78,7 +78,9 @@ export const SEARCH_PAGE = {
   intro:
     'Find a diagnosis or service code and see which states list it as a sign of medical ' +
     'frailty. Type a code number or words from its description.',
-  lead: 'Find a code and see which states list it.',
+  lead:
+    'Find a diagnosis or service code and see which states list it. Type a code number or words ' +
+    'from its description.',
   inputLabel: 'Code number or words',
   filtersLabel: 'Filters',
   systemLabel: 'Code system',

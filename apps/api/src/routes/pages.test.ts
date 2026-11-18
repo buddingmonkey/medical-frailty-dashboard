@@ -238,7 +238,7 @@ describe('GET / (server-rendered)', () => {
     expect(app).toContain(`<p>${HOME_INTRO} <a href="/about#matching">`)
     expect(app).toContain(`<a href="${STATUTE_URL}" rel="noopener noreferrer external">`)
     expect(app).toMatch(
-      /<footer>[\s\S]*<p>[^<]*No patient data\. <a href="\/disclaimer">Disclaimer<\/a><\/p>/,
+      /<footer>[\s\S]*<p>[^<]*It holds no patient data\. <a href="\/disclaimer">Disclaimer<\/a><\/p>/,
     )
     expect(app).toContain(FOOTER_TEXT)
     expect(jsonLd(html)[0]).toMatchObject({

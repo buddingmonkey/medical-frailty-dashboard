@@ -9,12 +9,14 @@ import {
 } from './code-detail'
 import {
   COMPARE_HEADING,
+  COMPARE_INTRO,
   compareLegend,
   compareStatusLabels,
   descriptionSourceText,
 } from './compare'
 import { CATEGORIES_HEADING, CATEGORIES_INTRO } from './compare-tabs'
 import {
+  DRILL_ABOUT,
   DRILL_COUNT_NOTE,
   drillCountText,
   drillGroupCountText,
@@ -25,12 +27,15 @@ import {
 import {
   NOT_REVIEWED_NOTE,
   OVERVIEW_HEADING,
+  OVERVIEW_INTRO,
   OVERVIEW_READING_HINT,
   overviewReadingNotes,
   OVERVIEW_NOT_REVIEWED,
   overviewOrderAnnouncement,
 } from './overview'
+import { OVERLAPS_COUNT_NOTE, OVERLAPS_INTRO } from './overlaps'
 import {
+  ENTRY_DEFINITION,
   FEDERAL_OVERLAP_NOTE,
   FOOTER_TEXT,
   HOME_INTRO,
@@ -39,6 +44,7 @@ import {
   stateCategoriesIntro,
   statesWithListText,
 } from './public'
+import { SEARCH_PAGE } from './search-page'
 import { qualificationBasisLabels, qualificationHelp, qualificationLabels } from './qualification'
 import {
   SIMILARITY_HELP,
@@ -114,7 +120,8 @@ describe('public wording', () => {
     expect(CATEGORIES_INTRO).toMatch(/not a state’s or CMS’s categories/)
     expect(STATES_COMPARE_NONE_LABEL).toBe('Not in any comparison category')
     expect(stateCategoriesIntro('Georgia')).toBe(
-      'How Georgia’s categories line up with the five federal categories in the law.',
+      'This table shows how Georgia’s own categories line up with the five federal categories in ' +
+        'the law.',
     )
   })
 
@@ -138,10 +145,16 @@ describe('public wording', () => {
 
   it('gives the home page and footer context and a disclaimer', () => {
     expect(HOME_INTRO).toMatch(/It does not decide anyone’s eligibility\.$/)
-    expect(FOOTER_TEXT).toMatch(/No patient data/)
-    expect(FOOTER_TEXT).toMatch(/Not an official source or an eligibility decision/)
-    expect(MAPPINGS_NOT_REVIEWED_NOTE).toMatch(/^\* /)
-    expect(FEDERAL_OVERLAP_NOTE).toMatch(/more than one category/)
+    expect(HOME_INTRO).toMatch(/excluded from the H\.R\.1 work requirements/)
+    expect(HOME_INTRO).not.toMatch(/exempt/)
+    expect(FOOTER_TEXT).toBe(
+      'Codes are copied from each state’s published documents. This site is not an official ' +
+        'source and does not determine eligibility. It holds no patient data.',
+    )
+    expect(MAPPINGS_NOT_REVIEWED_NOTE).toBe(
+      '* These counts include automatic suggestions that have not yet been reviewed.',
+    )
+    expect(FEDERAL_OVERLAP_NOTE).toMatch(/more than one federal category/)
     expect(statesWithListText(4)).toBe('4 of the 50 states and DC have a list on this site.')
     expect(pageTitles.home).toMatch(/medical frailty code lists/)
   })
@@ -152,6 +165,45 @@ describe('public wording', () => {
     expect(TILE_MAP_HEADING).toBe('One category, every state')
     expect(TILE_MAP_NONE).toBe('None')
     expect(OVERVIEW_NOT_REVIEWED).toBe('not yet reviewed')
+  })
+
+  // The professional-tone pass (2026-11-17): intros, notes, legends and tooltips are complete
+  // sentences, never fragments or colon-led shorthand.
+  it('writes intros, notes, legends and tooltips as complete sentences', () => {
+    const texts = [
+      HOME_INTRO,
+      FOOTER_TEXT,
+      MAPPINGS_NOT_REVIEWED_NOTE,
+      FEDERAL_OVERLAP_NOTE,
+      stateCategoriesIntro('Georgia'),
+      CATEGORIES_INTRO,
+      OVERVIEW_INTRO,
+      OVERVIEW_READING_HINT,
+      NOT_REVIEWED_NOTE,
+      TILE_MAP_INTRO,
+      TILE_MAP_UNION_NOTE,
+      DRILL_ABOUT,
+      DRILL_COUNT_NOTE,
+      OVERLAPS_INTRO,
+      OVERLAPS_COUNT_NOTE,
+      COMPARE_INTRO,
+      STATES_COMPARE_INTRO,
+      SIMILARITY_NOTE,
+      SIMILARITY_HELP,
+      CODE_DETAIL_CONFIRMED.help,
+      CODE_DETAIL_OTHERS.help,
+      SEARCH_PAGE.lead,
+      ...compareLegend.map((l) => l.text),
+    ]
+    for (const text of texts) {
+      expect(text).toMatch(/^([*†] )?[A-Z“]/)
+      expect(text).toMatch(/\.$/)
+      // No colon-led shorthand ("Not yet reviewed: some…", "The Jaccard index: shared…").
+      expect(text).not.toMatch(/^[^.]{0,40}: [a-z]/)
+    }
+    for (const tip of [ENTRY_DEFINITION, SIMILARITY_HELP, ...compareLegend.map((l) => l.text)]) {
+      expect(tip.split(/\s+/).length).toBeLessThanOrEqual(35)
+    }
   })
 
   it('explains every cell status in the legend', () => {

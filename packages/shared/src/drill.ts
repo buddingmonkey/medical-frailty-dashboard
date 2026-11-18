@@ -362,7 +362,7 @@ export const CCSR_URL = 'https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp'
 
 /** Under the header: what makes a comparison category (the site's own grouping). */
 export const DRILL_ABOUT =
-  'A comparison category: this site’s own grouping of codes, so that every state’s list can be ' +
+  'A comparison category is this site’s own grouping of codes, which lets every state’s list be ' +
   'measured the same way.'
 
 /** The `<details>` summary over the category's CCSR groups. */
@@ -379,8 +379,9 @@ export const DRILL_RULES_HEADING = 'State rules'
 
 /** Above the table: what the counts count, and what a group is. */
 export const DRILL_COUNT_NOTE =
-  'A state includes a code when its list has it or a wildcard or range that covers it, out of ' +
-  'the states with a list on this site.'
+  'A state includes a code when its list has the code itself or a wildcard or range that ' +
+  'covers it. Each count is out of the states with a list on this site. Codes are grouped by ' +
+  'their first three characters (ICD-10-CM) or by code system.'
 
 export const drillCountText = (n: number, m: number): string =>
   `${formatCount(n)} of ${formatCount(m)} ${m === 1 ? 'state' : 'states'}`
