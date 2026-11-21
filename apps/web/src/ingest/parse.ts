@@ -13,7 +13,8 @@ import readXlsxFile from 'read-excel-file/web-worker'
 // Worker in the browser (worker.ts) and directly in tests.
 
 import { ParseError } from './parse-error'
-import { MAX_TITLE_TEXT, type WrapDirection } from './pdf-layout'
+import { MAX_TITLE_TEXT } from './limits'
+import type { WrapDirection } from './pdf-layout'
 
 export { ParseError }
 
