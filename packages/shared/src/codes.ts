@@ -33,6 +33,10 @@ export type CodeProblemKind =
   | 'unclear_range'
   | 'reversed_range'
   | 'mixed_system_range'
+  /** An NDC without hyphens and with fewer than 11 digits: the padding cannot be known. */
+  | 'ndc_unclear'
+  /** NDCs have no ranges. */
+  | 'ndc_range'
 
 export interface ParsedCode {
   /** The text as published, for this one code or range. */
@@ -80,6 +84,10 @@ const HCPCS = /^[A-V]\d{4}$/
 const REVENUE = /^\d{3,4}$/
 /** State-published drug class codes (LA): short alphanumerics. */
 const DRUG_CLASS = /^[0-9A-Z]{2,6}$/
+/** NDC in the 11-digit HIPAA form (5-4-2 without hyphens), the only form stored. */
+const NDC = /^\d{11}$/
+/** NDC as labeler-product-package with hyphens: 4-4-2, 5-3-2, 5-4-1 or 5-4-2. */
+const NDC_HYPHENATED = /^(\d{4,5})-(\d{3,4})-(\d{1,2})$/
 const OTHER = /^[0-9A-Z]{1,20}$/
 
 const SHAPES: Record<CodeSystem, RegExp | null> = {
@@ -87,8 +95,7 @@ const SHAPES: Record<CodeSystem, RegExp | null> = {
   icd10pcs: ICD_PCS,
   cpt: CPT,
   hcpcs: HCPCS,
-  // No state in the seed set publishes NDCs. Add parsing when one does.
-  ndc: null,
+  ndc: NDC,
   revenue: REVENUE,
   drug_class: DRUG_CLASS,
   other: OTHER,
@@ -138,6 +145,7 @@ export function inferCodeSystem(
 ): { system: CodeSystem | null; ambiguous: boolean } {
   const text = raw.trim().toUpperCase()
   if (ICD_CM_DOTTED.test(text)) return { system: 'icd10cm', ambiguous: false }
+  if (NDC.test(text)) return { system: 'ndc', ambiguous: false }
   const norm = normalizeCode(text)
   if (CPT.test(norm)) return { system: 'cpt', ambiguous: false }
   if (REVENUE.test(norm)) return { system: 'revenue', ambiguous: false }
@@ -185,6 +193,7 @@ function parseSingle(raw: string, options: ParseOptions): Single | CodeProblemKi
     if (ICD_CM.test(norm)) return { system: 'icd10cm', norm, wildcard: true, ambiguous: false }
   }
 
+  if (options.system === 'ndc') return parseNdc(text)
   const norm = normalizeCode(text)
   if (options.system) {
     const shape = SHAPES[options.system]
@@ -202,6 +211,29 @@ function parseSingle(raw: string, options: ParseOptions): Single | CodeProblemKi
     wildcard: false,
     ambiguous,
   }
+}
+
+/**
+ * An NDC in the 11-digit form. A hyphenated 10-digit form is padded in its short segment
+ * (4-4-2 → 0 + labeler, 5-3-2 → 0 + product, 5-4-1 → 0 + package). Ten or fewer digits without
+ * hyphens could be any of the three, or a number that lost its leading zeros: never guessed.
+ */
+function parseNdc(text: string): Single | CodeProblemKind {
+  const single = (norm: string): Single => ({
+    system: 'ndc',
+    norm,
+    wildcard: false,
+    ambiguous: false,
+  })
+  if (NDC.test(text)) return single(text)
+  const hyphenated = NDC_HYPHENATED.exec(text.replace(/[\u2013\u2014]/g, '-'))
+  if (hyphenated) {
+    const [, labeler = '', product = '', pkg = ''] = hyphenated
+    if (labeler.length + product.length + pkg.length < 10) return 'ndc_unclear'
+    return single(labeler.padStart(5, '0') + product.padStart(4, '0') + pkg.padStart(2, '0'))
+  }
+  if (/^[\d\-\u2013\u2014]+$/.test(text)) return 'ndc_unclear'
+  return inferCodeSystem(text).system ? 'system_mismatch' : 'unrecognized'
 }
 
 const isCategory = (s: Single) => s.system === 'icd10cm' && s.norm.length === 3
@@ -257,6 +289,7 @@ function parseRange(
   if (end === 'system_mismatch') return 'mixed_system_range'
   if (typeof end === 'string') return end === 'empty' ? 'truncated_range' : end
   if (start.system !== end.system) return 'mixed_system_range'
+  if (start.system === 'ndc') return 'ndc_range'
 
   const flags: CodeFlag[] = []
   if (start.ambiguous || end.ambiguous) flags.push('system_ambiguous')
@@ -296,6 +329,27 @@ const MESSAGES: Record<CodeProblemKind, string> = {
   unclear_range: 'The two ends of this range have different lengths. Enter it by hand.',
   reversed_range: 'The range ends before it starts.',
   mixed_system_range: 'The two ends of this range are in different code systems.',
+  ndc_unclear:
+    'This NDC cannot be read safely. Enter it with hyphens (labeler-product-package) or as all 11 digits.',
+  ndc_range: 'NDCs cannot be listed as a range. Enter each NDC on its own.',
+}
+
+/**
+ * With the NDC system, hyphens separate an NDC's three segments: one or three parts are one
+ * NDC, two or six parts are a range of NDCs (a problem), anything else cannot be read.
+ */
+function parseNdcPart(part: string, ends: readonly string[]): ParsedCode | CodeProblemKind {
+  if (ends.length === 1 || ends.length === 3) {
+    const single = parseNdc(ends.join('-'))
+    return typeof single === 'string' ? single : fromSingle(part, single)
+  }
+  if (ends.length === 2 || ends.length === 6) {
+    const half = ends.length / 2
+    const start = parseNdc(ends.slice(0, half).join('-'))
+    const end = parseNdc(ends.slice(half).join('-'))
+    return typeof start === 'string' || typeof end === 'string' ? 'ndc_unclear' : 'ndc_range'
+  }
+  return 'ndc_unclear'
 }
 
 /** Parses one source cell into codes and ranges, and reports what it could not read. */
@@ -313,14 +367,16 @@ export function parseCodeCell(raw: string, options: ParseOptions = {}): ParsedCe
   for (const part of parts) {
     const ends = part.split(RANGE_MARK).map((end) => end.trim())
     const parsed =
-      ends.length === 2
-        ? parseRange(part, ends[0] ?? '', ends[1] ?? '', options)
-        : ends.length === 1
-          ? (() => {
-              const single = parseSingle(part, options)
-              return typeof single === 'string' ? single : fromSingle(part, single)
-            })()
-          : 'unrecognized'
+      options.system === 'ndc'
+        ? parseNdcPart(part, ends)
+        : ends.length === 2
+          ? parseRange(part, ends[0] ?? '', ends[1] ?? '', options)
+          : ends.length === 1
+            ? (() => {
+                const single = parseSingle(part, options)
+                return typeof single === 'string' ? single : fromSingle(part, single)
+              })()
+            : 'unrecognized'
     if (typeof parsed === 'string')
       result.problems.push({ raw: part, problem: parsed, message: MESSAGES[parsed] })
     else result.codes.push(parsed)
@@ -331,9 +387,16 @@ export function parseCodeCell(raw: string, options: ParseOptions = {}): ParsedCe
 // ---------------------------------------------------------------------------------------------
 // Display and URLs (docs/seo.md: URLs never change once published)
 
-/** `F200` → `F20.0` for ICD-10-CM; other systems display as stored. */
+/**
+ * `F200` → `F20.0` for ICD-10-CM; `00054017613` → `00054-0176-13` (5-4-2) for NDC; other systems
+ * display as stored.
+ */
 export function formatCode(system: CodeSystem, norm: string): string {
-  return system === 'icd10cm' && norm.length > 3 ? `${norm.slice(0, 3)}.${norm.slice(3)}` : norm
+  if (system === 'icd10cm' && norm.length > 3) return `${norm.slice(0, 3)}.${norm.slice(3)}`
+  if (system === 'ndc' && NDC.test(norm)) {
+    return `${norm.slice(0, 5)}-${norm.slice(5, 9)}-${norm.slice(9)}`
+  }
+  return norm
 }
 
 const URL_SLUGS: Partial<Record<CodeSystem, string>> = {

@@ -84,10 +84,47 @@ describe('parseSearchInput', () => {
     'F',
     'F20.0.1',
     'F2-0',
-    '12345678901',
+    '123456789012',
+    '0054-176-13',
+    '00054-0176-130',
+    '00054--0176',
+    '00054 0176 13',
     'é1',
   ])('reads %s as words', (q) => {
     expect(parseSearchInput(q).kind).toBe('words')
+  })
+})
+
+describe('parseSearchInput: NDCs', () => {
+  it.each([
+    ['00054017613', '00054017613'],
+    ['00054-0176-13', '00054017613'],
+    ['00054\u20130176\u201313', '00054017613'],
+    ['0054-0176-13', '00054017613'],
+    ['00054-176-13', '00054017613'],
+    ['00054-0176-3', '00054017603'],
+  ])('reads %s as the NDC %s', (q, prefix) => {
+    expect(parseSearchInput(q)).toEqual({ kind: 'code', prefix, systems: ['ndc'], primary: 'ndc' })
+  })
+
+  it.each([
+    ['000540', '000540'],
+    ['0005401761', '0005401761'],
+    ['00054-', '00054'],
+    ['00054-01', '0005401'],
+    ['00054-0176', '000540176'],
+    ['00054-0176-', '000540176'],
+  ])('reads %s as the start of an NDC (labeler, then product)', (q, prefix) => {
+    expect(parseSearchInput(q)).toEqual({ kind: 'code', prefix, systems: ['ndc'], primary: 'ndc' })
+  })
+
+  it('leaves five digits to every system (a CPT code or an NDC labeler)', () => {
+    expect(parseSearchInput('00054')).toEqual({
+      kind: 'code',
+      prefix: '00054',
+      systems: null,
+      primary: 'cpt',
+    })
   })
 })
 

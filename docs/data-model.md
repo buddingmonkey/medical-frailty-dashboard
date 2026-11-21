@@ -500,16 +500,28 @@ Pure functions, unit-tested against every pattern found in the seed files:
 | `E08.621-E08.622` (LA) | range `E08621`–`E08622` | Exact codes; covers only codes of the same length |
 | `H2G`, `ZAF` (LA pharmacy) | drug class `H2G` | Same shape as an ICD-10-CM category (`C7A`), so the code system must come from the source's sub-category; never inferred |
 | `C96.Z`, `F03.A2`, `M35.0B` (GA) | `C96Z`, `F03A2`, `M350B` | Letters can appear in any position after the first digit |
+| `00054017613`, `0054-0176-13` (CT NDC) | `00054017613` | NDCs are stored in the 11-digit HIPAA form, exact, `includes_children=0`; see below |
 
 `parseCodeCell(raw, { system?, undottedIcd? })` in `packages/shared/src/codes.ts` implements this
 table (tests: `codes.test.ts`, one row per pattern). Results are **codes** (ready to store),
 **flags** on codes that need an admin's decision (`category_scope`, `system_ambiguous`,
 `mixed_wildcard_range`), and **problems** that stop the row for manual entry
 (`truncated_range`, `unclear_range`, `reversed_range`, `mixed_system_range`,
-`system_mismatch`, `unrecognized`, `empty`). `undottedIcd` is a per-source setting (on for
+`system_mismatch`, `unrecognized`, `empty`, `ndc_unclear`, `ndc_range`). `undottedIcd` is a per-source setting (on for
 NE): there, letter + 4 digits could be ICD-10-CM or HCPCS and is flagged until `ref_codes`
 settles it. Elsewhere it is HCPCS. Matching ignores dots either way: NE `A0103` and a dotted
 `A01.03` from another state share one `code_norm`.
+
+**NDC** (CT): always stored as the 11-digit HIPAA form, digits only, with no wildcards or
+ranges. With the NDC code system, a hyphenated 10-digit form is padded in its short segment
+(4-4-2 `0054-0176-13` → `00054017613`; 5-3-2 pads the product, 5-4-1 the package), and three
+hyphen-separated parts are one NDC, not a range. Ten or fewer digits without hyphens (an
+unhyphenated 10-digit NDC, or a number cell that lost its leading zeros) is `ndc_unclear` and
+is never guessed; two NDCs joined by a dash are `ndc_range`. Without a code-system column, only
+11 digits infer NDC. NDCs are in no CMS reference set here, so they are never
+`not_in_reference`; their names are the state's published text (FDA public data, so the CPT
+licensing rule does not apply). Display and code page URLs use the 5-4-2 form with hyphens (`00054-0176-13`,
+`/codes/ndc/00054-0176-13`); the plain 11-digit URL answers with a 301 to it.
 
 **Coverage** (`entryCovers`): an exact entry covers itself, plus its children when
 `includes_children = 1`; a prefix covers every code that starts with it; a wildcard range
