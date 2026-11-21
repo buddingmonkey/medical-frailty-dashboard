@@ -36,6 +36,37 @@ describe('parseDelimited (CSV)', () => {
     expect(parseDelimited('\n\nCode\nF20.0', ',', 'f.csv').header).toEqual(['Code'])
   })
 
+  it('takes the first row with a code column as the header; the lines above are the title', () => {
+    const table = parseDelimited(
+      [
+        'State Medical Frailty Exclusion Code List',
+        '',
+        'Effective January 1, 2027,,',
+        'Code Type,Code,Code Description',
+        'ICD-10,F20.0,Schizophrenia',
+      ].join('\n'),
+      ',',
+      'f.csv',
+    )
+    expect(table.header).toEqual(['Code Type', 'Code', 'Code Description'])
+    expect(table.titleRows).toBe(2)
+    expect(table.rows).toEqual([{ cells: ['ICD-10', 'F20.0', 'Schizophrenia'], locator: 'row 5' }])
+  })
+
+  it('keeps the first non-blank row as the header when no row names a code column', () => {
+    const table = parseDelimited('Title\nDiagnosis,Name\nF20.0,S\n', ',', 'f.csv')
+    expect(table.header).toEqual(['Title'])
+    expect(table.titleRows).toBeUndefined()
+  })
+
+  it('returns the title of a pasted table for the state-name check', async () => {
+    const { titleText } = await parseSource({
+      kind: 'paste',
+      text: 'Montana list\n\nCode\tDescription\nF20.0\tS',
+    })
+    expect(titleText).toBe('Montana list')
+  })
+
   it('refuses an empty file and an unclosed quote', () => {
     expect(() => parseDelimited('\n \n', ',', 'f.csv')).toThrow(ParseError)
     expect(() => parseDelimited('Code\n"F20.0', ',', 'f.csv')).toThrow('unclosed quote')
@@ -131,6 +162,31 @@ describe('parseSource', () => {
       'G35',
       'Multiple sclerosis',
     ])
+  })
+
+  it('finds the header below a title block and returns the title text (Connecticut layout)', async () => {
+    // fixtures/title-block.xlsx comes from fixtures/make-title-block-xlsx.py.
+    const xlsx = new Uint8Array(
+      readFileSync(join(import.meta.dirname, 'fixtures/title-block.xlsx')),
+    )
+    const { tables, titleText } = await parseSource({
+      kind: 'file',
+      name: 'title-block.xlsx',
+      bytes: xlsx,
+    })
+    const [table] = tables
+    expect(table?.header.filter((h) => h !== '')).toEqual(['Code Type', 'Code', 'Code Description'])
+    // Eight non-blank lines above the header: four title lines and four prose lines.
+    expect(table?.titleRows).toBe(8)
+    expect(table?.rows).toHaveLength(5)
+    expect(table?.rows[0]?.locator).toBe('Medical Frailty Condition Codes row 16')
+    const cells = (i: number) => table?.rows[i]?.cells.filter((c) => c !== '')
+    expect(cells(0)).toEqual(['ICD-10', 'A15.0', 'Tuberculosis of lung'])
+    expect(cells(2)).toEqual(['NDC', '00054017613', 'BUPRENORPHINE HCL   '])
+    expect(cells(4)?.[1]).toBe('G2067')
+    expect(titleText).toContain('Connecticut Department of Social Services')
+    expect(titleText).toContain('Effective January 1, 2027')
+    expect(titleText).not.toContain('Code Type')
   })
 
   it('refuses a file named .xlsx that is not a workbook', async () => {

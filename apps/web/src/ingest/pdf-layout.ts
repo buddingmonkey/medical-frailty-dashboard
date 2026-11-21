@@ -40,7 +40,7 @@ export interface PdfLayoutResult {
 }
 
 /** Enough title text to name a state; a contents page can be long. */
-const MAX_TITLE_TEXT = 2_000
+export const MAX_TITLE_TEXT = 2_000
 
 /** Header runs closer than this many heights are one header cell ("Code" "Type"). */
 const WORD_GAP = 0.5

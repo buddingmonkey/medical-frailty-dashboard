@@ -144,7 +144,7 @@ Each adapter: `(file: File) => Promise<RawTable[]>` (one table per PDF page grou
 
 | Adapter | Library | Notes |
 | --- | --- | --- |
-| `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. Old `.xls` is not supported |
+| `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. The header is the first of a sheet's first 50 rows with a code column (at least two cells, a short code cell), so a title block above the table (Connecticut) is skipped; the non-blank rows above it become `titleText` for the state-name check, and the parse summary counts them (CSV, text and pasted tables follow the same rule). Old `.xls` is not supported |
 | `csv` | native (`apps/web/src/ingest/parse.ts`) | RFC 4180 quoting, one linear pass, no regexes. `.txt` is read as tab-separated |
 | `pdf` | `pdfjs-dist` (pinned, legacy build), in a worker it starts from ours | See "PDF adapter" below |
 | `json` | native | Accepts an array of objects with any keys; column mapping step decides which key is what |
