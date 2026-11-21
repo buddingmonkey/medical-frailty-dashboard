@@ -39,7 +39,7 @@ describe('parseConditionMember', () => {
     ['icd10cm', 'C00-D49.9', 'different lengths'],
     ['icd10cm', 'C96-C00', 'ends before it starts'],
     ['icd10cm', 'cancer', 'Not a code'],
-    ['ndc', '12345', 'Not a code'],
+    ['ndc', '12345', 'cannot be read safely'], // too few digits: never padded
   ] as const)('refuses %s %s', (codeSystem, text, message) => {
     const parsed = parseConditionMember({ codeSystem, text })
     expect(parsed.ok).toBe(false)
