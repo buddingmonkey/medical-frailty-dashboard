@@ -12,7 +12,9 @@ import { icd10cmChapterOf } from './icd-chapters'
 // 2. `placed`: the federal parents of the published unified categories the entry is placed in
 //    (`entry_unified`), each once (project lead, 2026-11-02: "Federal category should be pre
 //    mapped").
-// 3. `chapter`: an ICD-10-CM chapter override of the state (always set by an admin).
+// 3. `chapter`: an ICD-10-CM chapter override of the state (always set by an admin), or
+//    `system`: a code-system override of the state for its entries of every other system
+//    (NDC, HCPCS…; project lead, 2026-11-21). The two never meet: one entry has one system.
 // 4. `suggestedReviewed`: a suggestion by code that an admin confirmed (per code, so more
 //    specific than a category mapping).
 // 5. `manual`: the confirmed mapping of the entry's state category.
@@ -20,6 +22,22 @@ import { icd10cmChapterOf } from './icd-chapters'
 //    project lead, 2026-11-13), not yet reviewed.
 // 7. `auto`: the keyword guess for the state category.
 // 8. `unmapped` (shown as "Not yet classified").
+
+/**
+ * Code systems a state can have a code-system override for (rule 3, `system`): every one but
+ * ICD-10-CM, which has chapter overrides instead (project lead, 2026-11-21).
+ */
+export const overrideSystems = [
+  'icd10pcs',
+  'cpt',
+  'hcpcs',
+  'ndc',
+  'revenue',
+  'drug_class',
+  'other',
+] as const satisfies readonly Exclude<CodeSystem, 'icd10cm'>[]
+export type OverrideSystem = (typeof overrideSystems)[number]
+export const overrideSystemSchema = z.enum(overrideSystems)
 
 /** Key of a state category in a mapping table: trimmed, case ignored. */
 export function mappingKey(stateCategory: string, stateSubcategory: string): string {
@@ -30,6 +48,7 @@ export const federalRules = [
   'stated',
   'placed',
   'chapter',
+  'system',
   'suggestedReviewed',
   'manual',
   'suggested',
@@ -42,6 +61,7 @@ export type FederalRule = (typeof federalRules)[number]
 export const confirmedRules: ReadonlySet<FederalRule> = new Set<FederalRule>([
   'stated',
   'chapter',
+  'system',
   'suggestedReviewed',
   'manual',
 ])
@@ -60,6 +80,8 @@ export interface FederalRuleEntry {
 
 /**
  * Which rule decides the entry's federal categories, and the categories, in federal order.
+ * `chapterOverrides` are the state's ICD-10-CM chapter overrides, `systemOverrides` its
+ * overrides by code system (never ICD-10-CM).
  * `manualKeys` names the state categories whose mapping an admin confirmed (`mappingKey`);
  * left out, every mapping counts as manual, so a suggestion never beats one by mistake.
  */
@@ -68,6 +90,7 @@ export function federalRuleOf(
   unifiedParents: readonly FederalCategory[],
   mappings: ReadonlyMap<string, FederalCategory>,
   chapterOverrides: ReadonlyMap<number, FederalCategory>,
+  systemOverrides: ReadonlyMap<CodeSystem, FederalCategory>,
   manualKeys?: ReadonlySet<string>,
 ): { rule: FederalRule; categories: FederalCategory[] } {
   const inOrder = (list: readonly FederalCategory[]) => {
@@ -81,6 +104,10 @@ export function federalRuleOf(
     const chapter = icd10cmChapterOf(entry.codeNorm)
     const override = chapter ? chapterOverrides.get(chapter.number) : undefined
     if (override) return { rule: 'chapter', categories: [override] }
+  }
+  if (entry.codeSystem !== 'icd10cm') {
+    const override = systemOverrides.get(entry.codeSystem)
+    if (override) return { rule: 'system', categories: [override] }
   }
   const suggestion = entry.suggestion
   const suggested = suggestion && suggestion.categories.length > 0 ? suggestion : null
@@ -101,16 +128,24 @@ export function federalRuleOf(
 /**
  * The federal categories an entry counts under, in federal order (`federalRuleOf`): the ones
  * the state published for it, else the parents of its unified categories (repeats allowed),
- * else one from a chapter override, a suggestion or the state category's mapping.
+ * else one from a chapter or code-system override, a suggestion or the state category's mapping.
  */
 export function federalCategoriesOf(
   entry: FederalRuleEntry,
   unifiedParents: readonly FederalCategory[],
   mappings: ReadonlyMap<string, FederalCategory>,
   chapterOverrides: ReadonlyMap<number, FederalCategory>,
+  systemOverrides: ReadonlyMap<CodeSystem, FederalCategory>,
   manualKeys?: ReadonlySet<string>,
 ): FederalCategory[] {
-  return federalRuleOf(entry, unifiedParents, mappings, chapterOverrides, manualKeys).categories
+  return federalRuleOf(
+    entry,
+    unifiedParents,
+    mappings,
+    chapterOverrides,
+    systemOverrides,
+    manualKeys,
+  ).categories
 }
 
 /** The parents as SQL's `group_concat` returns them (null when none), known values only. */
@@ -122,6 +157,15 @@ export function federalCategoryList(text: string | null): FederalCategory[] {
 
 /** A federal category an admin can choose: every one except "unmapped". */
 export const chosenCategory = z.enum(federalCategories).exclude(['unmapped'])
+/** The same list as a constant, for CHECK constraints (a test checks it against the enum). */
+export const chosenFederalCategories = [
+  'blind_or_disabled',
+  'sud',
+  'disabling_mental_disorder',
+  'physical_idd_adl',
+  'serious_complex_medical',
+  'state_specific',
+] as const satisfies readonly ChosenFederalCategory[]
 export type ChosenFederalCategory = z.infer<typeof chosenCategory>
 export const categoryLabel = z.string().max(200)
 
@@ -202,5 +246,19 @@ export const stateCategoriesResponseSchema = z.object({
       override: mappingInfo.omit({ method: true, confidence: true }).nullable(),
     }),
   ),
+  /**
+   * Code systems other than ICD-10-CM that the published version or an open draft holds, with
+   * the state's override for each (rule 3, `system`), in `codeSystems` order.
+   */
+  systems: z
+    .array(
+      z.object({
+        codeSystem: overrideSystemSchema,
+        publishedEntries: z.number().int().nonnegative(),
+        draftEntries: z.number().int().nonnegative(),
+        override: mappingInfo.omit({ method: true, confidence: true }).nullable(),
+      }),
+    )
+    .default([]),
 })
 export type StateCategories = z.infer<typeof stateCategoriesResponseSchema>

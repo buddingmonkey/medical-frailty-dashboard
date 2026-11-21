@@ -97,6 +97,34 @@ describe('GET /api/public/codes/search: code numbers', () => {
   })
 })
 
+describe('GET /api/public/codes/search: NDCs', () => {
+  it.each(['00054017613', '00054-0176-13', '0054-0176-13'])(
+    'finds the NDC typed as %s, with its 5-4-2 page',
+    async (q) => {
+      const body = await results(`q=${q}`)
+      expect(body.query.kind).toBe('code')
+      expect(body.results).toEqual([
+        {
+          system: 'ndc',
+          codeNorm: '00054017613',
+          code: '00054-0176-13',
+          url: '/codes/ndc/00054-0176-13',
+          description: 'Sample tablet, 10 mg (LA text)',
+          descriptionSource: 'state',
+          descriptionState: { slug: 'la', name: 'Louisiana' },
+          listedBy: { count: 1, states: ['la'] },
+        },
+      ])
+    },
+  )
+
+  it('finds NDCs by labeler, and by labeler and product', async () => {
+    expect(codes(await results('q=00054'))).toEqual(['ndc:00054-0176-13', 'ndc:00054-0177-20'])
+    expect(codes(await results('q=0005401'))).toEqual(['ndc:00054-0176-13', 'ndc:00054-0177-20'])
+    expect(codes(await results('q=00054-0177'))).toEqual(['ndc:00054-0177-20'])
+  })
+})
+
 describe('GET /api/public/codes/search: words', () => {
   it('matches CMS text for codes no state lists, ranked by bm25', async () => {
     const body = await results('q=paranoid schizophrenia')

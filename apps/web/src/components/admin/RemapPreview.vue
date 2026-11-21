@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import {
+  codeSystemLabels,
   type FederalCategory,
   federalCategoriesText,
   federalCategoryInfo,
   icd10cmChapters,
   type RemapChange,
-  type RemapChanges,
+  type RemapChangesInput,
   remapChangeSentences,
   remapPreviewResponseSchema,
 } from '@mfcd/shared'
@@ -18,7 +19,7 @@ import { ApiError, sendJson } from '../../lib/api'
 // The confirm step of a bulk remap (roadmap M7 step 3): the server's preview of what the
 // changes do to the state's published entries, then a save that sends the preview's token back.
 // A 409 means something changed since: the preview is fetched again and the admin checks it.
-const props = defineProps<{ stateId: string; stateName: string; changes: RemapChanges }>()
+const props = defineProps<{ stateId: string; stateName: string; changes: RemapChangesInput }>()
 const emit = defineEmits<{ saved: [message: string]; cancel: [] }>()
 
 const id = useId()
@@ -39,7 +40,10 @@ const preview = useQuery({
 })
 
 const stale = ref(false)
-const count = props.changes.categories.length + props.changes.chapters.length
+const count =
+  props.changes.categories.length +
+  props.changes.chapters.length +
+  (props.changes.systems?.length ?? 0)
 const save = useMutation({
   mutationFn: (token: string) =>
     sendJson(
@@ -78,6 +82,10 @@ function titleOf(change: RemapChange): string {
     const chapter = icd10cmChapters.find((c) => c.number === change.chapter)
     const to = change.to === null ? 'use the category mapping' : label(change.to)
     return `ICD-10-CM chapter ${String(change.chapter)}${chapter ? ` (${chapter.title})` : ''} → ${to}`
+  }
+  if (change.kind === 'system' && change.codeSystem !== null) {
+    const to = change.to === null ? 'use the category mapping' : label(change.to)
+    return `${codeSystemLabels[change.codeSystem]} entries → ${to}`
   }
   const name = [change.stateCategory || '(no category)', change.stateSubcategory]
     .filter(Boolean)

@@ -12,7 +12,10 @@ what is still open, and the decisions behind it.
 - **Production** holds the real lists for the four seed states (GA, LA, MT, NE), copied from
   preview on 2026-11-02, and admins edit them there. **Indiana** (Tier 1 only, 4,250 ICD-10-CM
   codes) was added on production by the project lead on 2026-11-13 (`docs/sources.md`,
-  Indiana). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
+  Indiana). **Connecticut** (xlsx, a state draft effective 2027-01-01; ICD-10-CM, NDC and
+  HCPCS) arrived 2026-11-21. The ingest code now reads it (NDC parsing, header below a title
+  block, federal override by code system, migration 0018); it waits for a release and an admin
+  load on production (`docs/devlog/2026-11-21-connecticut-ingest.md`). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
 - **Preview** is a test site with seed data and a gold "Preview site: test data" banner: 4 real
   states (up to 300 real entries each), 40 synthetic lists, 4 announced and 3 with no list
   (`apps/api/seed/seed.sql`, written by `pnpm db:seed:make`). Never seed production.

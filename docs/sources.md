@@ -210,6 +210,37 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   (`33230 and 33240`), comma lists across lines (`T2042, X2042, T2043, ...`) and multi-range
   lines (`E1037-E1224 and E1229-E1295`). The normalizer must split these into separate entries.
 
+## Connecticut (CT)
+
+| Document | Pages | Notes |
+| --- | --- | --- |
+| [Medical Frailty Code List](https://portal.ct.gov/dss/-/media/departments-and-agencies/dss/hr1-partner-toolkit/medical-frailty-code-list-2026_11_09.xlsx) (DSS, HR1 partner toolkit) | xlsx, 1 sheet | "HUSKY D Work Requirements Medical Frailty Exclusion Code List", **"DRAFT Revision Date: November 4, 2026"**, effective 2027-01-01. File name dated 2026-11-09. Sent by the project lead on 2026-11-21. SHA-256 `2a73206c…41a6ff87` |
+
+- **A state draft.** The project lead decided (2026-11-21) to publish it, with the source
+  details saying it is the state's draft effective 2027-01-01, and a watch date to look for
+  a final version.
+- **Layout:** one sheet, "Medical Frailty Condition Codes". Column A is empty. Rows 2–13 are a
+  title block (merged B:D title lines, then prose citing 42 CFR 435.554(c)(5)(ii) and listing
+  the code types). Row 15 is the header `Code Type | Code | Code Description`; data starts at
+  row 16. The parser used to take the first non-empty row as the header; it now looks for the
+  row with a code column (2026-11-21).
+- **6,083 rows, no duplicates, no ranges or wildcards:** 5,684 `ICD-10` (all ICD-10-CM,
+  dotted, no PCS despite the prose), 374 `NDC`, 25 `HCPCS`. All codes are stored as text, so
+  the NDCs keep their leading zeros (11 digits, no hyphens). NDC descriptions are drug names
+  padded with trailing spaces.
+- **No categories.** NDC and HCPCS rows are all addiction treatment (buprenorphine,
+  naloxone combinations, naltrexone, disulfiram, acamprosate; opioid treatment program G
+  codes, H0020, J0570–J0592). The ICD-10-CM codes get suggestions by code; NDC and HCPCS take
+  a per-state override by code system (project lead, 2026-11-21).
+- **Against the CMS lists** (FY2027, 2026-11-21): every HCPCS code is present. 64 ICD-10-CM
+  codes are not in FY2027, all retired in earlier years: `S06.0X2S`–`S06.9X8S` (the old
+  loss-of-consciousness 7th-character set), `T40.4X1A`–`T40.4X5S` and `T40.7X1A`, `I60.20`–
+  `I60.22`, `H40.11X2`, `H40.11X3`. 90 listed codes have children in FY2027, including the
+  bare `F42`, `F53`, `F78`, `G20` and `G35`. For 84 of the 90, the list also names some of the
+  children, so "this code only" or "with children" is a review decision per code.
+- The workbook holds an external link to a staff member's local spreadsheet (left over from
+  editing). It carries no data and the parser ignores it.
+
 ## Codes the seed lists contain that ICD-10-CM FY2027 does not
 
 Found by the CCSR coverage check (M5 step 2, 2026-11-02; `pnpm --filter @mfcd/reference-data

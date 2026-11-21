@@ -72,6 +72,8 @@ describe('inferCodeSystem', () => {
     ['S72001A', 'icd10cm'], // undotted 7 chars
     ['QA0.0101', 'icd10cm'], // FY2027: letter in 2nd place (only QA so far)
     ['QA00101', 'icd10cm'],
+    ['00054017613', 'ndc'], // CT: 11 digits, no other system has this shape
+    [' 72888018230 ', 'ndc'],
   ])('%s -> %s', (raw, system) => {
     expect(inferCodeSystem(raw)).toEqual({ system, ambiguous: false })
   })
@@ -87,6 +89,11 @@ describe('inferCodeSystem', () => {
   it('returns null for shapes no system has', () => {
     expect(inferCodeSystem('ZAF')).toEqual({ system: null, ambiguous: false })
     expect(inferCodeSystem('Infections')).toEqual({ system: null, ambiguous: false })
+  })
+
+  it('never infers NDC from a hyphenated or shorter form', () => {
+    expect(inferCodeSystem('0054-0176-13')).toEqual({ system: null, ambiguous: false })
+    expect(inferCodeSystem('0054017613')).toEqual({ system: null, ambiguous: false })
   })
 })
 
@@ -234,6 +241,63 @@ describe('parseCodeCell: problems (the row stops for manual entry)', () => {
   })
 })
 
+describe('parseCodeCell: NDC (CT)', () => {
+  const ndc: ParseOptions = { system: 'ndc' }
+  it.each<[string, ParseOptions | undefined, string]>([
+    ['00054017613', ndc, '00054017613'], // CT: 11 digits stored as text
+    ['72888018230', ndc, '72888018230'],
+    ['82804019930', undefined, '82804019930'], // no code-system column: inferred
+    ['0054-0176-13', ndc, '00054017613'], // 4-4-2: pad the labeler
+    ['12345-678-90', ndc, '12345067890'], // 5-3-2: pad the product
+    ['12345-6789-0', ndc, '12345678900'], // 5-4-1: pad the package
+    ['00054-0176-13', ndc, '00054017613'], // 5-4-2: the 11 digits with hyphens
+    ['0054–0176–13', ndc, '00054017613'], // en dashes
+  ])('%s -> %s', (raw, options, norm) => {
+    expect(one(raw, options)).toEqual({
+      rawCode: raw,
+      codeSystem: 'ndc',
+      codeNorm: norm,
+      matchKind: 'exact',
+      rangeEndNorm: null,
+      includesChildren: 0,
+      flags: [],
+    })
+  })
+
+  it('reads several NDCs in one cell', () => {
+    const { codes, problems } = parseCodeCell('0054-0176-13, 72888018230', ndc)
+    expect(problems).toEqual([])
+    expect(codes.map((c) => c.codeNorm)).toEqual(['00054017613', '72888018230'])
+  })
+
+  it.each<[string, CodeProblemKind, ParseOptions | undefined]>([
+    ['54017613', 'ndc_unclear', ndc], // a numeric Excel cell that lost its leading zeros
+    ['0054017613', 'ndc_unclear', ndc], // 10 digits without hyphens: never guess the padding
+    ['123-4567-89', 'ndc_unclear', ndc], // 3-4-2 is no NDC layout
+    ['12345-67890-1', 'ndc_unclear', ndc],
+    ['0054-017613', 'ndc_unclear', ndc],
+    ['00054017613-00054017699', 'ndc_range', ndc],
+    ['0054-0176-13 - 0054-0176-99', 'ndc_range', ndc],
+    ['00054017613-00054017699', 'ndc_range', undefined],
+    ['F20.0', 'system_mismatch', ndc],
+    ['BUPRENORPHINE', 'unrecognized', ndc],
+  ])('%s -> %s', (raw, problem, options) => {
+    const result = parseCodeCell(raw, options)
+    expect(result.codes).toEqual([])
+    expect(result.problems).toEqual([expect.objectContaining({ raw, problem })])
+  })
+
+  it('tells the admin how to fix an NDC it cannot read', () => {
+    const [problem] = parseCodeCell('54017613', ndc).problems
+    expect(problem?.message).toMatch(/hyphens|11 digits/)
+  })
+
+  it('keeps range reading for other systems', () => {
+    expect(one('32851-32854', { system: 'cpt' })).toMatchObject({ matchKind: 'range' })
+    expect(parseCodeCell('1-2-3', { system: 'cpt' }).problems[0]?.problem).toBe('unrecognized')
+  })
+})
+
 describe('formatCode', () => {
   it.each([
     ['icd10cm', 'F200', 'F20.0'],
@@ -241,6 +305,7 @@ describe('formatCode', () => {
     ['icd10cm', 'S14111A', 'S14.111A'],
     ['cpt', '28400', '28400'],
     ['revenue', '0912', '0912'],
+    ['ndc', '00054017613', '00054-0176-13'], // stored as 11 digits, shown 5-4-2
   ] as const)('%s %s -> %s', (system, norm, display) => {
     expect(formatCode(system, norm)).toBe(display)
   })
@@ -253,6 +318,7 @@ describe('code page URLs (docs/seo.md)', () => {
     ['hcpcs', 'J7500', '/codes/hcpcs/J7500'],
     ['revenue', '0912', '/codes/revenue/0912'],
     ['drug_class', 'H2G', '/codes/drug-class/H2G'],
+    ['ndc', '00054017613', '/codes/ndc/00054-0176-13'],
   ] as const)('%s %s <-> %s', (system, norm, path) => {
     expect(codeUrlPath(system, norm)).toBe(path)
     const [, , slug = '', code = ''] = path.split('/')
@@ -269,12 +335,20 @@ describe('code page URLs (docs/seo.md)', () => {
       codeNorm: 'F200',
       canonicalPath: '/codes/icd-10-cm/F20.0',
     })
+    for (const variant of ['00054017613', '0054-0176-13']) {
+      expect(parseCodeUrl('ndc', variant)).toEqual({
+        system: 'ndc',
+        codeNorm: '00054017613',
+        canonicalPath: '/codes/ndc/00054-0176-13',
+      })
+    }
   })
 
   it('rejects unknown systems and codes that do not fit the system', () => {
     expect(parseCodeUrl('icd-9', 'F20.0')).toBeNull()
     expect(parseCodeUrl('cpt', 'F20.0')).toBeNull()
     expect(parseCodeUrl('icd-10-cm', 'C34.x')).toBeNull() // wildcards have no page
+    expect(parseCodeUrl('ndc', '54017613')).toBeNull() // lost leading zeros: no guess
   })
 })
 

@@ -144,7 +144,7 @@ Each adapter: `(file: File) => Promise<RawTable[]>` (one table per PDF page grou
 
 | Adapter | Library | Notes |
 | --- | --- | --- |
-| `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. Old `.xls` is not supported |
+| `xlsx` | `read-excel-file` (npm, MIT, pinned), its `/web-worker` build | Chosen over SheetJS by the project lead (2026-11-01): SheetJS CE is only on its own CDN, and the npm `xlsx@0.18.5` is unmaintained with known CVEs. Every sheet becomes a table; numbers are kept as the cell's text (`parseNumber`), dates as `YYYY-MM-DD`. The header is the first of a sheet's first 50 rows with a code column (at least two cells, a short code cell), so a title block above the table (Connecticut) is skipped; the non-blank rows above it become `titleText` for the state-name check, and the parse summary counts them (CSV, text and pasted tables follow the same rule). Old `.xls` is not supported |
 | `csv` | native (`apps/web/src/ingest/parse.ts`) | RFC 4180 quoting, one linear pass, no regexes. `.txt` is read as tab-separated |
 | `pdf` | `pdfjs-dist` (pinned, legacy build), in a worker it starts from ours | See "PDF adapter" below |
 | `json` | native | Accepts an array of objects with any keys; column mapping step decides which key is what |
@@ -246,6 +246,14 @@ unified category takes those categories' federal parents; for one placed nowhere
 override (ICD-10-CM entries only) wins, then the category mapping, else `unmapped`
 (`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
+
+**Code-system overrides** (project lead, 2026-11-21). A chapter override covers ICD-10-CM
+entries only; for every other system the admin can set one federal category per state and code
+system in `system_mappings`, at the same rank (rule `system`). It is for lists without
+categories, such as Connecticut's, whose NDC and HCPCS entries are all addiction treatment.
+`/admin/categories` lists, in an "Override by code system" table after the chapter table, only the
+non-ICD systems that the published version or an open draft holds, and every change goes
+through the bulk remap preview and save below (change kind `system`, audited under `systems`).
 
 **Suggestions by code** (project lead, 2026-11-13). Besides the keyword guess per category,
 publish suggests a federal category per ICD-10-CM entry from the published lists that name one

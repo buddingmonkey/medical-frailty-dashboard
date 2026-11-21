@@ -365,6 +365,21 @@ describe('/admin/ingest', () => {
     ])
   })
 
+  it('reads the lines above the header as the title, and checks it for state names', async () => {
+    const api = fakeApi()
+    await start(`Montana Medical Frailty Code List\n\nCode\tDescription\nF20.0\tx\nF31.0\ty\n`)
+    expect(screen.getByText(/1 row above the header was read as the title/)).toBeTruthy()
+    const panel = screen.getByRole('region', { name: 'Send to a draft' })
+    await within(panel).findByRole('option', { name: 'Louisiana HR1 codes' })
+    await user.selectOptions(within(panel).getByLabelText('Source document'), '11')
+    await user.click(within(panel).getByRole('button', { name: 'Send to draft' }))
+    await within(panel).findByRole('link', { name: 'Open draft v1' })
+    // Only the title names Montana; the rows below it name no state.
+    expect(api.draftSources).toEqual([
+      { part: 'Pasted table', expectedEntries: 2, invalidRowCount: 0, namedStateIds: ['MT'] },
+    ])
+  })
+
   it('reads an AI assistant’s answer for a file it cannot read, then maps it', async () => {
     fakeApi()
     server.use(

@@ -1,4 +1,11 @@
-import { fileTypeFromName, MAX_COLUMNS, MAX_ROWS, type RawRow, type RawTable } from '@mfcd/shared'
+import {
+  fileTypeFromName,
+  guessColumnRoles,
+  MAX_COLUMNS,
+  MAX_ROWS,
+  type RawRow,
+  type RawTable,
+} from '@mfcd/shared'
 // The build for code already inside a Web Worker: it starts no workers of its own.
 import readXlsxFile from 'read-excel-file/web-worker'
 
@@ -6,6 +13,7 @@ import readXlsxFile from 'read-excel-file/web-worker'
 // Worker in the browser (worker.ts) and directly in tests.
 
 import { ParseError } from './parse-error'
+import { MAX_TITLE_TEXT } from './limits'
 import type { WrapDirection } from './pdf-layout'
 
 export { ParseError }
@@ -26,7 +34,7 @@ export interface ParseResult {
   tables: RawTable[]
   /** PDF only: the wrap direction used (chosen, or detected under 'auto'). */
   pdfWrap?: WrapDirection
-  /** PDF only: text before the first table (titles), for the state-name check. */
+  /** Text above the table (titles), for the state-name check: PDF, spreadsheet, text, paste. */
   titleText?: string
   /** With `textOnly`: the text, one string per page (text files: per 100 lines). */
   pageTexts?: string[]
@@ -43,7 +51,7 @@ async function extractText(input: { name: string; bytes: Uint8Array }): Promise<
       return (await extractPdfPages(input.bytes, input.name)).map(pageText)
     }
     case 'xlsx': {
-      const tables = await parseXlsx(input.bytes, input.name)
+      const { tables } = await parseXlsx(input.bytes, input.name)
       return tables.map((t) =>
         [`Sheet: ${t.name}`, t.header.join('\t'), ...t.rows.map((r) => r.cells.join('\t'))].join(
           '\n',
@@ -65,13 +73,64 @@ async function extractText(input: { name: string; bytes: Uint8Array }): Promise<
   }
 }
 
+/** How far down a file the header row may sit below a title block. */
+const HEADER_SEARCH_ROWS = 50
+/** A header cell is short; a longer cell that says "code" is a title or a sentence. */
+const MAX_HEADER_CELL = 40
+
+const isBlank = (cells: readonly string[]) => cells.every((c) => c.trim() === '')
+
+/**
+ * The header row: the first of the first 50 rows with a code column (`guessColumnRoles`), at
+ * least two cells and a short code cell, so a one-cell title such as "Exclusion Code List"
+ * does not count. With no such row, the first non-blank row. The non-blank rows above the
+ * header are the title. Returns -1 for an empty table.
+ */
+function findHeader(rows: readonly { cells: string[] }[]): {
+  index: number
+  title: string[]
+} {
+  const isHeader = (cells: string[]) => {
+    const codeAt = guessColumnRoles(cells).indexOf('code')
+    const filled = cells.filter((c) => c.trim() !== '').length
+    return codeAt >= 0 && filled >= 2 && (cells[codeAt] ?? '').trim().length <= MAX_HEADER_CELL
+  }
+  let index = rows.slice(0, HEADER_SEARCH_ROWS).findIndex((r) => isHeader(r.cells))
+  if (index < 0) index = rows.findIndex((r) => !isBlank(r.cells))
+  const title = rows
+    .slice(0, Math.max(index, 0))
+    .filter((r) => !isBlank(r.cells))
+    .map((r) =>
+      r.cells
+        .map((c) => c.trim())
+        .filter((c) => c !== '')
+        .join(' '),
+    )
+  return { index, title }
+}
+
+/** The title lines of several tables as one text, capped as for PDFs. */
+const joinTitles = (titles: readonly string[]) =>
+  titles
+    .filter((t) => t !== '')
+    .join(' ')
+    .slice(0, MAX_TITLE_TEXT) || undefined
+
 const QUOTE = '"'
 
 /**
  * RFC 4180 style: quoted cells may hold the delimiter, newlines and doubled quotes. One pass
- * over the text, no regular expressions. The first non-blank record is the header.
+ * over the text, no regular expressions. `findHeader` picks the header record.
  */
 export function parseDelimited(text: string, delimiter: string, name: string): RawTable {
+  return readDelimited(text, delimiter, name).table
+}
+
+function readDelimited(
+  text: string,
+  delimiter: string,
+  name: string,
+): { table: RawTable; title: string } {
   const records: { cells: string[]; line: number }[] = []
   let cells: string[] = []
   let cellText = ''
@@ -123,17 +182,27 @@ export function parseDelimited(text: string, delimiter: string, name: string): R
     throw new ParseError(`${name} has an unclosed quote (from line ${String(recordLine)}).`)
   if (cellText !== '' || cells.length > 0) endRecord()
 
-  const isBlank = (r: { cells: string[] }) => r.cells.every((c) => c.trim() === '')
-  const headerIndex = records.findIndex((r) => !isBlank(r))
+  const { index: headerIndex, title } = findHeader(records)
   const headerRecord = records[headerIndex]
   if (!headerRecord) throw new ParseError(`${name} is empty.`)
   return {
-    name,
-    header: headerRecord.cells.map((c) => c.trim()),
-    rows: records
-      .slice(headerIndex + 1)
-      .map((r): RawRow => ({ cells: r.cells, locator: `row ${String(r.line)}` })),
+    table: {
+      name,
+      header: headerRecord.cells.map((c) => c.trim()),
+      rows: records
+        .slice(headerIndex + 1)
+        .map((r): RawRow => ({ cells: r.cells, locator: `row ${String(r.line)}` })),
+      ...(title.length > 0 && { titleRows: title.length }),
+    },
+    title: title.join(' '),
   }
+}
+
+/** A delimited file or paste as a parse result, with the lines above the header as title. */
+function delimitedResult(text: string, delimiter: string, name: string): ParseResult {
+  const { table, title } = readDelimited(text, delimiter, name)
+  const titleText = joinTitles([title])
+  return { tables: [table], ...(titleText !== undefined && { titleText }) }
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -189,8 +258,14 @@ function xlsxCellText(value: unknown): string {
   return cellText(value)
 }
 
-/** Every sheet of a workbook, one table each. Numbers stay as the text in the cell ("0"). */
-export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTable[]> {
+/**
+ * Every sheet of a workbook, one table each. Numbers stay as the text in the cell ("0").
+ * `findHeader` picks each sheet's header row; `titles` are the lines above it, sheet by sheet.
+ */
+export async function parseXlsx(
+  bytes: Uint8Array,
+  name: string,
+): Promise<{ tables: RawTable[]; titles: string[] }> {
   let sheets: Awaited<ReturnType<typeof readXlsxFile<string>>>
   try {
     sheets = await readXlsxFile<string>(new Uint8Array(bytes).buffer, {
@@ -201,6 +276,7 @@ export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTab
     throw new ParseError(`${name} is not a readable Excel workbook.`)
   }
   const tables: RawTable[] = []
+  const titles: string[] = []
   for (const { sheet, data } of sheets) {
     if (data.length > MAX_ROWS + 1) {
       throw new ParseError(`Sheet “${sheet}” has more than ${String(MAX_ROWS)} rows.`)
@@ -209,7 +285,7 @@ export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTab
       cells: row.map(xlsxCellText),
       line: i + 1,
     }))
-    const headerIndex = rows.findIndex((r) => r.cells.some((c) => c.trim() !== ''))
+    const { index: headerIndex, title } = findHeader(rows)
     const headerRow = rows[headerIndex]
     if (!headerRow) continue // An empty sheet.
     if (headerRow.cells.length > MAX_COLUMNS) {
@@ -221,10 +297,12 @@ export async function parseXlsx(bytes: Uint8Array, name: string): Promise<RawTab
       rows: rows
         .slice(headerIndex + 1)
         .map((r): RawRow => ({ cells: r.cells, locator: `${sheet} row ${String(r.line)}` })),
+      ...(title.length > 0 && { titleRows: title.length }),
     })
+    titles.push(title.join(' '))
   }
   if (tables.length === 0) throw new ParseError(`${name} has no sheets with data.`)
-  return tables
+  return { tables, titles }
 }
 
 /** Text from bytes; TextDecoder drops a UTF-8 byte-order mark. */
@@ -232,14 +310,13 @@ const decode = (bytes: Uint8Array) => new TextDecoder('utf-8').decode(bytes)
 
 export function parseSource(input: ParseInput): Promise<ParseResult> {
   return Promise.resolve().then(async (): Promise<ParseResult> => {
-    if (input.kind === 'paste')
-      return { tables: [parseDelimited(input.text, '\t', 'Pasted table')] }
+    if (input.kind === 'paste') return delimitedResult(input.text, '\t', 'Pasted table')
     if (input.textOnly) return { tables: [], pageTexts: await extractText(input) }
     switch (fileTypeFromName(input.name)) {
       case 'csv':
-        return { tables: [parseDelimited(decode(input.bytes), ',', input.name)] }
+        return delimitedResult(decode(input.bytes), ',', input.name)
       case 'txt':
-        return { tables: [parseDelimited(decode(input.bytes), '\t', input.name)] }
+        return delimitedResult(decode(input.bytes), '\t', input.name)
       case 'json':
         return { tables: [parseJson(decode(input.bytes), input.name)] }
       case 'pdf': {
@@ -252,8 +329,11 @@ export function parseSource(input: ParseInput): Promise<ParseResult> {
         )
         return { tables, pdfWrap: wrap, titleText }
       }
-      case 'xlsx':
-        return { tables: await parseXlsx(input.bytes, input.name) }
+      case 'xlsx': {
+        const { tables, titles } = await parseXlsx(input.bytes, input.name)
+        const titleText = joinTitles(titles)
+        return { tables, ...(titleText !== undefined && { titleText }) }
+      }
       case null:
         throw new ParseError('Use a CSV, JSON, text, Excel or PDF file.')
     }

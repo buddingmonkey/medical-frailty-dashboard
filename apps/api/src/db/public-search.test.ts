@@ -32,6 +32,8 @@ const CASES: [string, CodeSearchQuery][] = [
   ['a code in some states', query('F20', { states: ['ga', 'mt'] })],
   ['a code in one system', query('J12', { system: 'hcpcs' })],
   ['a CPT code', query('99213')],
+  ['an NDC', query('00054-0176-13')],
+  ['the start of an NDC', query('000540176')],
   ['words', query('paranoid schizo')],
   ['words in some states', query('paranoid schizo', { states: ['ga'] })],
   ['words in one system', query('injection', { system: 'hcpcs' })],

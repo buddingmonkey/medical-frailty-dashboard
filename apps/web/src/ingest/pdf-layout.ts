@@ -1,5 +1,6 @@
 import { guessColumnRoles, headerKey, MAX_COLUMNS, MAX_ROWS, type RawTable } from '@mfcd/shared'
 
+import { MAX_TITLE_TEXT } from './limits'
 import { ParseError } from './parse-error'
 
 // Rebuilds tables from the text positions in a PDF (docs/ingestion.md, "PDF adapter").
@@ -38,9 +39,6 @@ export interface PdfLayoutResult {
   /** Text before the first table (title lines, a contents page), for the state-name check. */
   titleText: string
 }
-
-/** Enough title text to name a state; a contents page can be long. */
-const MAX_TITLE_TEXT = 2_000
 
 /** Header runs closer than this many heights are one header cell ("Code" "Type"). */
 const WORD_GAP = 0.5

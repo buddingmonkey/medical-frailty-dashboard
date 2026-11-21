@@ -1,4 +1,4 @@
-// A small world for code search (roadmap M6 step 1): CMS rows, three published states, one
+// A small world for code search (roadmap M6 step 1): CMS rows, two NDCs, three published states, one
 // state without a list, and a draft whose codes must never show. Raw SQL, like schema.test.ts.
 import { resetDb } from './reset-db'
 
@@ -22,13 +22,18 @@ const LISTS: Record<string, Entry[]> = {
     ['icd10cm', 'F20.0', 'F200', 'Paranoid schizophrenia (LA text)'],
     ['cpt', '99213', '99213', 'Office visit, established patient (state text)'],
     ['icd10cm', 'F10', 'F10', 'Alcohol related disorders', 'prefix'],
+    // NDCs: stored as 11 digits, published in any hyphenated form (codes.ts, parseNdc).
+    ['ndc', '0054-0176-13', '00054017613', 'Sample tablet, 10 mg (LA text)'],
   ],
   GA: [
     ['icd10cm', 'F20.0', 'F200', null],
     ['hcpcs', 'J1234', 'J1234', 'Test drug injection'],
     ['cpt', '99213', '99213', 'Established patient office visit'],
   ],
-  MT: [['icd10cm', 'F20.9', 'F209', 'Schizophrenia, unspecified']],
+  MT: [
+    ['icd10cm', 'F20.9', 'F209', 'Schizophrenia, unspecified'],
+    ['ndc', '00054-0177-20', '00054017720', 'Sample tablet, 20 mg'],
+  ],
 }
 
 export async function seedSearch(db: D1Database): Promise<void> {

@@ -4,7 +4,7 @@
 // quantifiers, so no input can make it backtrack.
 import { z } from 'zod'
 
-import { inferCodeSystem } from './codes'
+import { inferCodeSystem, parseCodeCell } from './codes'
 import { type CodeSystem, codeSystemSchema } from './enums'
 
 export const CODE_SEARCH_MAX_Q = 100
@@ -57,7 +57,8 @@ export type SearchInput =
   /**
    * A code or the start of one (`F20`, `f20.0`, `J1234`, `99213`), as `normalizeCode` writes
    * it. `systems` null: any code system; `['icd10cm']` for the dotted form. `primary` is the
-   * system `inferCodeSystem` reads, which sorts first among equal codes.
+   * system `inferCodeSystem` reads, which sorts first among equal codes. An NDC, whole or
+   * started, is `['ndc']` in its 11-digit form (`00054017613`).
    */
   | { kind: 'code'; prefix: string; systems: CodeSystem[] | null; primary: CodeSystem | null }
   | { kind: 'words'; tokens: string[] }
@@ -72,10 +73,20 @@ const ICD_PREFIX = /^(?:[A-Z]\d|QA)[0-9A-Z]{0,5}$/
 const HCPCS_PREFIX = /^[A-V]\d{1,4}$/
 /** The start of a CPT or revenue code: digits, or CPT Category II/III and PLA (`0001F`). */
 const NUMERIC_PREFIX = /^(?:\d{1,5}|\d{4}[FTU])$/
+/** A whole NDC, 11 digits or with hyphens (4-4-2, 5-3-2, 5-4-1, 5-4-2): `parseCodeCell` reads it. */
+const NDC_WHOLE = /^(?:\d{11}|\d{4,5}[-\u2013\u2014]\d{3,4}[-\u2013\u2014]\d{1,2})$/
+/**
+ * The start of an NDC in the stored 5-4-2 order: 6 to 10 digits (no other system's codes are
+ * that long), or a 5-digit labeler, a hyphen and part of the product (`00054-01`). Five digits
+ * alone stay a NUMERIC_PREFIX, which already finds NDCs among the other systems.
+ */
+const NDC_PREFIX = /^(?:\d{6,10}|\d{5}[-\u2013\u2014]\d{0,4}[-\u2013\u2014]?)$/
 
 /** Reads the search box: a code prefix when the text has a code's shape, otherwise words. */
 export function parseSearchInput(q: string): SearchInput {
   const text = q.trim().toUpperCase()
+  const ndc = ndcInput(text)
+  if (ndc) return ndc
   if (text.length <= MAX_CODE_TEXT && hasDigit(text)) {
     if (ICD_DOTTED_PREFIX.test(text)) {
       const prefix = text.replace('.', '')
@@ -86,6 +97,22 @@ export function parseSearchInput(q: string): SearchInput {
     }
   }
   return { kind: 'words', tokens: searchTokens(q) }
+}
+
+/** An NDC, whole (as `parseCodeCell` stores it) or started; null for any other text. */
+function ndcInput(text: string): SearchInput | null {
+  const code = (prefix: string): SearchInput => ({
+    kind: 'code',
+    prefix,
+    systems: ['ndc'],
+    primary: 'ndc',
+  })
+  if (NDC_WHOLE.test(text)) {
+    const { codes, problems } = parseCodeCell(text, { system: 'ndc' })
+    const [only] = codes
+    return only && codes.length === 1 && problems.length === 0 ? code(only.codeNorm) : null
+  }
+  return NDC_PREFIX.test(text) ? code(text.replace(/\D/g, '')) : null
 }
 
 function hasDigit(text: string): boolean {

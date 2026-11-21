@@ -57,7 +57,7 @@ export const publicStateSummarySchema = z.object({
       /**
        * Every entry's federal category is confirmed: stated by the state (its own federal
        * category column), or confirmed by an admin (each placement in a unified category
-       * reviewed, or, for an entry placed nowhere, a manual mapping or chapter override).
+       * reviewed, or, for an entry placed nowhere, a manual mapping or an override).
        */
       mappingsConfirmed: z.boolean(),
     })
@@ -136,7 +136,7 @@ export const publicStateCategorySchema = z.object({
   federalCategory: federalCategorySchema,
   /**
    * Confirmed: the state stated it, or an admin confirmed it (every placement reviewed, or, for
-   * entries placed nowhere, a manual mapping or a chapter override). Else a guess (CCSR group or
+   * entries placed nowhere, a manual mapping or an override). Else a guess (CCSR group or
    * keyword).
    */
   confirmed: z.boolean(),

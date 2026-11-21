@@ -319,6 +319,12 @@ const summary = computed(() => {
   const m = mapping.value
   if (!m) return ''
   const parts = [`${plural(m.rows.length, 'row', 'rows')} mapped`]
+  const titleRows = table.value?.titleRows ?? 0
+  if (titleRows > 0) {
+    parts.push(
+      `${plural(titleRows, 'row above the header was', 'rows above the header were')} read as the title`,
+    )
+  }
   if (m.blankRows > 0) parts.push(`${plural(m.blankRows, 'blank row', 'blank rows')} skipped`)
   if (m.noCodeRows.length > 0) {
     const shown = m.noCodeRows.slice(0, 10).join(', ')

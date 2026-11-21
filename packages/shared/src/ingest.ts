@@ -23,6 +23,8 @@ export interface RawTable {
   name: string
   header: string[]
   rows: RawRow[]
+  /** Non-blank rows above the header, read as the title (spreadsheets and delimited text). */
+  titleRows?: number
 }
 
 /** Limits from docs/ingestion.md, "Parser adapters". */

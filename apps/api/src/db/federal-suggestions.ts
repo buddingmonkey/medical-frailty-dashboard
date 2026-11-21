@@ -1,5 +1,6 @@
 import {
   buildSuggestionReference,
+  type CodeSystem,
   decodeStateFederal,
   decodeSuggestion,
   type FederalCategory,
@@ -26,6 +27,7 @@ import {
   entries,
   entryFederalSuggestions,
   states,
+  systemMappings,
 } from './schema'
 
 // Federal categories suggested by code (docs/data-model.md, "Federal categories"; the rule is
@@ -331,7 +333,7 @@ export async function suggestAfterPublish(
 /**
  * Ids of the state's published entries, in the given categories (`mappingKey`), whose federal
  * categories come from an unreviewed suggestion right now (rule `suggested`). Confirming only
- * these moves no entry: a suggestion hidden by a placement, chapter override or manual mapping
+ * these moves no entry: a suggestion hidden by a placement, an override or a manual mapping
  * stays unreviewed.
  */
 export async function applyingSuggestionIds(
@@ -340,7 +342,7 @@ export async function applyingSuggestionIds(
   categoryKeys: ReadonlySet<string>,
 ): Promise<number[]> {
   if (state.publishedVersionId === null || categoryKeys.size === 0) return []
-  const [rows, mappingRows, overrideRows] = await Promise.all([
+  const [rows, mappingRows, overrideRows, systemRows] = await Promise.all([
     db
       .select({
         id: entries.id,
@@ -361,9 +363,11 @@ export async function applyingSuggestionIds(
       ),
     db.select().from(categoryMappings).where(eq(categoryMappings.stateId, state.id)),
     db.select().from(chapterMappings).where(eq(chapterMappings.stateId, state.id)),
+    db.select().from(systemMappings).where(eq(systemMappings.stateId, state.id)),
   ])
   const { mappings, manualKeys } = mappingLookups(mappingRows)
   const overrides = new Map(overrideRows.map((o) => [o.chapter, o.federalCategory]))
+  const systems = systemOverridesByState(systemRows).get(state.id) ?? new Map()
   return rows
     .filter((r) => categoryKeys.has(mappingKey(r.stateCategory, r.stateSubcategory)))
     .filter(
@@ -377,6 +381,7 @@ export async function applyingSuggestionIds(
           federalCategoryList(r.parents),
           mappings,
           overrides,
+          systems,
           manualKeys,
         ).rule === 'suggested',
     )
@@ -404,6 +409,19 @@ export function confirmSuggestionStatements(
           ),
         ),
     )
+  }
+  return out
+}
+
+/** Code-system overrides (`system_mappings` rows) by state, then by code system. */
+export function systemOverridesByState(
+  rows: readonly { stateId: string; codeSystem: CodeSystem; federalCategory: FederalCategory }[],
+): Map<string, Map<CodeSystem, FederalCategory>> {
+  const out = new Map<string, Map<CodeSystem, FederalCategory>>()
+  for (const o of rows) {
+    const forState = out.get(o.stateId) ?? new Map<CodeSystem, FederalCategory>()
+    forState.set(o.codeSystem, o.federalCategory)
+    out.set(o.stateId, forState)
   }
   return out
 }

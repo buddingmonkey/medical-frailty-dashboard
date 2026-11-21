@@ -17,6 +17,7 @@ import {
   entryUnified,
   sourceDocuments,
   states,
+  systemMappings,
   unifiedCategories,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
@@ -520,5 +521,160 @@ describe('/api/admin/states/:stateId/categories/preview and /remap', () => {
       origin: 'https://evil.example',
     })
     expect(crossSite.status).toBe(403)
+  })
+})
+
+describe('code-system overrides', () => {
+  beforeEach(async () => {
+    await resetDb(env.DB)
+    await seed()
+    // Connecticut-like: NDC and HCPCS entries in the blank category, beside MT's ICD-10-CM.
+    const [doc] = await db.select().from(sourceDocuments)
+    const row = (versionId: number, codeSystem: 'ndc' | 'hcpcs', codeNorm: string) => ({
+      versionId,
+      codeSystem,
+      rawCode: codeNorm,
+      codeNorm,
+      stateCategory: '',
+      sourceDocumentId: doc?.id ?? 0,
+    })
+    await db
+      .insert(entries)
+      .values([
+        row(publishedId, 'ndc', '00093572001'),
+        row(publishedId, 'ndc', '00093572002'),
+        row(draftId, 'ndc', '00093572001'),
+        row(draftId, 'hcpcs', 'H0020'),
+      ])
+    await db.insert(categoryMappings).values({
+      stateId: 'MT',
+      stateCategory: '',
+      federalCategory: 'serious_complex_medical',
+      method: 'manual',
+    })
+  })
+
+  const changes = {
+    categories: [],
+    chapters: [],
+    systems: [{ codeSystem: 'ndc', federalCategory: 'sud' }],
+  }
+
+  async function preview(body: unknown = changes) {
+    const res = await send('POST', '/api/admin/states/MT/categories/preview', body)
+    expect(res.status).toBe(200)
+    return remapPreviewResponseSchema.parse(await res.json())
+  }
+
+  it('lists only the non-ICD code systems the state’s lists hold, with counts and overrides', async () => {
+    await db
+      .insert(systemMappings)
+      .values({ stateId: 'MT', codeSystem: 'hcpcs', federalCategory: 'sud', mappedBy: ADMIN })
+    const { systems } = await categories()
+    expect(systems).toEqual([
+      {
+        codeSystem: 'hcpcs',
+        publishedEntries: 0,
+        draftEntries: 1,
+        override: {
+          federalCategory: 'sud',
+          mappedBy: ADMIN,
+          mappedAt: expect.any(String) as unknown,
+        },
+      },
+      { codeSystem: 'ndc', publishedEntries: 2, draftEntries: 1, override: null },
+    ])
+  })
+
+  it('previews the entries that move, then saves in one batch with the date, version and audit', async () => {
+    const result = await preview()
+    expect(result.changes[0]).toMatchObject({
+      kind: 'system',
+      codeSystem: 'ndc',
+      entries: 2,
+      moves: [{ from: 'serious_complex_medical', to: 'sud', n: 2 }],
+      draftEntries: 1,
+    })
+    const res = await send('POST', '/api/admin/states/MT/categories/remap', {
+      ...changes,
+      token: result.token,
+    })
+    expect(res.status).toBe(200)
+    expect(
+      (await db.select().from(systemMappings)).map((m) => [
+        m.stateId,
+        m.codeSystem,
+        m.federalCategory,
+        m.mappedBy,
+      ]),
+    ).toEqual([['MT', 'ndc', 'sud', ADMIN]])
+    const [meta] = await db.select().from(appMeta).where(eq(appMeta.key, 'data_version'))
+    expect(meta?.value).toBe('1')
+    const [version] = await db
+      .select()
+      .from(datasetVersions)
+      .where(eq(datasetVersions.id, publishedId))
+    expect(version?.contentUpdatedAt).not.toBe('2026-11-01T00:00:00.000Z')
+    const audit = auditListResponseSchema.parse(
+      await (await send('GET', '/api/admin/audit')).json(),
+    )
+    expect(audit.items[0]).toMatchObject({
+      action: 'category.remap',
+      details: { systems: [{ codeSystem: 'ndc', from: null, to: 'sud', moved: 2 }] },
+    })
+
+    // Removing it moves the entries back to the category mapping.
+    const removal = { ...changes, systems: [{ codeSystem: 'ndc', federalCategory: null }] }
+    const again = await preview(removal)
+    expect(again.changes[0]?.moves).toEqual([{ from: 'sud', to: 'serious_complex_medical', n: 2 }])
+    const removed = await send('POST', '/api/admin/states/MT/categories/remap', {
+      ...removal,
+      token: again.token,
+    })
+    expect(removed.status).toBe(200)
+    expect(await db.select().from(systemMappings)).toEqual([])
+  })
+
+  it('refuses a stale preview with 409, ICD-10-CM and "unmapped"', async () => {
+    const { token } = await preview()
+    await db.insert(systemMappings).values({
+      stateId: 'MT',
+      codeSystem: 'ndc',
+      federalCategory: 'blind_or_disabled',
+      mappedBy: ADMIN,
+    })
+    const res = await send('POST', '/api/admin/states/MT/categories/remap', { ...changes, token })
+    expect(res.status).toBe(409)
+    const [kept] = await db.select().from(systemMappings)
+    expect(kept?.federalCategory).toBe('blind_or_disabled')
+    for (const systems of [
+      [{ codeSystem: 'icd10cm', federalCategory: 'sud' }],
+      [{ codeSystem: 'ndc', federalCategory: 'unmapped' }],
+    ]) {
+      const bad = await send('POST', '/api/admin/states/MT/categories/preview', {
+        ...changes,
+        systems,
+      })
+      expect(bad.status).toBe(400)
+    }
+  })
+
+  it('refuses ICD-10-CM and "unmapped" in the database too', async () => {
+    await expect(
+      db.insert(systemMappings).values({
+        stateId: 'MT',
+        codeSystem: 'icd10cm' as never,
+        federalCategory: 'sud',
+        mappedBy: ADMIN,
+      }),
+    ).rejects.toThrow()
+    await expect(
+      db.insert(systemMappings).values({
+        stateId: 'MT',
+        codeSystem: 'ndc',
+        federalCategory: 'unmapped' as never,
+        mappedBy: ADMIN,
+      }),
+    ).rejects.toThrow()
   })
 })

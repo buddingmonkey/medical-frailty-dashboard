@@ -271,5 +271,21 @@ describe('buildReview', () => {
       // CPT is not in ref_codes; wildcards are prefixes, not codes.
       expect(referenceLookupCodes(result)).toEqual(['A0103', 'F200'])
     })
+
+    it('reads CT NDCs from the code-system column; CMS lists never hold them', () => {
+      const ndc = { codeSystemHint: 'NDC', description: 'BUPRENORPHINE HCL' }
+      const result = withRef([row('00054017613', ndc), row('0054-0176-13', ndc)])
+      expect(result.rows.map((r) => [r.status, r.codes[0]?.codeNorm, r.notes])).toEqual([
+        ['ready', '00054017613', []],
+        ['ready', '00054017613', ['duplicate']],
+      ])
+      expect(referenceLookupCodes(result)).toEqual([])
+    })
+
+    it('stops an NDC that lost its leading zeros for manual entry', () => {
+      const [r] = withRef([row('54017613', { codeSystemHint: 'NDC' })]).rows
+      expect(r?.status).toBe('problem')
+      expect(r?.problems[0]?.problem).toBe('ndc_unclear')
+    })
   })
 })

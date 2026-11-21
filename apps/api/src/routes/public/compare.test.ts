@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createDb } from '../../db/client'
 import { refCodes } from '../../db/schema'
 import { call } from '../../test/access-fixtures'
-import { icd, publishVersion, seedPublicStates } from '../../test/public-fixtures'
+import { icd, overrideSystem, publishVersion, seedPublicStates } from '../../test/public-fixtures'
 
 // GET /api/public/compare (roadmap M4 step 1). Fixture: GA published (F20.0 and F10.* under
 // Mental health, F codes overridden to SUD by chapter 5; C50.* Cancer; E0250 Equipment), MT
@@ -88,6 +88,15 @@ describe('GET /api/public/compare', () => {
     })
     expect(f10).toMatchObject({ codePath: null, description: 'Alcohol related disorders' })
     expect(res).toMatchObject({ totalRows: 2, page: 1, pageCount: 1, pageSize: 100 })
+  })
+
+  it('counts an entry under its code system’s override', async () => {
+    // E0250 (HCPCS, Equipment) has no mapping; the HCPCS override puts it under SUD.
+    await overrideSystem('GA', 'hcpcs', 'sud')
+    const res = await body('states=ga,mt&category=sud')
+
+    expect(res.rows.map((r) => r.display)).toEqual(['F10.*', 'F20.0', 'E0250'])
+    expect(res.rows[2]?.cells[0]?.match).toMatchObject({ federalCategories: ['sud'] })
   })
 
   it("compares one state's own category, with the state's text where CMS has none", async () => {
