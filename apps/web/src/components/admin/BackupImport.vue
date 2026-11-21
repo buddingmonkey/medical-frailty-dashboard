@@ -394,8 +394,8 @@ const statusLabels: Record<string, string> = {
               :aria-describedby="`${id}-mappings-warning`"
             />
             <span>
-              Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter overrides and
-              column profiles with the backup’s
+              Also replace {{ nameOf(plan.stateId) }}’s category mappings, chapter and code-system
+              overrides and column profiles with the backup’s
               <span class="text-muted-foreground"
                 >(if this is not ticked, the current ones are kept)</span
               >

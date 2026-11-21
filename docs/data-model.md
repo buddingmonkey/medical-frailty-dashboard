@@ -56,7 +56,13 @@ public pages):
    placed in. A code in two unified categories with different parents counts under **both**.
    Admins manage only state → unified; each unified category's parent is fixed.
 3. **Entries placed nowhere**, first match wins (`federalRuleOf`):
-   1. an ICD-10-CM chapter override of the state (`chapter_mappings`);
+   1. an ICD-10-CM chapter override of the state (`chapter_mappings`, rule `chapter`), or, for
+      an entry of any other code system, the state's override for that system
+      (`system_mappings`, rule `system`; project lead, 2026-11-21). Connecticut publishes no
+      categories, and its NDC and HCPCS entries are all addiction treatment: the override puts
+      them under `sud` without inventing a state category. Like a chapter override it is a
+      federal category set by an admin, never shown as the state's own; ICD-10-CM has no
+      system override (chapters do that job), and neither override may be `unmapped`;
    2. a **reviewed suggestion by code** (below): an admin confirmed it for this code, which is
       more specific than a category mapping;
    3. a **manual** mapping of the entry's state category (`category_mappings`);
@@ -105,7 +111,7 @@ What this means where counts are shown:
   categories is always confirmed, and its category rows show "Stated by the state" (`stated` in
   the API, provisional wording) when every entry in the row is stated. Otherwise a placed entry is
   confirmed when every one of its placements is reviewed (`entry_unified.reviewed`); an unplaced
-  one when a chapter override, a reviewed suggestion or a `manual` mapping decides it
+  one when a chapter or code-system override, a reviewed suggestion or a `manual` mapping decides it
   (`confirmedRules`). A row whose unconfirmed entries all follow unreviewed suggestions carries
   `suggestedFrom` (the reference states' names) and shows "Not yet reviewed (suggested from
   Indiana’s list)". A state's mappings are confirmed when all its entries are.

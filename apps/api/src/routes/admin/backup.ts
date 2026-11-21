@@ -16,6 +16,7 @@ import { bumpDataVersion } from '../../db/meta'
 import {
   categoryMappings,
   chapterMappings,
+  systemMappings,
   columnProfiles,
   datasetVersions,
   sourceDocuments,
@@ -153,15 +154,17 @@ export const backupRoute = new Hono<AppEnv>()
     if (!query.success) return c.json({ error: 'Invalid query' }, 400)
     const { stateId } = query.data
     const db = createDb(c.env.DB)
-    const [cats, chapters, profiles] = await db.batch([
+    const [cats, chapters, systems, profiles] = await db.batch([
       db.select().from(categoryMappings).where(eq(categoryMappings.stateId, stateId)),
       db.select().from(chapterMappings).where(eq(chapterMappings.stateId, stateId)),
+      db.select().from(systemMappings).where(eq(systemMappings.stateId, stateId)),
       db.select().from(columnProfiles).where(eq(columnProfiles.stateId, stateId)),
     ])
     return c.json(
       restoreMappingsSchema.parse({
         categoryMappings: cats,
         chapterMappings: chapters,
+        systemMappings: systems,
         columnProfiles: profiles,
       }),
     )
@@ -178,21 +181,24 @@ export const backupRoute = new Hono<AppEnv>()
     const {
       categoryMappings: cats,
       chapterMappings: chapters,
+      systemMappings: systems,
       columnProfiles: profiles,
     } = body.data
-    if ([...cats, ...chapters, ...profiles].some((row) => row.stateId !== stateId)) {
+    if ([...cats, ...chapters, ...systems, ...profiles].some((row) => row.stateId !== stateId)) {
       return c.json({ error: 'Every row must belong to this state' }, 400)
     }
 
     const inserts = [
       ...chunked(cats).map((rows) => db.insert(categoryMappings).values(rows)),
       ...chunked(chapters).map((rows) => db.insert(chapterMappings).values(rows)),
+      ...chunked(systems).map((rows) => db.insert(systemMappings).values(rows)),
       ...chunked(profiles).map((rows) => db.insert(columnProfiles).values(rows)),
     ]
     // One batch: all of it or none. A mapping change is a change to the public page.
     await db.batch([
       db.delete(categoryMappings).where(eq(categoryMappings.stateId, stateId)),
       db.delete(chapterMappings).where(eq(chapterMappings.stateId, stateId)),
+      db.delete(systemMappings).where(eq(systemMappings.stateId, stateId)),
       db.delete(columnProfiles).where(eq(columnProfiles.stateId, stateId)),
       ...inserts,
       db
@@ -207,6 +213,7 @@ export const backupRoute = new Hono<AppEnv>()
         details: {
           categoryMappings: cats.length,
           chapterMappings: chapters.length,
+          systemMappings: systems.length,
           columnProfiles: profiles.length,
         },
       }),

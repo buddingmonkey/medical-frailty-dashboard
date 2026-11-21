@@ -99,6 +99,20 @@ const data = {
     },
   ],
   chapters,
+  // Connecticut-like: NDC and HCPCS entries in the blank category.
+  systems: [
+    {
+      codeSystem: 'hcpcs',
+      publishedEntries: 25,
+      draftEntries: 0,
+      override: {
+        federalCategory: 'sud',
+        mappedBy: 'admin@example.org',
+        mappedAt: '2026-11-21T15:00:00.000Z',
+      },
+    },
+    { codeSystem: 'ndc', publishedEntries: 374, draftEntries: 2, override: null },
+  ],
 }
 
 const previewBody = (token: string) => ({
@@ -377,6 +391,53 @@ describe('/admin/categories', () => {
     expect(chapterSaves).toEqual([])
   })
 
+  it('lists the code systems with their entries, and previews an override before saving it', async () => {
+    const { previews, remaps } = fakeApi()
+    await open()
+    const systemsTable = screen.getByRole('table', { name: 'Code systems other than ICD-10-CM' })
+    const rows = within(systemsTable).getAllByRole('row')
+    expect(rows).toHaveLength(3)
+    expect(within(rowOf(systemsTable, 'NDC')).getByText('376')).toBeTruthy()
+    expect(
+      within(systemsTable).getByLabelText<HTMLSelectElement>('Override for HCPCS Level II').value,
+    ).toBe('sud')
+    const button = within(systemsTable).getByRole('button', {
+      name: 'Preview change for NDC',
+    })
+    expect((button as HTMLButtonElement).disabled).toBe(true)
+    await user.selectOptions(within(systemsTable).getByLabelText('Override for NDC'), 'sud')
+    await user.click(button)
+    const region = await screen.findByRole('region', { name: 'Check the remap before saving' })
+    expect(previews).toEqual([
+      { categories: [], chapters: [], systems: [{ codeSystem: 'ndc', federalCategory: 'sud' }] },
+    ])
+    await user.click(within(region).getByRole('button', { name: 'Save remap' }))
+    await waitFor(() => {
+      expect(remaps).toEqual([
+        {
+          categories: [],
+          chapters: [],
+          systems: [{ codeSystem: 'ndc', federalCategory: 'sud' }],
+          token: 'token-1',
+        },
+      ])
+    })
+  })
+
+  it('previews removing a code-system override', async () => {
+    const { previews } = fakeApi()
+    await open()
+    const systemsTable = screen.getByRole('table', { name: 'Code systems other than ICD-10-CM' })
+    await user.selectOptions(within(systemsTable).getByLabelText('Override for HCPCS Level II'), '')
+    await user.click(
+      within(systemsTable).getByRole('button', { name: 'Preview change for HCPCS Level II' }),
+    )
+    await screen.findByRole('region', { name: 'Check the remap before saving' })
+    expect(previews).toEqual([
+      { categories: [], chapters: [], systems: [{ codeSystem: 'hcpcs', federalCategory: null }] },
+    ])
+  })
+
   it('previews a bulk remap of the selected categories, then saves it with the token', async () => {
     const { previews, remaps, saves } = fakeApi()
     const table = await open()
@@ -507,6 +568,7 @@ describe('/admin/categories field help', () => {
     ).toBeTruthy()
     expect(about('Remap several categories', /every selected row/)).toBeTruthy()
     expect(about('Override', /this chapter’s ICD-10-CM codes/)).toBeTruthy()
+    expect(about('Code-system override', /every entry of this code system/)).toBeTruthy()
     // The precedence is explained once, in a disclosure.
     expect(screen.getByText('How a code gets its federal category')).toBeTruthy()
     expect(within(table).getAllByRole('button', { name: /^About / })).toHaveLength(2)

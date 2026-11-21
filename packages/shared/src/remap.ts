@@ -7,15 +7,24 @@ import {
   type FederalRuleEntry,
   federalRuleOf,
   mappingKey,
+  type OverrideSystem,
+  overrideSystemSchema,
+  overrideSystems,
 } from './category-mapping'
-import { type CodeSystem, type FederalCategory, federalCategories } from './enums'
+import {
+  type CodeSystem,
+  codeSystemLabels,
+  codeSystems,
+  type FederalCategory,
+  federalCategories,
+} from './enums'
 import { icd10cmChapterOf, icd10cmChapters } from './icd-chapters'
 
 // Bulk remap with a preview (roadmap M7 step 3; docs/ingestion.md, "Category auto-mapping").
 // The preview applies the one federal-category rule (`federalCategoriesOf`) to every published
 // entry of the state, before and after the proposed changes, so it says honestly which entries
 // move and which stay: an entry placed in a published unified category keeps that category's
-// federal parent, an ICD-10-CM entry under a chapter override keeps the override, an entry
+// federal parent, an entry under a chapter or code-system override keeps the override, an entry
 // whose state published its federal category keeps that, and so does an entry whose suggestion
 // by code an admin confirmed. A remapped category's mapping becomes manual, so it wins over the
 // unreviewed suggestions of its entries: those move.
@@ -41,16 +50,24 @@ const changesShape = {
   chapters: z
     .array(z.object({ chapter: chapterNumber, federalCategory: chosenCategory.nullable() }))
     .max(icd10cmChapters.length),
+  /** Code-system overrides (never ICD-10-CM); null removes one. Left out: none. */
+  systems: z
+    .array(
+      z.object({ codeSystem: overrideSystemSchema, federalCategory: chosenCategory.nullable() }),
+    )
+    .max(overrideSystems.length)
+    .default([]),
 }
 
 function checkChanges(
   value: {
     categories: { stateCategory: string; stateSubcategory: string }[]
     chapters: { chapter: number }[]
+    systems: { codeSystem: string }[]
   },
   ctx: z.RefinementCtx,
 ) {
-  if (value.categories.length + value.chapters.length === 0) {
+  if (value.categories.length + value.chapters.length + value.systems.length === 0) {
     ctx.addIssue({ code: 'custom', message: 'Choose at least one change' })
   }
   const keys = value.categories.map((c) => mappingKey(c.stateCategory, c.stateSubcategory))
@@ -60,11 +77,16 @@ function checkChanges(
   if (new Set(value.chapters.map((c) => c.chapter)).size !== value.chapters.length) {
     ctx.addIssue({ code: 'custom', message: 'A chapter appears twice' })
   }
+  if (new Set(value.systems.map((c) => c.codeSystem)).size !== value.systems.length) {
+    ctx.addIssue({ code: 'custom', message: 'A code system appears twice' })
+  }
 }
 
 /** Body of `POST /api/admin/states/:stateId/categories/preview`. */
 export const remapChangesSchema = z.object(changesShape).superRefine(checkChanges)
 export type RemapChanges = z.infer<typeof remapChangesSchema>
+/** The changes as a caller writes them (`systems` may be left out). */
+export type RemapChangesInput = z.input<typeof remapChangesSchema>
 
 /** Body of `POST /api/admin/states/:stateId/categories/remap`: the changes and the preview's token. */
 export const remapSaveSchema = z
@@ -74,15 +96,20 @@ export const remapSaveSchema = z
 const federal = z.enum(federalCategories)
 
 const remapChange = z.object({
-  kind: z.enum(['category', 'chapter']),
-  /** For a category change; '' for a chapter change. */
+  kind: z.enum(['category', 'chapter', 'system']),
+  /** For a category change; '' for a chapter or code-system change. */
   stateCategory: z.string(),
   stateSubcategory: z.string(),
-  /** For a chapter change; null for a category change. */
+  /** For a chapter change; null for the others. */
   chapter: z.number().int().nullable(),
-  /** The new federal category; null when a chapter override is removed. */
+  /** For a code-system change; null for the others. */
+  codeSystem: overrideSystemSchema.nullable().default(null),
+  /** The new federal category; null when an override is removed. */
   to: federal.nullable(),
-  /** Published entries the change covers (in the category, or ICD-10-CM codes in the chapter). */
+  /**
+   * Published entries the change covers (in the category, ICD-10-CM codes in the chapter, or
+   * entries of the code system).
+   */
   entries: z.number().int().nonnegative(),
   /** Entries that change federal category, grouped by from → to. */
   moves: z.array(z.object({ from: federal, to: federal, n: z.number().int().positive() })),
@@ -102,6 +129,16 @@ const remapChange = z.object({
   chapterOverride: z.array(
     z.object({ chapter: z.number().int(), federalCategory: federal, n: z.number().int() }),
   ),
+  /** Category changes only: entries that stay because their code system's override wins. */
+  systemOverride: z
+    .array(
+      z.object({
+        codeSystem: overrideSystemSchema,
+        federalCategory: federal,
+        n: z.number().int(),
+      }),
+    )
+    .default([]),
   /** Up to 20 of the moving entries, as the state published them. */
   sample: z.array(
     z.object({
@@ -146,13 +183,19 @@ export interface RemapEntry {
   suggestion?: FederalRuleEntry['suggestion']
 }
 
-/** Open-draft entries counted by category and ICD-10-CM three-character category ('' if none). */
+/**
+ * Open-draft entries counted by category, code system and ICD-10-CM three-character category
+ * ('' if none).
+ */
 export interface RemapDraftGroup {
   stateCategory: string
   stateSubcategory: string
+  codeSystem: CodeSystem
   icd: string
   n: number
 }
+
+const codeSystemOrder = (s: CodeSystem) => codeSystems.indexOf(s)
 
 const chapterOf = (e: { codeSystem: CodeSystem; codeNorm: string }) =>
   e.codeSystem === 'icd10cm' ? (icd10cmChapterOf(e.codeNorm)?.number ?? null) : null
@@ -164,10 +207,12 @@ export function previewRemap(input: {
   /** The state categories whose mapping is manual; left out: every mapping. */
   manualKeys?: ReadonlySet<string>
   chapterOverrides: ReadonlyMap<number, FederalCategory>
-  changes: RemapChanges
+  systemOverrides: ReadonlyMap<CodeSystem, FederalCategory>
+  changes: RemapChangesInput
   draftGroups: readonly RemapDraftGroup[]
 }): Omit<RemapPreview, 'token'> {
-  const { entries, mappings, chapterOverrides, changes } = input
+  const { entries, mappings, chapterOverrides, systemOverrides, changes } = input
+  const systemChanges = changes.systems ?? []
   const manualKeys = input.manualKeys ?? new Set(mappings.keys())
   const afterMappings = new Map(mappings)
   const afterManual = new Set(manualKeys)
@@ -181,10 +226,29 @@ export function previewRemap(input: {
     if (c.federalCategory === null) afterChapters.delete(c.chapter)
     else afterChapters.set(c.chapter, c.federalCategory)
   }
+  const afterSystems = new Map(systemOverrides)
+  for (const c of systemChanges) {
+    if (c.federalCategory === null) afterSystems.delete(c.codeSystem)
+    else afterSystems.set(c.codeSystem, c.federalCategory)
+  }
 
   const rows = entries.map((e) => {
-    const before = federalRuleOf(e, e.unifiedParents, mappings, chapterOverrides, manualKeys)
-    const after = federalRuleOf(e, e.unifiedParents, afterMappings, afterChapters, afterManual)
+    const before = federalRuleOf(
+      e,
+      e.unifiedParents,
+      mappings,
+      chapterOverrides,
+      systemOverrides,
+      manualKeys,
+    )
+    const after = federalRuleOf(
+      e,
+      e.unifiedParents,
+      afterMappings,
+      afterChapters,
+      afterSystems,
+      afterManual,
+    )
     return {
       e,
       key: mappingKey(e.stateCategory, e.stateSubcategory),
@@ -204,7 +268,10 @@ export function previewRemap(input: {
 
   const describe = (
     covered: typeof rows,
-    base: Pick<RemapChange, 'kind' | 'stateCategory' | 'stateSubcategory' | 'chapter' | 'to'>,
+    base: Pick<
+      RemapChange,
+      'kind' | 'stateCategory' | 'stateSubcategory' | 'chapter' | 'codeSystem' | 'to'
+    >,
     draftEntries: number,
   ): RemapChange => {
     const moves = new Map<string, { from: FederalCategory; to: FederalCategory; n: number }>()
@@ -217,6 +284,10 @@ export function previewRemap(input: {
     const overrides = new Map<
       number,
       { chapter: number; federalCategory: FederalCategory; n: number }
+    >()
+    const systemKept = new Map<
+      OverrideSystem,
+      { codeSystem: OverrideSystem; federalCategory: FederalCategory; n: number }
     >()
     const sample: RemapChange['sample'] = []
     let placed = 0
@@ -247,6 +318,17 @@ export function previewRemap(input: {
         }
         o.n += 1
         overrides.set(r.chapter, o)
+        continue
+      }
+      const systemOverride = afterSystems.get(r.e.codeSystem)
+      if (base.kind === 'category' && r.e.codeSystem !== 'icd10cm' && systemOverride) {
+        const o = systemKept.get(r.e.codeSystem) ?? {
+          codeSystem: r.e.codeSystem,
+          federalCategory: systemOverride,
+          n: 0,
+        }
+        o.n += 1
+        systemKept.set(r.e.codeSystem, o)
         continue
       }
       const from = r.before[0] ?? 'unmapped'
@@ -284,6 +366,9 @@ export function previewRemap(input: {
         federal: federalCategories.filter((f) => suggestedFederal.has(f)),
       },
       chapterOverride: [...overrides.values()].sort((a, b) => a.chapter - b.chapter),
+      systemOverride: [...systemKept.values()].sort(
+        (a, b) => codeSystemOrder(a.codeSystem) - codeSystemOrder(b.codeSystem),
+      ),
       sample,
       draftEntries,
     }
@@ -304,6 +389,7 @@ export function previewRemap(input: {
             stateCategory: c.stateCategory,
             stateSubcategory: c.stateSubcategory,
             chapter: null,
+            codeSystem: null,
             to: c.federalCategory,
           },
           sum(
@@ -321,9 +407,24 @@ export function previewRemap(input: {
             stateCategory: '',
             stateSubcategory: '',
             chapter: c.chapter,
+            codeSystem: null,
             to: c.federalCategory,
           },
           sum(input.draftGroups.filter((g) => draftChapter(g) === c.chapter)),
+        ),
+      ),
+      ...systemChanges.map((c) =>
+        describe(
+          rows.filter((r) => r.e.codeSystem === c.codeSystem),
+          {
+            kind: 'system',
+            stateCategory: '',
+            stateSubcategory: '',
+            chapter: null,
+            codeSystem: c.codeSystem,
+            to: c.federalCategory,
+          },
+          sum(input.draftGroups.filter((g) => g.codeSystem === c.codeSystem)),
         ),
       ),
     ],
@@ -373,6 +474,11 @@ export function remapChangeSentences(change: RemapChange): string[] {
   for (const o of change.chapterOverride) {
     lines.push(
       `${o.n.toLocaleString('en-US')} ${o.n === 1 ? 'stays' : 'stay'} in ${label(o.federalCategory)} because the override for ICD-10-CM chapter ${String(o.chapter)} wins.`,
+    )
+  }
+  for (const o of change.systemOverride) {
+    lines.push(
+      `${o.n.toLocaleString('en-US')} ${o.n === 1 ? 'stays' : 'stay'} in ${label(o.federalCategory)} because the override for ${codeSystemLabels[o.codeSystem]} entries wins.`,
     )
   }
   if (change.draftEntries > 0) {

@@ -18,7 +18,7 @@ import { sourceDocuments, states } from '../db/schema'
 import { call } from '../test/access-fixtures'
 import { send } from '../test/draft-fixtures'
 import { seedOverview } from '../test/overview-fixtures'
-import { seedPublicStates } from '../test/public-fixtures'
+import { overrideSystem, seedPublicStates } from '../test/public-fixtures'
 
 // Server-rendered public pages, downloads and the sitemap (roadmap M3 step 4; docs/seo.md).
 
@@ -345,6 +345,18 @@ describe('downloads', () => {
     expect(body.sources[0]?.url).toBe('https://medicaid.georgia.gov/list.pdf')
     expect(body.entries).toHaveLength(4)
     expect(body.entries.find((e) => e.code === 'F10')?.federalCategories).toEqual(['sud'])
+  })
+
+  it('gives an entry its code system’s override', async () => {
+    await overrideSystem('GA', 'hcpcs', 'physical_idd_adl')
+    const body = await (
+      await get('/states/ga/codes.json')
+    ).json<{
+      entries: { code: string; federalCategories: string[] }[]
+    }>()
+    expect(body.entries.find((e) => e.code === 'E0250')?.federalCategories).toEqual([
+      'physical_idd_adl',
+    ])
   })
 
   it('answers 404 for a state with no list', async () => {

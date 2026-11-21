@@ -13,7 +13,7 @@ import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { suggestionSql, unifiedParentsSql } from './federal'
-import { mappingLookups } from './federal-suggestions'
+import { mappingLookups, systemOverridesByState } from './federal-suggestions'
 import { publicSummaries } from './public-summary'
 import {
   categoryMappings,
@@ -22,6 +22,7 @@ import {
   entries,
   sourceDocuments,
   states,
+  systemMappings,
   versionSources,
 } from './schema'
 
@@ -112,7 +113,7 @@ async function similarStates(db: Db, stateId: string): Promise<SimilarState[]> {
 
 /** Every entry of a state's published list, with its federal categories and source, by code. */
 export async function publishedEntriesForDownload(db: Db, stateId: string) {
-  const [rows, mappings, overrides] = await Promise.all([
+  const [rows, mappings, overrides, systemRows] = await Promise.all([
     db
       .select({
         entry: entries,
@@ -129,7 +130,9 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
       .orderBy(asc(entries.codeSystem), asc(entries.codeNorm), asc(entries.id)),
     db.select().from(categoryMappings).where(eq(categoryMappings.stateId, stateId)),
     db.select().from(chapterMappings).where(eq(chapterMappings.stateId, stateId)),
+    db.select().from(systemMappings).where(eq(systemMappings.stateId, stateId)),
   ])
+  const bySystem = systemOverridesByState(systemRows).get(stateId) ?? new Map()
   const { mappings: byKey, manualKeys } = mappingLookups(mappings)
   const byChapter = new Map<number, FederalCategory>(
     overrides.map((o) => [o.chapter, o.federalCategory]),
@@ -145,6 +148,7 @@ export async function publishedEntriesForDownload(db: Db, stateId: string) {
       federalCategoryList(r.parents),
       byKey,
       byChapter,
+      bySystem,
       manualKeys,
     ),
     sourceTitle: r.sourceTitle,

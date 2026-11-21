@@ -45,6 +45,7 @@ describe('previewRemap', () => {
       entries,
       mappings,
       chapterOverrides: new Map([[5, 'blind_or_disabled']]),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'smi ', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [],
@@ -83,6 +84,7 @@ describe('previewRemap', () => {
       ],
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [],
@@ -116,6 +118,7 @@ describe('previewRemap', () => {
       mappings: new Map([[mappingKey('Diabetes', ''), 'physical_idd_adl' as const]]),
       manualKeys: new Set(),
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [
           { stateCategory: 'Diabetes', stateSubcategory: '', federalCategory: 'physical_idd_adl' },
@@ -142,6 +145,7 @@ describe('previewRemap', () => {
       entries,
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [
           { stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' },
@@ -177,6 +181,7 @@ describe('previewRemap', () => {
       entries,
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: { categories: [], chapters: [{ chapter: 5, federalCategory: 'blind_or_disabled' }] },
       draftGroups: [],
     })
@@ -196,6 +201,7 @@ describe('previewRemap', () => {
       entries,
       mappings,
       chapterOverrides: new Map([[5, 'blind_or_disabled']]),
+      systemOverrides: new Map(),
       changes: { categories: [], chapters: [{ chapter: 5, federalCategory: null }] },
       draftGroups: [],
     })
@@ -213,6 +219,7 @@ describe('previewRemap', () => {
       entries: many,
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [],
@@ -228,17 +235,131 @@ describe('previewRemap', () => {
       entries: [],
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [{ chapter: 2, federalCategory: 'serious_complex_medical' }],
       },
       draftGroups: [
-        { stateCategory: 'SMI', stateSubcategory: '', icd: 'F20', n: 4 },
-        { stateCategory: 'SMI', stateSubcategory: '', icd: '', n: 1 },
-        { stateCategory: 'Cancer', stateSubcategory: '', icd: 'C50', n: 7 },
+        { stateCategory: 'SMI', stateSubcategory: '', codeSystem: 'icd10cm', icd: 'F20', n: 4 },
+        { stateCategory: 'SMI', stateSubcategory: '', codeSystem: 'cpt', icd: '', n: 1 },
+        { stateCategory: 'Cancer', stateSubcategory: '', codeSystem: 'icd10cm', icd: 'C50', n: 7 },
       ],
     })
     expect(preview.changes.map((c) => c.draftEntries)).toEqual([5, 7])
+  })
+})
+
+describe('previewRemap: code-system overrides', () => {
+  // Connecticut: one blank category for every entry; NDC and HCPCS entries are all addiction
+  // treatment.
+  const ct = [
+    entry('F10.20', ''),
+    entry('0009-3572-01', '', [], 'ndc'),
+    entry('0009-3572-02', '', [], 'ndc'),
+    entry('0009-3572-03', '', ['blind_or_disabled'], 'ndc'),
+    entry('H0020', '', [], 'hcpcs'),
+  ]
+  const blank = new Map<string, FederalCategory>([[mappingKey('', ''), 'serious_complex_medical']])
+
+  it('moves the unplaced entries of the code system, and its removal moves them back', () => {
+    const set = previewRemap({
+      entries: ct,
+      mappings: blank,
+      chapterOverrides: new Map(),
+      systemOverrides: new Map(),
+      changes: {
+        categories: [],
+        chapters: [],
+        systems: [{ codeSystem: 'ndc', federalCategory: 'sud' }],
+      },
+      draftGroups: [
+        { stateCategory: '', stateSubcategory: '', codeSystem: 'ndc', icd: '', n: 3 },
+        { stateCategory: '', stateSubcategory: '', codeSystem: 'hcpcs', icd: '', n: 9 },
+      ],
+    })
+    expect(set.changes[0]).toMatchObject({
+      kind: 'system',
+      codeSystem: 'ndc',
+      chapter: null,
+      to: 'sud',
+      entries: 3,
+      moves: [{ from: 'serious_complex_medical', to: 'sud', n: 2 }],
+      placed: { n: 1, federal: ['blind_or_disabled'] },
+      movingTotal: 2,
+      draftEntries: 3,
+    })
+    const cleared = previewRemap({
+      entries: ct,
+      mappings: blank,
+      chapterOverrides: new Map(),
+      systemOverrides: new Map([['ndc', 'sud']]),
+      changes: {
+        categories: [],
+        chapters: [],
+        systems: [{ codeSystem: 'ndc', federalCategory: null }],
+      },
+      draftGroups: [],
+    })
+    expect(cleared.changes[0]?.moves).toEqual([
+      { from: 'sud', to: 'serious_complex_medical', n: 2 },
+    ])
+  })
+
+  it('keeps a code system’s entries under its override when their category is remapped', () => {
+    const preview = previewRemap({
+      entries: ct,
+      mappings: blank,
+      chapterOverrides: new Map(),
+      systemOverrides: new Map([
+        ['ndc', 'sud'],
+        ['hcpcs', 'sud'],
+      ]),
+      changes: {
+        categories: [
+          { stateCategory: '', stateSubcategory: '', federalCategory: 'physical_idd_adl' },
+        ],
+        chapters: [],
+      },
+      draftGroups: [],
+    })
+    const [change] = preview.changes
+    expect(change).toMatchObject({
+      movingTotal: 1,
+      systemOverride: [
+        { codeSystem: 'hcpcs', federalCategory: 'sud', n: 1 },
+        { codeSystem: 'ndc', federalCategory: 'sud', n: 2 },
+      ],
+    })
+    if (!change) throw new Error('no change')
+    expect(remapChangeSentences(change)).toContain(
+      '2 stay in Substance use disorder because the override for NDC entries wins.',
+    )
+  })
+
+  it('refuses ICD-10-CM, repeats and "unmapped" as code-system changes', () => {
+    const ok = {
+      categories: [],
+      chapters: [],
+      systems: [{ codeSystem: 'ndc', federalCategory: 'sud' }],
+    }
+    expect(remapChangesSchema.safeParse(ok).success).toBe(true)
+    const bad = (systems: unknown) => remapChangesSchema.safeParse({ ...ok, systems }).success
+    expect(bad([{ codeSystem: 'icd10cm', federalCategory: 'sud' }])).toBe(false)
+    expect(bad([{ codeSystem: 'ndc', federalCategory: 'unmapped' }])).toBe(false)
+    expect(
+      bad([
+        { codeSystem: 'ndc', federalCategory: 'sud' },
+        { codeSystem: 'ndc', federalCategory: null },
+      ]),
+    ).toBe(false)
+    // An older client that sends no systems still works.
+    expect(
+      remapChangesSchema.parse({
+        categories: [],
+        chapters: [{ chapter: 5, federalCategory: null }],
+      }).systems,
+    ).toEqual([])
   })
 })
 
@@ -248,11 +369,14 @@ describe('remapChangeSentences', () => {
       entries,
       mappings,
       chapterOverrides: new Map([[5, 'blind_or_disabled']]),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'SMI', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [],
       },
-      draftGroups: [{ stateCategory: 'SMI', stateSubcategory: '', icd: 'F20', n: 2 }],
+      draftGroups: [
+        { stateCategory: 'SMI', stateSubcategory: '', codeSystem: 'icd10cm', icd: 'F20', n: 2 },
+      ],
     })
     const [change] = preview.changes
     if (!change) throw new Error('no change')
@@ -269,6 +393,7 @@ describe('remapChangeSentences', () => {
       entries: [entry('F10.20', 'SUD')],
       mappings,
       chapterOverrides: new Map(),
+      systemOverrides: new Map(),
       changes: {
         categories: [{ stateCategory: 'SUD', stateSubcategory: '', federalCategory: 'sud' }],
         chapters: [],

@@ -11,6 +11,8 @@ import {
   icd10cmChapterOf,
   icd10cmChapters,
   mappingKey,
+  type OverrideSystem,
+  overrideSystems,
   previewRemap,
   type RemapChanges,
   type RemapPreview,
@@ -39,7 +41,13 @@ import {
   writeSuggestionPlan,
 } from '../../db/federal-suggestions'
 import { bumpDataVersion } from '../../db/meta'
-import { categoryMappings, chapterMappings, datasetVersions, entries } from '../../db/schema'
+import {
+  categoryMappings,
+  chapterMappings,
+  datasetVersions,
+  entries,
+  systemMappings,
+} from '../../db/schema'
 import type { AppEnv } from '../../types'
 import { actorOf, findStateParam, notFound } from './request'
 
@@ -63,7 +71,8 @@ const icdCategory = sql<string>`CASE WHEN ${entries.codeSystem} = 'icd10cm' THEN
 /**
  * The remap preview (M7 step 3) with its token. Reads every published entry of the state once
  * (with its unified parents, one primary-key seek each), the open drafts' counts by category
- * and ICD-10-CM category, and the state's mappings and chapter overrides; writes nothing. The
+ * code system and ICD-10-CM category, and the state's mappings and chapter and code-system
+ * overrides; writes nothing. The
  * token hashes everything the preview depends on, so a save after any change is refused.
  */
 async function remapPreview(
@@ -74,8 +83,9 @@ async function remapPreview(
   preview: RemapPreview
   mappings: Map<string, FederalCategory>
   overrides: Map<number, FederalCategory>
+  systemOverrides: Map<OverrideSystem, FederalCategory>
 }> {
-  const [published, drafts, mappingRows, overrideRows] = await Promise.all([
+  const [published, drafts, mappingRows, overrideRows, systemRows] = await Promise.all([
     state.publishedVersionId === null
       ? Promise.resolve([])
       : db
@@ -97,14 +107,15 @@ async function remapPreview(
       .select({
         stateCategory: entries.stateCategory,
         stateSubcategory: entries.stateSubcategory,
+        codeSystem: entries.codeSystem,
         icd: icdCategory,
         n: count(),
       })
       .from(entries)
       .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
       .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
-      .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
-      .orderBy(entries.stateCategory, entries.stateSubcategory, icdCategory),
+      .groupBy(entries.stateCategory, entries.stateSubcategory, entries.codeSystem, icdCategory)
+      .orderBy(entries.stateCategory, entries.stateSubcategory, entries.codeSystem, icdCategory),
     db
       .select({
         stateCategory: categoryMappings.stateCategory,
@@ -123,9 +134,20 @@ async function remapPreview(
       .from(chapterMappings)
       .where(eq(chapterMappings.stateId, state.id))
       .orderBy(chapterMappings.chapter),
+    db
+      .select({
+        codeSystem: systemMappings.codeSystem,
+        federalCategory: systemMappings.federalCategory,
+      })
+      .from(systemMappings)
+      .where(eq(systemMappings.stateId, state.id))
+      .orderBy(systemMappings.codeSystem),
   ])
   const { mappings, manualKeys } = mappingLookups(mappingRows)
   const overrides = new Map(overrideRows.map((o) => [o.chapter, o.federalCategory]))
+  const systemOverrides = new Map<OverrideSystem, FederalCategory>(
+    systemRows.map((o) => [o.codeSystem, o.federalCategory]),
+  )
   const result = previewRemap({
     entries: published.map(({ stateFederal, parents, suggestion, ...e }) => ({
       ...e,
@@ -136,6 +158,7 @@ async function remapPreview(
     mappings,
     manualKeys,
     chapterOverrides: overrides,
+    systemOverrides,
     changes,
     draftGroups: drafts,
   })
@@ -147,12 +170,18 @@ async function remapPreview(
           publishedVersionId: state.publishedVersionId,
           mappingRows,
           overrideRows,
+          systemRows,
           result,
         }),
       ),
     ),
   )
-  return { preview: remapPreviewResponseSchema.parse({ token, ...result }), mappings, overrides }
+  return {
+    preview: remapPreviewResponseSchema.parse({ token, ...result }),
+    mappings,
+    overrides,
+    systemOverrides,
+  }
 }
 
 /** Entries shown in the re-run preview's sample. */
@@ -178,6 +207,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     const countFields = {
       category: entries.stateCategory,
       subcategory: entries.stateSubcategory,
+      codeSystem: entries.codeSystem,
       icd: icdCategory,
       n: count(),
     }
@@ -188,7 +218,12 @@ export const categoriesRoute = new Hono<AppEnv>()
             .select(countFields)
             .from(entries)
             .where(eq(entries.versionId, state.publishedVersionId))
-            .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
+            .groupBy(
+              entries.stateCategory,
+              entries.stateSubcategory,
+              entries.codeSystem,
+              icdCategory,
+            )
     // Open drafts by a join, not a list of their ids: a state can have more drafts than D1's 100
     // bound parameters (a long-lived local database had 101 for Montana, 2026-11-16).
     const inDrafts = await db
@@ -196,7 +231,7 @@ export const categoriesRoute = new Hono<AppEnv>()
       .from(entries)
       .innerJoin(datasetVersions, eq(datasetVersions.id, entries.versionId))
       .where(and(eq(datasetVersions.stateId, state.id), eq(datasetVersions.status, 'draft')))
-      .groupBy(entries.stateCategory, entries.stateSubcategory, icdCategory)
+      .groupBy(entries.stateCategory, entries.stateSubcategory, entries.codeSystem, icdCategory)
     // Published entries whose state published their federal category count under it; the
     // others placed in a published unified category take its federal parent; the M2 mapping on
     // this screen is only the fallback for the rest (docs/data-model.md).
@@ -244,6 +279,14 @@ export const categoriesRoute = new Hono<AppEnv>()
       .from(chapterMappings)
       .where(eq(chapterMappings.stateId, state.id))
     const overrideBy = new Map(overrides.map((o) => [o.chapter, o]))
+    const systemRows = await db
+      .select()
+      .from(systemMappings)
+      .where(eq(systemMappings.stateId, state.id))
+    const systemBy = new Map(systemRows.map((o) => [o.codeSystem, o]))
+    const systemMap = new Map<OverrideSystem, FederalCategory>(
+      systemRows.map((o) => [o.codeSystem, o.federalCategory]),
+    )
 
     // Published entries whose federal categories come from a suggestion by code (rules 4 and
     // 6), grouped so the rule runs once per kind of entry, not once per entry.
@@ -297,6 +340,7 @@ export const categoriesRoute = new Hono<AppEnv>()
         federalCategoryList(r.parents),
         lookups.mappings,
         overrideMap,
+        systemMap,
         lookups.manualKeys,
       )
       if (rule !== 'suggested' && rule !== 'suggestedReviewed') continue
@@ -324,6 +368,10 @@ export const categoriesRoute = new Hono<AppEnv>()
       }
     >()
     const chapterCounts = new Map<number, { publishedEntries: number; draftEntries: number }>()
+    const systemCounts = new Map<
+      OverrideSystem,
+      { publishedEntries: number; draftEntries: number }
+    >()
     const add = (rows: typeof published, field: 'publishedEntries' | 'draftEntries') => {
       for (const r of rows) {
         const key = `${r.category}\u0000${r.subcategory}`
@@ -343,6 +391,11 @@ export const categoriesRoute = new Hono<AppEnv>()
           }
           counts[field] += r.n
           chapterCounts.set(chapter.number, counts)
+        }
+        if (r.codeSystem !== 'icd10cm') {
+          const counts = systemCounts.get(r.codeSystem) ?? { publishedEntries: 0, draftEntries: 0 }
+          counts[field] += r.n
+          systemCounts.set(r.codeSystem, counts)
         }
       }
     }
@@ -397,6 +450,21 @@ export const categoriesRoute = new Hono<AppEnv>()
               ? { federalCategory: o.federalCategory, mappedBy: o.mappedBy, mappedAt: o.mappedAt }
               : null,
           }
+        }),
+        // Only the systems the lists hold: an override for another would change nothing.
+        systems: overrideSystems.flatMap((codeSystem) => {
+          const counts = systemCounts.get(codeSystem)
+          if (!counts) return []
+          const o = systemBy.get(codeSystem)
+          return [
+            {
+              codeSystem,
+              ...counts,
+              override: o
+                ? { federalCategory: o.federalCategory, mappedBy: o.mappedBy, mappedAt: o.mappedAt }
+                : null,
+            },
+          ]
         }),
       }),
     )
@@ -584,7 +652,7 @@ export const categoriesRoute = new Hono<AppEnv>()
     const body = remapSaveSchema.safeParse(await c.req.json().catch(() => null))
     if (!body.success) return c.json({ error: 'Invalid changes' }, 400)
     const { token, ...changes } = body.data
-    const { preview, mappings, overrides } = await remapPreview(db, state, changes)
+    const { preview, mappings, overrides, systemOverrides } = await remapPreview(db, state, changes)
     if (preview.token !== token) {
       return c.json({ error: 'The data changed since the preview. Preview again.' }, 409)
     }
@@ -628,6 +696,27 @@ export const categoriesRoute = new Hono<AppEnv>()
               set: { federalCategory, mappedBy: actor, mappedAt: now },
             }),
     )
+    const systemWrites = changes.systems.map(({ codeSystem, federalCategory }) =>
+      federalCategory === null
+        ? db
+            .delete(systemMappings)
+            .where(
+              and(eq(systemMappings.stateId, state.id), eq(systemMappings.codeSystem, codeSystem)),
+            )
+        : db
+            .insert(systemMappings)
+            .values({
+              stateId: state.id,
+              codeSystem,
+              federalCategory,
+              mappedBy: actor,
+              mappedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: [systemMappings.stateId, systemMappings.codeSystem],
+              set: { federalCategory, mappedBy: actor, mappedAt: now },
+            }),
+    )
     const moved = (i: number) => preview.changes[i]?.movingTotal ?? 0
     const audit = auditInsert(db, {
       actorEmail: actor,
@@ -647,8 +736,20 @@ export const categoriesRoute = new Hono<AppEnv>()
           to: item.federalCategory,
           moved: moved(changes.categories.length + i),
         })),
+        systems: changes.systems.map((item, i) => ({
+          codeSystem: item.codeSystem,
+          from: systemOverrides.get(item.codeSystem) ?? null,
+          to: item.federalCategory,
+          moved: moved(changes.categories.length + changes.chapters.length + i),
+        })),
       },
     })
-    await db.batch([audit, ...categoryWrites, ...chapterWrites, ...publicChange(db, state.id)])
+    await db.batch([
+      audit,
+      ...categoryWrites,
+      ...chapterWrites,
+      ...systemWrites,
+      ...publicChange(db, state.id),
+    ])
     return c.json({ ok: true })
   })

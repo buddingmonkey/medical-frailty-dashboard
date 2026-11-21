@@ -9,6 +9,7 @@ import {
   entries,
   sourceDocuments,
   states,
+  systemMappings,
   versionSources,
 } from '../db/schema'
 import { ADMIN } from './access-fixtures'
@@ -119,4 +120,13 @@ export async function seedPublicStates() {
     federalCategory: 'sud',
     mappedBy: ADMIN,
   })
+}
+
+/** A code-system override for a state (Connecticut's NDC and HCPCS entries count as SUD). */
+export async function overrideSystem(
+  stateId: string,
+  codeSystem: typeof systemMappings.$inferInsert.codeSystem,
+  federalCategory: typeof systemMappings.$inferInsert.federalCategory,
+) {
+  await db.insert(systemMappings).values({ stateId, codeSystem, federalCategory, mappedBy: ADMIN })
 }

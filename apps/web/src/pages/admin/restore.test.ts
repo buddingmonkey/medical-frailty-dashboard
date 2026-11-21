@@ -255,6 +255,41 @@ describe('/admin/restore', () => {
     expect(put?.body).toMatchObject({ categoryMappings: [{ stateCategory: 'SMI' }] })
   })
 
+  it('restores code-system overrides with the mappings (the fixture above predates them)', async () => {
+    const calls = fakeApi()
+    const user = userEvent.setup()
+    const backup = fullBackup()
+    const tables = {
+      ...backup.tables,
+      system_mappings: [
+        {
+          stateId: 'MT',
+          codeSystem: 'ndc',
+          federalCategory: 'sud',
+          mappedBy: 'old@example.org',
+          mappedAt: '2026-11-21T00:00:00.000Z',
+        },
+      ],
+    }
+    await renderRoute('/admin/restore')
+    await user.upload(await screen.findByLabelText('Backup file'), zipFile({ ...backup, tables }))
+    await user.selectOptions(await screen.findByLabelText('State'), 'MT')
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /Also replace Montana’s category mappings, chapter and code-system overrides/,
+      }),
+    )
+    const diff = await screen.findByRole('table', { name: 'Mapping changes' })
+    expect(diff.textContent).toContain('Code system NDC')
+
+    await user.click(screen.getByRole('button', { name: 'Create draft from v2' }))
+    expect(await screen.findByText(/The mappings were restored/)).toBeTruthy()
+    const put = calls.find((c) => c.path === '/api/admin/backup/mappings/MT')
+    expect(put?.body).toMatchObject({
+      systemMappings: [{ codeSystem: 'ndc', federalCategory: 'sud' }],
+    })
+  })
+
   it('reads a per-publish .json backup (format 1), which has no mappings', async () => {
     fakeApi()
     const user = userEvent.setup()

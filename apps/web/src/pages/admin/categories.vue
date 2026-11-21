@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import {
   type ChosenFederalCategory,
+  codeSystemLabels,
   type FederalCategory,
   federalCategories,
   federalCategoriesText,
   federalCategoryInfo,
-  type RemapChanges,
+  type RemapChangesInput,
   stateCategoriesResponseSchema,
   type StateCategories,
   stateListResponseSchema,
@@ -26,10 +27,13 @@ import { getJson, sendJson } from '../../lib/api'
 // admin confirms it here (launch needs every mapping confirmed). States that group codes only
 // by ICD-10-CM chapter (NE, GA) can override by chapter. Bulk remap (M7 step 3): select rows,
 // choose one federal category (or chapter override), check the server's preview, then save.
+// Code-system overrides (project lead, 2026-11-21) do the same for every entry of a non-ICD
+// system, for lists without categories (Connecticut's NDC and HCPCS entries).
 // Suggestions by code (project lead, 2026-11-13): entries whose federal category comes from
 // another state's per-code list; confirmed per state category, re-run with a preview.
 type Category = StateCategories['categories'][number]
 type Chapter = StateCategories['chapters'][number]
+type SystemRow = StateCategories['systems'][number]
 
 const id = useId()
 const queryClient = useQueryClient()
@@ -59,6 +63,7 @@ const keyOf = (c: { stateCategory: string; stateSubcategory: string }) =>
 // The select of each row starts at its mapping, else the guess.
 const picked = reactive<Record<string, FederalCategory | ''>>({})
 const chapterPicked = reactive<Record<number, FederalCategory | ''>>({})
+const systemPicked = reactive<Record<string, FederalCategory | ''>>({})
 watch(
   () => query.data.value,
   (data) => {
@@ -68,6 +73,8 @@ watch(
     }
     for (const ch of data?.chapters ?? [])
       chapterPicked[ch.chapter] = ch.override?.federalCategory ?? ''
+    for (const sys of data?.systems ?? [])
+      systemPicked[sys.codeSystem] = sys.override?.federalCategory ?? ''
   },
   { immediate: true },
 )
@@ -155,12 +162,11 @@ const selected = ref(new Set<string>())
 const selectedChapters = ref(new Set<number>())
 const bulkCategory = ref<ChosenFederalCategory | ''>('')
 const bulkChapter = ref<ChosenFederalCategory | 'clear' | ''>('')
-const remap = ref<{ changes: RemapChanges; from: 'categories' | 'chapters'; n: number } | null>(
-  null,
-)
+type RemapFrom = 'categories' | 'chapters' | 'systems'
+const remap = ref<{ changes: RemapChangesInput; from: RemapFrom; n: number } | null>(null)
 let remapCount = 0
 let opener: HTMLElement | null = null
-function openRemap(from: 'categories' | 'chapters', changes: RemapChanges) {
+function openRemap(from: RemapFrom, changes: RemapChangesInput) {
   opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
   remapCount += 1
   remap.value = { from, n: remapCount, changes }
@@ -220,7 +226,7 @@ async function closeRemap() {
 }
 async function remapSaved(message: string) {
   if (remap.value?.from === 'chapters') selectedChapters.value = new Set()
-  else selected.value = new Set()
+  else if (remap.value?.from === 'categories') selected.value = new Set()
   remap.value = null
   saved.value = message
   await queryClient.invalidateQueries({ queryKey: ['admin', 'categories', stateId.value] })
@@ -353,6 +359,19 @@ function previewChapter(ch: Chapter) {
   })
 }
 
+const systems = computed(() => query.data.value?.systems ?? [])
+const systemChanged = (sys: SystemRow) =>
+  (systemPicked[sys.codeSystem] ?? '') !== (sys.override?.federalCategory ?? '')
+function previewSystem(sys: SystemRow) {
+  const choice = systemPicked[sys.codeSystem] ?? ''
+  if (choice === 'unmapped') return
+  openRemap('systems', {
+    categories: [],
+    chapters: [],
+    systems: [{ codeSystem: sys.codeSystem, federalCategory: choice === '' ? null : choice }],
+  })
+}
+
 const n = (value: number) => value.toLocaleString('en-US')
 const selectClass = 'rounded border border-input-border bg-background px-2 py-1'
 const smallButton = 'rounded border border-border px-3 py-1 text-sm hover:bg-surface'
@@ -370,6 +389,8 @@ const help = {
     'This gives every selected row the same federal category as a confirmed mapping. A preview shows which published entries move before anything is saved.',
   override:
     'An override wins over the category mapping for this chapter’s ICD-10-CM codes, unless the state classified a code itself or a published unified category includes it.',
+  systemOverride:
+    'An override wins over the category mapping for every entry of this code system, unless the state classified the code itself or a published unified category includes it. It is a federal category, not a state category.',
 }
 </script>
 
@@ -386,7 +407,10 @@ const help = {
         <ol class="mt-2 list-decimal space-y-1 pl-5">
           <li>The federal category that the state’s list gives the code.</li>
           <li>The federal category of the code’s published unified category.</li>
-          <li>A chapter override, for ICD-10-CM codes.</li>
+          <li>
+            A chapter override for ICD-10-CM codes, or a code-system override for codes of any other
+            system.
+          </li>
           <li>A confirmed suggestion by code from another state’s list.</li>
           <li>
             This mapping. An unreviewed suggestion wins over a guessed mapping, but not over a
@@ -698,6 +722,78 @@ const help = {
                       :disabled="!chapterChanged(ch)"
                       :aria-label="`Preview change for chapter ${ch.chapter}`"
                       @click="previewChapter(ch)"
+                    >
+                      Preview change
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section v-if="systems.length > 0" class="space-y-3" :aria-labelledby="`${id}-sys`">
+        <h3 :id="`${id}-sys`" class="font-display text-xl font-medium text-heading">
+          Override by code system
+        </h3>
+        <p class="max-w-prose text-muted-foreground">
+          Use an override when every code of one system on the state’s list belongs to one federal
+          category, for example a list whose drug codes are all for addiction treatment.
+        </p>
+        <RemapPreview
+          v-if="remap && remap.from === 'systems'"
+          :key="remap.n"
+          :state-id="stateId"
+          :state-name="stateName"
+          :changes="remap.changes"
+          @saved="remapSaved"
+          @cancel="closeRemap"
+        />
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <caption class="sr-only">
+              Code systems other than ICD-10-CM
+            </caption>
+            <thead class="border-b border-border text-muted-foreground">
+              <tr>
+                <th scope="col" class="py-2 pr-4 font-medium">Code system</th>
+                <th scope="col" class="py-2 pr-4 text-right font-medium">Entries</th>
+                <th scope="col" class="py-2 font-medium">
+                  Override<InfoTip label="Code-system override" :text="help.systemOverride" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="sys in systems"
+                :key="sys.codeSystem"
+                class="border-b border-border align-top"
+              >
+                <th scope="row" class="py-2 pr-4 font-medium">
+                  {{ codeSystemLabels[sys.codeSystem] }}
+                </th>
+                <td class="py-2 pr-4 text-right">
+                  {{ n(sys.publishedEntries + sys.draftEntries) }}
+                </td>
+                <td class="py-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <label :for="`${id}-sys-${sys.codeSystem}`" class="sr-only"
+                      >Override for {{ codeSystemLabels[sys.codeSystem] }}</label
+                    >
+                    <select
+                      :id="`${id}-sys-${sys.codeSystem}`"
+                      v-model="systemPicked[sys.codeSystem]"
+                      :class="selectClass"
+                    >
+                      <option value="">Use the category mapping</option>
+                      <option v-for="f in choices" :key="f" :value="f">{{ label(f) }}</option>
+                    </select>
+                    <button
+                      type="button"
+                      :class="smallButton"
+                      :disabled="!systemChanged(sys)"
+                      :aria-label="`Preview change for ${codeSystemLabels[sys.codeSystem]}`"
+                      @click="previewSystem(sys)"
                     >
                       Preview change
                     </button>

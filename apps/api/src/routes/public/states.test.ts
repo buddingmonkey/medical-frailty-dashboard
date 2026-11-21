@@ -12,7 +12,7 @@ import {
   states,
 } from '../../db/schema'
 import { ADMIN, accessToken, call } from '../../test/access-fixtures'
-import { seedPublicStates } from '../../test/public-fixtures'
+import { overrideSystem, seedPublicStates } from '../../test/public-fixtures'
 
 // GET /api/public/states (roadmap M3 step 1): the home map's data, cached on data_version.
 
@@ -218,6 +218,24 @@ describe('GET /api/public/states/:slug', () => {
         entries: 2,
       },
     ])
+  })
+
+  it('counts an entry under its code system’s override, as confirmed', async () => {
+    await db.update(categoryMappings).set({ method: 'manual' })
+    // E0250 (HCPCS, Equipment) has no mapping; the HCPCS override decides it.
+    await overrideSystem('GA', 'hcpcs', 'physical_idd_adl')
+
+    const ga = (await getStates()).body.items[0]?.published
+
+    expect(ga?.byFederalCategory).toMatchObject({ physical_idd_adl: 1, unmapped: 0 })
+    expect(ga?.mappingsConfirmed).toBe(true)
+    const detail = publicStateDetailResponseSchema.parse(await (await getState('ga')).json())
+    expect(detail.categories.find((c) => c.stateCategory === 'Equipment')).toMatchObject({
+      federalCategory: 'physical_idd_adl',
+      confirmed: true,
+      stated: false,
+      entries: 1,
+    })
   })
 
   it('answers for a state with no list yet, upper case included', async () => {

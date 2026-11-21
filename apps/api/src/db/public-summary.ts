@@ -16,7 +16,7 @@ import { asc, count, eq, max, sql } from 'drizzle-orm'
 
 import type { Db } from './client'
 import { placementsReviewedSql, stateFederalSql, suggestionSql, unifiedParentsSql } from './federal'
-import { mappingLookups } from './federal-suggestions'
+import { mappingLookups, systemOverridesByState } from './federal-suggestions'
 import {
   categoryMappings,
   chapterMappings,
@@ -24,6 +24,7 @@ import {
   entries,
   sourceDocuments,
   states,
+  systemMappings,
   versionSources,
 } from './schema'
 
@@ -35,9 +36,9 @@ import {
 // Federal categories (docs/data-model.md, "Federal categories"): an entry the state gave its own
 // federal categories counts under exactly those; else once under each federal parent of its
 // unified categories, so `byFederalCategory` can add up to more than `totalEntries`; an entry
-// placed nowhere counts under a chapter override, a suggestion by code or its M2 mapping
-// (`federalRuleOf`). Confirmed: stated by the state, or every placement reviewed, or, placed
-// nowhere, a chapter override, a reviewed suggestion or a manual mapping.
+// placed nowhere counts under a chapter or code-system override, a suggestion by code or its M2
+// mapping (`federalRuleOf`). Confirmed: stated by the state, or every placement reviewed, or,
+// placed nowhere, an override, a reviewed suggestion or a manual mapping.
 
 export interface PublicSummaries {
   items: PublicStateSummary[]
@@ -49,7 +50,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
   const only = stateId === undefined ? undefined : eq(states.id, stateId)
   const icdCategory = sql<string>`CASE WHEN ${entries.codeSystem} = 'icd10cm' THEN substr(${entries.codeNorm}, 1, 3) ELSE '' END`
 
-  const [stateRows, groups, mappings, overrides, sourceDates] = await Promise.all([
+  const [stateRows, groups, mappings, overrides, systemRows, sourceDates] = await Promise.all([
     db
       .select({
         id: states.id,
@@ -103,6 +104,10 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       .from(chapterMappings)
       .where(stateId === undefined ? undefined : eq(chapterMappings.stateId, stateId)),
     db
+      .select()
+      .from(systemMappings)
+      .where(stateId === undefined ? undefined : eq(systemMappings.stateId, stateId)),
+    db
       .select({ stateId: states.id, date: max(sourceDocuments.publisherDate) })
       .from(states)
       .innerJoin(versionSources, eq(versionSources.versionId, states.publishedVersionId))
@@ -123,6 +128,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
     forState.set(o.chapter, o.federalCategory)
     overridesBy.set(o.stateId, forState)
   }
+  const systemsBy = systemOverridesByState(systemRows)
   const sourceDateBy = new Map(sourceDates.map((s) => [s.stateId, s.date]))
 
   const published = new Map<string, NonNullable<PublicStateSummary['published']>>()
@@ -145,6 +151,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
   const suggestedBy = new Map<string, Set<string> | null>()
   const noLookups = mappingLookups([])
   const noOverrides = new Map<number, FederalCategory>()
+  const noSystems = new Map<never, FederalCategory>()
   for (const g of groups) {
     const p = published.get(g.stateId)
     if (!p) continue
@@ -166,6 +173,7 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       parents,
       lookups.mappings,
       stateOverrides,
+      systemsBy.get(g.stateId) ?? noSystems,
       lookups.manualKeys,
     )
     p.totalEntries += g.n
@@ -181,8 +189,8 @@ export async function publicSummaries(db: Db, stateId?: string): Promise<PublicS
       // Placed: an admin reviewed every placement (an approved mapping or by_code row).
       confirmed = g.reviewed === 1
     } else {
-      // Placed nowhere: a chapter override (always set by hand), a reviewed suggestion or a
-      // manual mapping decides it.
+      // Placed nowhere: a chapter or code-system override (always set by hand), a reviewed
+      // suggestion or a manual mapping decides it.
       confirmed = confirmedRules.has(rule)
     }
     if (!confirmed) p.mappingsConfirmed = false

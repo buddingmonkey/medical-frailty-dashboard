@@ -167,8 +167,27 @@ describe('parseBackup', () => {
     expect(bundle.mappings?.['MT']).toEqual({
       categoryMappings: [],
       chapterMappings: [],
+      systemMappings: [],
       columnProfiles: [],
     })
+  })
+
+  it('reads code-system overrides, and older backups without them', () => {
+    const backup = formatTwo()
+    const override = {
+      stateId: 'LA',
+      codeSystem: 'ndc' as const,
+      federalCategory: 'sud' as const,
+      mappedBy: 'admin@example.org',
+      mappedAt: '2026-11-21T00:00:00.000Z',
+    }
+    backup.tables.system_mappings = [override]
+    expect(parseBackup(JSON.stringify(backup)).mappings?.['LA']?.systemMappings).toEqual([override])
+    // Written before migration 0018: no system_mappings table at all.
+    const older = { ...backup.tables, system_mappings: undefined }
+    const bundle = parseBackup(JSON.stringify({ ...backup, tables: older }))
+    expect(bundle.mappings?.['LA']?.systemMappings).toEqual([])
+    expect(bundle.mappings?.['LA']?.categoryMappings).toHaveLength(1)
   })
 
   it('refuses an unknown format, a cut-off file and something else', () => {
@@ -327,11 +346,21 @@ describe('diffMappings', () => {
       {
         categoryMappings: [m('A', 'state_specific'), m('B', 'state_specific')],
         chapterMappings: [],
+        systemMappings: [],
         columnProfiles: [],
       },
       {
         categoryMappings: [m('A', 'unmapped'), m('C', 'state_specific')],
         chapterMappings: [],
+        systemMappings: [
+          {
+            stateId: 'LA',
+            codeSystem: 'ndc',
+            federalCategory: 'sud',
+            mappedBy: 'a',
+            mappedAt: 'x',
+          },
+        ],
         columnProfiles: [],
       },
     )
@@ -339,6 +368,7 @@ describe('diffMappings', () => {
       'changed Category “A”',
       'added Category “C”',
       'removed Category “B”',
+      'added Code system NDC',
     ])
   })
 })

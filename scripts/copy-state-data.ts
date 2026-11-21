@@ -36,6 +36,7 @@ export const COPY_TABLES = [
   'entries',
   'category_mappings',
   'chapter_mappings',
+  'system_mappings',
   'unified_mappings',
   'entry_unified',
   'entry_federal_suggestions',
