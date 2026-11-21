@@ -247,6 +247,14 @@ override (ICD-10-CM entries only) wins, then the category mapping, else `unmappe
 (`docs/data-model.md`, "Federal categories"). Every change moves the published version's
 `content_updated_at` and bumps `data_version`.
 
+**Code-system overrides** (project lead, 2026-11-21). A chapter override covers ICD-10-CM
+entries only; for every other system the admin can set one federal category per state and code
+system in `system_mappings`, at the same rank (rule `system`). It is for lists without
+categories, such as Connecticut's, whose NDC and HCPCS entries are all addiction treatment.
+`/admin/categories` lists, in an "Override by code system" table after the chapter table, only the
+non-ICD systems that the published version or an open draft holds, and every change goes
+through the bulk remap preview and save below (change kind `system`, audited under `systems`).
+
 **Suggestions by code** (project lead, 2026-11-13). Besides the keyword guess per category,
 publish suggests a federal category per ICD-10-CM entry from the published lists that name one
 per code (Indiana's Tier 1): same code, else the most common for the 3-character category,

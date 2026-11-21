@@ -82,6 +82,7 @@ export const RESET_SQL = [
   'DELETE FROM column_profiles;',
   'DELETE FROM category_mappings;',
   'DELETE FROM chapter_mappings;',
+  'DELETE FROM system_mappings;',
   'DELETE FROM unified_mappings;',
   'DELETE FROM source_documents;',
   'DELETE FROM audit_log;',

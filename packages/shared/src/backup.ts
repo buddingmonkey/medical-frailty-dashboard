@@ -16,7 +16,8 @@ import {
   entryAttributesSchema,
   validateDraftEntry,
 } from './drafts'
-import { federalCategories, mappingMethods } from './enums'
+import { chosenCategory, overrideSystemSchema } from './category-mapping'
+import { codeSystemLabels, federalCategories, mappingMethods } from './enums'
 import { MAX_ROWS } from './ingest'
 import { sourceFileTypeSchema, fileTypeFromName, type SourceFileType } from './sources'
 import { decodeStateFederal } from './state-federal'
@@ -48,6 +49,7 @@ export const BACKUP_TABLES = [
   'entries',
   'category_mappings',
   'chapter_mappings',
+  'system_mappings',
   'entry_federal_suggestions',
   'unified_categories',
   'unified_ccsr',
@@ -197,6 +199,15 @@ export const backupChapterMappingSchema = z.object({
 })
 export type BackupChapterMapping = z.infer<typeof backupChapterMappingSchema>
 
+export const backupSystemMappingSchema = z.object({
+  stateId: z.string(),
+  codeSystem: overrideSystemSchema,
+  federalCategory: chosenCategory,
+  mappedBy: z.string().max(320),
+  mappedAt: z.string().max(40),
+})
+export type BackupSystemMapping = z.infer<typeof backupSystemMappingSchema>
+
 export const backupColumnProfileSchema = z.object({
   stateId: z.string(),
   headerKey: z.string().max(4000),
@@ -228,6 +239,8 @@ export const fullBackupSchema = z.object({
     entries: z.array(backupEntryRowSchema),
     category_mappings: z.array(backupCategoryMappingSchema.loose()),
     chapter_mappings: z.array(backupChapterMappingSchema.loose()),
+    // Added with migration 0018: an older backup has none.
+    system_mappings: z.array(backupSystemMappingSchema.loose()).default([]),
     // Added with migration 0017: an older backup has none.
     entry_federal_suggestions: z.array(anyRow).default([]),
     unified_categories: z.array(anyRow),
@@ -358,6 +371,7 @@ const formatMb = (bytes: number) => `${String(Math.round(bytes / 1024 / 1024))} 
 export interface BackupMappings {
   categoryMappings: BackupCategoryMapping[]
   chapterMappings: BackupChapterMapping[]
+  systemMappings: BackupSystemMapping[]
   columnProfiles: BackupColumnProfile[]
 }
 
@@ -464,10 +478,16 @@ function fromFullBackup(raw: unknown): BackupBundle {
 
   const mappings: Record<string, BackupMappings> = {}
   const forState = (id: string) =>
-    (mappings[id] ??= { categoryMappings: [], chapterMappings: [], columnProfiles: [] })
+    (mappings[id] ??= {
+      categoryMappings: [],
+      chapterMappings: [],
+      systemMappings: [],
+      columnProfiles: [],
+    })
   for (const s of tables.states) forState(s.id)
   for (const m of tables.category_mappings) forState(m.stateId).categoryMappings.push(m)
   for (const m of tables.chapter_mappings) forState(m.stateId).chapterMappings.push(m)
+  for (const m of tables.system_mappings) forState(m.stateId).systemMappings.push(m)
   for (const p of tables.column_profiles) forState(p.stateId).columnProfiles.push(p)
 
   return {
@@ -648,6 +668,8 @@ const mappingRow = <T extends z.ZodObject>(schema: T) => z.array(schema).max(10_
 export const restoreMappingsSchema = z.object({
   categoryMappings: mappingRow(backupCategoryMappingSchema),
   chapterMappings: mappingRow(backupChapterMappingSchema),
+  /** Left out by a client older than migration 0018: none. */
+  systemMappings: mappingRow(backupSystemMappingSchema).default([]),
   columnProfiles: mappingRow(backupColumnProfileSchema).max(500),
 })
 export type RestoreMappings = z.infer<typeof restoreMappingsSchema>
@@ -699,6 +721,13 @@ export function diffMappings(current: RestoreMappings, backup: RestoreMappings):
     current.chapterMappings,
     backup.chapterMappings,
     (m) => String(m.chapter),
+    (m) => m.federalCategory,
+  )
+  compare(
+    'Code system',
+    current.systemMappings,
+    backup.systemMappings,
+    (m) => codeSystemLabels[m.codeSystem],
     (m) => m.federalCategory,
   )
   compare(

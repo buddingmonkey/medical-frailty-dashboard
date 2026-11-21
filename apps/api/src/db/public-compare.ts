@@ -14,8 +14,15 @@ import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import type { Db } from './client'
 import { chunk, D1_MAX_PARAMS } from './d1-limits'
 import { stateFederalSql, suggestionSql, unifiedParentsSql } from './federal'
-import { mappingLookups } from './federal-suggestions'
-import { categoryMappings, chapterMappings, entries, refCodes, states } from './schema'
+import { mappingLookups, systemOverridesByState } from './federal-suggestions'
+import {
+  categoryMappings,
+  chapterMappings,
+  entries,
+  refCodes,
+  states,
+  systemMappings,
+} from './schema'
 
 // Compare by category (roadmap M4): loads the selected states' published entries with their
 // federal categories (their unified categories' parents, else the M2 mapping), lets
@@ -33,7 +40,7 @@ export async function publicCompare(
   options: { allRows?: boolean } = {},
 ): Promise<CompareLoad> {
   const ids = query.states
-  const [stateRows, rows, mappings, overrides] = await Promise.all([
+  const [stateRows, rows, mappings, overrides, systemRows] = await Promise.all([
     db
       .select({
         id: states.id,
@@ -65,6 +72,7 @@ export async function publicCompare(
       .where(and(inArray(states.id, ids), isNotNull(states.publishedVersionId))),
     db.select().from(categoryMappings).where(inArray(categoryMappings.stateId, ids)),
     db.select().from(chapterMappings).where(inArray(chapterMappings.stateId, ids)),
+    db.select().from(systemMappings).where(inArray(systemMappings.stateId, ids)),
   ])
 
   const found = new Set(stateRows.map((s) => s.id))
@@ -84,6 +92,7 @@ export async function publicCompare(
     forState.set(o.chapter, o.federalCategory)
     overridesBy.set(o.stateId, forState)
   }
+  const systemsBy = systemOverridesByState(systemRows)
   const none = new Map<never, FederalCategory>()
 
   const result = buildCompare(
@@ -110,6 +119,7 @@ export async function publicCompare(
           federalCategoryList(parents),
           (lookupsBy.get(r.stateId) ?? noLookups).mappings,
           overridesBy.get(r.stateId) ?? none,
+          systemsBy.get(r.stateId) ?? none,
           (lookupsBy.get(r.stateId) ?? noLookups).manualKeys,
         ),
       })),

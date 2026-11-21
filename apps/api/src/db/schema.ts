@@ -8,6 +8,7 @@
 // `state_subcategory` is '' rather than NULL so unique keys work (SQLite treats NULLs as distinct).
 import {
   codeSystems,
+  chosenFederalCategories,
   conditionGroupStatuses,
   federalCategories,
   lawCategories,
@@ -16,6 +17,7 @@ import {
   mappingMethods,
   mappingRelations,
   matchKinds,
+  overrideSystems,
   placementBases,
   qualificationBases,
   qualifications,
@@ -608,6 +610,30 @@ export const chapterMappings = sqliteTable(
     primaryKey({ columns: [t.stateId, t.chapter] }),
     check('chapter_mappings_chapter_check', sql`${t.chapter} BETWEEN 1 AND 22`),
     check('chapter_mappings_federal_check', oneOf(t.federalCategory, federalCategories)),
+  ],
+)
+
+/**
+ * Per-state override by code system (every system but ICD-10-CM, which has chapter_mappings),
+ * for lists without categories (CT: its NDC and HCPCS entries are all addiction treatment): an
+ * override wins over the category mapping for the state's entries of that system, at the rank
+ * of a chapter override (`federalRuleOf`, rule 3). Belongs to the state, like category_mappings.
+ */
+export const systemMappings = sqliteTable(
+  'system_mappings',
+  {
+    stateId: text('state_id')
+      .notNull()
+      .references(() => states.id),
+    codeSystem: text('code_system', { enum: overrideSystems }).notNull(),
+    federalCategory: text('federal_category', { enum: chosenFederalCategories }).notNull(),
+    mappedBy: text('mapped_by').notNull(),
+    mappedAt: timestamp('mapped_at'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.stateId, t.codeSystem] }),
+    check('system_mappings_code_system_check', oneOf(t.codeSystem, overrideSystems)),
+    check('system_mappings_federal_check', oneOf(t.federalCategory, chosenFederalCategories)),
   ],
 )
 

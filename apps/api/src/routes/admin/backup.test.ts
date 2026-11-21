@@ -19,6 +19,7 @@ import {
   auditLog,
   categoryMappings,
   chapterMappings,
+  systemMappings,
   entries,
   sourceDocuments,
   states,
@@ -353,5 +354,55 @@ describe('restore path 2', () => {
     }
     expect((await send('PUT', '/api/admin/backup/mappings/MT', other)).status).toBe(400)
     expect((await send('PUT', '/api/admin/backup/mappings/ZZ', fromFile)).status).toBe(404)
+  })
+
+  it('backs up and restores code-system overrides; a request without them clears them', async () => {
+    await db.insert(systemMappings).values([
+      { stateId: 'MT', codeSystem: 'ndc', federalCategory: 'sud', mappedBy: ADMIN },
+      { stateId: 'NE', codeSystem: 'hcpcs', federalCategory: 'sud', mappedBy: ADMIN },
+    ])
+    const current = restoreMappingsSchema.parse(
+      await (await send('GET', '/api/admin/backup/mappings?stateId=MT')).json(),
+    )
+    expect(current.systemMappings.map((m) => [m.codeSystem, m.federalCategory])).toEqual([
+      ['ndc', 'sud'],
+    ])
+
+    const fromFile = {
+      categoryMappings: [],
+      chapterMappings: [],
+      systemMappings: [
+        {
+          stateId: 'MT',
+          codeSystem: 'hcpcs',
+          federalCategory: 'physical_idd_adl',
+          mappedBy: 'old-admin@example.org',
+          mappedAt: '2026-10-01T00:00:00.000Z',
+        },
+      ],
+      columnProfiles: [],
+    }
+    expect((await send('PUT', '/api/admin/backup/mappings/MT', fromFile)).status).toBe(200)
+    const mt = await db.select().from(systemMappings).where(eq(systemMappings.stateId, 'MT'))
+    expect(mt.map((m) => [m.codeSystem, m.federalCategory, m.mappedBy])).toEqual([
+      ['hcpcs', 'physical_idd_adl', 'old-admin@example.org'],
+    ])
+    const [audit] = await audits('mappings.restore')
+    expect(JSON.parse(audit?.detailsJson ?? '{}')).toMatchObject({ systemMappings: 1 })
+
+    // A backup older than the table restores as "no overrides"; other states keep theirs.
+    const older = { ...fromFile, systemMappings: undefined }
+    expect((await send('PUT', '/api/admin/backup/mappings/MT', older)).status).toBe(200)
+    expect(await db.select().from(systemMappings).where(eq(systemMappings.stateId, 'MT'))).toEqual(
+      [],
+    )
+    expect(await db.select().from(systemMappings)).toHaveLength(1)
+
+    // Another state's row is refused.
+    const other = {
+      ...fromFile,
+      systemMappings: [{ ...fromFile.systemMappings[0], stateId: 'NE' }],
+    }
+    expect((await send('PUT', '/api/admin/backup/mappings/MT', other)).status).toBe(400)
   })
 })
