@@ -262,6 +262,9 @@ The public site changes only when the project lead approves a release.
   that restate labels and the same caveat on every screen. A 2026-11-17 review found 5,600
   words on the admin screens alone (`docs/devlog/2026-11-17-copy-trim.md`). Hold UI text to the
   house style below.
+- **Check that a test ran on what you meant to test.** A full check once passed on the wrong
+  branch: switching to the update's branch had failed without a visible error. The installed
+  version number showed it (`docs/devlog/2026-11-23-dependencies-and-release.md`).
 
 ### House style for UI text
 

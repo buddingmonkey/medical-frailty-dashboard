@@ -1,8 +1,8 @@
 # Status
 
-_Last updated: 2026-11-17. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.11.0` (UI text cut across admin and public
-pages, 2026-11-17)._
+_Last updated: 2026-11-23. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.12.0` (NDC codes, header below a title block,
+federal override by code system, 2026-11-21)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -14,8 +14,8 @@ what is still open, and the decisions behind it.
   codes) was added on production by the project lead on 2026-11-13 (`docs/sources.md`,
   Indiana). **Connecticut** (xlsx, a state draft effective 2027-01-01; ICD-10-CM, NDC and
   HCPCS) arrived 2026-11-21. The ingest code now reads it (NDC parsing, header below a title
-  block, federal override by code system, migration 0018); it waits for a release and an admin
-  load on production (`docs/devlog/2026-11-21-connecticut-ingest.md`). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
+  block, federal override by code system, migration 0018); it shipped in `v0.12.0` and waits for an
+  admin load on production (`docs/devlog/2026-11-21-connecticut-ingest.md`). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
 - **Preview** is a test site with seed data and a gold "Preview site: test data" banner: 4 real
   states (up to 300 real entries each), 40 synthetic lists, 4 announced and 3 with no list
   (`apps/api/seed/seed.sql`, written by `pnpm db:seed:make`). Never seed production.
@@ -77,7 +77,9 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.10.0` | 2026-11-15 | Migrations 0016 and 0017: state's own federal category, per-code suggestions; dependencies (wrangler and the vitest plugin held back) |
 | `v0.10.1` | 2026-11-15 | Clearer suggestion and re-read messages; e2e and Windows test fixes |
 | `v0.10.3` | 2026-11-16 | Info tooltips on admin fields; "classified by code" status; open-draft count by join; similarity SQL rewrite; wrangler 4.162 (`v0.10.2` cancelled before deploy) |
-| `v0.11.0` | 2026-11-17 | UI text cut across admin and public pages; legal review updated; picomatch audit ignore (live) |
+| `v0.11.0` | 2026-11-17 | UI text cut across admin and public pages; legal review updated; picomatch audit ignore |
+| `v0.11.1` | 2026-11-17 | UI text in complete, professional sentences |
+| `v0.12.0` | 2026-11-21 | Migration 0018 (`system_mappings`): NDC parsing and search, header below a title block, federal override by code system (live) |
 
 ## For the project lead
 
