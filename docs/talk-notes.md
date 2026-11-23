@@ -85,6 +85,8 @@ literacy, little or no coding.
 | 2026-11-04 | The admin overview still promised features as "coming next" that had shipped. The first AI audit fixed it but got two facts wrong itself; a second reviewer told to check each claim against the code caught both | Factual text needs a second reviewer who checks sources, not style | same |
 | 2026-11-17 | An adversarial reviewer counted 5,600 words of text on the admin screens; one rule was explained five times on one page. Three builders cut it by more than half in one session | Count the words and the repeats; AI padding is easier to see as a number | `devlog/2026-11-17-copy-trim.md` |
 | 2026-11-17 | Hours later the project lead said the cut went too far: tooltips like "Lower comes first." had lost their instructions. A second pass restored full sentences without bringing back the repeats | Cap repetition, not sentence length; brevity is not the same as clarity | `devlog/2026-11-17-copy-trim.md` |
+| 2026-11-21 | Connecticut's file arrived with 374 drug codes (NDC), a code system the site had a placeholder for but no parser. Profiling the file first found that, plus a title block that would have become the column headers, before anyone uploaded it. Four builders fixed it in parallel; the real file then read 6,035 of 6,083 rows ready and 0 problems | Look at a new state's file before uploading it | `devlog/2026-11-21-connecticut-ingest.md` |
+| 2026-11-23 | A full check passed on the wrong branch: switching to the update's branch failed silently. The installed version number gave it away before the merge | A green run proves only what it ran on | `devlog/2026-11-23-dependencies-and-release.md` |
 
 ## Numbers to collect
 
