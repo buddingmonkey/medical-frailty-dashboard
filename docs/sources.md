@@ -238,6 +238,8 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   `I60.22`, `H40.11X2`, `H40.11X3`. 90 listed codes have children in FY2027, including the
   bare `F42`, `F53`, `F78`, `G20` and `G35`. For 84 of the 90, the list also names some of the
   children, so "this code only" or "with children" is a review decision per code.
+- **Loaded on production** by the project lead (reported 2026-11-23), after `v0.12.0`
+  added migration 0018.
 - The workbook holds an external link to a staff member's local spreadsheet (left over from
   editing). It carries no data and the parser ignores it.
 
