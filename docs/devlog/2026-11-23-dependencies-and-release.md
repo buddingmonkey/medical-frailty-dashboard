@@ -66,8 +66,7 @@ the waiting Dependabot PRs and the expired package-age exemption.
 
 ## Open threads
 
-- **Load CT on production** through the admin screens (steps in
-  `docs/devlog/2026-11-21-connecticut-ingest.md`); this log does not record whether it is done.
+- ~~Load CT on production~~: done; the project lead reported it loaded on 2026-11-23.
 - The dependency updates and the exemption removal are on `main` only; they ship with the next
   release tag.
 - From 2026-11-21: a restore from a backup older than 0018 clears system overrides; the
