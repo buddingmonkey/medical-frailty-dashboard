@@ -29,8 +29,7 @@ what is still open, and the decisions behind it.
   scripts are cross-platform Node, with a `check (windows)` CI job.
 - **ui-sdk** (`@ui-sdk/vue`, `@ui-sdk/core` 0.1.0-beta.1, added 2026-11-12) gives the badge
   tooltips, the matrix hover cards and the Overlaps rows. Its theme CSS is not loaded; see
-  `AGENTS.md`. **Temporary:** `pnpm-workspace.yaml` exempts the two packages from the 3-day
-  rule (project lead, 2026-11-12). Remove that entry after 2026-11-15.
+  `AGENTS.md`. Its temporary exemption from the 3-day rule was removed on 2026-11-23.
 - **Skill folders** (`.agents/`, `.claude/skills/`, `skills-lock.json`) stay untracked on
   purpose (user, 2026-11-01). Their sources are in `docs/architecture.md`, "Agent skills".
 
