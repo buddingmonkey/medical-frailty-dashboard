@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { groupWatchItems, type WatchCreate, watchItemSchema, type WatchUpdate } from '@mfcd/shared'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import {
+  groupWatchItems,
+  stateListResponseSchema,
+  type WatchCreate,
+  watchItemSchema,
+  type WatchUpdate,
+} from '@mfcd/shared'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 
 import WatchCloseForm from '../../components/admin/WatchCloseForm.vue'
 import WatchItemForm from '../../components/admin/WatchItemForm.vue'
 import { formatIsoDate, localToday, useWatchItems, watchKindLabels } from '../../lib/admin-watch'
-import { sendJson } from '../../lib/api'
+import { getJson, sendJson } from '../../lib/api'
 
 type Tab = 'open' | 'history'
 const tab = ref<Tab>('open')
@@ -29,6 +35,12 @@ const editing = ref<'new' | number | null>(null)
 const closing = ref<number | null>(null)
 
 const queryClient = useQueryClient()
+// For the form's State select; same key as the other admin pages, so the cache is shared.
+const statesQuery = useQuery({
+  queryKey: ['admin', 'states'],
+  queryFn: async () => (await getJson('/api/admin/states', stateListResponseSchema)).items,
+  staleTime: Infinity,
+})
 
 const save = useMutation({
   mutationFn: ({ id, body }: { id: number | null; body: WatchCreate | WatchUpdate }) =>
@@ -129,6 +141,7 @@ const resolvedFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
         :key="String(editing)"
         :item="editingItem"
         :saving="save.isPending.value"
+        :states="statesQuery.data.value"
         @save="onSave"
         @cancel="editing = null"
       />

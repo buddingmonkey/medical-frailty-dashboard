@@ -11,6 +11,8 @@ const props = defineProps<{
   item?: WatchItem
   /** Disables Save while the request runs. */
   saving?: boolean
+  /** States for the State select, by name; may arrive after the form opens. */
+  states?: readonly { id: string; name: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +25,7 @@ const id = useId()
 const draft = reactive({
   title: props.item?.title ?? '',
   kind: props.item?.kind ?? 'court',
+  stateId: props.item?.stateId ?? null,
   dueDate: props.item?.dueDate ?? '',
   dateIsApproximate: props.item?.dateIsApproximate ?? false,
   whyMd: props.item?.whyMd ?? '',
@@ -33,6 +36,7 @@ const draft = reactive({
 const fieldLabels: Record<string, string> = {
   title: 'Title',
   kind: 'Kind',
+  stateId: 'State',
   dueDate: 'Due date',
   whyMd: 'Why it matters',
   links: 'Links (each needs a label and an http or https URL)',
@@ -54,7 +58,7 @@ function submit() {
   const result = watchCreateSchema.safeParse({
     title: draft.title,
     kind: draft.kind,
-    stateId: props.item?.stateId ?? null,
+    stateId: draft.stateId,
     dueDate: draft.dueDate === '' ? null : draft.dueDate,
     dateIsApproximate: draft.dateIsApproximate,
     whyMd: draft.whyMd,
@@ -69,8 +73,16 @@ function submit() {
   emit('save', result.data)
 }
 
+/** The state options; an item's own state stays listed (by its code) until the list loads. */
+const stateOptions = computed(() => {
+  const list = props.states ?? []
+  const own = props.item?.stateId
+  return own && !list.some((s) => s.id === own) ? [{ id: own, name: own }, ...list] : list
+})
+
 /** What the less obvious fields do, in their info buttons' tooltips. */
 const fieldHelp = {
+  state: 'Links the item to one state’s list. Leave it as None for federal or general items.',
   dueDate: 'If the date is left blank, the item is listed under “No date yet”.',
   repeatDays:
     'When the item is closed, the next one opens this many days later. Enter a whole number from 1 to 3,650, or leave it blank.',
@@ -114,6 +126,21 @@ const inputClass =
         >
           <option v-for="kind in watchKinds" :key="kind" :value="kind">
             {{ watchKindLabels[kind] }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label :for="`${id}-state`" class="font-medium">State</label
+        ><InfoTip label="State" :text="fieldHelp.state" />
+        <select
+          :id="`${id}-state`"
+          v-model="draft.stateId"
+          :class="inputClass"
+          v-bind="fieldState('stateId')"
+        >
+          <option :value="null">None</option>
+          <option v-for="state in stateOptions" :key="state.id" :value="state.id">
+            {{ state.name }}
           </option>
         </select>
       </div>
