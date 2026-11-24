@@ -249,8 +249,9 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   - Most similar lists: Nebraska 0.40, Georgia 0.39, Indiana 0.27, Louisiana 0.23, Montana 0.13.
   - `/codes/ndc/00054-0176-13` lists Connecticut; `/codes/ndc/00054017613` redirects to it;
     code search finds the NDC typed either way.
-  - Watch item "Connecticut publishes final list" is open, with no state linked and no due
-    date.
+  - Watch item "Connecticut publishes final list": linked to CT and due 2026-12-15
+    (approximate) on 2026-11-23 (project lead's choice; audit `watch.edit`, `watch:10`). The
+    edit form has no State field, so the state was set through the app's own save endpoint.
 - The workbook holds an external link to a staff member's local spreadsheet (left over from
   editing). It carries no data and the parser ignores it.
 
