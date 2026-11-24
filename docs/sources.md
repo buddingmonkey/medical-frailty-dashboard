@@ -238,8 +238,19 @@ Seed files were reviewed on 2026-11-01 with `pdftotext -layout`.
   `I60.22`, `H40.11X2`, `H40.11X3`. 90 listed codes have children in FY2027, including the
   bare `F42`, `F53`, `F78`, `G20` and `G35`. For 84 of the 90, the list also names some of the
   children, so "this code only" or "with children" is a review decision per code.
-- **Loaded on production** by the project lead (reported 2026-11-23), after `v0.12.0`
-  added migration 0018.
+- **Loaded on production** by the project lead on 2026-11-22 (version 1), after `v0.12.0`
+  added migration 0018. Checked on production 2026-11-23 through the browser:
+  - 6,083 entries: 5,684 ICD-10-CM, 25 HCPCS, 374 NDC; all "Enough by itself". Source title
+    "Medical Frailty Code List (state draft, effective 2027-01-01)", state's date 2026-11-04.
+  - Overrides by code system: NDC and HCPCS → Substance use disorder (set 2026-11-22). Federal
+    counts: blind or disabled 3,408, substance use disorder 3,914, disabling mental disorder
+    3,708, physical/IDD/ADL 3,527, serious or complex medical 5,140 (an entry can count under
+    several). All shown as reviewed.
+  - Most similar lists: Nebraska 0.40, Georgia 0.39, Indiana 0.27, Louisiana 0.23, Montana 0.13.
+  - `/codes/ndc/00054-0176-13` lists Connecticut; `/codes/ndc/00054017613` redirects to it;
+    code search finds the NDC typed either way.
+  - Watch item "Connecticut publishes final list" is open, with no state linked and no due
+    date.
 - The workbook holds an external link to a staff member's local spreadsheet (left over from
   editing). It carries no data and the parser ignores it.
 
