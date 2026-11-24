@@ -15,7 +15,7 @@ what is still open, and the decisions behind it.
   Indiana). **Connecticut** (xlsx, a state draft effective 2027-01-01; ICD-10-CM, NDC and
   HCPCS) arrived 2026-11-21. The ingest code now reads it (NDC parsing, header below a title
   block, federal override by code system, migration 0018); it shipped in `v0.12.0`, and the project
-  lead loaded it on production by 2026-11-23 (`docs/devlog/2026-11-21-connecticut-ingest.md`). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
+  lead loaded it on production on 2026-11-22 (checked 2026-11-23) (`docs/devlog/2026-11-21-connecticut-ingest.md`). The whole site stays behind Cloudflare Access (the pre-launch gate) until go-live.
 - **Preview** is a test site with seed data and a gold "Preview site: test data" banner: 4 real
   states (up to 300 real entries each), 40 synthetic lists, 4 announced and 3 with no list
   (`apps/api/seed/seed.sql`, written by `pnpm db:seed:make`). Never seed production.
