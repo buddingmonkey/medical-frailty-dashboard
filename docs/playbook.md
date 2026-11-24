@@ -265,6 +265,9 @@ The public site changes only when the project lead approves a release.
 - **Check that a test ran on what you meant to test.** A full check once passed on the wrong
   branch: switching to the update's branch had failed without a visible error. The installed
   version number showed it (`docs/devlog/2026-11-23-dependencies-and-release.md`).
+  It happened again a day later: a builder's worktree still held the branch, so the checkout
+  failed and the check ran on `main`. The test count (415, not the branch's 419) showed it.
+  Stop on a failed checkout; do not chain the check after it with `;` or a pipe.
 
 ### House style for UI text
 
