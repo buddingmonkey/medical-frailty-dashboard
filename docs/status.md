@@ -1,8 +1,7 @@
 # Status
 
-_Last updated: 2026-11-23. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
-and 8 (go live) wait for the project lead. Production runs `v0.12.0` (NDC codes, header below a title block,
-federal override by code system, 2026-11-21)._
+_Last updated: 2026-11-25. M0–M7 done. M8 steps 1–4, 6 and 7 (except the restore drill) done; steps 5 (usability gate)
+and 8 (go live) wait for the project lead. Production runs `v0.12.1` (State field on watch items, dependency updates, 2026-11-25)._
 
 The devlog (`docs/devlog/`) records how each step was built. This file keeps what is true now,
 what is still open, and the decisions behind it.
@@ -79,7 +78,8 @@ summary; the copy-state-data workflow does the same for its copy. Look there for
 | `v0.10.3` | 2026-11-16 | Info tooltips on admin fields; "classified by code" status; open-draft count by join; similarity SQL rewrite; wrangler 4.162 (`v0.10.2` cancelled before deploy) |
 | `v0.11.0` | 2026-11-17 | UI text cut across admin and public pages; legal review updated; picomatch audit ignore |
 | `v0.11.1` | 2026-11-17 | UI text in complete, professional sentences |
-| `v0.12.0` | 2026-11-21 | Migration 0018 (`system_mappings`): NDC parsing and search, header below a title block, federal override by code system (live) |
+| `v0.12.0` | 2026-11-21 | Migration 0018 (`system_mappings`): NDC parsing and search, header below a title block, federal override by code system |
+| `v0.12.1` | 2026-11-25 | State field on the watch item form; Dependabot updates (wrangler 4.165, jsdom 31); ui-sdk age exemption removed (live) |
 
 ## For the project lead
 
