@@ -67,7 +67,7 @@ the waiting Dependabot PRs and the expired package-age exemption.
 ## Open threads
 
 - ~~Load CT on production~~: done; the project lead reported it loaded on 2026-11-23.
-- The dependency updates and the exemption removal are on `main` only; they ship with the next
-  release tag.
+- ~~The dependency updates and the exemption removal ship with the next release tag~~: `v0.12.1`,
+  2026-11-25.
 - From 2026-11-21: a restore from a backup older than 0018 clears system overrides; the
   partial NDC search while typing; NDC members in condition groups via the API.

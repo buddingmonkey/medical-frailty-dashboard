@@ -46,4 +46,4 @@ Let an admin link a watch item to a state from the form. Fixing the Connecticut 
 
 ## Open threads
 
-- Ships with the next release tag, with the dependency updates already on `main`.
+- ~~Ships with the next release tag~~: `v0.12.1`, deployed 2026-11-25 14:42 CST after the project lead approved.
